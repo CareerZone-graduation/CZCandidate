@@ -1,119 +1,94 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { Menu, Briefcase, Building2, Newspaper, UserPlus, LogIn } from 'lucide-react';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navigateToLogin = () => {
-    window.history.pushState({}, '', '/login');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
-
-  const navigateToRegister = () => {
-    window.history.pushState({}, '', '/register');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
-
-  const navigateToHome = () => {
-    window.history.pushState({}, '', '/');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
+  const navLinks = [
+    { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
+    { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
+    { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
+  ];
 
   return (
-    <header className="bg-black shadow-lg sticky top-0 z-50 w-full border-b border-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+    <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <div 
-              onClick={navigateToHome}
-              className="text-2xl font-bold text-white cursor-pointer hover:text-[#0B8043] transition duration-300"
-            >
-              CareerZone
-            </div>
-          </div>
+          <Link to="/" className="text-2xl font-bold text-gray-900 dark:text-white">
+            Career<span className="text-primary">Zone</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <a href="#" className="text-white hover:text-[#0B8043] transition duration-300">
-              Trang chủ
-            </a>
-            <a href="#" className="text-white hover:text-[#0B8043] transition duration-300">
-              Tìm việc làm
-            </a>
-            <a href="#" className="text-white hover:text-[#0B8043] transition duration-300">
-              Công ty
-            </a>
-            <a href="#" className="text-white hover:text-[#0B8043] transition duration-300">
-              Cẩm nang
-            </a>
+          <nav className="hidden md:flex items-center space-x-8">
+            {navLinks.map((link) => (
+              <Link key={link.title} to={link.href} className="text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-300">
+                {link.title}
+              </Link>
+            ))}
           </nav>
 
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-              <button className="text-white hover:text-[#0B8043] transition duration-300">
-              Trang nhà tuyển dụng
-            </button>
-            <button 
-              onClick={navigateToLogin}
-              className="text-white hover:text-[#0B8043] transition duration-300"
-            >
-              Đăng nhập
-            </button>
-            <button 
-              onClick={navigateToRegister}
-              className="bg-[#0B8043] text-white px-6 py-2 rounded-lg hover:bg-[#0F6B3D] transition duration-300 shadow-lg"
-            >
-              Đăng ký
-            </button>
+          <div className="hidden md:flex items-center space-x-2">
+            <Button variant="ghost" asChild>
+              <Link to="/login">
+                <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/register">
+                <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
+              </Link>
+            </Button>
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden text-green-400"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-700">
-            <nav className="flex flex-col space-y-4">
-              <a href="#" className="text-green-300 hover:text-green-200 transition duration-300">
-                Trang chủ
-              </a>
-              <a href="#" className="text-green-300 hover:text-green-200 transition duration-300">
-                Tìm việc làm
-              </a>
-              <a href="#" className="text-green-300 hover:text-green-200 transition duration-300">
-                Công ty
-              </a>
-              <a href="#" className="text-green-300 hover:text-green-200 transition duration-300">
-                Cẩm nang
-              </a>
-              <div className="flex flex-col space-y-2 pt-4">
-                <button 
-                  onClick={navigateToLogin}
-                  className="text-green-300 hover:text-green-200 transition duration-300 text-left"
-                >
-                  Đăng nhập
-                </button>
-                <button 
-                  onClick={navigateToRegister}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300"
-                >
-                  Đăng ký
-                </button>
+          {/* Mobile Menu Button */}
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="outline" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <div className="flex flex-col space-y-6 pt-8">
+                <Link to="/" className="text-2xl font-bold" onClick={() => setIsMenuOpen(false)}>
+                  Career<span className="text-primary">Zone</span>
+                </Link>
+                <nav className="flex flex-col space-y-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.title}
+                      to={link.href}
+                      className="flex items-center space-x-3 text-lg text-gray-700 dark:text-gray-200 hover:text-primary transition-colors duration-300"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.icon}
+                      <span>{link.title}</span>
+                    </Link>
+                  ))}
+                </nav>
+                <div className="border-t pt-6 space-y-2">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                      <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
+                    </Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                      <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
+                    </Link>
+                  </Button>
+                </div>
               </div>
-            </nav>
-          </div>
-        )}
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

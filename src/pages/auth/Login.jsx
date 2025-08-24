@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { login as loginService } from '../../services/authService';
 
 const Login = () => {
@@ -26,10 +27,10 @@ const Login = () => {
 
     try {
       const response = await loginService(formData);
-      
+      console.log('Login successful:', response);
       // Store user data and token
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('user', JSON.stringify(response.data));
       
       setSuccess('Đăng nhập thành công!');
       
@@ -39,7 +40,7 @@ const Login = () => {
       }, 1500);
       
     } catch (error) {
-      const errorMessage = error.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const errorMessage = error.response.data.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
       setError(errorMessage);
       console.error('Login error:', error);
     } finally {
@@ -123,9 +124,9 @@ const Login = () => {
 
             <div className="text-center text-sm text-gray-600">
               Chưa có tài khoản?{' '}
-              <a href="/register" className="text-[#0B8043] hover:text-[#0F6B3D] font-medium">
+              <Link to="/register" className="text-[#0B8043] hover:text-[#0F6B3D] font-medium">
                 Đăng ký ngay
-              </a>
+              </Link>
             </div>
           </form>
         </div>

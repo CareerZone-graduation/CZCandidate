@@ -6,6 +6,11 @@ export const login = async (credentials) => {
   return response; // apiClient now returns data directly
 };
 
+export const register = async (userData) => {
+  const response = await apiClient.post('/auth/register', userData);
+  return response;
+};
+
 export const logout = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('user');

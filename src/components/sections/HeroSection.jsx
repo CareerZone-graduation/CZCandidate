@@ -1,81 +1,97 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { Search, MapPin, Briefcase, Building2, TrendingUp } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const HeroSection = () => {
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [location, setLocation] = useState('')
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [location, setLocation] = useState('');
+  
+  const stats = [
+    { icon: Briefcase, value: '15,000+', label: 'Việc làm mới' },
+    { icon: Building2, value: '2,500+', label: 'Công ty hàng đầu' },
+    { icon: TrendingUp, value: '98%', label: 'Tỷ lệ thành công' },
+  ];
 
   return (
-    <section className="bg-black py-20 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Tìm việc làm phù hợp với
-              <span className="text-[#0B8043]"> kỹ năng & sở thích</span> của bạn
-            </h1>
-            <p className="text-xl text-gray-300 mb-8">
-              Khám phá hàng ngàn cơ hội việc làm từ các công ty hàng đầu. 
-              Bắt đầu hành trình sự nghiệp của bạn ngay hôm nay.
-            </p>
+    <section className="relative bg-gradient-to-b from-primary/5 to-background pt-16 lg:pt-24 pb-20">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/5 blur-3xl"></div>
+        <div className="absolute top-1/2 -left-20 w-60 h-60 rounded-full bg-primary/5 blur-3xl"></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-12">
+          <Badge variant="outline" className="px-4 py-1 text-sm font-medium text-primary border-primary/30 mb-5">
+            Nền tảng việc làm hàng đầu tại Việt Nam
+          </Badge>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+            Tìm kiếm công việc <br />
+            <span className="text-foreground">định hình tương lai của bạn</span>
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Khám phá hàng ngàn cơ hội việc làm chất lượng từ các công ty hàng đầu 
+            phù hợp với kỹ năng và đam mê của bạn.
+          </p>
+        </div>
 
-            {/* Search Box */}
-            <div className="bg-white rounded-lg shadow-xl p-2 flex flex-col md:flex-row gap-2">
-              <div className="flex-1">
-                <input
+        {/* Search Box */}
+        <Card className="max-w-3xl mx-auto shadow-lg mb-16">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="relative md:col-span-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
                   type="text"
-                  placeholder="Tìm kiếm việc làm, công ty..."
+                  placeholder="Vị trí, kỹ năng, từ khóa..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-2 focus:ring-[#0B8043] rounded bg-white text-black placeholder-gray-500"
+                  className="pl-10 h-12"
                 />
               </div>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Địa điểm"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-4 py-3 border-0 focus:outline-none focus:ring-2 focus:ring-[#0B8043] rounded bg-white text-black placeholder-gray-500"
-                />
+              <div className="relative">
+                <Select>
+                  <SelectTrigger className="h-12">
+                    <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Địa điểm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hanoi">Hà Nội</SelectItem>
+                    <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
+                    <SelectItem value="danang">Đà Nẵng</SelectItem>
+                    <SelectItem value="other">Khác</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <button className="bg-[#0B8043] text-white px-8 py-3 rounded-lg hover:bg-[#0F6B3D] transition duration-300 font-semibold shadow-lg">
+              <Button size="lg" className="h-12 w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Search className="mr-2 h-5 w-5" />
                 Tìm kiếm
-              </button>
+              </Button>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Popular Keywords */}
-            <div className="mt-6">
-              <p className="text-gray-300 mb-3">Từ khóa phổ biến:</p>
-              <div className="flex flex-wrap gap-2">
-                {['ReactJS', 'NodeJS', 'Python', 'Java', 'Marketing', 'Designer'].map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="bg-white text-black px-3 py-1 rounded-full text-sm hover:bg-[#0B8043] hover:text-white cursor-pointer transition duration-300"
-                  >
-                    {keyword}
-                  </span>
-                ))}
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 mb-3 bg-primary/10 rounded-full">
+                <stat.icon className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
               </div>
             </div>
-          </div>
-
-          {/* Right Content - Illustration */}
-          <div className="text-center">
-            <div className="bg-white rounded-2xl shadow-xl p-8 transform rotate-3 hover:rotate-0 transition duration-500">
-              <div className="bg-[#0B8043] rounded-full w-32 h-32 mx-auto mb-6 flex items-center justify-center">
-                <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-black mb-2">10,000+ Việc làm</h3>
-              <p className="text-gray-600">Cơ hội nghề nghiệp đa dạng</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default HeroSection
+export default HeroSection;
