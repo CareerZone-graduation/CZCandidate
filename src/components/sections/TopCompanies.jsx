@@ -14,40 +14,49 @@ const companies = [
 
 const TopCompanies = () => {
   return (
-    <section className="py-20 bg-white dark:bg-gray-950">
+    <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Top công ty hàng đầu
+          <Badge variant="outline" className="text-primary mb-4 bg-background border-primary/30">
+            🏢 Đối tác uy tín
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Top công ty <span className="text-gradient-primary">hàng đầu</span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Khám phá và ứng tuyển vào các công ty uy tín, môi trường làm việc tốt nhất.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {companies.map((company) => (
-            <Card key={company.id} className="flex flex-col text-center hover:shadow-lg transition-shadow duration-300">
+            <Card key={company.id} className="flex flex-col text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 shadow-md bg-background relative">
               <CardHeader>
                 <div className="text-5xl mb-3 mx-auto">{company.logo}</div>
-                <CardTitle className="text-xl font-bold">{company.name}</CardTitle>
-                <CardDescription>{company.industry}</CardDescription>
+                <CardTitle className="text-xl font-bold text-foreground">{company.name}</CardTitle>
+                <CardDescription className="text-muted-foreground">{company.industry}</CardDescription>
                 <div className="flex items-center justify-center gap-1 mt-2">
-                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                  <span className="font-semibold">{company.rating}</span>
+                  <Star className="h-5 w-5 text-warning fill-warning" />
+                  <span className="font-semibold text-foreground">{company.rating}</span>
                 </div>
                 {company.featured && (
-                  <Badge className="absolute top-4 right-4">Top</Badge>
+                  <Badge className="absolute top-4 right-4 bg-gradient-primary text-primary-foreground">Top</Badge>
                 )}
               </CardHeader>
               <CardContent className="flex-grow">
-                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center justify-center gap-2"><Users className="h-4 w-4 text-primary" /> {company.employees}</div>
-                  <div className="flex items-center justify-center gap-2"><Briefcase className="h-4 w-4 text-primary" /> {company.jobs}</div>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2">
+                    <Users className="h-4 w-4 text-primary" /> 
+                    <span className="font-medium">{company.employees}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <Briefcase className="h-4 w-4 text-success" /> 
+                    <span className="font-medium">{company.jobs}</span>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">
                   Xem công ty <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -56,7 +65,7 @@ const TopCompanies = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg">
+          <Button size="lg" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
             Xem tất cả công ty
           </Button>
         </div>

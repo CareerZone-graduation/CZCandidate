@@ -39,13 +39,15 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section className="py-20 bg-primary/5">
+    <section className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div>
-            <Badge variant="outline" className="text-primary mb-4">Người dùng chia sẻ</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Câu chuyện thành công
+            <Badge variant="outline" className="text-primary mb-4 bg-background border-primary/30">
+              👥 Người dùng chia sẻ
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              Câu chuyện <span className="text-gradient-primary">thành công</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl">
               Hàng ngàn người đã tìm được công việc mơ ước thông qua nền tảng CareerZone. 
@@ -53,10 +55,10 @@ const Testimonials = () => {
             </p>
           </div>
           <div className="flex gap-2 mt-6 md:mt-0">
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground">
               <ChevronLeft className="h-6 w-6" />
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground">
               <ChevronRight className="h-6 w-6" />
             </Button>
           </div>
@@ -64,38 +66,38 @@ const Testimonials = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="hover:shadow-lg transition-all duration-300 overflow-visible relative">
-              <div className="absolute -top-5 left-8 w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <Quote className="h-5 w-5 text-white" />
+            <Card key={testimonial.id} className="hover:shadow-2xl transition-all duration-300 overflow-visible relative border-0 shadow-md bg-background transform hover:-translate-y-1">
+              <div className="absolute -top-5 left-8 w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center shadow-lg">
+                <Quote className="h-5 w-5 text-primary-foreground" />
               </div>
               <CardContent className="p-8 pt-10">
                 <div className="flex items-center mb-6">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-amber-400 fill-amber-400" />
+                    <Star key={i} className="h-5 w-5 text-warning fill-warning" />
                   ))}
                 </div>
                 
-                <p className="text-muted-foreground mb-6 italic">"{testimonial.content}"</p>
+                <p className="text-muted-foreground mb-6 italic leading-relaxed">"{testimonial.content}"</p>
                 
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 border-2 border-primary/10">
+                  <Avatar className="h-14 w-14 border-2 border-primary/20">
                     <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
-                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">{testimonial.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold text-lg">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.position}</p>
+                    <p className="font-bold text-lg text-foreground">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground font-medium">{testimonial.position}</p>
                   </div>
                 </div>
                 
-                <div className="mt-6 pt-6 border-t flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Công ty:</span>
+                <div className="mt-6 pt-6 border-t border-border flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground font-medium">Công ty:</span>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={testimonial.companyLogo} alt={testimonial.company} />
-                      <AvatarFallback>{testimonial.company.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{testimonial.company.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{testimonial.company}</span>
+                    <span className="font-semibold text-foreground">{testimonial.company}</span>
                   </div>
                 </div>
               </CardContent>
@@ -104,20 +106,20 @@ const Testimonials = () => {
         </div>
 
         <div className="mt-20 text-center">
-          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-primary to-primary/80 text-white p-8 md:p-12 shadow-xl">
+          <Card className="max-w-4xl mx-auto bg-gradient-primary text-primary-foreground p-8 md:p-12 shadow-2xl border-0">
             <CardContent className="p-0">
               <h3 className="text-2xl md:text-3xl font-bold mb-4">
                 Bạn cũng muốn có câu chuyện thành công như vậy?
               </h3>
-              <p className="text-white/80 mb-8 max-w-2xl mx-auto">
+              <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto leading-relaxed">
                 Hãy tham gia CareerZone ngay hôm nay và khám phá hàng ngàn cơ hội việc làm tuyệt vời!
                 Việc làm mơ ước của bạn đang chờ phía trước.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="secondary" size="lg">
+                <Button variant="secondary" size="lg" className="bg-background text-foreground hover:bg-background/90 font-semibold shadow-lg">
                   Tìm việc làm
                 </Button>
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                <Button size="lg" className="bg-background text-primary hover:bg-background/90 font-semibold shadow-lg">
                   Đăng ký ngay
                 </Button>
               </div>

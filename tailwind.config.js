@@ -1,23 +1,13 @@
+// tailwind.config.js
 import animate from "tailwindcss-animate"
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["class"],
-  content: [
-    './pages/**/*.{js,jsx}',
-    './components/**/*.{js,jsx}',
-    './app/**/*.{js,jsx}',
-    './src/**/*.{js,jsx}',
+  // Với Tailwind v4 và plugin Vite, bạn không cần thuộc tính "content" nữa.
+  // Các thuộc tính như "darkMode", "theme", "extend" cũng được xử lý trong file CSS.
+  
+  // Bạn chỉ cần khai báo plugin ở đây.
+  plugins: [
+    animate
   ],
-  prefix: "",
-  theme: {
-    extend: {
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-    },
-  },
-  plugins: [animate],
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { login as loginService } from '../../services/authService';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -36,7 +37,7 @@ const Login = () => {
       
       // Redirect after successful login
       setTimeout(() => {
-        window.location.href = '/';
+        navigate('/'); 
       }, 1500);
       
     } catch (error) {
@@ -62,7 +63,7 @@ const Login = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-6">
-            <div className="text-2xl font-bold text-[#0B8043]">
+            <div className="text-2xl font-bold text-primary">
               CareerZone
             </div>
           </div>
@@ -93,7 +94,7 @@ const Login = () => {
                 placeholder="Email"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:border-[#0B8043] disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:bg-gray-100"
               />
             </div>
 
@@ -110,21 +111,21 @@ const Login = () => {
                 placeholder="Nhập mật khẩu"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:border-[#0B8043] disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:bg-gray-100"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#0B8043] text-white py-2 px-4 rounded-md hover:bg-[#0F6B3D] focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
+              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
             >
               {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
 
             <div className="text-center text-sm text-gray-600">
               Chưa có tài khoản?{' '}
-              <Link to="/register" className="text-[#0B8043] hover:text-[#0F6B3D] font-medium">
+              <Link to="/register" className="text-primary hover:text-primary/90 font-medium">
                 Đăng ký ngay
               </Link>
             </div>

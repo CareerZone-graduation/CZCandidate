@@ -71,7 +71,7 @@ const Register = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-6">
-            <div className="text-2xl font-bold text-brand-primary">
+            <div className="text-2xl font-bold text-primary">
               CareerZone
             </div>
           </div>
@@ -102,7 +102,7 @@ const Register = () => {
                 placeholder="Nguyen Van A"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:bg-gray-100"
               />
             </div>
 
@@ -119,7 +119,7 @@ const Register = () => {
                 placeholder="Email"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:bg-gray-100"
               />
             </div>
 
@@ -136,7 +136,7 @@ const Register = () => {
                 placeholder="Mật khẩu"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:bg-gray-100"
               />
             </div>
 
@@ -157,14 +157,14 @@ const Register = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-brand-primary text-white py-2 px-4 rounded-md hover:bg-brand-primary-hover focus:outline-none focus:ring-2 ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
+              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
             >
               {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>
 
             <div className="text-center text-sm text-gray-600">
               Đã có tài khoản?{' '}
-              <Link to="/login" className="text-brand-primary hover:text-brand-primary-dark font-medium">
+              <Link to="/login" className="text-primary hover:text-primary/90 font-medium">
                 Đăng nhập ngay
               </Link>
             </div>

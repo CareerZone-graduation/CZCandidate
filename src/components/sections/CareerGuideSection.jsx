@@ -35,34 +35,34 @@ const guideItems = [
 
 const CareerGuideSection = () => {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div>
-            <Badge variant="outline" className="text-primary mb-4">Cẩm nang nghề nghiệp</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Bí quyết phát triển sự nghiệp
+            <Badge variant="outline" className="text-primary mb-4 bg-background border-primary/30">📚 Cẩm nang nghề nghiệp</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              Bí quyết <span className="text-gradient-primary">phát triển sự nghiệp</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl">
               Những bài viết hữu ích giúp bạn đạt được thành công trong hành trình sự nghiệp của mình.
             </p>
           </div>
-          <Button variant="outline" size="lg" className="mt-6 md:mt-0">
+          <Button variant="outline" size="lg" className="mt-6 md:mt-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground">
             Xem tất cả bài viết
           </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {guideItems.map((item, index) => (
-            <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={index} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-background group hover:-translate-y-1">
               <div className="relative h-48 overflow-hidden">
                 <img 
                   src={item.image} 
                   alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-4 left-4">
-                  <Badge className="bg-primary text-white hover:bg-primary/90">{item.category}</Badge>
+                  <Badge className="bg-gradient-primary text-primary-foreground hover:opacity-90">{item.category}</Badge>
                 </div>
               </div>
               <CardContent className="p-6">
@@ -76,7 +76,7 @@ const CareerGuideSection = () => {
                     <span>{item.readTime}</span>
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-3 line-clamp-2">{item.title}</h3>
+                <h3 className="text-xl font-semibold mb-3 line-clamp-2 text-foreground group-hover:text-primary transition-colors">{item.title}</h3>
                 <p className="text-muted-foreground line-clamp-3">{item.description}</p>
               </CardContent>
               <CardFooter className="px-6 pb-6 pt-0">

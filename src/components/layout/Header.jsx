@@ -14,18 +14,18 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
+    <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-gray-900 dark:text-white">
+          <Link to="/" className="text-2xl font-bold text-foreground">
             Career<span className="text-primary">Zone</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
-              <Link key={link.title} to={link.href} className="text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-300">
+              <Link key={link.title} to={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-300">
                 {link.title}
               </Link>
             ))}

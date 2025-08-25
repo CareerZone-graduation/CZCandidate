@@ -77,7 +77,7 @@ const JobCategoriesSection = () => {
           {categories.map((category, index) => (
             <Card key={index} className="hover:shadow-lg transition-all duration-300 group">
               <CardContent className="p-6">
-                <div className="inline-flex items-center justify-center h-14 w-14 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-gradient-primary group-hover:text-primary-foreground transition-all duration-300">
                   <category.icon className="h-7 w-7" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
