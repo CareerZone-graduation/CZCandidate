@@ -1,26 +1,27 @@
-import { useState } from 'react'
-import Header from './layout/Header'
-import HeroSection from './sections/HeroSection'
-import StatsSection from './sections/StatsSection'
-import PopularCategories from './sections/PopularCategories'
-import FeaturedJobs from './sections/FeaturedJobs'
-import TopCompanies from './sections/TopCompanies'
-import Testimonials from './sections/Testimonials'
-import Footer from './layout/Footer'
+import HeroSection from './sections/HeroSection';
+import PopularCategories from './sections/PopularCategories';
+import FeaturedJobs from './sections/FeaturedJobs';
+import TopCompanies from './sections/TopCompanies';
+import Testimonials from './sections/Testimonials';
+import JobSearchSection from './sections/JobSearchSection';
+import JobCategoriesSection from './sections/JobCategoriesSection';
+import CareerGuideSection from './sections/CareerGuideSection';
+import NewsletterSection from './sections/NewsletterSection';
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen">
-      <Header />
+    <div className="flex flex-col min-h-full">
       <HeroSection />
-      <StatsSection />
+      <JobSearchSection />
       <PopularCategories />
       <FeaturedJobs />
+      <JobCategoriesSection />
       <TopCompanies />
+      <CareerGuideSection />
       <Testimonials />
-      <Footer />
+      <NewsletterSection />
     </div>
-  )
-}
+  );
+};
 
 export default HomePage

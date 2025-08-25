@@ -1,5 +1,6 @@
 import { useState } from 'react';
-
+import { Link } from 'react-router-dom';
+import { register as registerService } from '../../services/authService';
 const Register = () => {
   const [formData, setFormData] = useState({
     password: '',
@@ -36,20 +37,7 @@ const Register = () => {
         username: username
       };
 
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      await registerService(payload);
       setSuccess('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
       
       // Reset form sau khi đăng ký thành công
@@ -73,7 +61,7 @@ const Register = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-black mb-2">
             Đăng ký
           </h2>
           <p className="text-gray-600">
@@ -83,7 +71,7 @@ const Register = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-6">
-            <div className="text-2xl font-bold text-[#0B8043]">
+            <div className="text-2xl font-bold text-brand-primary">
               CareerZone
             </div>
           </div>
@@ -102,7 +90,7 @@ const Register = () => {
             )}
 
             <div>
-              <label htmlFor="fullname" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="fullname" className="block text-sm font-medium text-black mb-2">
                 Họ và tên
               </label>
               <input
@@ -114,12 +102,12 @@ const Register = () => {
                 placeholder="Nguyen Van A"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:border-[#0B8043] disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-black mb-2">
                 Email
               </label>
               <input
@@ -131,12 +119,12 @@ const Register = () => {
                 placeholder="Email"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:border-[#0B8043] disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-black mb-2">
                 Mật khẩu
               </label>
               <input
@@ -148,7 +136,7 @@ const Register = () => {
                 placeholder="Mật khẩu"
                 required
                 disabled={isLoading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:border-[#0B8043] disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 ring-brand-primary border-brand-primary disabled:bg-gray-100"
               />
             </div>
 
@@ -169,36 +157,22 @@ const Register = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#0B8043] text-white py-2 px-4 rounded-md hover:bg-[#0F6B3D] focus:outline-none focus:ring-2 focus:ring-[#0B8043] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
+              className="w-full bg-brand-primary text-white py-2 px-4 rounded-md hover:bg-brand-primary-hover focus:outline-none focus:ring-2 ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
             >
               {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>
 
             <div className="text-center text-sm text-gray-600">
               Đã có tài khoản?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  window.history.pushState({}, '', '/login');
-                  window.dispatchEvent(new PopStateEvent('popstate'));
-                }}
-                className="text-[#0B8043] hover:text-[#0F6B3D] font-medium"
-              >
+              <Link to="/login" className="text-brand-primary hover:text-brand-primary-dark font-medium">
                 Đăng nhập ngay
-              </button>
+              </Link>
             </div>
 
             <div className="text-center">
-              <button 
-                type="button"
-                onClick={() => {
-                  window.history.pushState({}, '', '/');
-                  window.dispatchEvent(new PopStateEvent('popstate'));
-                }}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
+              <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
                 ← Về trang chủ
-              </button>
+              </Link>
             </div>
           </form>
         </div>

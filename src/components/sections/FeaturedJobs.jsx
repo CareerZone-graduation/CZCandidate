@@ -1,157 +1,176 @@
-const FeaturedJobs = () => {
-  const jobs = [
-    {
-      id: 1,
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp Vietnam',
-      location: 'Hà Nội',
-      salary: '25-35 triệu',
-      type: 'Full-time',
-      logo: '🏢',
-      tags: ['ReactJS', 'TypeScript', 'Next.js'],
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Marketing Manager',
-      company: 'Digital Agency',
-      location: 'TP.HCM',
-      salary: '20-30 triệu',
-      type: 'Full-time',
-      logo: '🚀',
-      tags: ['Digital Marketing', 'SEO', 'Social Media'],
-      featured: true
-    },
-    {
-      id: 3,
-      title: 'UI/UX Designer',
-      company: 'Creative Studio',
-      location: 'Đà Nẵng',
-      salary: '15-25 triệu',
-      type: 'Full-time',
-      logo: '🎨',
-      tags: ['Figma', 'Adobe XD', 'Sketch'],
-      featured: false
-    },
-    {
-      id: 4,
-      title: 'Backend Developer',
-      company: 'StartupXYZ',
-      location: 'Remote',
-      salary: '22-32 triệu',
-      type: 'Remote',
-      logo: '💻',
-      tags: ['Node.js', 'MongoDB', 'AWS'],
-      featured: true
-    },
-    {
-      id: 5,
-      title: 'Data Analyst',
-      company: 'BigData Corp',
-      location: 'Hà Nội',
-      salary: '18-28 triệu',
-      type: 'Full-time',
-      logo: '📊',
-      tags: ['Python', 'SQL', 'Power BI'],
-      featured: false
-    },
-    {
-      id: 6,
-      title: 'Product Manager',
-      company: 'InnovateTech',
-      location: 'TP.HCM',
-      salary: '30-45 triệu',
-      type: 'Full-time',
-      logo: '🏆',
-      tags: ['Product Strategy', 'Agile', 'Analytics'],
-      featured: true
-    }
-  ]
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Star, BookmarkIcon, Heart } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Avatar } from '../ui/avatar';
 
+const jobs = [
+  { 
+    id: 1, 
+    title: 'Senior Frontend Developer', 
+    company: 'TechCorp Vietnam', 
+    location: 'Hà Nội', 
+    salary: '25-35 triệu', 
+    type: 'Full-time', 
+    logo: 'https://randomuser.me/api/portraits/men/41.jpg', 
+    tags: ['ReactJS', 'TypeScript', 'Next.js'], 
+    featured: true,
+    posted: '2 ngày trước' 
+  },
+  { 
+    id: 2, 
+    title: 'Marketing Manager', 
+    company: 'Digital Agency', 
+    location: 'TP.HCM', 
+    salary: '20-30 triệu', 
+    type: 'Full-time', 
+    logo: 'https://randomuser.me/api/portraits/women/67.jpg', 
+    tags: ['Digital Marketing', 'SEO', 'Social Media'], 
+    featured: false,
+    posted: '3 ngày trước' 
+  },
+  { 
+    id: 3, 
+    title: 'UI/UX Designer', 
+    company: 'Creative Studio', 
+    location: 'Đà Nẵng', 
+    salary: '15-25 triệu', 
+    type: 'Full-time', 
+    logo: 'https://randomuser.me/api/portraits/men/32.jpg', 
+    tags: ['Figma', 'Adobe XD', 'Sketch'], 
+    featured: false,
+    posted: '1 ngày trước' 
+  },
+  { 
+    id: 4, 
+    title: 'Backend Developer', 
+    company: 'StartupXYZ', 
+    location: 'Remote', 
+    salary: '22-32 triệu', 
+    type: 'Remote', 
+    logo: 'https://randomuser.me/api/portraits/women/44.jpg', 
+    tags: ['Node.js', 'MongoDB', 'AWS'], 
+    featured: true,
+    posted: '5 ngày trước' 
+  },
+  { 
+    id: 5, 
+    title: 'Data Analyst', 
+    company: 'BigData Corp', 
+    location: 'Hà Nội', 
+    salary: '18-28 triệu', 
+    type: 'Full-time', 
+    logo: 'https://randomuser.me/api/portraits/men/59.jpg', 
+    tags: ['Python', 'SQL', 'Power BI'], 
+    featured: false,
+    posted: '1 tuần trước' 
+  },
+  { 
+    id: 6, 
+    title: 'Product Manager', 
+    company: 'InnovateTech', 
+    location: 'TP.HCM', 
+    salary: '30-45 triệu', 
+    type: 'Full-time', 
+    logo: 'https://randomuser.me/api/portraits/women/29.jpg', 
+    tags: ['Product Strategy', 'Agile', 'Analytics'], 
+    featured: true,
+    posted: '4 ngày trước' 
+  },
+];
+
+const FeaturedJobs = () => {
   return (
-    <section className="py-16 bg-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Việc làm nổi bật
-          </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Những cơ hội việc làm tốt nhất từ các công ty hàng đầu
-          </p>
+    <section className="py-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+          <div>
+            <Badge variant="outline" className="text-primary mb-4">Cơ hội việc làm</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Việc làm nổi bật
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl">
+              Những cơ hội việc làm tốt nhất từ các công ty hàng đầu đang tìm kiếm tài năng như bạn.
+            </p>
+          </div>
+          <div className="flex gap-2 mt-6 md:mt-0">
+            <Button variant="outline" size="lg">Tìm kiếm</Button>
+            <Button size="lg">Đăng việc làm</Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition duration-300 cursor-pointer relative hover:border-[#00C853]"
-            >
+            <Card key={job.id} className="group hover:border-primary hover:shadow-lg transition-all duration-300">
+              <CardHeader className="flex flex-row items-start space-y-0 gap-4 pb-4">
+                <Avatar className="h-12 w-12 rounded-md border">
+                  <img src={job.logo} alt={job.company} />
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <CardTitle className="text-lg font-semibold">{job.title}</CardTitle>
+                  <CardDescription>{job.company}</CardDescription>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                    <BookmarkIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center text-muted-foreground">
+                    <MapPin className="h-4 w-4 mr-2 text-primary" /> {job.location}
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <DollarSign className="h-4 w-4 mr-2 text-primary" /> {job.salary}
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <Clock className="h-4 w-4 mr-2 text-primary" /> {job.posted}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {job.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="font-normal">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4 flex justify-between items-center">
+                <Badge variant={job.type === 'Remote' ? 'outline' : 'secondary'} className="px-3 py-1">
+                  <Briefcase className="h-3 w-3 mr-1" /> 
+                  {job.type}
+                </Badge>
+                <Button variant="ghost" className="p-0 h-auto font-medium text-primary group-hover:translate-x-1 transition-transform">
+                  Chi tiết <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </CardFooter>
+              
               {job.featured && (
-                <div className="absolute top-4 right-4">
-                  <span className="bg-[#00C853] text-white text-xs px-2 py-1 rounded-full font-semibold">
-                    Nổi bật
-                  </span>
+                <div className="absolute -top-1 -right-1">
+                  <div className="relative">
+                    <Badge className="bg-primary text-white px-3 py-1">
+                      <Star className="h-3 w-3 mr-1 fill-white" /> Nổi bật
+                    </Badge>
+                    <div className="absolute top-0 right-0 w-0 h-0 border-t-8 border-r-8 border-transparent border-t-primary transform rotate-45 translate-x-2 -translate-y-2"></div>
+                  </div>
                 </div>
               )}
-
-              <div className="flex items-start mb-4">
-                <div className="text-3xl mr-4">{job.logo}</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-black mb-1 hover:text-[#00C853] transition duration-300">
-                    {job.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{job.company}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-700">
-                  <svg className="w-4 h-4 mr-2 text-[#00C853]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {job.location}
-                </div>
-                <div className="flex items-center text-sm text-gray-700">
-                  <svg className="w-4 h-4 mr-2 text-[#00C853]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                  {job.salary}
-                </div>
-                <div className="flex items-center text-sm text-gray-700">
-                  <svg className="w-4 h-4 mr-2 text-[#00C853]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {job.type}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {job.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs border border-gray-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <button className="w-full bg-[#00C853] text-white py-2 rounded-lg hover:bg-[#28A745] transition duration-300 font-semibold shadow-lg">
-                Ứng tuyển ngay
-              </button>
-            </div>
+            </Card>
           ))}
         </div>
 
         <div className="text-center mt-12">
-          <button className="bg-white text-black px-8 py-3 rounded-lg hover:bg-gray-100 transition duration-300 font-semibold border-2 border-[#00C853]">
-            Xem thêm việc làm
-          </button>
+          <Button size="lg" variant="outline" className="min-w-[200px]">
+            Xem thêm việc làm <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default FeaturedJobs
+export default FeaturedJobs;
