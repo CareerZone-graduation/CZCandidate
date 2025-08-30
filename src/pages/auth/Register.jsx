@@ -26,8 +26,9 @@ const Register = () => {
     setSuccess("");
 
     try {
-      await registerService(formData);
-      setSuccess("Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.");
+      const resp = await registerService(formData);
+      console.log(resp);
+      setSuccess(resp.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
       setFormData({ fullname: "", email: "", password: "", role: "candidate" });
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Đăng ký thất bại.");

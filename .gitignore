@@ -6,14 +6,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-.trae/*
+.kilocode
+.trae
 node_modules
 dist
 dist-ssr
 *.local
-
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -28,3 +26,4 @@ dist-ssr
 .env
 .github
 digest.txt
+.rar
