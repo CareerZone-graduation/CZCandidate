@@ -1,26 +1,25 @@
-// src/services/authService.js
 import apiClient from './apiClient';
 
 export const login = async (credentials) => {
-  const response = await apiClient.post('/auth/login', credentials);
-  return response; // apiClient now returns data directly
+  const response = await apiClient.post('/auth/login', credentials, {
+     withCredentials: true
+  });
+  return response.data;
+};
+
+export const getMe = async () => {
+  const response = await apiClient.get('/users/me');
+  return response.data;
 };
 
 export const register = async (userData) => {
   const response = await apiClient.post('/auth/register', userData);
-  return response;
+  return response.data;
 };
 
-export const logout = () => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('user');
-};
-
-export const getCurrentUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
-};
-
-export const getAccessToken = () => {
-  return localStorage.getItem('accessToken');
+export const logout = async () => {
+  const response = await apiClient.post('/auth/logout', null, {
+    withCredentials: true
+  });
+  return response.data;
 };

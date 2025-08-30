@@ -1,30 +1,41 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Menu, Briefcase, Building2, Newspaper, UserPlus, LogIn, Home } from 'lucide-react';
-import { AuthContext } from "../../contexts/AuthContext";
+import { logoutSuccess } from '../../redux/authSlice';
+import { logout as logoutService } from '../../services/authService';
 
 const Header = () => {
-  const { user, logout } = useContext(AuthContext);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated, profile } = useSelector((state) => state.auth);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Navigation links - điều chỉnh dựa trên trạng thái đăng nhập
-  const navLinks = user ? [
-    { title: 'Tổng quan', href: '/dashboard', icon: <Home className="h-5 w-5" /> },
-    { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
-    { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
-    { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
-  ] : [
-    { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
-    { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
-    { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
-  ];
+  const navLinks = isAuthenticated
+    ? [
+        { title: 'Tổng quan', href: '/dashboard', icon: <Home className="h-5 w-5" /> },
+        { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
+        { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
+        { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
+      ]
+    : [
+        { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
+        { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
+        { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
+      ];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logoutService();
+    } catch (error) {
+      // Even if API call fails, we log out the user from the client
+      console.error("Logout failed", error);
+    } finally {
+      dispatch(logoutSuccess());
+      navigate('/');
+    }
   };
 
   return (
@@ -47,9 +58,9 @@ const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            {user ? (
+            {isAuthenticated ? (
               <>
-                <span className="text-sm">Xin chào, {user.fullname || user.username}</span>
+                <span className="text-sm">Xin chào, {profile?.fullname}</span>
                 <Button variant="ghost" onClick={handleLogout}>
                   Đăng xuất
                 </Button>
@@ -96,10 +107,10 @@ const Header = () => {
                   ))}
                 </nav>
                 <div className="border-t pt-6 space-y-2">
-                  {user ? (
+                  {isAuthenticated ? (
                     <>
                       <div className="text-sm text-muted-foreground mb-2">
-                        Xin chào, {user.fullname || user.username}
+                        Xin chào, {profile?.fullname}
                       </div>
                       <Button className="w-full" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
                         Đăng xuất

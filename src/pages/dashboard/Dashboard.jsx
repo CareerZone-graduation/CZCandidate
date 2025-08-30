@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -13,12 +13,11 @@ import {
   ArrowRight,
   Home 
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useSelector } from 'react-redux';
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const location = useLocation();
-  const [stats, setStats] = useState({
+  const { profile } = useSelector((state) => state.auth);
+  const [stats] = useState({
     appliedJobs: 12,
     savedJobs: 8,
     profileViews: 156,
@@ -57,7 +56,7 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
         <h1 className="text-2xl font-bold mb-2">
-          Chào mừng trở lại, {user?.fullname || user?.username}! 👋
+          Chào mừng trở lại, {profile?.fullname}! 👋
         </h1>
         <p className="text-primary-foreground/90">
           Hãy khám phá những cơ hội nghề nghiệp mới dành cho bạn
