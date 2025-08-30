@@ -1,88 +1,80 @@
 import axios from 'axios';
-import { getAccessToken } from '@/utils/token';
-// import { forcedLogout } from '@/utils/auth';
-// import { refreshToken } from './authService';
+import { getAccessToken, saveAccessToken } from '@/utils/token';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', // Lấy URL từ biến môi trường
-  timeout: 15000,
-  withCredentials: false, // KHÔNG gửi cookie mặc định
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
-// ----- gắn Authorization -----
-apiClient.interceptors.request.use((config) => {
-  config.metadata = { startTime: new Date() };
-  const token = getAccessToken();
-  if (token) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`,
-    };
-  }
-  return config;
+const apiRefreshClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  withCredentials: true,
 });
 
-// ----- Refresh Token Flow -----
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 let isRefreshing = false;
-let queue = [];
+let failedQueue = [];
 
-function subscribeRefresh(cb) {
-  queue.push(cb);
-}
-function publishRefresh(token) {
-  queue.forEach((cb) => cb(token));
-  queue = [];
-}
-
-// forcedLogout được import từ utils/auth.js
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 apiClient.interceptors.response.use(
-  (res) => {
-    // ----- Toast cho request thành công -----
-    const { data } = res;
-    return data;
-  },
+  (response) => response,
   async (error) => {
-    const { response, config } = error;
+    const originalRequest = error.config;
 
-    // ----- Logic Refresh Token cho lỗi 401 -----
-    // if (response?.status === 401 && !config._retry) {
-    //   config._retry = true;
+    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/login') {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            return apiClient(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
 
-    //   if (isRefreshing) {
-    //     return new Promise((resolve, reject) => {
-    //       subscribeRefresh((token) => {
-    //         if (!token) return reject(error);
-    //         config.headers.Authorization = `Bearer ${token}`;
-    //         resolve(apiClient(config));
-    //       });
-    //     });
-    //   }
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-    //   isRefreshing = true;
-    //   try {
-    //     // Break the circular dependency by calling the refresh endpoint directly
-    //     const refreshResponse = await refreshToken();
+      try {
+        const { data } = await apiRefreshClient.post('/auth/refresh');
+        const newAccessToken = data.data.accessToken;
         
-    //     // 🚨 THAY ĐỔI Ở ĐÂY 🚨
-    //     // refreshResponse bây giờ là data, không phải là response object đầy đủ
-    //     const { accessToken } = refreshResponse.data; 
-    //     console.log("Refreshed access token:", accessToken);
+        saveAccessToken(newAccessToken);
+        apiClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
+        originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
         
-    //     saveAccessToken(accessToken);
-        
-    //     publishRefresh(accessToken);
-        
-    //     config.headers.Authorization = `Bearer ${accessToken}`;
-    //     return apiClient(config);
-    //   } catch (refreshErr) {
-    //     publishRefresh(null);
-    //     await forcedLogout();
-    //     return Promise.reject(refreshErr);
-    //   } finally {
-    //     isRefreshing = false;
-    //   }
-    // }
+        processQueue(null, newAccessToken);
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        // store.dispatch(logout()); // Let the caller handle logout on critical failure
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
 
     return Promise.reject(error);
   }

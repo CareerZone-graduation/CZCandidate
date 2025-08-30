@@ -1,46 +1,42 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-import { login as loginService } from "../../services/authService";
+import { useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { toast } from 'sonner';
+import { loginSuccess, fetchUser } from '../../redux/authSlice';
+import * as authService from '../../services/authService';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const { login } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error('Vui lòng nhập đầy đủ email và mật khẩu.');
+      return;
+    }
     setIsLoading(true);
-    setError("");
-
     try {
-      const response = await loginService({ email, password });
-      const userData = response.data;
-      const accessToken = response.data.accessToken;
-
-      if (!userData) {
-        setError("Đăng nhập thất bại: user không tồn tại");
-        return;
+      const loginData = await authService.login({ email, password });
+      if (loginData && loginData.data.accessToken) {
+        dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
+        await dispatch(fetchUser());
+        toast.success('Đăng nhập thành công!');
+        navigate('/dashboard', { replace: true });
+      } else {  
+        throw new Error('Phản hồi đăng nhập không hợp lệ.');
       }
-
-      const successLogin = login(userData, accessToken);
-      if (!successLogin) {
-        setError("Chỉ ứng viên mới được đăng nhập");
-        return;
-      }
-
-      navigate("/dashboard"); // Chuyển đến trang chính candidate
     } catch (err) {
-      setError(err.response?.data?.message || "Đăng nhập thất bại");
-      console.error("Login error:", err);
+      console.log(err);
+      const errorMessage = err.response?.data?.message || 'Email hoặc mật khẩu không đúng.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [email, password, dispatch, navigate]);
 
   // Nút quay về trang chủ
   const handleBackHome = () => {
@@ -55,12 +51,6 @@ const Login = () => {
         </div>
 
         <div className="bg-white shadow-lg rounded-lg p-8 space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
