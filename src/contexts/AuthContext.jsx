@@ -1,56 +1,53 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getCurrentUser, getAccessToken } from '../services/authService';
+import { createContext, useContext, useState, useEffect } from "react";
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    const initAuth = () => {
-      const token = getAccessToken();
-      const userData = getCurrentUser();
-      
-      if (token && userData) {
-        setUser(userData);
-      }
-      setIsLoading(false);
-    };
+    const savedUser = localStorage.getItem("user");
+    const savedToken = localStorage.getItem("accessToken");
 
-    initAuth();
+    if (savedUser && savedToken) {
+      setUser(JSON.parse(savedUser));
+      setToken(savedToken);
+    }
   }, []);
 
-  const login = (userData, token) => {
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = (userData, accessToken) => {
+    // Chỉ cho phép role = candidate
+    if (userData.role !== "candidate") {
+      alert("Chỉ ứng viên mới được đăng nhập");
+      return false;
+    }
+
     setUser(userData);
+    setToken(accessToken);
+
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("accessToken", accessToken);
+    return true;
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
     setUser(null);
-  };
-
-  const value = {
-    user,
-    isLoading,
-    login,
-    logout,
-    isAuthenticated: !!user
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

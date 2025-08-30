@@ -1,17 +1,31 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { Menu, Briefcase, Building2, Newspaper, UserPlus, LogIn } from 'lucide-react';
+import { Menu, Briefcase, Building2, Newspaper, UserPlus, LogIn, Home } from 'lucide-react';
+import { AuthContext } from "../../contexts/AuthContext";
 
 const Header = () => {
+  const { user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const navLinks = [
+  // Navigation links - điều chỉnh dựa trên trạng thái đăng nhập
+  const navLinks = user ? [
+    { title: 'Tổng quan', href: '/dashboard', icon: <Home className="h-5 w-5" /> },
+    { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
+    { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
+    { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
+  ] : [
     { title: 'Việc làm', href: '/jobs', icon: <Briefcase className="h-5 w-5" /> },
     { title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
     { title: 'Cẩm nang', href: '/blog', icon: <Newspaper className="h-5 w-5" /> },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
@@ -33,16 +47,27 @@ const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
-            <Button variant="ghost" asChild>
-              <Link to="/login">
-                <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link to="/register">
-                <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm">Xin chào, {user.fullname || user.username}</span>
+                <Button variant="ghost" onClick={handleLogout}>
+                  Đăng xuất
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">
+                    <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/register">
+                    <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -71,16 +96,29 @@ const Header = () => {
                   ))}
                 </nav>
                 <div className="border-t pt-6 space-y-2">
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                      <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
-                    </Link>
-                  </Button>
-                  <Button className="w-full" asChild>
-                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
-                    </Link>
-                  </Button>
+                  {user ? (
+                    <>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Xin chào, {user.fullname || user.username}
+                      </div>
+                      <Button className="w-full" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
+                        Đăng xuất
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                          <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
+                        </Link>
+                      </Button>
+                      <Button className="w-full" asChild>
+                        <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                          <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
+                        </Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
