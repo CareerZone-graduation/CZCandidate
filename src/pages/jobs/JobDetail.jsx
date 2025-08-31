@@ -20,8 +20,15 @@ import {
   Globe,
   Phone,
   Mail,
-  Briefcase
+  Briefcase,
+  UserCheck,
+  Coins,
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
+import { getJobApplicantCount } from '../../services/jobService';
+import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
+import { toast } from 'sonner';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -32,6 +39,11 @@ const JobDetail = () => {
   const [error, setError] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [applicantCount, setApplicantCount] = useState(null);
+  const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
+  const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     const fetchJobDetail = async () => {
@@ -60,6 +72,22 @@ const JobDetail = () => {
     }
   }, [id]);
 
+  // Kiểm tra trạng thái đã lưu khi component load và user đã đăng nhập
+  useEffect(() => {
+    const checkSavedStatus = async () => {
+      if (!isAuthenticated || !id) return;
+      
+      try {
+        const savedStatus = await checkJobSaved(id);
+        setIsSaved(savedStatus);
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra trạng thái lưu job:', err);
+      }
+    };
+
+    checkSavedStatus();
+  }, [id, isAuthenticated]);
+
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
     if (!minSalary && !maxSalary) return 'Thỏa thuận';
@@ -75,10 +103,8 @@ const JobDetail = () => {
       'FULL_TIME': 'Toàn thời gian',
       'PART_TIME': 'Bán thời gian',
       'CONTRACT': 'Hợp đồng',
-      'FREELANCE': 'Freelance',
-      'HYBRID': 'Hybrid',
-      'REMOTE': 'Remote',
-      'ONSITE': 'Tại văn phòng'
+      'FREELANCE': 'Tự do',
+      'INTERNSHIP': 'Thực tập'
     };
     return typeMap[type] || type;
   };
@@ -86,14 +112,51 @@ const JobDetail = () => {
   const formatExperience = (level) => {
     const levelMap = {
       'INTERN': 'Thực tập sinh',
-      'ENTRY_LEVEL': 'Mới tốt nghiệp',
-      'JUNIOR_LEVEL': 'Junior (1-2 năm)',
-      'MID_LEVEL': 'Mid-level (2-5 năm)',
-      'SENIOR_LEVEL': 'Senior (5+ năm)',
-      'LEAD_LEVEL': 'Team Lead',
-      'MANAGER_LEVEL': 'Manager'
+      'FRESHER': 'Fresher',
+      'JUNIOR_LEVEL': 'Junior',
+      'MID_LEVEL': 'Middle',
+      'SENIOR_LEVEL': 'Senior',
+      'MANAGER_LEVEL': 'Quản lý',
+      'DIRECTOR_LEVEL': 'Giám đốc'
     };
     return levelMap[level] || level;
+  };
+
+  const handleViewApplicants = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmViewApplicants = async () => {
+    try {
+      setIsLoadingApplicants(true);
+      setShowConfirmDialog(false);
+      
+      const response = await getJobApplicantCount(id);
+      
+      if (response.data.success) {
+        setApplicantCount(response.data.data.applicantCount);
+        setHasViewedApplicants(true);
+        
+        // Hiển thị thông báo từ API về việc trừ xu
+        if (response.data.message) {
+          toast.success(response.data.message);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy số lượng ứng viên:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin ứng viên';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoadingApplicants(false);
+    }
+  };
+
+  const handleCancelViewApplicants = () => {
+    setShowConfirmDialog(false);
   };
 
   const handleApply = async () => {
@@ -119,9 +182,43 @@ const JobDetail = () => {
     }
   };
 
-  const handleSave = () => {
-    setIsSaved(!isSaved);
-    // TODO: Call API to save/unsave job
+  const handleSave = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      if (isSaved) {
+        // Unsave job
+        await unsaveJob(id);
+        setIsSaved(false);
+        toast.success('Đã bỏ lưu công việc');
+      } else {
+        // Save job
+        try {
+          await saveJob(id);
+          setIsSaved(true);
+          toast.success('Đã lưu công việc thành công');
+        } catch (err) {
+          // Xử lý trường hợp đặc biệt: job đã được lưu
+          if (err.response?.data?.message === 'Bạn đã lưu công việc này rồi.') {
+            setIsSaved(true);
+            toast.info('Công việc này đã được lưu trước đó');
+          } else {
+            throw err; // Re-throw lỗi khác
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
+      toast.error(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleShare = () => {
@@ -133,8 +230,76 @@ const JobDetail = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      // TODO: Show toast notification
+      toast.success('Đã sao chép liên kết vào clipboard');
     }
+  };
+
+  // Component hiển thị dialog xác nhận
+  const ConfirmDialog = () => {
+    if (!showConfirmDialog) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mb-4">
+              <Coins className="w-6 h-6 text-warning" />
+            </div>
+            <CardTitle className="text-xl">Xem số người đã ứng tuyển</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center space-y-2">
+              <p className="text-muted-foreground">
+                Để xem số lượng ứng viên đã ứng tuyển vào vị trí này, bạn cần tiêu phí:
+              </p>
+              <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-warning">
+                <Coins className="w-5 h-5" />
+                <span>50 xu</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Thông tin này chỉ hiển thị một lần. Sau khi xem, bạn không thể hoàn tiền.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={handleCancelViewApplicants}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button 
+                onClick={handleConfirmViewApplicants}
+                className="flex-1 bg-gradient-primary hover:opacity-90"
+                disabled={isLoadingApplicants}
+              >
+                {isLoadingApplicants ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <Coins className="w-4 h-4 mr-2" />
+                    Đồng ý tiêu 50 xu
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -196,10 +361,10 @@ const JobDetail = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy công việc</h3>
-                <p className="text-gray-600 mb-4">Công việc bạn đang tìm kiếm có thể đã bị xóa hoặc không tồn tại.</p>
-                <Button onClick={() => navigate('/jobs')} variant="outline">
+                <p className="text-gray-600 mb-4">Công việc bạn đang tìm có thể đã bị xóa hoặc không tồn tại.</p>
+                <Button onClick={() => navigate(-1)} variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Về danh sách việc làm
+                  Quay lại
                 </Button>
               </CardContent>
             </Card>
@@ -251,29 +416,48 @@ const JobDetail = () => {
             </div>
 
             <CardContent className="p-6">
-              <div className="flex flex-wrap gap-4 mb-6">
-                <div className="flex items-center text-gray-600">
-                  <DollarSign className="w-4 h-4 mr-2 text-emerald-600" />
-                  <span className="font-semibold">{formatSalary(job.minSalary, job.maxSalary)}</span>
+              <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
+                <div className="flex items-center">
+                  <DollarSign className="w-4 h-4 mr-2 text-green-600" />
+                  <span className="font-semibold text-green-600">
+                    {formatSalary(job.minSalary, job.maxSalary)}
+                  </span>
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center">
                   <Clock className="w-4 h-4 mr-2 text-blue-600" />
                   <span>{formatWorkType(job.type)}</span>
-                  {job.workType && job.workType !== job.type && (
-                    <>
-                      <span className="mx-2">•</span>
-                      <span>{formatWorkType(job.workType)}</span>
-                    </>
-                  )}
                 </div>
-                <div className="flex items-center text-gray-600">
-                  <Users className="w-4 h-4 mr-2 text-purple-600" />
+                <div className="flex items-center">
+                  <Briefcase className="w-4 h-4 mr-2 text-purple-600" />
                   <span>{formatExperience(job.experience)}</span>
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2 text-orange-600" />
                   <span>Hạn nộp: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
                 </div>
+                
+                {/* Hiển thị số lượng ứng viên hoặc nút xem */}
+                {isAuthenticated && (
+                  <div className="flex items-center text-gray-600">
+                    <UserCheck className="w-4 h-4 mr-2 text-primary" />
+                    {hasViewedApplicants && applicantCount !== null ? (
+                      <span className="font-semibold text-primary">
+                        {applicantCount} ứng viên đã ứng tuyển
+                      </span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewApplicants}
+                        disabled={isLoadingApplicants}
+                        className="h-7 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Xem số ứng viên (50 xu)
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2 mb-6">
@@ -307,9 +491,14 @@ const JobDetail = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleSave}
+                    disabled={isSaving}
                     className={isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
                   >
-                    <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
+                    {isSaving ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                    ) : (
+                      <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
+                    )}
                     {isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>
@@ -330,36 +519,52 @@ const JobDetail = () => {
                 <CardHeader>
                   <CardTitle className="text-xl">Mô tả công việc</CardTitle>
                 </CardHeader>
-                <CardContent className="prose max-w-none">
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {job.description}
+                <CardContent>
+                  <div className="prose max-w-none">
+                    {job.description?.split('\n').map((paragraph, index) => (
+                      <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Requirements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Yêu cầu ứng viên</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {job.requirements}
-                  </div>
-                </CardContent>
-              </Card>
+              {job.requirements && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">Yêu cầu công việc</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none">
+                      {job.requirements.split('\n').map((requirement, index) => (
+                        <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+                          {requirement}
+                        </p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Benefits */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Quyền lợi</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {job.benefits}
-                  </div>
-                </CardContent>
-              </Card>
+              {job.benefits && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">Quyền lợi</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none">
+                      {job.benefits.split('\n').map((benefit, index) => (
+                        <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+                          {benefit}
+                        </p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -373,21 +578,21 @@ const JobDetail = () => {
                   <div className="flex items-center space-x-3">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                      <AvatarFallback className="bg-emerald-100 text-emerald-600">
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {job.company?.name?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.company?.name}</h3>
-                      <p className="text-sm text-gray-600">Công ty công nghệ</p>
+                      <p className="text-sm text-gray-600">{job.company?.industry || 'Công nghệ thông tin'}</p>
                     </div>
                   </div>
-
+                  
                   <Separator />
-
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center text-gray-600">
-                      <MapPin className="w-4 h-4 mr-2" />
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-gray-400" />
                       <span>{job.address || `${job.location.province}, ${job.location.ward}`}</span>
                     </div>
                   </div>
@@ -420,12 +625,38 @@ const JobDetail = () => {
                       {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
                     </Badge>
                   </div>
+                  
+                  {/* Hiển thị số ứng viên trong sidebar */}
+                  {isAuthenticated && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Số ứng viên:</span>
+                      {hasViewedApplicants && applicantCount !== null ? (
+                        <span className="font-medium text-primary">
+                          {applicantCount} người
+                        </span>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleViewApplicants}
+                          disabled={isLoadingApplicants}
+                          className="h-6 p-1 text-xs text-primary hover:text-primary-foreground hover:bg-primary"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Xem (50 xu)
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog />
     </div>
   );
 };

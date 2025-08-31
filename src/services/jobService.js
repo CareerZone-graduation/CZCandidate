@@ -45,3 +45,9 @@ export const applyJob = async (jobId, applicationData) => {
   const response = await apiClient.post(`/jobs/${jobId}/apply`, applicationData);
   return response;
 };
+
+// Lấy số lượng ứng viên đã apply vào công việc
+export const getJobApplicantCount = async (jobId) => {
+  const response = await apiClient.post(`/jobs/${jobId}/applicant-count`);
+  return response;
+};

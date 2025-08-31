@@ -80,4 +80,6 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Export cả default và named export để tương thích
+export { apiClient };
 export default apiClient;

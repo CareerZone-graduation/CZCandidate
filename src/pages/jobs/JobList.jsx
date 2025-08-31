@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -14,13 +15,18 @@ import {
   Calendar,
   Bookmark
 } from 'lucide-react';
+import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
+import { toast } from 'sonner';
 
 const JobList = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [savedJobs, setSavedJobs] = useState(new Set()); // Track saved job IDs
+  const [savingJobs, setSavingJobs] = useState(new Set()); // Track jobs being saved/unsaved
 
   // Mock data in case API fails
   const mockJobs = [
@@ -83,6 +89,39 @@ const JobList = () => {
     fetchJobs();
   }, []);
 
+  // Check saved status for all jobs when component loads and user is authenticated
+  useEffect(() => {
+    const checkAllJobsSavedStatus = async () => {
+      if (!isAuthenticated || jobs.length === 0) return;
+      
+      try {
+        const savedStatuses = await Promise.all(
+          jobs.map(async (job) => {
+            try {
+              const isSaved = await checkJobSaved(job._id);
+              return { jobId: job._id, isSaved };
+            } catch (err) {
+              console.error(`Lỗi khi kiểm tra trạng thái lưu job ${job._id}:`, err);
+              return { jobId: job._id, isSaved: false };
+            }
+          })
+        );
+        
+        const savedJobIds = new Set(
+          savedStatuses
+            .filter(status => status.isSaved)
+            .map(status => status.jobId)
+        );
+        
+        setSavedJobs(savedJobIds);
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra trạng thái lưu các công việc:', err);
+      }
+    };
+
+    checkAllJobsSavedStatus();
+  }, [jobs, isAuthenticated]);
+
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
     if (!minSalary && !maxSalary) return 'Thỏa thuận';
@@ -98,7 +137,8 @@ const JobList = () => {
       'FULL_TIME': 'Toàn thời gian',
       'PART_TIME': 'Bán thời gian',
       'CONTRACT': 'Hợp đồng',
-      'FREELANCE': 'Freelance'
+      'FREELANCE': 'Tự do',
+      'INTERNSHIP': 'Thực tập'
     };
     return typeMap[type] || type;
   };
@@ -106,12 +146,12 @@ const JobList = () => {
   const formatExperience = (level) => {
     const levelMap = {
       'INTERN': 'Thực tập sinh',
-      'ENTRY_LEVEL': 'Mới tốt nghiệp',
-      'JUNIOR_LEVEL': 'Junior (1-2 năm)',
-      'MID_LEVEL': 'Mid-level (2-5 năm)',
-      'SENIOR_LEVEL': 'Senior (5+ năm)',
-      'LEAD_LEVEL': 'Team Lead',
-      'MANAGER_LEVEL': 'Manager'
+      'FRESHER': 'Fresher',
+      'JUNIOR_LEVEL': 'Junior',
+      'MID_LEVEL': 'Middle',
+      'SENIOR_LEVEL': 'Senior',
+      'MANAGER_LEVEL': 'Quản lý',
+      'DIRECTOR_LEVEL': 'Giám đốc'
     };
     return levelMap[level] || level;
   };
@@ -126,6 +166,60 @@ const JobList = () => {
   // Handle view job detail
   const handleViewJob = (jobId) => {
     navigate(`/jobs/${jobId}`);
+  };
+
+  // Handle save/unsave job
+  const handleSaveJob = async (jobId, e) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (savingJobs.has(jobId)) return; // Prevent multiple simultaneous saves
+
+    try {
+      setSavingJobs(prev => new Set([...prev, jobId]));
+      
+      const isSaved = savedJobs.has(jobId);
+      
+      if (isSaved) {
+        // Unsave job
+        await unsaveJob(jobId);
+        setSavedJobs(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(jobId);
+          return newSet;
+        });
+        toast.success('Đã bỏ lưu công việc');
+      } else {
+        // Save job
+        try {
+          await saveJob(jobId);
+          setSavedJobs(prev => new Set([...prev, jobId]));
+          toast.success('Đã lưu công việc thành công');
+        } catch (err) {
+          // Xử lý trường hợp đặc biệt: job đã được lưu
+          if (err.response?.data?.message === 'Bạn đã lưu công việc này rồi.') {
+            setSavedJobs(prev => new Set([...prev, jobId]));
+            toast.info('Công việc này đã được lưu trước đó');
+          } else {
+            throw err; // Re-throw lỗi khác
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
+      toast.error(errorMessage);
+    } finally {
+      setSavingJobs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+    }
   };
 
   if (isLoading) {
@@ -228,102 +322,110 @@ const JobList = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job) => (
-                <Card 
-                  key={job._id} 
-                  className="hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white"
-                  onClick={() => handleViewJob(job._id)}
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3 flex-1">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={job.company.logo} alt={job.company.name} />
-                          <AvatarFallback className="bg-emerald-100 text-emerald-600">
-                            {job.company.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
-                            {job.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 truncate">
-                            {job.company.name}
-                          </p>
+              {filteredJobs.map((job) => {
+                const isSaved = savedJobs.has(job._id);
+                const isSaving = savingJobs.has(job._id);
+                
+                return (
+                  <Card 
+                    key={job._id} 
+                    className="hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white"
+                    onClick={() => handleViewJob(job._id)}
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3 flex-1">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={job.company.logo} alt={job.company.name} />
+                            <AvatarFallback className="bg-emerald-100 text-emerald-600">
+                              {job.company.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
+                              {job.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 truncate">
+                              {job.company.name}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>{job.location.province}</span>
-                      </div>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          <span>{job.location.province}</span>
+                        </div>
 
-                      <div className="flex items-center text-sm text-gray-600">
-                        <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-                        <span className="font-medium text-green-600">
-                          {formatSalary(job.minSalary, job.maxSalary)}
-                        </span>
-                      </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <DollarSign className="h-4 w-4 mr-2 text-green-600" />
+                          <span className="font-medium text-green-600">
+                            {formatSalary(job.minSalary, job.maxSalary)}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="h-4 w-4 mr-2 text-blue-600" />
-                        <span>{formatWorkType(job.type)}</span>
-                      </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                          <span>{formatWorkType(job.type)}</span>
+                        </div>
 
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Building className="h-4 w-4 mr-2 text-purple-600" />
-                        <span>{formatExperience(job.experience)}</span>
-                      </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Building className="h-4 w-4 mr-2 text-purple-600" />
+                          <span>{formatExperience(job.experience)}</span>
+                        </div>
 
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Calendar className="h-4 w-4 mr-2 text-orange-600" />
-                        <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
-                      </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 mr-2 text-orange-600" />
+                          <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                        </div>
 
-                      {/* Skills */}
-                      <div className="flex flex-wrap gap-1 pt-2">
-                        {job.skills?.slice(0, 3).map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                        {job.skills?.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{job.skills.length - 3}
-                          </Badge>
-                        )}
-                      </div>
+                        {/* Skills */}
+                        <div className="flex flex-wrap gap-1 pt-2">
+                          {job.skills?.slice(0, 3).map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {job.skills?.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{job.skills.length - 3}
+                            </Badge>
+                          )}
+                        </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-4">
-                        <Button 
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewJob(job._id);
-                          }}
-                        >
-                          Xem chi tiết
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle save job
-                          }}
-                        >
-                          <Bookmark className="h-4 w-4 mr-2" />
-                          Lưu
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-4">
+                          <Button 
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewJob(job._id);
+                            }}
+                          >
+                            Xem chi tiết
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={(e) => handleSaveJob(job._id, e)}
+                            disabled={isSaving}
+                            className={isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
+                          >
+                            {isSaving ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                            ) : (
+                              <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
+                            )}
+                            {isSaved ? "Đã lưu" : "Lưu"}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

@@ -15,6 +15,8 @@ import Dashboard from '../pages/dashboard/Dashboard';
 import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobList from '../pages/jobs/JobList';
 import JobDetail from '../pages/jobs/JobDetail';
+import SavedJobs from '../pages/jobs/SavedJobs';
+import Profile from '../pages/profile/Profile';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -71,7 +73,15 @@ const AppRouter = () => {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="job-suggestions" element={<JobSuggestion />} />
+            <Route path="saved-jobs" element={<SavedJobs />} />
             {/* Add other nested dashboard routes here */}
+          </Route>
+        </Route>
+
+        {/* Protected profile routes */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/profile" element={<MainLayout />}>
+            <Route index element={<Profile />} />
           </Route>
         </Route>
         
