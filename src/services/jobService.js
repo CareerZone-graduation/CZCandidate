@@ -4,15 +4,36 @@ import apiClient from './apiClient';
 export const getAllJobs = async (params = {}) => {
   const queryParams = new URLSearchParams();
   
+  // Debug log để kiểm tra params được gửi
+  console.log('🔍 getAllJobs called with params:', params);
+  
   if (params.search) queryParams.append('search', params.search);
   if (params.category) queryParams.append('category', params.category);
   if (params.location) queryParams.append('location', params.location);
+  if (params.experience) queryParams.append('experience', params.experience);
+  if (params.salary) queryParams.append('salary', params.salary);
   if (params.jobType) queryParams.append('jobType', params.jobType);
+  if (params.workType) queryParams.append('workType', params.workType);
+  if (params.featured) queryParams.append('featured', params.featured);
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
   
   const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  
+  // Debug log để kiểm tra URL được tạo
+  console.log('🌐 API URL:', url);
+  
   const response = await apiClient.get(url);
+  
+  // Debug log để kiểm tra response
+  console.log('📡 API Response:', {
+    success: response?.data?.success,
+    dataLength: response?.data?.data?.length,
+    totalItems: response?.data?.meta?.totalItems,
+    totalPages: response?.data?.meta?.totalPages
+  });
+  
   return response;
 };
 

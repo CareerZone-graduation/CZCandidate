@@ -1,0 +1,236 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { toast } from 'sonner';
+import { 
+  getJobNotifications,
+  createJobNotification,
+  updateJobNotification,
+  deleteJobNotification,
+  toggleNotificationStatus
+} from '../services/jobNotificationService';
+
+/**
+ * Custom hook để quản lý job notification subscriptions
+ * @returns {Object} Job notification state và functions
+ */
+export const useJobNotifications = () => {
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  
+  // State
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(new Set());
+  const [error, setError] = useState(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async (page = 1, params = {}) => {
+    if (!isAuthenticated) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const queryParams = {
+        page,
+        limit: 10,
+        ...params
+      };
+      
+      const response = await getJobNotifications(queryParams);
+      
+      if (response.success) {
+        const { notifications: data, meta } = response.data;
+        setNotifications(data || []);
+        setTotalItems(meta?.totalItems || 0);
+        setTotalPages(meta?.totalPages || 1);
+        setCurrentPage(meta?.currentPage || page);
+      } else {
+        throw new Error(response.message || 'Không thể tải danh sách thông báo');
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setError(err.response?.data?.message || err.message);
+      toast.error('Không thể tải danh sách thông báo việc làm');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  // Create notification
+  const createNotification = useCallback(async (notificationData) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để đăng ký thông báo');
+      return false;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      const response = await createJobNotification(notificationData);
+      
+      if (response.success) {
+        toast.success('Đăng ký thông báo việc làm thành công!');
+        // Refresh list
+        await fetchNotifications(1);
+        return true;
+      } else {
+        throw new Error(response.message || 'Không thể đăng ký thông báo');
+      }
+    } catch (err) {
+      console.error('Error creating notification:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isAuthenticated, fetchNotifications]);
+
+  // Update notification
+  const updateNotification = useCallback(async (id, updateData) => {
+    if (!isAuthenticated) return false;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      const response = await updateJobNotification(id, updateData);
+      
+      if (response.success) {
+        toast.success('Cập nhật thông báo thành công!');
+        // Update local state
+        setNotifications(prev => 
+          prev.map(notification => 
+            notification._id === id 
+              ? { ...notification, ...updateData }
+              : notification
+          )
+        );
+        return true;
+      } else {
+        throw new Error(response.message || 'Không thể cập nhật thông báo');
+      }
+    } catch (err) {
+      console.error('Error updating notification:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isAuthenticated]);
+
+  // Delete notification
+  const deleteNotification = useCallback(async (id) => {
+    if (!isAuthenticated) return false;
+
+    try {
+      setIsDeleting(prev => new Set([...prev, id]));
+      setError(null);
+      
+      const response = await deleteJobNotification(id);
+      
+      if (response.success) {
+        toast.success('Xóa thông báo thành công!');
+        // Remove from local state
+        setNotifications(prev => prev.filter(notification => notification._id !== id));
+        setTotalItems(prev => Math.max(0, prev - 1));
+        return true;
+      } else {
+        throw new Error(response.message || 'Không thể xóa thông báo');
+      }
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsDeleting(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  }, [isAuthenticated]);
+
+  // Toggle notification status
+  const toggleNotification = useCallback(async (id, isActive) => {
+    if (!isAuthenticated) return false;
+
+    try {
+      setError(null);
+      
+      const response = await toggleNotificationStatus(id, isActive);
+      
+      if (response.success) {
+        toast.success(`${isActive ? 'Bật' : 'Tắt'} thông báo thành công!`);
+        // Update local state
+        setNotifications(prev => 
+          prev.map(notification => 
+            notification._id === id 
+              ? { ...notification, isActive }
+              : notification
+          )
+        );
+        return true;
+      } else {
+        throw new Error(response.message || 'Không thể thay đổi trạng thái thông báo');
+      }
+    } catch (err) {
+      console.error('Error toggling notification:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    }
+  }, [isAuthenticated]);
+
+  // Pagination handler
+  const handlePageChange = useCallback((page) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      fetchNotifications(page);
+    }
+  }, [currentPage, totalPages, fetchNotifications]);
+
+  // Load initial data
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications(1);
+    }
+  }, [isAuthenticated, fetchNotifications]);
+
+  return {
+    // State
+    notifications,
+    isLoading,
+    isSaving,
+    isDeleting,
+    error,
+    totalItems,
+    currentPage,
+    totalPages,
+    
+    // Actions
+    fetchNotifications,
+    createNotification,
+    updateNotification,
+    deleteNotification,
+    toggleNotification,
+    handlePageChange,
+    
+    // Computed
+    activeNotifications: notifications.filter(n => n.isActive),
+    hasNotifications: notifications.length > 0,
+    canCreateMore: notifications.length < 10, // Giới hạn tối đa 10 thông báo
+  };
+};
+
+export default useJobNotifications;

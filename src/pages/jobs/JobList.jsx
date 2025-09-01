@@ -1,435 +1,1163 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { 
-  Search, 
-  MapPin, 
-  DollarSign, 
-  Clock, 
-  Building,
-  Calendar,
-  Bookmark
-} from 'lucide-react';
-import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
 import { toast } from 'sonner';
+import { 
+  Search, Building, MapPin, DollarSign, Clock, Users, TrendingUp, Star, 
+  Heart, ChevronLeft, ChevronRight, X, Sparkles, AlertCircle, Filter,
+  Briefcase, Building2, BarChart, Eye, ArrowRight
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { getAllJobs } from '../../services/jobService';
+import { saveJob, unsaveJob } from '../../services/jobService';
 
 const JobList = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const user = useSelector((state) => state.auth.user);
+
+  // State for main job list
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [savedJobs, setSavedJobs] = useState(new Set()); // Track saved job IDs
-  const [savingJobs, setSavingJobs] = useState(new Set()); // Track jobs being saved/unsaved
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Mock data in case API fails
-  const mockJobs = [
+  // State for featured jobs
+  const [featuredJobs, setFeaturedJobs] = useState([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(false);
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedExperience, setSelectedExperience] = useState('');
+  const [selectedSalary, setSelectedSalary] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Filter options
+  const locations = [
+    { value: 'all', label: 'Tất cả địa điểm', icon: '📍' },
+    { value: 'Hà Nội', label: 'Hà Nội' },
+    { value: 'TP.HCM', label: 'TP. Hồ Chí Minh' },
+    { value: 'Đà Nẵng', label: 'Đà Nẵng' },
+    { value: 'Hải Phòng', label: 'Hải Phòng' },
+    { value: 'Cần Thơ', label: 'Cần Thơ' },
+    { value: 'Khác', label: 'Khác' }
+  ];
+
+  const experiences = [
+    { value: 'all', label: 'Tất cả kinh nghiệm', icon: '💼' },
+    { value: 'Không yêu cầu', label: 'Không yêu cầu kinh nghiệm' },
+    { value: 'Dưới 1 năm', label: 'Dưới 1 năm' },
+    { value: '1-2 năm', label: '1-2 năm' },
+    { value: '2-5 năm', label: '2-5 năm' },
+    { value: '5-10 năm', label: '5-10 năm' },
+    { value: 'Trên 10 năm', label: 'Trên 10 năm' }
+  ];
+
+  const salaryRanges = [
+    { value: 'all', label: 'Tất cả mức lương', icon: '💰' },
+    { value: 'Dưới 10', label: 'Dưới 10 triệu' },
+    { value: '10-15', label: '10-15 triệu' },
+    { value: '15-20', label: '15-20 triệu' },
+    { value: '20-30', label: '20-30 triệu' },
+    { value: '30-50', label: '30-50 triệu' },
+    { value: '50+', label: 'Trên 50 triệu' },
+    { value: 'Thỏa thuận', label: 'Thỏa thuận' }
+  ];
+
+  const jobCategories = [
+    { value: 'all', label: 'Tất cả ngành nghề', icon: Briefcase },
+    { value: 'Công nghệ thông tin', label: 'Công nghệ thông tin', icon: Briefcase },
+    { value: 'Marketing', label: 'Marketing - PR', icon: BarChart },
+    { value: 'Kinh doanh', label: 'Kinh doanh - Bán hàng', icon: Building2 },
+    { value: 'Tài chính', label: 'Tài chính - Kế toán', icon: DollarSign },
+    { value: 'Thiết kế', label: 'Thiết kế - Sáng tạo', icon: Sparkles },
+    { value: 'Khác', label: 'Khác', icon: Building }
+  ];
+
+  // Top Categories Data  
+  const topCategories = [
     {
-      _id: "1",
-      title: "Frontend Developer",
-      company: { name: "Tech Company", logo: "" },
-      location: { province: "Hà Nội", ward: "Ba Đình" },
-      minSalary: "1500",
-      maxSalary: "2500",
-      type: "FULL_TIME",
-      experience: "SENIOR_LEVEL",
-      deadline: "2025-12-31",
-      skills: ["React", "JavaScript", "CSS"]
+      id: 1,
+      name: 'Công nghệ thông tin',
+      jobCount: '8.245 việc làm',
+      icon: '💻',
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-600'
     },
     {
-      _id: "2", 
-      title: "Backend Developer",
-      company: { name: "Software Corp", logo: "" },
-      location: { province: "TP. Hồ Chí Minh", ward: "Quận 1" },
-      minSalary: "2000",
-      maxSalary: "3000",
-      type: "FULL_TIME",
-      experience: "MID_LEVEL",
-      deadline: "2025-11-30",
-      skills: ["Node.js", "MongoDB", "Express"]
+      id: 2,
+      name: 'Kinh doanh - Bán hàng',
+      jobCount: '6.832 việc làm',
+      icon: '💼',
+      bgColor: 'bg-green-100',
+      textColor: 'text-green-600'
+    },
+    {
+      id: 3,
+      name: 'Marketing - PR',
+      jobCount: '3.456 việc làm',
+      icon: '📊',
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-600'
+    },
+    {
+      id: 4,
+      name: 'Thiết kế - Sáng tạo',
+      jobCount: '2.189 việc làm',
+      icon: '🎨',
+      bgColor: 'bg-pink-100',
+      textColor: 'text-pink-600'
+    },
+    {
+      id: 5,
+      name: 'Nhân sự - Tuyển dụng',
+      jobCount: '1.874 việc làm',
+      icon: '👥',
+      bgColor: 'bg-orange-100',
+      textColor: 'text-orange-600'
+    },
+    {
+      id: 6,
+      name: 'Tài chính - Kế toán',
+      jobCount: '5.303 việc làm',
+      icon: '🏦',
+      bgColor: 'bg-emerald-100',
+      textColor: 'text-emerald-600'
     }
   ];
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Try to fetch from API first
-        const response = await fetch('http://localhost:5000/api/jobs');
-        
-        if (!response.ok) {
-          throw new Error('API không phản hồi');
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          setJobs(result.data);
-        } else {
-          throw new Error('Dữ liệu không hợp lệ');
-        }
-      } catch (err) {
-        console.warn('API error, using mock data:', err);
-        // Use mock data if API fails
-        setJobs(mockJobs);
-        setError(null); // Don't show error, just use mock data
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Top Companies Data
+  const topCompanies = [
+    {
+      id: 1,
+      name: 'MISA',
+      logo: 'https://cdn-new.topcv.vn/unsafe/300x/https://static.topcv.vn/company_logos/YVVFSY05ZUhqjlVHtBl2kOD1a189WFj0_1652947920____d78c5dd2ab820dcbb9a367b40e712067.jpg',
+      isTop: true,
+      employees: '5,000+ nhân viên',
+      jobs: '45 việc làm'
+    },
+    {
+      id: 2,
+      name: 'Concentrix',
+      logo: 'https://cdn-new.topcv.vn/unsafe/300x/https://static.topcv.vn/company_logos/q9bYqtXdPBInb3ZdqSrW5WA3OFgk1Tzc_1732778674____8ed9b945bd229d402e816cce9aa9c046.png',
+      isTop: true,
+      employees: '3,000+ nhân viên', 
+      jobs: '28 việc làm'
+    },
+    {
+      id: 3,
+      name: 'SPX Express',
+      logo: 'https://cdn-new.topcv.vn/unsafe/300x/https://static.topcv.vn/company_logos/6830417b01e641747992955.png',
+      isTop: false,
+      employees: '2,500+ nhân viên',
+      jobs: '22 việc làm'
+    }
+  ];
 
-    fetchJobs();
-  }, []);
+  // Helper functions
+  const hasActiveFilters = useMemo(() => {
+    return searchTerm || 
+           (selectedLocation && selectedLocation !== 'all') || 
+           (selectedExperience && selectedExperience !== 'all') || 
+           (selectedSalary && selectedSalary !== 'all') || 
+           (selectedCategory && selectedCategory !== 'all');
+  }, [searchTerm, selectedLocation, selectedExperience, selectedSalary, selectedCategory]);
 
-  // Check saved status for all jobs when component loads and user is authenticated
-  useEffect(() => {
-    const checkAllJobsSavedStatus = async () => {
-      if (!isAuthenticated || jobs.length === 0) return;
-      
-      try {
-        const savedStatuses = await Promise.all(
-          jobs.map(async (job) => {
-            try {
-              const isSaved = await checkJobSaved(job._id);
-              return { jobId: job._id, isSaved };
-            } catch (err) {
-              console.error(`Lỗi khi kiểm tra trạng thái lưu job ${job._id}:`, err);
-              return { jobId: job._id, isSaved: false };
-            }
-          })
-        );
-        
-        const savedJobIds = new Set(
-          savedStatuses
-            .filter(status => status.isSaved)
-            .map(status => status.jobId)
-        );
-        
-        setSavedJobs(savedJobIds);
-      } catch (err) {
-        console.error('Lỗi khi kiểm tra trạng thái lưu các công việc:', err);
-      }
-    };
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedLocation('all');
+    setSelectedExperience('all');
+    setSelectedSalary('all');
+    setSelectedCategory('all');
+    setCurrentPage(1);
+  };
 
-    checkAllJobsSavedStatus();
-  }, [jobs, isAuthenticated]);
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    setCurrentPage(1);
+    // Scroll to jobs section
+    document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCompanyClick = (companyName) => {
+    setSearchTerm(companyName);
+    setCurrentPage(1);
+    // Scroll to jobs section
+    document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   // Format functions
+  const formatLocation = (location) => {
+    if (!location) return 'Chưa xác định';
+    if (typeof location === 'string') return location;
+    if (typeof location === 'object') {
+      const { province, ward } = location;
+      if (province && ward) return `${ward}, ${province}`;
+      if (province) return province;
+      if (ward) return ward;
+    }
+    return 'Chưa xác định';
+  };
+
   const formatSalary = (minSalary, maxSalary) => {
     if (!minSalary && !maxSalary) return 'Thỏa thuận';
-    if (minSalary && maxSalary) {
-      return `${minSalary}-${maxSalary} USD`;
-    }
-    if (minSalary) return `Từ ${minSalary} USD`;
-    if (maxSalary) return `Đến ${maxSalary} USD`;
+    if (minSalary && maxSalary) return `${minSalary} - ${maxSalary} triệu`;
+    if (minSalary) return `Từ ${minSalary} triệu`;
+    return `Lên đến ${maxSalary} triệu`;
   };
 
   const formatWorkType = (type) => {
     const typeMap = {
-      'FULL_TIME': 'Toàn thời gian',
-      'PART_TIME': 'Bán thời gian',
-      'CONTRACT': 'Hợp đồng',
-      'FREELANCE': 'Tự do',
-      'INTERNSHIP': 'Thực tập'
+      'Full-time': 'Toàn thời gian',
+      'Part-time': 'Bán thời gian',
+      'Contract': 'Hợp đồng',
+      'Freelance': 'Tự do',
+      'Internship': 'Thực tập'
     };
     return typeMap[type] || type;
   };
 
-  const formatExperience = (level) => {
-    const levelMap = {
-      'INTERN': 'Thực tập sinh',
-      'FRESHER': 'Fresher',
-      'JUNIOR_LEVEL': 'Junior',
-      'MID_LEVEL': 'Middle',
-      'SENIOR_LEVEL': 'Senior',
-      'MANAGER_LEVEL': 'Quản lý',
-      'DIRECTOR_LEVEL': 'Giám đốc'
-    };
-    return levelMap[level] || level;
-  };
-
-  // Filter jobs based on search
-  const filteredJobs = jobs.filter(job => {
-    if (!searchTerm) return true;
-    return job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           job.company.name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  // Handle view job detail
-  const handleViewJob = (jobId) => {
-    navigate(`/jobs/${jobId}`);
-  };
-
-  // Handle save/unsave job
-  const handleSaveJob = async (jobId, e) => {
-    e.stopPropagation(); // Prevent card click
+  const timeAgo = (dateString) => {
+    const now = new Date();
+    const postDate = new Date(dateString);
+    const diffInMs = now - postDate;
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
     
-    if (!isAuthenticated) {
+    if (diffInDays === 0) return 'Hôm nay';
+    if (diffInDays === 1) return 'Hôm qua';
+    if (diffInDays < 7) return `${diffInDays} ngày trước`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} tuần trước`;
+    return `${Math.floor(diffInDays / 30)} tháng trước`;
+  };
+
+  // API Functions
+  const fetchJobs = async (page = 1, reset = false) => {
+    try {
+      if (reset || page === 1) setIsLoading(true);
+      
+      const params = {
+        page,
+        limit: 12,
+        keyword: searchTerm.trim(),
+        location: selectedLocation === 'all' ? '' : selectedLocation,
+        experience: selectedExperience === 'all' ? '' : selectedExperience, 
+        salaryRange: selectedSalary === 'all' ? '' : selectedSalary,
+        category: selectedCategory === 'all' ? '' : selectedCategory
+      };
+
+      const response = await getAllJobs(params);
+      const responseData = response.data;
+      
+      if (responseData.success) {
+        const jobsData = responseData.data?.jobs || responseData.data || [];
+        const pagination = responseData.meta || responseData.data || responseData;
+        
+        setJobs(jobsData);
+        setCurrentPage(pagination.currentPage || page);
+        setTotalPages(pagination.totalPages || 1);
+        setTotalItems(pagination.totalItems || 0);
+        setError(null);
+      } else {
+        throw new Error(responseData.message || 'Không thể tải danh sách việc làm');
+      }
+    } catch (err) {
+      console.error('❌ Error fetching jobs:', err);
+      setError(err.response?.data?.message || err.message);
+      setJobs([]);
+      setTotalItems(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchFeaturedJobs = async () => {
+    try {
+      setIsLoadingFeatured(true);
+      
+      const response = await getAllJobs({
+        page: 1,
+        limit: 6,
+        featured: true,
+        sort: 'newest'
+      });
+      
+      const responseData = response.data;
+      
+      if (responseData.success) {
+        const jobsData = responseData.data?.jobs || responseData.data || [];
+        setFeaturedJobs(jobsData);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching featured jobs:', err);
+    } finally {
+      setIsLoadingFeatured(false);
+    }
+  };
+
+  const handleSaveJob = async (jobId) => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để lưu việc làm');
       navigate('/login');
       return;
     }
 
-    if (savingJobs.has(jobId)) return; // Prevent multiple simultaneous saves
-
     try {
-      setSavingJobs(prev => new Set([...prev, jobId]));
-      
-      const isSaved = savedJobs.has(jobId);
-      
-      if (isSaved) {
-        // Unsave job
-        await unsaveJob(jobId);
-        setSavedJobs(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(jobId);
-          return newSet;
-        });
-        toast.success('Đã bỏ lưu công việc');
-      } else {
-        // Save job
-        try {
-          await saveJob(jobId);
-          setSavedJobs(prev => new Set([...prev, jobId]));
-          toast.success('Đã lưu công việc thành công');
-        } catch (err) {
-          // Xử lý trường hợp đặc biệt: job đã được lưu
-          if (err.response?.data?.message === 'Bạn đã lưu công việc này rồi.') {
-            setSavedJobs(prev => new Set([...prev, jobId]));
-            toast.info('Công việc này đã được lưu trước đó');
-          } else {
-            throw err; // Re-throw lỗi khác
-          }
-        }
+      const response = await saveJob(jobId);
+      if (response.success) {
+        toast.success('Đã lưu việc làm thành công!');
+        setJobs(prev => prev.map(job => 
+          job.id === jobId ? { ...job, isSaved: true } : job
+        ));
+        setFeaturedJobs(prev => prev.map(job => 
+          job.id === jobId ? { ...job, isSaved: true } : job
+        ));
       }
-    } catch (err) {
-      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
-      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
-      toast.error(errorMessage);
-    } finally {
-      setSavingJobs(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(jobId);
-        return newSet;
-      });
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi lưu việc làm');
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded mb-6 w-1/3"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="bg-white rounded-lg p-6">
-                    <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded mb-2 w-1/2"></div>
-                    <div className="h-3 bg-gray-200 rounded mb-4 w-1/3"></div>
-                    <div className="h-8 bg-gray-200 rounded"></div>
-                  </div>
-                ))}
-              </div>
+  const handleUnsaveJob = async (jobId) => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để bỏ lưu việc làm');
+      return;
+    }
+
+    try {
+      const response = await unsaveJob(jobId);
+      if (response.success) {
+        toast.success('Đã bỏ lưu việc làm');
+        setJobs(prev => prev.map(job => 
+          job.id === jobId ? { ...job, isSaved: false } : job
+        ));
+        setFeaturedJobs(prev => prev.map(job => 
+          job.id === jobId ? { ...job, isSaved: false } : job
+        ));
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi bỏ lưu việc làm');
+    }
+  };
+
+  const handleJobClick = (jobId) => {
+    navigate(`/jobs/${jobId}`);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    if (!selectedLocation) setSelectedLocation('all');
+    if (!selectedExperience) setSelectedExperience('all');
+    if (!selectedSalary) setSelectedSalary('all');
+    if (!selectedCategory) setSelectedCategory('all');
+  }, []);
+
+  useEffect(() => {
+    fetchJobs(1, true);
+  }, [searchTerm, selectedLocation, selectedExperience, selectedSalary, selectedCategory]);
+
+  useEffect(() => {
+    if (currentPage > 1) {
+      fetchJobs(currentPage);
+    }
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchFeaturedJobs();
+  }, []);
+
+  // Job Card Component
+  const JobCard = ({ job, onSave, onUnsave, onClick, featured = false }) => (
+    <Card className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer ${featured ? 'border-2 border-primary/20' : ''}`}>
+      {featured && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <Badge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1 shadow-lg">
+            <Star className="h-3 w-3 mr-1 fill-current" /> Nổi bật
+          </Badge>
+        </div>
+      )}
+      
+      <CardHeader className="flex flex-row items-start space-y-0 gap-4 pb-4">
+        <Avatar className="h-14 w-14 rounded-xl border-2 border-primary/10">
+          <AvatarImage 
+            src={job.company?.logo} 
+            alt={job.company?.name || 'Company Logo'} 
+          />
+          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
+            {job.company?.name?.charAt(0) || job.title?.charAt(0) || '?'}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 space-y-1">
+          <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+            {job.title}
+          </CardTitle>
+          <CardDescription className="text-muted-foreground font-medium">
+            {job.company?.name || 'Công ty chưa xác định'}
+          </CardDescription>
+        </div>
+        <div className="flex items-center space-x-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (job.isSaved) {
+                onUnsave(job.id || job._id);
+              } else {
+                onSave(job.id || job._id);
+              }
+            }}
+          >
+            <Heart className={`h-4 w-4 ${job.isSaved ? 'fill-current text-red-500' : ''}`} />
+          </Button>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-2">
+        <div className="space-y-4 text-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-2 text-primary" /> 
+              <span className="font-medium">{formatLocation(job.location)}</span>
+            </div>
+            <div className="flex items-center text-success font-semibold">
+              <DollarSign className="h-4 w-4 mr-1" /> 
+              <span>{formatSalary(job.minSalary, job.maxSalary)}</span>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8">
-              <CardContent>
-                <div className="text-red-500 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
-                <Button onClick={() => window.location.reload()} size="lg">
-                  Thử lại
-                </Button>
-              </CardContent>
-            </Card>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-muted-foreground">
+              <Clock className="h-4 w-4 mr-2 text-info" /> 
+              <span>{timeAgo(job.createdAt || job.postedAt)}</span>
+            </div>
+            <div className="flex items-center text-muted-foreground">
+              <Users className="h-4 w-4 mr-2 text-primary" />
+              <span>{job.experience || 'Không yêu cầu'}</span>
+            </div>
           </div>
+          
+          {job.skills && job.skills.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {job.skills.slice(0, 3).map((tag, index) => (
+                <Badge key={index} variant="secondary" className="font-normal text-xs hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer">
+                  {tag}
+                </Badge>
+              ))}
+              {job.skills.length > 3 && (
+                <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                  +{job.skills.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
-      </div>
-    );
-  }
+      </CardContent>
+      
+      <CardFooter className="border-t pt-4 flex justify-between items-center bg-muted/20">
+        <Badge 
+          variant={formatWorkType(job.type) === 'Remote' ? 'outline' : 'secondary'} 
+          className="px-3 py-1 font-medium"
+        >
+          <Briefcase className="h-3 w-3 mr-1" /> 
+          {formatWorkType(job.type)}
+        </Badge>
+        <Button 
+          variant="ghost" 
+          className="p-0 h-auto font-semibold text-primary group-hover:translate-x-1 transition-all duration-300 hover:text-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(job.id || job._id);
+          }}
+        >
+          Chi tiết <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </CardFooter>
+    </Card>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Tìm kiếm việc làm
+    <div className="flex flex-col min-h-full">
+      {/* 🎯 Hero Section - Similar to HomePage */}
+     <section className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 min-h-[60vh] flex items-center pt-20 lg:pt-24 pb-20">
+        {/* Background decorations */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-emerald-400/10 blur-3xl"></div>
+<div className="absolute top-1/2 -left-20 w-60 h-60 rounded-full bg-green-400/10 blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 relative z-10 w-full">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+           <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-emerald-600 border-emerald-300 bg-white/80 backdrop-blur-sm mb-6">
+              🚀 Nền tảng việc làm hàng đầu tại Việt Nam
+            </Badge>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Tìm kiếm công việc</span>
+              <br />
+              <span className="text-foreground">định hình tương lai của bạn</span>
             </h1>
-            <p className="text-gray-600">
-              Khám phá {jobs.length} cơ hội việc làm hấp dẫn
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Khám phá hàng ngàn cơ hội việc làm chất lượng từ các công ty hàng đầu 
+              phù hợp với kỹ năng và đam mê của bạn.
             </p>
           </div>
 
-          {/* Search Bar */}
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  placeholder="Tìm kiếm theo tên công việc, công ty..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-12"
-                />
+          {/* Search Box */}
+          <Card className="max-w-4xl mx-auto shadow-2xl border-0 bg-background/95 backdrop-blur-md mb-16">
+            <CardContent className="p-8">
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="relative md:col-span-2">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                  <Input
+                    type="text"
+                    placeholder="Vị trí, kỹ năng, từ khóa..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 h-14 text-base border-border/50 focus:border-primary bg-background"
+                  />
+                </div>
+                <div className="relative">
+                  <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
+                    <SelectTrigger className="h-14 border-border/50 focus:border-primary bg-background">
+                      <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
+                      <SelectValue placeholder="Địa điểm" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((location) => (
+                        <SelectItem key={location.value} value={location.value}>
+                          {location.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+               <Button size="lg" className="h-14 w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold">
+                  <Search className="mr-2 h-5 w-5" />
+                  Tìm kiếm ngay
+                </Button>
+              </div>
+              
+              {/* Popular searches */}
+              <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                <span className="text-sm text-muted-foreground mr-2">Tìm kiếm phổ biến:</span>
+                {['Frontend Developer', 'Marketing', 'Data Science', 'Product Manager', 'UI/UX Designer'].map((term, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="outline" 
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => setSearchTerm(term)}
+                  >
+                    {term}
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Results Count */}
-          <div className="flex justify-between items-center mb-6">
-            <p className="text-gray-600">
-              Hiển thị {filteredJobs.length} kết quả
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              { icon: Briefcase, value: '15,000+', label: 'Việc làm mới' },
+              { icon: Building2, value: '2,500+', label: 'Công ty hàng đầu' },
+              { icon: TrendingUp, value: '98%', label: 'Tỷ lệ thành công' },
+            ].map((stat, index) => (
+              <Card key={index} className="p-6 text-center border-0 shadow-md bg-background/80 backdrop-blur-sm">
+                <CardContent className="p-0">
+                  <stat.icon className="h-12 w-12 mx-auto mb-4 text-primary" />
+                  <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
+                  <div className="text-muted-foreground font-medium">{stat.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🎯 Job Search Section - Similar to HomePage */}
+      <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Tìm kiếm cơ hội nghề nghiệp</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Khám phá việc làm trong các lĩnh vực phổ biến hoặc tìm kiếm theo địa điểm và mức lương mong muốn
             </p>
           </div>
 
-          {/* Job Grid */}
-          {filteredJobs.length === 0 ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            {/* Search by Industry */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-background">
+              <CardContent className="p-0 space-y-4">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary">
+                  <Briefcase className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy việc làm</h3>
-                <p className="text-gray-600 mb-4">Thử thay đổi từ khóa tìm kiếm</p>
+                <h3 className="text-xl font-semibold text-foreground">Tìm theo ngành nghề</h3>
+                <p className="text-muted-foreground">
+                  Khám phá cơ hội việc làm trong lĩnh vực chuyên môn của bạn
+                </p>
+                <div className="pt-2">
+                  <Select value={selectedCategory || 'all'} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn ngành nghề" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobCategories.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job) => {
-                const isSaved = savedJobs.has(job._id);
-                const isSaving = savingJobs.has(job._id);
-                
-                return (
-                  <Card 
-                    key={job._id} 
-                    className="hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white"
-                    onClick={() => handleViewJob(job._id)}
-                  >
-                    <CardHeader className="pb-4">
+
+            {/* Search by Location */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-background">
+              <CardContent className="p-0 space-y-4">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary">
+                  <MapPin className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground">Tìm theo địa điểm</h3>
+                <p className="text-muted-foreground">
+                  Tìm việc làm gần nơi bạn sống hoặc nơi bạn muốn đến
+                </p>
+                <div className="pt-2">
+                  <Select value={selectedLocation || 'all'} onValueChange={setSelectedLocation}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn địa điểm" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((location) => (
+                        <SelectItem key={location.value} value={location.value}>
+                          {location.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Search by Salary */}
+            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-background">
+              <CardContent className="p-0 space-y-4">
+                <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary">
+                  <DollarSign className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground">Tìm theo mức lương</h3>
+                <p className="text-muted-foreground">
+                  Lọc việc làm theo mức lương phù hợp với mong đợi của bạn
+                </p>
+                <div className="pt-2">
+                  <Select value={selectedSalary || 'all'} onValueChange={setSelectedSalary}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn mức lương" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salaryRanges.map((range) => (
+                        <SelectItem key={range.value} value={range.value}>
+                          {range.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Filter Categories */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: Briefcase, name: 'Lập trình & IT', count: 1523 },
+              { icon: Building2, name: 'Kinh doanh & Bán hàng', count: 876 },
+              { icon: BarChart, name: 'Marketing & Digital', count: 654 },
+              { icon: DollarSign, name: 'Tài chính & Kế toán', count: 321 },
+            ].map((category, index) => (
+              <Card 
+                key={index} 
+                className="hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md bg-background group"
+                onClick={() => handleCategoryClick(category.name)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-primary/80 transition-all duration-300">
+                      <category.icon className="h-6 w-6 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-lg text-foreground group-hover:text-primary transition-colors">{category.name}</h3>
+                      <div className="flex items-center justify-between mt-1">
+                        <Badge variant="secondary">{category.count} việc làm</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🎯 Featured Jobs Section - Similar to HomePage */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
+              ⭐ Việc làm nổi bật
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Cơ hội nghề nghiệp</span> <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Khám phá những vị trí việc làm chất lượng cao từ các công ty uy tín, 
+              với mức lương hấp dẫn và môi trường làm việc chuyên nghiệp.
+            </p>
+          </div>
+
+          {/* Featured Jobs Grid */}
+          {isLoadingFeatured ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="h-80 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3 flex-1">
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={job.company.logo} alt={job.company.name} />
-                            <AvatarFallback className="bg-emerald-100 text-emerald-600">
-                              {job.company.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
-                              {job.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 truncate">
-                              {job.company.name}
-                            </p>
-                          </div>
-                        </div>
+                        <Skeleton className="w-16 h-16 rounded-xl" />
+                        <Skeleton className="w-12 h-12 rounded-full" />
                       </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-0">
                       <div className="space-y-3">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{job.location.province}</span>
-                        </div>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                          <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-                          <span className="font-medium text-green-600">
-                            {formatSalary(job.minSalary, job.maxSalary)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="h-4 w-4 mr-2 text-blue-600" />
-                          <span>{formatWorkType(job.type)}</span>
-                        </div>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Building className="h-4 w-4 mr-2 text-purple-600" />
-                          <span>{formatExperience(job.experience)}</span>
-                        </div>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2 text-orange-600" />
-                          <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
-                        </div>
-
-                        {/* Skills */}
-                        <div className="flex flex-wrap gap-1 pt-2">
-                          {job.skills?.slice(0, 3).map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.skills?.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{job.skills.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-4">
-                          <Button 
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewJob(job._id);
-                            }}
-                          >
-                            Xem chi tiết
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            onClick={(e) => handleSaveJob(job._id, e)}
-                            disabled={isSaving}
-                            className={isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
-                          >
-                            {isSaving ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                            ) : (
-                              <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
-                            )}
-                            {isSaved ? "Đã lưu" : "Lưu"}
-                          </Button>
-                        </div>
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-1/2" />
+                        <Skeleton className="h-4 w-2/3" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {featuredJobs.slice(0, 6).map((job) => (
+                <JobCard
+                  key={job.id || job._id}
+                  job={job}
+                  onSave={handleSaveJob}
+                  onUnsave={handleUnsaveJob}
+                  onClick={handleJobClick}
+                  featured={true}
+                />
+              ))}
             </div>
           )}
+
+          {/* View All Button */}
+          <div className="text-center">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="px-8 py-3 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-sm hover:shadow-lg"
+              onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Xem tất cả việc làm
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* 🎯 Top Categories Section */}
+      <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
+              🏢 Khám phá lĩnh vực
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+             Việc làm theo <span className="text-emerald-600 font-bold">danh mục</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {topCategories.map((category) => (
+              <Card 
+                key={category.id}
+                className="group cursor-pointer hover:shadow-xl transition-all duration-300 bg-background border-0 overflow-hidden hover:-translate-y-1 transform"
+                onClick={() => handleCategoryClick(category.name)}
+              >
+                <CardContent className="p-8">
+                  <div className={`w-16 h-16 rounded-2xl ${category.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                    <span className="text-3xl">{category.icon}</span>
+                  </div>
+                  <h3 className={`font-bold text-lg mb-3 group-hover:${category.textColor} transition-colors line-clamp-2`}>
+                    {category.name}
+                  </h3>
+                  <p className={`${category.textColor} font-semibold text-sm mb-4`}>
+                    {category.jobCount}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    className="group-hover:translate-x-2 transition-all duration-300 p-0 h-auto font-semibold text-primary"
+                  >
+                    Khám phá ngay <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 🎯 All Jobs Section */}
+      <section id="jobs-section" className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          {/* Header */}
+            <div className="text-center mb-16">
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
+              💼 Tất cả việc làm
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Khám phá <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">cơ hội nghề nghiệp</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Danh sách đầy đủ tất cả các vị trí việc làm hiện có, được cập nhật liên tục
+            </p>
+          </div>
+
+          {/* Advanced Filters */}
+          <Card className="mb-12 shadow-xl border-0 bg-background/95 backdrop-blur-sm">
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                {/* Experience Filter */}
+                <Select value={selectedExperience || 'all'} onValueChange={setSelectedExperience}>
+                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
+                    <SelectValue placeholder="Kinh nghiệm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {experiences.map((exp) => (
+                      <SelectItem key={exp.value} value={exp.value}>
+                        {exp.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Salary Filter */}
+                <Select value={selectedSalary || 'all'} onValueChange={setSelectedSalary}>
+                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
+                    <SelectValue placeholder="Mức lương" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salaryRanges.map((range) => (
+                      <SelectItem key={range.value} value={range.value}>
+                        {range.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Category Filter */}
+                <Select value={selectedCategory || 'all'} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
+                    <SelectValue placeholder="Ngành nghề" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobCategories.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Clear Filters Button */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    onClick={clearAllFilters}
+                    className="h-12 px-6 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Xóa bộ lọc
+                  </Button>
+                )}
+              </div>
+
+              {/* Active Filters Display */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+                  {searchTerm && (
+                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
+                      🔍 "{searchTerm}"
+                    </Badge>
+                  )}
+                  {selectedLocation && selectedLocation !== 'all' && (
+                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
+                      📍 {locations.find(l => l.value === selectedLocation)?.label}
+                    </Badge>
+                  )}
+                  {selectedExperience && selectedExperience !== 'all' && (
+                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
+                      💼 {experiences.find(e => e.value === selectedExperience)?.label}
+                    </Badge>
+                  )}
+                  {selectedSalary && selectedSalary !== 'all' && (
+                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
+                      💰 {salaryRanges.find(s => s.value === selectedSalary)?.label}
+                    </Badge>
+                  )}
+                  {selectedCategory && selectedCategory !== 'all' && (
+                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
+                      🏢 {jobCategories.find(c => c.value === selectedCategory)?.label}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Results Summary */}
+          <div className="flex justify-between items-center mb-8">
+            <div className="text-sm text-muted-foreground">
+              {totalItems > 0 ? (
+                <span className="font-medium">
+                  Tìm thấy <span className="text-primary font-bold">{totalItems}</span> việc làm
+                  {hasActiveFilters && " phù hợp với bộ lọc"}
+                </span>
+              ) : !isLoading ? (
+                <span>Không có kết quả</span>
+              ) : (
+                <span>Đang tìm kiếm...</span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="font-medium">Trang {currentPage} / {totalPages}</span>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              {[...Array(12)].map((_, i) => (
+                <Card key={i} className="h-80 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <Skeleton className="w-16 h-16 rounded-xl" />
+                        <Skeleton className="w-12 h-12 rounded-full" />
+                      </div>
+                      <div className="space-y-3">
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-1/2" />
+                        <Skeleton className="h-4 w-2/3" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <div className="text-center py-20">
+              <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-8">
+                <AlertCircle className="h-16 w-16 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Có lỗi xảy ra
+              </h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                {error}
+              </p>
+              <Button 
+                onClick={() => fetchJobs(1, true)}
+                className="bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground font-semibold"
+              >
+                Thử lại
+              </Button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {jobs.length === 0 && !isLoading && !error && (
+            <div className="text-center py-20">
+              <div className="w-32 h-32 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
+                <Building className="h-16 w-16 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Không tìm thấy công việc nào
+              </h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                {hasActiveFilters 
+                  ? 'Không có kết quả phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác.'
+                  : 'Hiện tại chưa có công việc nào được đăng tuyển.'
+                }
+              </p>
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  onClick={clearAllFilters}
+                  className="bg-background border-primary/30 text-primary hover:bg-primary/10 font-semibold"
+                >
+                  Xóa tất cả bộ lọc
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Jobs Grid */}
+          {!isLoading && !error && jobs.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                {jobs.map((job) => (
+                  <JobCard
+                    key={job.id || job._id}
+                    job={job}
+                    onSave={handleSaveJob}
+                    onUnsave={handleUnsaveJob}
+                    onClick={handleJobClick}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-6 h-12 border-primary/30 bg-background hover:bg-primary/10 font-semibold"
+                  >
+                    <ChevronLeft className="h-5 w-5 mr-2" />
+                    Trước
+                  </Button>
+                  
+                  <div className="flex space-x-2">
+                    <span className="px-6 py-3 text-sm text-primary bg-primary/10 border-2 border-primary/30 rounded-xl font-bold">
+                      {currentPage} / {totalPages}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-6 h-12 border-primary/30 bg-background hover:bg-primary/10 font-semibold"
+                  >
+                    Sau
+                    <ChevronRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* 🎯 Top Companies Section */}
+     <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
+              🏢 Khám phá lĩnh vực
+            </Badge>
+             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                 Việc làm theo <span className="text-emerald-600 font-bold">công ty</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {topCompanies.map((company) => (
+              <Card 
+                key={company.id}
+                className="group cursor-pointer hover:shadow-xl transition-all duration-300 bg-background border-0 relative overflow-hidden hover:-translate-y-1 transform"
+                onClick={() => handleCompanyClick(company.name)}
+              >
+                {company.isTop && (
+                  <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full z-10">
+                    TOP
+                  </Badge>
+                )}
+                <CardContent className="p-8 text-center">
+                  <div className="w-full h-24 bg-muted/30 rounded-lg flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                    <img 
+                      src={company.logo} 
+                      alt={company.name}
+                      className="max-w-full max-h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden w-full h-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-xl">
+                        {company.name.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg line-clamp-2 mb-4">
+                    {company.name}
+                  </h3>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{company.employees}</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <Building className="h-4 w-4" />
+                      <span className="text-primary font-medium">{company.jobs}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* View All Companies Button */}
+          <div className="text-center">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={() => navigate('/companies')}
+            >
+              Xem tất cả công ty
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

@@ -32,7 +32,8 @@ const Login = () => {
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
         await dispatch(fetchUser());
         toast.success('Đăng nhập thành công!');
-        navigate('/dashboard', { replace: true });
+        // Thay đổi từ /dashboard thành /jobs
+        navigate('/jobs', { replace: true });
       } else {
         throw new Error('Phản hồi đăng nhập không hợp lệ.');
       }

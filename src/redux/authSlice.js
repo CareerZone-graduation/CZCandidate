@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getMe } from '../services/authService';
+// Thay đổi import này:
+// import { getMe } from '../services/authService';
+import { getMyProfile } from '../services/profileService';
 import { saveAccessToken, clearAccessToken, getAccessToken } from '../utils/token';
 
 // Async thunk to fetch user data after login or on app load
@@ -9,15 +11,17 @@ export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWi
     return rejectWithValue('No token found');
   }
   try {
-    const response = await getMe();
-    // The service already returns response.data
-    return response;
+    // Thay đổi từ getMe() thành getMyProfile()
+    const response = await getMyProfile();
+    // Lấy data từ response (vì getMyProfile trả về response.data)
+    return response.data;
   } catch (error) {
     clearAccessToken(); // Clear token if fetching user fails
     return rejectWithValue(error.response?.data || 'Failed to fetch user');
   }
 });
 
+// Phần còn lại giữ nguyên...
 const initialState = {
   user: null, // Will hold user and profile info
   isAuthenticated: !!getAccessToken(),

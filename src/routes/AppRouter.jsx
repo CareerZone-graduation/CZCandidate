@@ -17,6 +17,8 @@ import JobList from '../pages/jobs/JobList';
 import JobDetail from '../pages/jobs/JobDetail';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import Profile from '../pages/profile/Profile';
+import JobNotificationManager from '../pages/notification/JobNotificationManager.jsx';
+import News from '../pages/news/News';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -31,17 +33,12 @@ const AppRouter = () => {
   const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Fetch user on initial load if a token exists
     if (isAuthenticated) {
       dispatch(fetchUser());
-    } else {
-      // If no token, no need to fetch, just finish initializing
-      // This part is handled by the initial state of isInitializing in the slice
     }
   }, [dispatch, isAuthenticated]);
 
-
-  if (isInitializing && isAuthenticated) { // Only show loader if we are authenticated and fetching user
+  if (isInitializing && isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -59,14 +56,15 @@ const AppRouter = () => {
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <HomePage />} />
+          <Route path="/" element={isAuthenticated ? <Navigate to="/jobs" /> : <HomePage />} />
           <Route path="/jobs" element={<JobList />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/news" element={<News />} />
         </Route>
 
         {/* Auth routes */}
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
-        <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/jobs" /> : <Login />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/jobs" /> : <Register />} />
 
         {/* Protected dashboard routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
@@ -74,7 +72,6 @@ const AppRouter = () => {
             <Route index element={<Dashboard />} />
             <Route path="job-suggestions" element={<JobSuggestion />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
-            {/* Add other nested dashboard routes here */}
           </Route>
         </Route>
 
@@ -84,9 +81,16 @@ const AppRouter = () => {
             <Route index element={<Profile />} />
           </Route>
         </Route>
+
+        {/* Protected notifications routes */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/notifications" element={<MainLayout />}>
+            <Route index element={<JobNotificationManager />} />
+          </Route>
+        </Route>
         
         {/* Fallback for any other route */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/jobs" : "/"} />} />
       </Routes>
     </BrowserRouter>
   );

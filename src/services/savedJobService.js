@@ -1,5 +1,20 @@
 import apiClient from './apiClient';
 
+// Cache để lưu trữ danh sách job IDs đã lưu
+let savedJobsCache = {
+  data: new Set(),
+  lastFetch: 0,
+  ttl: 30000 // 30 seconds cache
+};
+
+/**
+ * Xóa cache khi có thay đổi (save/unsave)
+ */
+export const clearSavedJobsCache = () => {
+  savedJobsCache.data.clear();
+  savedJobsCache.lastFetch = 0;
+};
+
 /**
  * Lưu một công việc
  * @param {string} jobId - ID của công việc cần lưu
@@ -7,6 +22,8 @@ import apiClient from './apiClient';
 export const saveJob = async (jobId) => {
   try {
     const response = await apiClient.post(`/jobs/${jobId}/save`);
+    // Xóa cache khi có thay đổi
+    clearSavedJobsCache();
     return response;
   } catch (error) {
     console.error('Lỗi khi lưu công việc:', error);
@@ -21,6 +38,8 @@ export const saveJob = async (jobId) => {
 export const unsaveJob = async (jobId) => {
   try {
     const response = await apiClient.delete(`/jobs/${jobId}/save`);
+    // Xóa cache khi có thay đổi
+    clearSavedJobsCache();
     return response;
   } catch (error) {
     console.error('Lỗi khi bỏ lưu công việc:', error);
@@ -29,28 +48,106 @@ export const unsaveJob = async (jobId) => {
 };
 
 /**
- * Lấy danh sách công việc đã lưu
+ * Lấy danh sách công việc đã lưu (API gốc)
  * @param {Object} params - Tham số query
- * @param {string} params.sortBy - Sắp xếp theo (mặc định: createdAt:asc)
- * @param {number} params.page - Trang hiện tại (mặc định: 1)
- * @param {number} params.limit - Số lượng items per page (mặc định: 5)
  */
-export const getSavedJobs = async (params = {}) => {
+const getSavedJobsRaw = async (params = {}) => {
   try {
-    // Thiết lập tham số mặc định
     const defaultParams = {
-      sortBy: 'createdAt:asc',
+      sortBy: 'createdAt:desc',
       page: 1,
-      limit: 5,
+      limit: 10, // Backend force về 10
       ...params
     };
 
+    console.log('getSavedJobsRaw params:', defaultParams);
+    
     const response = await apiClient.get('/jobs/saved/list', { 
       params: defaultParams 
     });
+    
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách công việc đã lưu:', error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách công việc đã lưu với virtual pagination (12 items/page)
+ * @param {Object} params - Tham số query
+ * @param {number} params.page - Trang hiện tại (virtual page)
+ * @param {number} params.limit - Số lượng items mong muốn (12)
+ * @param {string} params.sortBy - Sắp xếp theo
+ */
+export const getSavedJobs = async (params = {}) => {
+  try {
+    const virtualPage = params.page || 1;
+    const virtualLimit = params.limit || 12;
+    const backendLimit = 10; // Backend giới hạn cố định
+    
+    console.log('Virtual pagination request:', { virtualPage, virtualLimit });
+    
+    // Tính toán backend pages cần lấy để có đủ virtualLimit items
+    const startIndex = (virtualPage - 1) * virtualLimit; // Index bắt đầu (0-based)
+    const endIndex = startIndex + virtualLimit - 1; // Index kết thúc
+    
+    const startBackendPage = Math.floor(startIndex / backendLimit) + 1;
+    const endBackendPage = Math.floor(endIndex / backendLimit) + 1;
+    
+    console.log('Backend pages needed:', { startBackendPage, endBackendPage, startIndex, endIndex });
+    
+    // Lấy dữ liệu từ nhiều backend pages
+    const allJobs = [];
+    let totalItems = 0;
+    let totalPages = 0;
+    
+    for (let backendPage = startBackendPage; backendPage <= endBackendPage; backendPage++) {
+      const response = await getSavedJobsRaw({
+        page: backendPage,
+        limit: backendLimit,
+        sortBy: params.sortBy || 'createdAt:desc'
+      });
+      
+      if (response.data.success) {
+        const jobs = response.data.data || [];
+        allJobs.push(...jobs);
+        
+        // Lấy meta từ response đầu tiên
+        if (backendPage === startBackendPage) {
+          totalItems = response.data.meta?.totalItems || 0;
+          // Tính virtual totalPages
+          totalPages = Math.ceil(totalItems / virtualLimit);
+        }
+      }
+    }
+    
+    // Cắt dữ liệu theo virtual pagination
+    const startSlice = startIndex % (startBackendPage * backendLimit - backendLimit);
+    const virtualJobs = allJobs.slice(startSlice, startSlice + virtualLimit);
+    
+    console.log(`Virtual page ${virtualPage}: Got ${virtualJobs.length}/${virtualLimit} jobs from ${allJobs.length} total fetched`);
+    
+    // Tạo virtual response
+    const virtualResponse = {
+      data: {
+        success: true,
+        message: 'Lấy danh sách công việc thành công.',
+        meta: {
+          currentPage: virtualPage,
+          totalPages: totalPages,
+          totalItems: totalItems,
+          limit: virtualLimit,
+          actualItemsInPage: virtualJobs.length
+        },
+        data: virtualJobs
+      }
+    };
+    
+    return virtualResponse;
+    
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách công việc đã lưu (virtual):', error);
     throw error;
   }
 };
@@ -62,26 +159,82 @@ export const getSavedJobs = async (params = {}) => {
  */
 export const checkJobSaved = async (jobId) => {
   try {
-    // Thử gọi API check trực tiếp trước (nếu backend có hỗ trợ)
-    const response = await apiClient.get(`/jobs/${jobId}/saved-status`);
-    return response.data.data?.isSaved || false;
-  } catch (error) {
-    // Nếu API check không có, sẽ kiểm tra từ danh sách saved jobs
-    console.warn('API check saved status không có, sẽ kiểm tra từ danh sách:', error);
+    // Kiểm tra cache trước
+    const now = Date.now();
+    if (now - savedJobsCache.lastFetch < savedJobsCache.ttl && savedJobsCache.data.size > 0) {
+      return savedJobsCache.data.has(jobId);
+    }
+
+    // Lấy danh sách saved jobs và cache lại (sử dụng API gốc)
+    const response = await getSavedJobsRaw({ page: 1, limit: 10 });
     
-    try {
-      const savedJobs = await getSavedJobs({ page: 1, limit: 100 }); // Lấy nhiều để check chính xác
-      
-      // Sử dụng cấu trúc dữ liệu mới: savedJobs.data.data là array trực tiếp
-      const isSaved = savedJobs.data.data?.some(savedJob => {
-        // Kiểm tra với jobId field (cấu trúc mới)
-        return savedJob.jobId === jobId || savedJob.job?._id === jobId || savedJob._id === jobId;
+    const jobs = response.data.data || [];
+    const savedIds = new Set();
+    
+    jobs.forEach(job => {
+      // Thêm các ID khả dụng vào Set
+      if (job.jobId) savedIds.add(job.jobId);
+      if (job.job?._id) savedIds.add(job.job._id);
+      if (job._id) savedIds.add(job._id);
+    });
+    
+    // Cập nhật cache
+    savedJobsCache.data = savedIds;
+    savedJobsCache.lastFetch = now;
+    
+    console.log(`Cached ${savedIds.size} saved job IDs (from page 1)`);
+    return savedIds.has(jobId);
+    
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra trạng thái lưu công việc:', error);
+    return false; // Nếu có lỗi, mặc định là chưa lưu
+  }
+};
+
+/**
+ * Lấy tất cả công việc đã lưu (với nhiều request để bypass limit 10)
+ * @returns {Array} - Danh sách tất cả job IDs đã lưu
+ */
+export const getAllSavedJobIds = async () => {
+  try {
+    const allJobIds = new Set();
+    let currentPage = 1;
+    let hasMore = true;
+    
+    while (hasMore) {
+      const response = await getSavedJobsRaw({ 
+        page: currentPage, 
+        limit: 10,
+        sortBy: 'createdAt:desc' 
       });
       
-      return isSaved || false;
-    } catch (listError) {
-      console.error('Lỗi khi kiểm tra trạng thái lưu công việc:', listError);
-      return false; // Nếu có lỗi, mặc định là chưa lưu
+      const jobs = response.data.data || [];
+      
+      jobs.forEach(job => {
+        // Thêm các ID khả dụng vào Set
+        if (job.jobId) allJobIds.add(job.jobId);
+        if (job.job?._id) allJobIds.add(job.job._id);
+        if (job._id) allJobIds.add(job._id);
+      });
+      
+      // Kiểm tra còn trang nào không
+      const meta = response.data.meta;
+      hasMore = currentPage < (meta?.totalPages || 1);
+      currentPage++;
+      
+      console.log(`Page ${currentPage-1}: Got ${jobs.length} jobs`);
+      
+      // Tránh infinite loop
+      if (currentPage > 100) {
+        console.warn('Dừng tại trang 100 để tránh infinite loop');
+        break;
+      }
     }
+    
+    console.log(`Đã lấy ${allJobIds.size} job IDs đã lưu từ ${currentPage-1} trang`);
+    return Array.from(allJobIds);
+  } catch (error) {
+    console.error('Lỗi khi lấy tất cả job IDs đã lưu:', error);
+    return [];
   }
 };
