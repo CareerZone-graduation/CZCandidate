@@ -89,48 +89,48 @@ const JobList = () => {
       name: 'Công nghệ thông tin',
       jobCount: '8.245 việc làm',
       icon: '💻',
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-600'
+      bgColor: 'bg-primary/10',
+      textColor: 'text-primary'
     },
     {
       id: 2,
       name: 'Kinh doanh - Bán hàng',
       jobCount: '6.832 việc làm',
       icon: '💼',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-600'
+      bgColor: 'bg-success/10',
+      textColor: 'text-success'
     },
     {
       id: 3,
       name: 'Marketing - PR',
       jobCount: '3.456 việc làm',
       icon: '📊',
-      bgColor: 'bg-purple-100',
-      textColor: 'text-purple-600'
+      bgColor: 'bg-info/10',
+      textColor: 'text-info'
     },
     {
       id: 4,
       name: 'Thiết kế - Sáng tạo',
       jobCount: '2.189 việc làm',
       icon: '🎨',
-      bgColor: 'bg-pink-100',
-      textColor: 'text-pink-600'
+      bgColor: 'bg-warning/10',
+      textColor: 'text-warning'
     },
     {
       id: 5,
       name: 'Nhân sự - Tuyển dụng',
       jobCount: '1.874 việc làm',
       icon: '👥',
-      bgColor: 'bg-orange-100',
-      textColor: 'text-orange-600'
+      bgColor: 'bg-primary/10',
+      textColor: 'text-primary'
     },
     {
       id: 6,
       name: 'Tài chính - Kế toán',
       jobCount: '5.303 việc làm',
       icon: '🏦',
-      bgColor: 'bg-emerald-100',
-      textColor: 'text-emerald-600'
+      bgColor: 'bg-success/10',
+      textColor: 'text-success'
     }
   ];
 
@@ -385,7 +385,7 @@ const JobList = () => {
     <Card className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer ${featured ? 'border-2 border-primary/20' : ''}`}>
       {featured && (
         <div className="absolute -top-2 -right-2 z-10">
-          <Badge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1 shadow-lg">
+          <Badge className="bg-gradient-primary text-primary-foreground px-3 py-1 shadow-lg">
             <Star className="h-3 w-3 mr-1 fill-current" /> Nổi bật
           </Badge>
         </div>
@@ -494,20 +494,21 @@ const JobList = () => {
   return (
     <div className="flex flex-col min-h-full">
       {/* 🎯 Hero Section - Similar to HomePage */}
-     <section className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 min-h-[60vh] flex items-center pt-20 lg:pt-24 pb-20">
+     <section className="relative bg-gradient-to-primary min-h-[60vh] flex items-center pt-20 lg:pt-24 pb-20">
         {/* Background decorations */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-emerald-400/10 blur-3xl"></div>
-<div className="absolute top-1/2 -left-20 w-60 h-60 rounded-full bg-green-400/10 blur-3xl"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
+          <div className="absolute top-1/2 -left-20 w-60 h-60 rounded-full bg-primary/10 blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl"></div>
         </div>
         
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 relative z-10 w-full">
           <div className="max-w-4xl mx-auto text-center mb-12">
-           <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-emerald-600 border-emerald-300 bg-white/80 backdrop-blur-sm mb-6">
+           <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background/80 backdrop-blur-sm mb-6">
               🚀 Nền tảng việc làm hàng đầu tại Việt Nam
             </Badge>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Tìm kiếm công việc</span>
+              <span className="text-gradient-primary bg-clip-text text-transparent">Tìm kiếm công việc</span>
               <br />
               <span className="text-foreground">định hình tương lai của bạn</span>
             </h1>
@@ -546,7 +547,7 @@ const JobList = () => {
                     </SelectContent>
                   </Select>
                 </div>
-               <Button size="lg" className="h-14 w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold">
+               <Button size="lg" className="h-14 w-full bg-gradient-primary hover:opacity-90 text-primary-foreground transition-all duration-300 shadow-lg hover:shadow-xl font-semibold">
                   <Search className="mr-2 h-5 w-5" />
                   Tìm kiếm ngay
                 </Button>
@@ -578,7 +579,9 @@ const JobList = () => {
             ].map((stat, index) => (
               <Card key={index} className="p-6 text-center border-0 shadow-md bg-background/80 backdrop-blur-sm">
                 <CardContent className="p-0">
-                  <stat.icon className="h-12 w-12 mx-auto mb-4 text-primary" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-primary rounded-xl shadow-lg">
+                    <stat.icon className="h-8 w-8 text-primary-foreground" />
+                  </div>
                   <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
                   <div className="text-muted-foreground font-medium">{stat.label}</div>
                 </CardContent>
@@ -593,7 +596,7 @@ const JobList = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Tìm kiếm cơ hội nghề nghiệp</span>
+              <span className="text-gradient-primary bg-clip-text text-transparent">Tìm kiếm cơ hội nghề nghiệp</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Khám phá việc làm trong các lĩnh vực phổ biến hoặc tìm kiếm theo địa điểm và mức lương mong muốn
@@ -698,7 +701,7 @@ const JobList = () => {
               >
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
-                    <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-primary/80 transition-all duration-300">
+                    <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 group-hover:bg-gradient-primary transition-all duration-300">
                       <category.icon className="h-6 w-6 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
                     </div>
                     <div className="flex-1">
@@ -724,7 +727,7 @@ const JobList = () => {
               ⭐ Việc làm nổi bật
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">Cơ hội nghề nghiệp</span> <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span>
+              <span className="text-gradient-primary bg-clip-text text-transparent">Cơ hội nghề nghiệp</span> <span className="text-gradient-primary bg-clip-text text-transparent">hàng đầu</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Khám phá những vị trí việc làm chất lượng cao từ các công ty uy tín, 
@@ -794,7 +797,7 @@ const JobList = () => {
               🏢 Khám phá lĩnh vực
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-             Việc làm theo <span className="text-emerald-600 font-bold">danh mục</span>
+             Việc làm theo <span className="text-primary font-bold">danh mục</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
@@ -840,7 +843,7 @@ const JobList = () => {
               💼 Tất cả việc làm
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Khám phá <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">cơ hội nghề nghiệp</span>
+              Khám phá <span className="text-gradient-primary bg-clip-text text-transparent">cơ hội nghề nghiệp</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Danh sách đầy đủ tất cả các vị trí việc làm hiện có, được cập nhật liên tục
@@ -999,7 +1002,7 @@ const JobList = () => {
               </p>
               <Button 
                 onClick={() => fetchJobs(1, true)}
-                className="bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground font-semibold"
+                className="bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold"
               >
                 Thử lại
               </Button>
@@ -1091,7 +1094,7 @@ const JobList = () => {
               🏢 Khám phá lĩnh vực
             </Badge>
              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                 Việc làm theo <span className="text-emerald-600 font-bold">công ty</span>
+                 Việc làm theo <span className="text-primary font-bold">công ty</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
@@ -1121,7 +1124,7 @@ const JobList = () => {
                         e.target.nextSibling.style.display = 'flex';
                       }}
                     />
-                    <div className="hidden w-full h-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                    <div className="hidden w-full h-full bg-gradient-primary flex items-center justify-center">
                       <span className="text-primary-foreground font-bold text-xl">
                         {company.name.charAt(0)}
                       </span>
@@ -1149,7 +1152,7 @@ const JobList = () => {
           <div className="text-center">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              className="bg-gradient-primary hover:opacity-90 text-primary-foreground px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               onClick={() => navigate('/companies')}
             >
               Xem tất cả công ty

@@ -22,7 +22,14 @@ import {
   Award,
   Target,
   Users,
-  Briefcase
+  Briefcase,
+  FileText,
+  MessageSquare,
+  Calculator,
+  CheckCircle,
+  ArrowRight,
+  Sparkles,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -817,9 +824,296 @@ const News = () => {
               </Button>
             </div>
           )}
+
+
+{/* Newsletter Subscription */}
+<section className="py-16 bg-gradient-to-br from-emerald-500 to-green-600 relative overflow-hidden">
+  <div className="absolute inset-0 bg-black/10"></div>
+  <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12">
+      <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
+        <BookOpen className="h-8 w-8 text-white" />
+      </div>
+      <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        Nhận thông báo bài viết mới
+      </h2>
+      <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+        Đăng ký để nhận những bài viết chất lượng cao về phát triển sự nghiệp 
+        và kiến thức chuyên ngành được gửi thẳng đến email của bạn.
+      </p>
+      
+      <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+        <Input
+          type="email"
+          placeholder="Nhập email của bạn..."
+          className="bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:bg-white/30 h-12"
+        />
+        <Button 
+          size="lg" 
+          className="bg-white text-emerald-600 hover:bg-white/90 font-semibold h-12 px-8"
+        >
+          Đăng ký ngay
+        </Button>
+      </div>
+      
+      <p className="text-sm text-white/80 mt-4">
+        💡 Hoàn toàn miễn phí • 📧 Không spam • 🔒 Bảo mật thông tin
+      </p>
+    </div>
+  </div>
+</section>
+
+{/* Popular Tags */}
+<section className="py-16 bg-background">
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="text-center mb-12">
+      <h2 className="text-3xl font-bold text-foreground mb-4">
+        <span className="text-emerald-600">Chủ đề</span> phổ biến
+      </h2>
+      <p className="text-lg text-muted-foreground">
+        Khám phá các chủ đề được quan tâm nhất trong cộng đồng
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      {[
+        { name: 'Phát triển sự nghiệp', count: 156, icon: TrendingUp, color: 'bg-blue-500' },
+        { name: 'Kỹ năng mềm', count: 134, icon: Users, color: 'bg-purple-500' },
+        { name: 'Phỏng vấn', count: 98, icon: Award, color: 'bg-orange-500' },
+        { name: 'Lương bổng', count: 87, icon: DollarSign, color: 'bg-green-500' },
+        { name: 'Work-life balance', count: 76, icon: Target, color: 'bg-pink-500' },
+        { name: 'Chuyển đổi nghề nghiệp', count: 65, icon: Briefcase, color: 'bg-indigo-500' },
+        { name: 'Khởi nghiệp', count: 54, icon: Sparkles, color: 'bg-yellow-500' },
+        { name: 'Công nghệ mới', count: 43, icon: GraduationCap, color: 'bg-red-500' }
+      ].map((tag, index) => (
+        <Card 
+          key={index}
+          className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-background border-0 shadow-md"
+          onClick={() => handleSearch(tag.name)}
+        >
+          <CardContent className="p-6 text-center">
+            <div className={`w-12 h-12 ${tag.color}/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
+              <tag.icon className={`h-6 w-6 ${tag.color.replace('bg-', 'text-')}`} />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2 group-hover:text-emerald-600 transition-colors">
+              {tag.name}
+            </h3>
+            <Badge variant="secondary" className="text-emerald-600 bg-emerald-100">
+              {tag.count} bài viết
+            </Badge>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    {/* Popular Tags Cloud */}
+    <div className="text-center">
+      <h3 className="text-xl font-semibold mb-6 text-foreground">Tags phổ biến khác</h3>
+      <div className="flex flex-wrap justify-center gap-3">
+        {[
+          'React', 'JavaScript', 'UI/UX Design', 'Data Science', 'Product Management',
+          'Agile', 'Scrum', 'Digital Marketing', 'SEO', 'Content Writing',
+          'Leadership', 'Team Management', 'Remote Work', 'Freelancing', 'Networking'
+        ].map((tag, index) => (
+          <Badge 
+            key={index}
+            variant="outline" 
+            className="cursor-pointer hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300 px-4 py-2 text-sm"
+            onClick={() => handleSearch(tag)}
+          >
+            #{tag}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* Career Resources */}
+<section className="py-16 bg-gradient-to-br from-emerald-50/50 to-blue-50/50">
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="text-center mb-12">
+      <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-emerald-600 border-emerald-300 bg-background mb-4">
+        🎯 Tài nguyên nghề nghiệp
+      </Badge>
+      <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        Công cụ <span className="text-emerald-600">hỗ trợ</span> sự nghiệp
+      </h2>
+      <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        Khám phá các công cụ và tài nguyên miễn phí giúp bạn phát triển sự nghiệp hiệu quả
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {[
+        {
+          icon: FileText,
+          title: 'Mẫu CV chuyên nghiệp',
+          description: 'Hơn 50 mẫu CV đẹp, hiện đại cho mọi ngành nghề',
+          features: ['Dễ chỉnh sửa', 'Định dạng ATS-friendly', 'Hoàn toàn miễn phí'],
+          buttonText: 'Tải về ngay',
+          color: 'bg-blue-500'
+        },
+        {
+          icon: MessageSquare,
+          title: 'Câu hỏi phỏng vấn',
+          description: 'Bộ sưu tập 500+ câu hỏi phỏng vấn phổ biến nhất',
+          features: ['Có đáp án gợi ý', 'Phân loại theo ngành', 'Cập nhật thường xuyên'],
+          buttonText: 'Xem ngay',
+          color: 'bg-purple-500'
+        },
+        {
+          icon: Calculator,
+          title: 'Tính lương thực lãnh',
+          description: 'Công cụ tính toán lương gross/net chính xác',
+          features: ['Áp dụng luật mới nhất', 'Tính bảo hiểm', 'Xuất báo cáo'],
+          buttonText: 'Sử dụng ngay',
+          color: 'bg-green-500'
+        },
+        {
+          icon: Target,
+          title: 'Định hướng nghề nghiệp',
+          description: 'Bài test tính cách và định hướng nghề nghiệp',
+          features: ['Dựa trên khoa học', 'Kết quả chi tiết', 'Tư vấn cá nhân hóa'],
+          buttonText: 'Làm bài test',
+          color: 'bg-orange-500'
+        },
+        {
+          icon: BookOpen,
+          title: 'Khóa học miễn phí',
+          description: 'Học kỹ năng mới với các khóa học chất lượng cao',
+          features: ['Video HD', 'Có chứng chỉ', 'Học theo lộ trình'],
+          buttonText: 'Khám phá',
+          color: 'bg-pink-500'
+        },
+        {
+          icon: Users,
+          title: 'Cộng đồng nghề nghiệp',
+          description: 'Kết nối và chia sẻ kinh nghiệm với cộng đồng',
+          features: ['10K+ thành viên', 'Thảo luận sôi nổi', 'Sự kiện định kỳ'],
+          buttonText: 'Tham gia',
+          color: 'bg-indigo-500'
+        }
+      ].map((resource, index) => (
+        <Card 
+          key={index}
+          className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-background border-0 shadow-lg overflow-hidden"
+        >
+          <CardContent className="p-6">
+            <div className={`w-16 h-16 ${resource.color}/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+              <resource.icon className={`h-8 w-8 ${resource.color.replace('bg-', 'text-')}`} />
+            </div>
+            
+            <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-emerald-600 transition-colors">
+              {resource.title}
+            </h3>
+            
+            <p className="text-muted-foreground mb-4 leading-relaxed">
+              {resource.description}
+            </p>
+            
+            <ul className="space-y-2 mb-6">
+              {resource.features.map((feature, featureIndex) => (
+                <li key={featureIndex} className="flex items-center text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 mr-2 flex-shrink-0" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            
+            <Button className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold">
+              {resource.buttonText}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* Statistics Section */}
+<section className="py-16 bg-background">
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {[
+        { icon: BookOpen, value: '500+', label: 'Bài viết chuyên sâu', color: 'text-blue-600' },
+        { icon: Users, value: '50K+', label: 'Người đọc hàng tháng', color: 'text-purple-600' },
+        { icon: Award, value: '95%', label: 'Độ hài lòng của người dùng', color: 'text-green-600' },
+        { icon: TrendingUp, value: '10M+', label: 'Lượt xem tổng cộng', color: 'text-orange-600' }
+      ].map((stat, index) => (
+        <div key={index} className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full mb-4">
+            <stat.icon className={`h-8 w-8 ${stat.color}`} />
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
+          <div className="text-muted-foreground">{stat.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* Call to Action */}
+<section className="py-20 bg-gradient-to-br from-emerald-600 via-green-600 to-blue-600 relative overflow-hidden">
+  <div className="absolute inset-0 bg-black/20"></div>
+  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-transparent"></div>
+  
+  <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+    <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-6">
+      <Sparkles className="h-10 w-10 text-white" />
+    </div>
+    
+    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+      Sẵn sàng để <span className="text-yellow-300">thành công</span>?
+    </h2>
+    
+    <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+      Bắt đầu hành trình phát triển sự nghiệp của bạn ngay hôm nay. 
+      Tìm việc làm phù hợp và xây dựng tương lai mơ ước.
+    </p>
+    
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <Button 
+        size="lg" 
+        className="bg-white text-emerald-600 hover:bg-white/90 font-semibold px-8 py-4 text-lg"
+        onClick={() => navigate('/jobs')}
+      >
+        <Search className="mr-2 h-5 w-5" />
+        Tìm việc làm ngay
+      </Button>
+      
+      <Button 
+        size="lg" 
+        variant="outline"
+        className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 py-4 text-lg backdrop-blur-sm"
+        onClick={() => navigate('/profile')}
+      >
+        <User className="mr-2 h-5 w-5" />
+        Tạo hồ sơ
+      </Button>
+    </div>
+    
+    <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-white/80">
+      <div className="flex items-center justify-center gap-3">
+        <CheckCircle className="h-6 w-6 text-green-300" />
+        <span>Hoàn toàn miễn phí</span>
+      </div>
+      <div className="flex items-center justify-center gap-3">
+        <CheckCircle className="h-6 w-6 text-green-300" />
+        <span>Cập nhật liên tục</span>
+      </div>
+      <div className="flex items-center justify-center gap-3">
+        <CheckCircle className="h-6 w-6 text-green-300" />
+        <span>Hỗ trợ 24/7</span>
+      </div>
+    </div>
+  </div>
+</section>
         </div>
       </div>
     </div>
+    
   );
 };
 
