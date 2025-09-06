@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
-  Search, Building, MapPin, DollarSign, Clock, Users, TrendingUp, Star, 
+import {
+  Search, Building, MapPin, DollarSign, Clock, Users, TrendingUp, Star,
   Heart, ChevronLeft, ChevronRight, X, Sparkles, AlertCircle, Filter,
-  Briefcase, Building2, BarChart, Eye, ArrowRight
+  Briefcase, Building2, BarChart, Eye, ArrowRight, CheckCircle2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -14,8 +15,9 @@ import { Input } from '../../components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { getAllJobs } from '../../services/jobService';
+import { getAllJobs, getAppliedJobIds } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/jobService';
+import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobList = () => {
   const navigate = useNavigate();
@@ -32,6 +34,22 @@ const JobList = () => {
   // State for featured jobs
   const [featuredJobs, setFeaturedJobs] = useState([]);
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false);
+
+  // State for Apply Job Dialog
+  const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+
+  // Fetch applied job IDs
+  const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
+    queryKey: ['appliedJobIds'],
+    queryFn: getAppliedJobIds,
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const appliedJobIds = useMemo(() => {
+    return new Set(appliedJobIdsData?.data || []);
+  }, [appliedJobIdsData]);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -183,14 +201,12 @@ const JobList = () => {
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(categoryName);
     setCurrentPage(1);
-    // Scroll to jobs section
     document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleCompanyClick = (companyName) => {
     setSearchTerm(companyName);
     setCurrentPage(1);
-    // Scroll to jobs section
     document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -351,6 +367,21 @@ const JobList = () => {
     navigate(`/jobs/${jobId}`);
   };
 
+  const handleOpenApplyDialog = (job) => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để ứng tuyển');
+      navigate('/login');
+      return;
+    }
+    setSelectedJob(job);
+    setIsApplyDialogOpen(true);
+  };
+
+  const handleApplySuccess = () => {
+    toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
+    refetchAppliedJobIds();
+  };
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
       setCurrentPage(newPage);
@@ -381,8 +412,11 @@ const JobList = () => {
   }, []);
 
   // Job Card Component
-  const JobCard = ({ job, onSave, onUnsave, onClick, featured = false }) => (
-    <Card className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer ${featured ? 'border-2 border-primary/20' : ''}`}>
+  const JobCard = ({ job, onSave, onUnsave, onClick, isApplied, featured = false }) => (
+    <Card
+      onClick={() => onClick(job.id || job._id)}
+      className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer ${featured ? 'border-2 border-primary/20' : ''}`}
+    >
       {featured && (
         <div className="absolute -top-2 -right-2 z-10">
           <Badge className="bg-gradient-primary text-primary-foreground px-3 py-1 shadow-lg">
@@ -393,9 +427,9 @@ const JobList = () => {
       
       <CardHeader className="flex flex-row items-start space-y-0 gap-4 pb-4">
         <Avatar className="h-14 w-14 rounded-xl border-2 border-primary/10">
-          <AvatarImage 
-            src={job.company?.logo} 
-            alt={job.company?.name || 'Company Logo'} 
+          <AvatarImage
+            src={job.company?.logo}
+            alt={job.company?.name || 'Company Logo'}
           />
           <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
             {job.company?.name?.charAt(0) || job.title?.charAt(0) || '?'}
@@ -410,9 +444,9 @@ const JobList = () => {
           </CardDescription>
         </div>
         <div className="flex items-center space-x-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
@@ -432,18 +466,18 @@ const JobList = () => {
         <div className="space-y-4 text-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-2 text-primary" /> 
+              <MapPin className="h-4 w-4 mr-2 text-primary" />
               <span className="font-medium">{formatLocation(job.location)}</span>
             </div>
             <div className="flex items-center text-success font-semibold">
-              <DollarSign className="h-4 w-4 mr-1" /> 
+              <DollarSign className="h-4 w-4 mr-1" />
               <span>{formatSalary(job.minSalary, job.maxSalary)}</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="flex items-center text-muted-foreground">
-              <Clock className="h-4 w-4 mr-2 text-info" /> 
+              <Clock className="h-4 w-4 mr-2 text-info" />
               <span>{timeAgo(job.createdAt || job.postedAt)}</span>
             </div>
             <div className="flex items-center text-muted-foreground">
@@ -470,23 +504,31 @@ const JobList = () => {
       </CardContent>
       
       <CardFooter className="border-t pt-4 flex justify-between items-center bg-muted/20">
-        <Badge 
-          variant={formatWorkType(job.type) === 'Remote' ? 'outline' : 'secondary'} 
+        <Badge
+          variant={formatWorkType(job.type) === 'Remote' ? 'outline' : 'secondary'}
           className="px-3 py-1 font-medium"
         >
-          <Briefcase className="h-3 w-3 mr-1" /> 
+          <Briefcase className="h-3 w-3 mr-1" />
           {formatWorkType(job.type)}
         </Badge>
-        <Button 
-          variant="ghost" 
-          className="p-0 h-auto font-semibold text-primary group-hover:translate-x-1 transition-all duration-300 hover:text-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick(job.id || job._id);
-          }}
-        >
-          Chi tiết <ArrowRight className="ml-1 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-4">
+          {isApplied && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700 border border-green-200">
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Đã ứng tuyển
+            </Badge>
+          )}
+          <Button
+            variant="ghost"
+            className="p-0 h-auto font-semibold text-primary group-hover:translate-x-1 transition-all duration-300 hover:text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick(job.id || job._id);
+            }}
+          >
+            Chi tiết <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
@@ -768,6 +810,7 @@ const JobList = () => {
                   onSave={handleSaveJob}
                   onUnsave={handleUnsaveJob}
                   onClick={handleJobClick}
+                  isApplied={appliedJobIds.has(job._id)}
                   featured={true}
                 />
               ))}
@@ -796,8 +839,8 @@ const JobList = () => {
             <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
               🏢 Khám phá lĩnh vực
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-             Việc làm theo <span className="text-primary font-bold">danh mục</span>
+             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                 Việc làm theo <span className="text-primary font-bold">danh mục</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
@@ -1047,6 +1090,7 @@ const JobList = () => {
                     onSave={handleSaveJob}
                     onUnsave={handleUnsaveJob}
                     onClick={handleJobClick}
+                    isApplied={appliedJobIds.has(job._id)}
                   />
                 ))}
               </div>
@@ -1161,6 +1205,16 @@ const JobList = () => {
           </div>
         </div>
       </section>
+
+     {selectedJob && (
+       <ApplyJobDialog
+         open={isApplyDialogOpen}
+         onOpenChange={setIsApplyDialogOpen}
+         jobId={selectedJob?._id}
+         jobTitle={selectedJob?.title}
+         onSuccess={handleApplySuccess}
+       />
+     )}
     </div>
   );
 };

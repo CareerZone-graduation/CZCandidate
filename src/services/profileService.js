@@ -43,3 +43,14 @@ export const setDefaultCV = async (cvId) => {
   const response = await apiClient.put(`/candidate/cv/${cvId}/set-default`);
   return response.data;
 };
+// Lấy danh sách CV profiles
+export const getCvProfiles = async () => {
+  const response = await apiClient.get('/candidate/cv-profiles');
+  return response;
+};
+
+// Lấy thông tin user hiện tại (bao gồm profile)
+export const getCurrentUserProfile = async () => {
+  const response = await apiClient.get('/users/me');
+  return response.data;
+};

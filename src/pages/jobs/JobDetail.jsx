@@ -26,9 +26,10 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
-import { getJobApplicantCount } from '../../services/jobService';
+import { getJobApplicantCount, getJobById } from '../../services/jobService';
 import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
 import { toast } from 'sonner';
+import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -37,7 +38,7 @@ const JobDetail = () => {
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isApplying, setIsApplying] = useState(false);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
@@ -49,16 +50,11 @@ const JobDetail = () => {
     const fetchJobDetail = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`http://localhost:5000/api/jobs/${id}`);
-        if (!response.ok) {
-          throw new Error('Không thể tải thông tin công việc');
-        }
-        const result = await response.json();
-        
-        if (result.success) {
-          setJob(result.data);
+        const response = await getJobById(id);
+        if (response.data.success) {
+          setJob(response.data.data);
         } else {
-          throw new Error(result.message || 'Có lỗi xảy ra');
+          throw new Error(response.data.message || 'Có lỗi xảy ra');
         }
       } catch (err) {
         setError(err.message);
@@ -159,27 +155,21 @@ const JobDetail = () => {
     setShowConfirmDialog(false);
   };
 
-  const handleApply = async () => {
+  const handleApply = () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
+    setShowApplyDialog(true);
+  };
 
-    try {
-      setIsApplying(true);
-      // TODO: Call API to apply for job
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      navigate('/dashboard', { 
-        state: { 
-          message: 'Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.' 
-        }
-      });
-    } catch (err) {
-      console.error('Lỗi khi ứng tuyển:', err);
-    } finally {
-      setIsApplying(false);
-    }
+  const handleApplySuccess = () => {
+    // Optionally refetch data or update UI
+    navigate('/dashboard', {
+      state: {
+        message: 'Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.'
+      }
+    });
   };
 
   const handleSave = async () => {
@@ -470,23 +460,14 @@ const JobDetail = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex space-x-3">
-                  <Button 
-                    onClick={handleApply}
-                    disabled={isApplying}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
-                  >
-                    {isApplying ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Đang ứng tuyển...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Ứng tuyển ngay
-                      </>
-                    )}
-                  </Button>
+                 <Button
+                   onClick={handleApply}
+                   className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
+                   disabled={job?.status !== 'ACTIVE'}
+                 >
+                   <CheckCircle className="w-4 h-4 mr-2" />
+                   {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
+                 </Button>
                   
                   <Button 
                     variant="outline" 
@@ -657,6 +638,17 @@ const JobDetail = () => {
 
       {/* Confirm Dialog */}
       <ConfirmDialog />
+
+      {/* Apply Dialog */}
+      {job && (
+        <ApplyJobDialog
+          jobId={job._id}
+          jobTitle={job.title}
+          open={showApplyDialog}
+          onOpenChange={setShowApplyDialog}
+          onSuccess={handleApplySuccess}
+        />
+      )}
     </div>
   );
 };

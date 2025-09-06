@@ -72,3 +72,9 @@ export const getJobApplicantCount = async (jobId) => {
   const response = await apiClient.post(`/jobs/${jobId}/applicant-count`);
   return response;
 };
+
+// Lấy danh sách ID các job đã ứng tuyển
+export const getAppliedJobIds = async () => {
+  const response = await apiClient.get('/candidate/applied-jobs-ids');
+  return response.data;
+};
