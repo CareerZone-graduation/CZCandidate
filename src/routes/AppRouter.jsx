@@ -19,6 +19,10 @@ import SavedJobs from '../pages/jobs/SavedJobs';
 import Profile from '../pages/profile/Profile';
 import JobNotificationManager from '../pages/notification/JobNotificationManager.jsx';
 import News from '../pages/news/News';
+import BillingPage from '../pages/billing/Billing';
+import Billing from '../pages/billing/Billing'; // Import trang nạp xu
+import PaymentSuccess from '../pages/payment/PaymentSuccess';
+import PaymentFailure from '../pages/payment/PaymentFailure';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -72,6 +76,9 @@ const AppRouter = () => {
             <Route index element={<Dashboard />} />
             <Route path="job-suggestions" element={<JobSuggestion />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
+            {/* Thêm route cho trang nạp xu */}
+            <Route path="billing" element={<BillingPage />} />
+            <Route path="top-up" element={<Billing />} />
           </Route>
         </Route>
 
@@ -88,6 +95,10 @@ const AppRouter = () => {
             <Route index element={<JobNotificationManager />} />
           </Route>
         </Route>
+
+        {/* Payment result routes - không cần layout */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failure" element={<PaymentFailure />} />
         
         {/* Fallback for any other route */}
         <Route path="*" element={<Navigate to={isAuthenticated ? "/jobs" : "/"} />} />

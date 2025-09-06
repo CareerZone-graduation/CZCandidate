@@ -28,7 +28,8 @@ import {
   ExternalLink,
   MoreHorizontal,
   AlertCircle,
-  Bookmark
+  Bookmark,
+  Coins
 } from 'lucide-react';
 import { logoutSuccess } from '../../redux/authSlice';
 import { logout as logoutService } from '../../services/authService';
@@ -69,14 +70,6 @@ const Header = () => {
     return salaryMap[salaryRange] || salaryRange;
   };
 
-  const formatWorkType = (workType) => {
-    const workTypeMap = {
-      'ON_SITE': 'Tại văn phòng',
-      'REMOTE': 'Làm việc từ xa',
-      'HYBRID': 'Hybrid'
-    };
-    return workTypeMap[workType] || workType;
-  };
 
   const formatExperience = (experience) => {
     const experienceMap = {
@@ -284,7 +277,15 @@ const Header = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-2">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-4">
+                {/* Thêm hiển thị số dư xu */}
+                <Link to="/dashboard/top-up">
+                  <Badge variant="outline" className="px-3 py-2 cursor-pointer hover:bg-muted">
+                    <Coins className="h-4 w-4 mr-2 text-yellow-500" />
+                    <span className="font-semibold">{user?.user?.coinBalance?.toLocaleString() || 0} xu</span>
+                  </Badge>
+                </Link>
+                
                 {/* Notification Bell */}
                 <div className="relative">
                   <Button
@@ -305,7 +306,7 @@ const Header = () => {
                   
                   {/* Notification Badge */}
                   {notificationCount > 0 && !isLoadingNotifications && (
-                    <Badge 
+                    <Badge
                       className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full border-2 border-background"
                     >
                       {notificationCount > 99 ? '99+' : notificationCount}
@@ -315,8 +316,8 @@ const Header = () => {
                   {/* Notification Dropdown */}
                   {showNotificationDropdown && (
                     <>
-                      <div 
-                        className="fixed inset-0 z-10" 
+                      <div
+                        className="fixed inset-0 z-10"
                         onClick={() => setShowNotificationDropdown(false)}
                       />
                       <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-xl z-20 max-h-96 overflow-hidden">
@@ -439,7 +440,7 @@ const Header = () => {
                     </>
                   )}
                 </div>
-
+                
                 {/* User Dropdown */}
                 <div className="relative">
                   <button
@@ -454,10 +455,10 @@ const Header = () => {
                     </Avatar>
                     <div className="text-left">
                       <div className="text-sm font-medium">
-                        Xin chào, {user?.fullname?.split(' ').slice(-1)[0] || 'bạn'}!
+                        Xin chào, {user?.profile?.fullname.split(' ').slice(-1)[0] || 'bạn'}!
                       </div>
                       <div className="text-sm text-muted-foreground truncate max-w-32">
-                        {user?.fullname || 'Người dùng'}
+                        {user?.profile?.fullname || 'Người dùng'}
                       </div>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />

@@ -5,6 +5,10 @@ export const getMyProfile = async () => {
   const response = await apiClient.get('/candidate/my-profile');
   return response.data;
 };
+export const getMe = async () => {
+  const response = await apiClient.get('/users/me');
+  return response.data;
+};
 
 // Cập nhật thông tin profile
 export const updateProfile = async (profileData) => {
@@ -19,6 +23,12 @@ export const uploadAvatar = async (formData) => {
       'Content-Type': 'multipart/form-data',
     },
   });
+  return response.data;
+};
+
+// Lấy số dư xu của user
+export const getMyCoinBalance = async () => {
+  const response = await apiClient.get('/users/me/coins');
   return response.data;
 };
 
