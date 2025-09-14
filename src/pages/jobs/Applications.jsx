@@ -1,0 +1,669 @@
+import React from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Separator } from '../../components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../../components/ui/dialog';
+import { 
+  FileText, 
+  Calendar, 
+  MapPin, 
+  DollarSign, 
+  Building, 
+  Clock,
+  Eye,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Hourglass,
+  ExternalLink,
+  ArrowLeft,
+  Download,
+  User,
+  Mail,
+  Phone,
+  X,
+  FileIcon,
+  Share2
+} from 'lucide-react';
+import { getMyApplications } from '../../services/jobService';
+import { ErrorState } from '../../components/common/ErrorState';
+import { cn } from '../../lib/utils';
+
+/**
+ * Component hiển thị danh sách đơn ứng tuyển của người dùng
+ */
+const Applications = () => {
+  const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const limit = 9;
+
+  // Query để lấy danh sách đơn ứng tuyển
+  const { 
+    data: applicationsData, 
+    isLoading, 
+    isError, 
+    error,
+    refetch 
+  } = useQuery({
+    queryKey: ['myApplications', currentPage, selectedStatus],
+    queryFn: () => getMyApplications({ 
+      page: currentPage, 
+      limit,
+      status: selectedStatus === 'all' ? undefined : selectedStatus
+    }),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const applications = applicationsData?.data || [];
+  const meta = applicationsData?.meta || {};
+  const totalPages = meta.totalPages || 1;
+  const totalItems = meta.totalItems || 0;
+
+  // Helper functions
+  const getStatusInfo = (status) => {
+    const statusMap = {
+      'PENDING': {
+        label: 'Đang chờ',
+        variant: 'secondary',
+        icon: <Hourglass className="h-4 w-4" />,
+        bgColor: 'bg-yellow-50',
+        textColor: 'text-yellow-700',
+        borderColor: 'border-yellow-200'
+      },
+      'REVIEWING': {
+        label: 'Đang xem xét',
+        variant: 'outline',
+        icon: <Eye className="h-4 w-4" />,
+        bgColor: 'bg-blue-50',
+        textColor: 'text-blue-700',
+        borderColor: 'border-blue-200'
+      },
+      'INTERVIEW': {
+        label: 'Phỏng vấn',
+        variant: 'default',
+        icon: <AlertCircle className="h-4 w-4" />,
+        bgColor: 'bg-purple-50',
+        textColor: 'text-purple-700',
+        borderColor: 'border-purple-200'
+      },
+      'ACCEPTED': {
+        label: 'Đã chấp nhận',
+        variant: 'secondary',
+        icon: <CheckCircle className="h-4 w-4" />,
+        bgColor: 'bg-green-50',
+        textColor: 'text-green-700',
+        borderColor: 'border-green-200'
+      },
+      'REJECTED': {
+        label: 'Đã từ chối',
+        variant: 'destructive',
+        icon: <XCircle className="h-4 w-4" />,
+        bgColor: 'bg-red-50',
+        textColor: 'text-red-700',
+        borderColor: 'border-red-200'
+      }
+    };
+    return statusMap[status] || statusMap['PENDING'];
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  };
+
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleViewJob = (jobId) => {
+    navigate(`/jobs/${jobId}`);
+  };
+
+  const handleDownloadCV = (cvUrl, cvName) => {
+    window.open(cvUrl, '_blank');
+  };
+
+  const handleViewDetail = (application) => {
+    setSelectedApplication(application);
+    setShowDetailModal(true);
+  };
+
+  // Component Skeleton
+  const ApplicationSkeleton = () => (
+    <Card className="mb-4">
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="flex-1 space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-64" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Application Detail Modal
+  const ApplicationDetailModal = () => {
+    if (!selectedApplication) return null;
+
+    const statusInfo = getStatusInfo(selectedApplication.status);
+
+    return (
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage 
+                  src={selectedApplication.jobSnapshot?.logo} 
+                  alt={selectedApplication.jobSnapshot?.company} 
+                />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  {selectedApplication.jobSnapshot?.company?.charAt(0) || 'C'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-lg font-semibold">{selectedApplication.jobSnapshot?.title}</h3>
+                <p className="text-sm text-muted-foreground">{selectedApplication.jobSnapshot?.company}</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Status và thông tin cơ bản */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Trạng thái đơn ứng tuyển</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "flex items-center gap-2 w-fit px-4 py-2",
+                      statusInfo.textColor,
+                      statusInfo.borderColor
+                    )}
+                  >
+                    {statusInfo.icon}
+                    {statusInfo.label}
+                  </Badge>
+                  
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>Ứng tuyển: {formatDateTime(selectedApplication.appliedAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>Cập nhật: {formatDateTime(selectedApplication.lastStatusUpdateAt)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Thông tin ứng viên</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{selectedApplication.candidateName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    <span>{selectedApplication.candidateEmail}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-primary" />
+                    <span>{selectedApplication.candidatePhone}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Cover Letter */}
+            {selectedApplication.coverLetter && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Thư giới thiệu</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/30 p-4 rounded-lg border">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {selectedApplication.coverLetter}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* CV Section */}
+            {selectedApplication.submittedCV && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <FileIcon className="h-4 w-4" />
+                    CV đã nộp
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* CV Info */}
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{selectedApplication.submittedCV.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Nguồn: {selectedApplication.submittedCV.source === 'UPLOADED' ? 'Tải lên' : 'Từ hồ sơ'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadCV(selectedApplication.submittedCV.path, selectedApplication.submittedCV.name)}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Tải xuống
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => window.open(selectedApplication.submittedCV.path, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Xem PDF
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* PDF Viewer */}
+                    <div className="border rounded-lg overflow-hidden bg-gray-100">
+                      <div className="bg-gray-800 text-white p-3 flex items-center justify-between">
+                        <span className="text-sm font-medium">Xem trước CV</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-white hover:bg-gray-700"
+                          onClick={() => window.open(selectedApplication.submittedCV.path, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Mở toàn màn hình
+                        </Button>
+                      </div>
+                      
+                      <div className="aspect-[3/4] bg-white">
+                        <iframe
+                          src={`${selectedApplication.submittedCV.path}#toolbar=0&navpanes=0&scrollbar=0`}
+                          className="w-full h-full border-0"
+                          title="CV Preview"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button 
+                variant="outline"
+                onClick={() => handleViewJob(selectedApplication.jobId)}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Xem tin tuyển dụng
+              </Button>
+              
+              <Button 
+                variant="default"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  // Render loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <ApplicationSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
+  // Render error state
+  if (isError) {
+    const errorMessage = error.response?.data?.message || error.message;
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <ErrorState onRetry={refetch} message={errorMessage} />
+      </div>
+    );
+  }
+
+  // Render empty state
+  if (!applications.length) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-center py-12">
+          <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Chưa có đơn ứng tuyển nào
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp!
+          </p>
+          <Button onClick={() => navigate('/jobs')} className="bg-gradient-primary">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Tìm việc làm
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Đơn ứng tuyển của tôi</h1>
+          <p className="text-muted-foreground">
+            Theo dõi trạng thái {totalItems} đơn ứng tuyển của bạn
+          </p>
+        </div>
+        
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/dashboard')}
+          className="w-fit"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Quay lại Dashboard
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Tổng số đơn', count: totalItems, icon: FileText, color: 'text-blue-600' },
+          { 
+            label: 'Đang chờ', 
+            count: applications.filter(app => app.status === 'PENDING').length, 
+            icon: Hourglass, 
+            color: 'text-yellow-600' 
+          },
+          { 
+            label: 'Đang xem xét', 
+            count: applications.filter(app => app.status === 'REVIEWING').length, 
+            icon: Eye, 
+            color: 'text-purple-600' 
+          },
+          { 
+            label: 'Đã chấp nhận', 
+            count: applications.filter(app => app.status === 'ACCEPTED').length, 
+            icon: CheckCircle, 
+            color: 'text-green-600' 
+          }
+        ].map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-2xl font-bold">{stat.count}</p>
+                </div>
+                <stat.icon className={cn("h-8 w-8", stat.color)} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Applications List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {applications.map((application) => {
+          const statusInfo = getStatusInfo(application.status);
+
+          return (
+            <Card 
+              key={application._id} 
+              className={cn(
+                "group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl cursor-pointer",
+                statusInfo.bgColor,
+                statusInfo.borderColor
+              )}
+              onClick={() => handleViewDetail(application)}
+            >
+              {/* Hiệu ứng highlight khi hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <CardContent className="relative p-6">
+                <div className="flex items-start space-x-4">
+                  {/* Logo công ty trong vòng tròn có shadow */}
+                  <Avatar className="h-14 w-14 shadow-md ring-2 ring-muted/20">
+                    <AvatarImage 
+                      src={application.jobSnapshot?.logo} 
+                      alt={application.jobSnapshot?.company} 
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                      {application.jobSnapshot?.company?.charAt(0) || 'C'}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {application.jobSnapshot?.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground flex items-center">
+                          <Building className="h-4 w-4 mr-1" />
+                          {application.jobSnapshot?.company}
+                        </p>
+                      </div>
+
+                      {/* Badge tròn đẹp hơn */}
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm font-medium",
+                          statusInfo.textColor,
+                          statusInfo.borderColor,
+                          "bg-white/70 backdrop-blur-sm"
+                        )}
+                      >
+                        {statusInfo.icon}
+                        {statusInfo.label}
+                      </Badge>
+                    </div>
+
+                    {/* Info */}
+                    <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-primary" />
+                        <span className="truncate">{application.candidateName}</span>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-primary" />
+                        <span>Ứng tuyển: {formatDate(application.appliedAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* Cover Letter Preview */}
+                    {application.coverLetter && (
+                      <div className="mb-4">
+                        <div className="bg-muted/40 p-3 rounded-md border border-muted/30">
+                          <p className="text-sm text-muted-foreground line-clamp-2 italic">
+                            "{application.coverLetter}"
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Separator className="my-3" />
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3 mr-1 text-primary" />
+                        <span>{formatDate(application.lastStatusUpdateAt)}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {application.submittedCV && (
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadCV(application.submittedCV.path, application.submittedCV.name);
+                            }}
+                            className="text-xs rounded-full shadow-sm"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            CV
+                          </Button>
+                        )}
+
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetail(application);
+                          }}
+                          className="rounded-full bg-gradient-to-r from-primary to-indigo-500 hover:opacity-90"
+                        >
+                          Chi tiết
+                          <Eye className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center mt-6 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+          >
+            Trước
+          </Button>
+
+          {/* Hiển thị tối đa 5 trang, có "..." nếu nhiều */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(page => 
+              page === 1 || 
+              page === totalPages || 
+              (page >= currentPage - 1 && page <= currentPage + 1)
+            )
+            .map((page, index, arr) => {
+              const prevPage = arr[index - 1];
+              const showDots = prevPage && page - prevPage > 1;
+
+              return (
+                <React.Fragment key={page}>
+                  {showDots && <span className="px-2">...</span>}
+                  <Button
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                </React.Fragment>
+              );
+            })}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            Sau
+          </Button>
+        </div>
+      )}
+
+      {/* Application Detail Modal */}
+      <ApplicationDetailModal />
+    </div>
+  );
+};
+
+export default Applications;

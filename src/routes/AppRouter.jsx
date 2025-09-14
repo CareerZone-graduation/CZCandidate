@@ -16,6 +16,7 @@ import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobList from '../pages/jobs/JobList';
 import JobDetail from '../pages/jobs/JobDetail';
 import SavedJobs from '../pages/jobs/SavedJobs';
+import Applications from '../pages/jobs/Applications';
 import Profile from '../pages/profile/Profile';
 import JobNotificationManager from '../pages/notification/JobNotificationManager.jsx';
 import News from '../pages/news/News';
@@ -71,10 +72,10 @@ const AppRouter = () => {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="job-suggestions" element={<JobSuggestion />} />
+            <Route path="applications" element={<Applications />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
           </Route>
-        </Route>
-
+</Route>
         {/* Protected profile routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/profile" element={<MainLayout />}>

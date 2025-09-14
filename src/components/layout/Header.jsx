@@ -28,7 +28,8 @@ import {
   ExternalLink,
   MoreHorizontal,
   AlertCircle,
-  Bookmark
+  Bookmark,
+  FileText
 } from 'lucide-react';
 import { logoutSuccess } from '../../redux/authSlice';
 import { logout as logoutService } from '../../services/authService';
@@ -513,7 +514,14 @@ const Header = () => {
                             <Bookmark className="mr-3 h-4 w-4" />
                             Việc làm đã lưu
                           </Link>
-
+                           <Link
+                            to="/dashboard/applications"
+                            className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                            onClick={() => setShowUserDropdown(false)}
+                          >
+                            <FileText className="mr-3 h-4 w-4" />
+                            Quản lý đơn ứng tuyển
+                          </Link>
                           <Link
                             to="/notifications"
                             className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
@@ -616,7 +624,12 @@ const Header = () => {
                             Việc làm đã lưu
                           </Link>
                         </Button>
-                        
+                        <Button className="w-full justify-start" variant="ghost" asChild>
+                          <Link to="/dashboard/applications" onClick={() => setIsMenuOpen(false)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Quản lý đơn ứng tuyển
+                          </Link>
+                        </Button>
                         {/* Mobile Notification Button */}
                         <Button 
                           className="w-full justify-start" 

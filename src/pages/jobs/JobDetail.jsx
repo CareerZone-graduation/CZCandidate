@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,62 +28,31 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { getJobApplicantCount, getJobById } from '../../services/jobService';
-import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
+import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const [job, setJob] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
+
   const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  useEffect(() => {
-    const fetchJobDetail = async () => {
-      try {
-        setIsLoading(true);
-        const response = await getJobById(id);
-        if (response.data.success) {
-          setJob(response.data.data);
-        } else {
-          throw new Error(response.data.message || 'Có lỗi xảy ra');
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchJobDetail();
-    }
-  }, [id]);
-
-  // Kiểm tra trạng thái đã lưu khi component load và user đã đăng nhập
-  useEffect(() => {
-    const checkSavedStatus = async () => {
-      if (!isAuthenticated || !id) return;
-      
-      try {
-        const savedStatus = await checkJobSaved(id);
-        setIsSaved(savedStatus);
-      } catch (err) {
-        console.error('Lỗi khi kiểm tra trạng thái lưu job:', err);
-      }
-    };
-
-    checkSavedStatus();
-  }, [id, isAuthenticated]);
+  // Fetch job details using React Query
+  const { data: jobData, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['jobDetail', id],
+    queryFn: () => getJobById(id),
+    enabled: !!id,
+    select: (data) => data.data.data,
+  });
+  
+  const job = jobData;
 
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
@@ -164,51 +134,32 @@ const JobDetail = () => {
   };
 
   const handleApplySuccess = () => {
-    // Optionally refetch data or update UI
-    navigate('/dashboard', {
-      state: {
-        message: 'Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.'
-      }
-    });
+    toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
+    queryClient.invalidateQueries(['jobDetail', id]);
   };
+  
+  const { mutate: toggleSaveJob, isPending: isSaving } = useMutation({
+    mutationFn: () => {
+      return job?.isSaved ? unsaveJob(id) : saveJob(id);
+    },
+    onSuccess: () => {
+      const message = job?.isSaved ? 'Đã bỏ lưu công việc' : 'Đã lưu công việc thành công';
+      toast.success(message);
+      queryClient.invalidateQueries(['jobDetail', id]);
+    },
+    onError: (err) => {
+      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
+      toast.error(errorMessage);
+    },
+  });
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-
-    try {
-      setIsSaving(true);
-      
-      if (isSaved) {
-        // Unsave job
-        await unsaveJob(id);
-        setIsSaved(false);
-        toast.success('Đã bỏ lưu công việc');
-      } else {
-        // Save job
-        try {
-          await saveJob(id);
-          setIsSaved(true);
-          toast.success('Đã lưu công việc thành công');
-        } catch (err) {
-          // Xử lý trường hợp đặc biệt: job đã được lưu
-          if (err.response?.data?.message === 'Bạn đã lưu công việc này rồi.') {
-            setIsSaved(true);
-            toast.info('Công việc này đã được lưu trước đó');
-          } else {
-            throw err; // Re-throw lỗi khác
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
-      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
-      toast.error(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
+    toggleSaveJob();
   };
 
   const handleShare = () => {
@@ -312,7 +263,7 @@ const JobDetail = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
         <div className="container mx-auto px-4 py-8">
@@ -325,10 +276,10 @@ const JobDetail = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
-                <Button onClick={() => navigate(-1)} variant="outline">
+                <p className="text-gray-600 mb-4">{error.message}</p>
+                <Button onClick={() => refetch()} variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại
+                  Thử lại
                 </Button>
               </CardContent>
             </Card>
@@ -460,27 +411,34 @@ const JobDetail = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex space-x-3">
-                 <Button
-                   onClick={handleApply}
-                   className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
-                   disabled={job?.status !== 'ACTIVE'}
-                 >
-                   <CheckCircle className="w-4 h-4 mr-2" />
-                   {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
-                 </Button>
+                  {job?.isApplied ? (
+                    <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border border-green-200 px-8 py-2.5">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Đã ứng tuyển
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={handleApply}
+                      className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
+                      disabled={job?.status !== 'ACTIVE'}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
+                    </Button>
+                  )}
                   
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className={isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
+                    className={job?.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
                   >
                     {isSaving ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                     ) : (
-                      <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
+                      <Bookmark className={`w-4 h-4 mr-2 ${job?.isSaved ? "fill-current" : ""}`} />
                     )}
-                    {isSaved ? "Đã lưu" : "Lưu việc làm"}
+                    {job?.isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>
 

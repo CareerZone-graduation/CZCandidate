@@ -39,6 +39,7 @@ export const getAllJobs = async (params = {}) => {
 
 // Lấy chi tiết một việc làm
 export const getJobById = async (jobId) => {
+  // The Authorization header is included by the apiClient interceptor
   const response = await apiClient.get(`/jobs/${jobId}`);
   return response;
 };
@@ -76,5 +77,19 @@ export const getJobApplicantCount = async (jobId) => {
 // Lấy danh sách ID các job đã ứng tuyển
 export const getAppliedJobIds = async () => {
   const response = await apiClient.get('/candidate/applied-jobs-ids');
+  return response.data;
+};
+
+// Lấy danh sách đơn ứng tuyển chi tiết
+export const getMyApplications = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.page) queryParams.append('page', params.page);
+  if (params.limit) queryParams.append('limit', params.limit);
+  if (params.status) queryParams.append('status', params.status);
+  
+  const url = `/candidate/my-applications${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  
+  const response = await apiClient.get(url);
   return response.data;
 };
