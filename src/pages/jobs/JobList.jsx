@@ -15,7 +15,7 @@ import { Input } from '../../components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { getAllJobs, getAppliedJobIds } from '../../services/jobService';
+import { getAllJobs } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/jobService';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 
@@ -39,17 +39,6 @@ const JobList = () => {
   const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
 
-  // Fetch applied job IDs
-  const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
-    queryKey: ['appliedJobIds'],
-    queryFn: getAppliedJobIds,
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const appliedJobIds = useMemo(() => {
-    return new Set(appliedJobIdsData?.data || []);
-  }, [appliedJobIdsData]);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -379,7 +368,6 @@ const JobList = () => {
 
   const handleApplySuccess = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
-    refetchAppliedJobIds();
   };
 
   const handlePageChange = (newPage) => {
@@ -810,7 +798,7 @@ const JobList = () => {
                   onSave={handleSaveJob}
                   onUnsave={handleUnsaveJob}
                   onClick={handleJobClick}
-                  isApplied={appliedJobIds.has(job._id)}
+                  isApplied={job.isApplied}
                   featured={true}
                 />
               ))}
@@ -1090,7 +1078,7 @@ const JobList = () => {
                     onSave={handleSaveJob}
                     onUnsave={handleUnsaveJob}
                     onClick={handleJobClick}
-                    isApplied={appliedJobIds.has(job._id)}
+                    isApplied={job.isApplied}
                   />
                 ))}
               </div>

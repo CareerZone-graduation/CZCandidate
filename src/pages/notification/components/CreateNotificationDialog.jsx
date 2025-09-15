@@ -1,426 +1,133 @@
-import { useState } from 'react';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Separator } from '../../../components/ui/separator';
-import { 
-  X, 
-  Bell, 
-  Search, 
-  MapPin, 
-  DollarSign, 
-  Briefcase, 
-  Clock,
-  Building,
-  Monitor,
-  AlertCircle
-} from 'lucide-react';
-import { getJobAlertOptions } from '../../../services/jobNotificationService';
-import { cn } from '../../../lib/utils';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { getJobAlertOptions } from '@/services/jobNotificationService';
+import LocationPicker from '@/components/common/LocationPicker'; // Import component mới
 
-/**
- * Dialog để tạo job alert mới
- */
-export const CreateNotificationDialog = ({ onClose, onSubmit, isLoading = false }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    keywords: '',
-    location: '',
-    category: '',
-    salaryRange: '',
-    type: '',
-    workType: '',
-    experience: '',
-    frequency: 'weekly',
-    isActive: true
+// Zod schema cho form validation phía client
+const formSchema = z.object({
+  keyword: z.string().min(1, 'Từ khóa là bắt buộc').max(100),
+  location: z.object({
+    province: z.string().min(1, 'Tỉnh/Thành phố là bắt buộc'),
+    district: z.string().min(1, 'Quận/Huyện là bắt buộc'),
+  }),
+  frequency: z.enum(['daily', 'weekly']),
+  salaryRange: z.string().optional(),
+  type: z.string().optional(),
+  workType: z.string().optional(),
+  experience: z.string().optional(),
+  category: z.string().optional(),
+});
+
+export const CreateNotificationDialog = ({ open, onClose, onSubmit, isLoading = false }) => {
+  const methods = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      keyword: '',
+      location: { province: 'Tất cả tỉnh thành', district: 'Tất cả quận/huyện' },
+      frequency: 'weekly',
+      salaryRange: 'ALL',
+      type: 'ALL',
+      workType: 'ALL',
+      experience: 'ALL',
+      category: 'ALL',
+    },
   });
   
-  const [errors, setErrors] = useState({});
   const options = getJobAlertOptions();
 
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
+  const handleFormSubmit = methods.handleSubmit(async (data) => {
+    // Chuyển đổi giá trị "Tất cả..." thành "ALL" cho backend
+    const apiData = { ...data };
+    if (data.location.province === 'Tất cả tỉnh thành') apiData.location.province = 'ALL';
+    if (data.location.district === 'Tất cả quận/huyện') apiData.location.district = 'ALL';
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Tên thông báo không được để trống';
-    }
-    
-    if (!formData.keywords.trim()) {
-      newErrors.keywords = 'Từ khóa không được để trống';
-    }
-    
-    if (!formData.frequency) {
-      newErrors.frequency = 'Vui lòng chọn tần suất thông báo';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    // Thêm phương thức thông báo mặc định
+    apiData.notificationMethod = 'APPLICATION';
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    // Transform data to match API format
-    const submitData = {
-      keyword: formData.keywords, // API expects 'keyword', not 'keywords'
-      location: formData.location ? { province: formData.location } : undefined,
-      frequency: formData.frequency,
-      salaryRange: formData.salaryRange || undefined,
-      type: formData.type || undefined,
-      workType: formData.workType || undefined,
-      experience: formData.experience || undefined,
-      category: formData.category || undefined,
-      active: formData.isActive,
-      notificationMethod: 'APPLICATION'
-    };
-
-    // Remove undefined fields
-    Object.keys(submitData).forEach(key => {
-      if (submitData[key] === undefined || submitData[key] === '') {
-        delete submitData[key];
-      }
-    });
-    
-    const success = await onSubmit(submitData);
-    if (success) {
-      // Reset form
-      setFormData({
-        name: '',
-        keywords: '',
-        location: '',
-        category: '',
-        salaryRange: '',
-        type: '',
-        workType: '',
-        experience: '',
-        frequency: 'weekly',
-        isActive: true
-      });
-      setErrors({});
-    }
-  };
-
-  // Handle input change
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }));
-    }
-  };
+    await onSubmit(apiData);
+  });
 
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-        onClick={onClose}
-      />
-      
-      {/* Dialog */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden bg-background">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <Bell className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">
-                    Đăng ký thông báo việc làm mới
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Nhận thông báo về những công việc phù hợp với bạn
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Đăng ký thông báo việc làm</DialogTitle>
+          <DialogDescription>Nhận cơ hội việc làm mới nhất được gửi đến bạn.</DialogDescription>
+        </DialogHeader>
+        <FormProvider {...methods}>
+          <form onSubmit={handleFormSubmit} className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="keyword">Từ khóa tìm kiếm *</Label>
+              <Input id="keyword" {...methods.register('keyword')} placeholder="VD: Senior Backend Developer" />
+              {methods.formState.errors.keyword && <p className="text-sm text-red-500 mt-1">{methods.formState.errors.keyword.message}</p>}
             </div>
-          </CardHeader>
-
-          <CardContent className="overflow-y-auto max-h-[calc(90vh-120px)]">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Tên thông báo */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-emerald-600" />
-                  <label className="text-sm font-semibold">
-                    Tên thông báo <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="VD: Thông báo React Developer tại Hà Nội"
-                  className={cn(
-                    "h-11",
-                    errors.name && "border-red-500 focus:border-red-500"
-                  )}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.name}
-                  </p>
-                )}
+            
+            <div>
+              <Label>Địa điểm</Label>
+              <div className="grid grid-cols-2 gap-4 mt-1">
+                <LocationPicker control={methods.control} provinceFieldName="location.province" districtFieldName="location.district" />
               </div>
+            </div>
 
-              {/* Từ khóa */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-emerald-600" />
-                  <label className="text-sm font-semibold">
-                    Từ khóa công việc <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <Input
-                  value={formData.keywords}
-                  onChange={(e) => handleInputChange('keywords', e.target.value)}
-                  placeholder="VD: React Developer, Frontend, JavaScript..."
-                  className={cn(
-                    "h-11",
-                    errors.keywords && "border-red-500 focus:border-red-500"
-                  )}
-                />
-                {errors.keywords && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.keywords}
-                  </p>
-                )}
-              </div>
-
-              {/* Tần suất */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-emerald-600" />
-                  <label className="text-sm font-semibold">
-                    Tần suất thông báo <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <Select
-                  value={formData.frequency}
-                  onValueChange={(value) => handleInputChange('frequency', value)}
-                >
-                  <SelectTrigger className={cn(
-                    "h-11",
-                    errors.frequency && "border-red-500"
-                  )}>
-                    <SelectValue placeholder="Chọn tần suất thông báo" />
-                  </SelectTrigger>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salaryRange">Mức lương</Label>
+                <Select onValueChange={(value) => methods.setValue('salaryRange', value)} defaultValue="ALL">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {options.frequencies.map((freq) => (
-                      <SelectItem key={freq.value} value={freq.value}>
-                        {freq.label}
-                      </SelectItem>
-                    ))}
+                    {options.salaryRanges.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {errors.frequency && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.frequency}
-                  </p>
-                )}
               </div>
+              <div>
+                <Label htmlFor="experience">Kinh nghiệm</Label>
+                <Select onValueChange={(value) => methods.setValue('experience', value)} defaultValue="ALL">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {options.experiences.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-              <Separator />
-
-              {/* Bộ lọc nâng cao */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-base flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-emerald-600" />
-                  Tiêu chí lọc (tùy chọn)
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Địa điểm */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Địa điểm</label>
-                    </div>
-                    <Select
-                      value={formData.location}
-                      onValueChange={(value) => handleInputChange('location', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả địa điểm" />
-                      </SelectTrigger>
+             <div className="grid grid-cols-2 gap-4">
+                 <div>
+                    <Label htmlFor="category">Ngành nghề</Label>
+                    <Select onValueChange={(value) => methods.setValue('category', value)} defaultValue="ALL">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {options.provinces.map((province) => (
-                          <SelectItem key={province.value} value={province.value}>
-                            {province.label}
-                          </SelectItem>
-                        ))}
+                        {options.categories.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  {/* Mức lương */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Mức lương</label>
-                    </div>
-                    <Select
-                      value={formData.salaryRange}
-                      onValueChange={(value) => handleInputChange('salaryRange', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả mức lương" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.salaryRanges.map((salary) => (
-                          <SelectItem key={salary.value} value={salary.value}>
-                            {salary.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Kinh nghiệm */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Building className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Kinh nghiệm</label>
-                    </div>
-                    <Select
-                      value={formData.experience}
-                      onValueChange={(value) => handleInputChange('experience', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả cấp độ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.experiences.map((exp) => (
-                          <SelectItem key={exp.value} value={exp.value}>
-                            {exp.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Ngành nghề */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Ngành nghề</label>
-                    </div>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => handleInputChange('category', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả ngành nghề" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.categories.map((cat) => (
-                          <SelectItem key={cat.value} value={cat.value}>
-                            {cat.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Loại công việc */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Loại công việc</label>
-                    </div>
-                    <Select
-                      value={formData.type}
-                      onValueChange={(value) => handleInputChange('type', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả loại" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.jobTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Hình thức làm việc */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Monitor className="h-4 w-4 text-gray-500" />
-                      <label className="text-sm font-medium">Hình thức</label>
-                    </div>
-                    <Select
-                      value={formData.workType}
-                      onValueChange={(value) => handleInputChange('workType', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Tất cả hình thức" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.workTypes.map((work) => (
-                          <SelectItem key={work.value} value={work.value}>
-                            {work.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
-              </div>
+                 <div>
+                    <Label htmlFor="frequency">Tần suất nhận *</Label>
+                     <Select onValueChange={(value) => methods.setValue('frequency', value)} defaultValue="weekly">
+                       <SelectTrigger><SelectValue /></SelectTrigger>
+                       <SelectContent>
+                         {options.frequencies.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                </div>
+            </div>
 
-              {/* Action buttons */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isLoading}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Đang tạo...
-                    </div>
-                  ) : (
-                    'Đăng ký thông báo'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Hủy</Button>
+              <Button type="submit" disabled={isLoading} className="bg-gradient-primary">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Đang lưu...' : 'Lưu thông báo'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </FormProvider>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default CreateNotificationDialog;

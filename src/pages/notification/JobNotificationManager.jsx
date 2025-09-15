@@ -149,7 +149,7 @@ const JobNotificationManager = () => {
               {canCreateMore && (
                 <Button
                   onClick={() => setShowCreateDialog(true)}
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="..."
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Tạo thông báo mới
@@ -421,6 +421,7 @@ const JobNotificationManager = () => {
       {/* Create Dialog */}
       {showCreateDialog && (
         <CreateNotificationDialog
+          open={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
           onSubmit={handleCreateNotification}
           isLoading={isSaving}

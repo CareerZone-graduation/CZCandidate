@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -35,7 +35,7 @@ import { ApplyJobDialog } from './components/ApplyJobDialog';
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
 
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -138,20 +138,56 @@ const JobDetail = () => {
     queryClient.invalidateQueries(['jobDetail', id]);
   };
   
-  const { mutate: toggleSaveJob, isPending: isSaving } = useMutation({
+  const { mutate: toggleSaveJob } = useMutation({
     mutationFn: () => {
       return job?.isSaved ? unsaveJob(id) : saveJob(id);
     },
+    onMutate: async () => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['jobDetail', id] });
+
+      // Snapshot the previous value
+      const previousJobData = queryClient.getQueryData(['jobDetail', id]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['jobDetail', id], (oldQueryData) => {
+        if (!oldQueryData) return undefined;
+        
+        return {
+          ...oldQueryData,
+          data: {
+            ...oldQueryData.data,
+            data: {
+              ...oldQueryData.data.data,
+              isSaved: !oldQueryData.data.data.isSaved,
+            }
+          }
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousJobData };
+    },
     onSuccess: () => {
-      const message = job?.isSaved ? 'Đã bỏ lưu công việc' : 'Đã lưu công việc thành công';
+      // The UI is already updated optimistically. We can show a toast.
+      // We need to get the *new* state to show the correct message.
+      const updatedJob = queryClient.getQueryData(['jobDetail', id]);
+      const message = updatedJob?.data?.data?.isSaved ? 'Đã lưu công việc thành công' : 'Đã bỏ lưu công việc';
       toast.success(message);
-      queryClient.invalidateQueries(['jobDetail', id]);
     },
-    onError: (err) => {
+    onError: (err, _newVariables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousJobData) {
+        queryClient.setQueryData(['jobDetail', id], context.previousJobData);
+      }
       console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
-      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái lưu';
       toast.error(errorMessage);
+      
+      // Inform the user the optimistic update was reverted.
+      toast.info('Trạng thái lưu công việc đã được hoàn tác do có lỗi.');
     },
+    // By not having onSettled or invalidating in onSuccess, we prevent the refetch.
   });
 
   const handleSave = () => {
@@ -430,14 +466,9 @@ const JobDetail = () => {
                   <Button
                     variant="outline"
                     onClick={handleSave}
-                    disabled={isSaving}
                     className={job?.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
                   >
-                    {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                    ) : (
-                      <Bookmark className={`w-4 h-4 mr-2 ${job?.isSaved ? "fill-current" : ""}`} />
-                    )}
+                    <Bookmark className={`w-4 h-4 mr-2 ${job?.isSaved ? "fill-current" : ""}`} />
                     {job?.isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>

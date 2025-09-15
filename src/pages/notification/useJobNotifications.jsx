@@ -90,29 +90,31 @@ export const useJobNotifications = () => {
    * Tạo notification mới
    */
   const createNotification = useCallback(async (notificationData) => {
-    try {
-      setIsSaving(true);
-      
-      console.log('🆕 Creating notification with data:', notificationData);
-      
-      const response = await createJobAlert(notificationData);
-      
-      if (response.data.success) {
-        toast.success('Đăng ký thông báo thành công!');
-        await fetchNotifications(); // Refresh danh sách
-        return true;
-      } else {
-        throw new Error(response.data.message || 'Không thể tạo thông báo');
-      }
-    } catch (err) {
-      console.error('❌ Error creating notification:', err);
-      const errorMessage = err.response?.data?.message || err.message;
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [fetchNotifications]);
+        if (!isAuthenticated) {
+            toast.error('Vui lòng đăng nhập để thực hiện chức năng này.');
+            return false;
+        }
+
+        try {
+            setIsSaving(true);
+            const response = await createJobAlert(notificationData);
+            
+            if (response.success) { // apiClient trả về data trực tiếp
+                toast.success('Đăng ký thông báo thành công!');
+                await fetchNotifications(); // Tải lại danh sách
+                return true;
+            } else {
+                throw new Error(response.message || 'Không thể tạo thông báo');
+            }
+        } catch (err) {
+            console.error('❌ Error creating notification:', err);
+            const errorMessage = err.response?.data?.message || err.message;
+            toast.error(errorMessage);
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [isAuthenticated, fetchNotifications]);
 
   /**
    * Cập nhật notification

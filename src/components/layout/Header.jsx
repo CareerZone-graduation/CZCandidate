@@ -166,23 +166,21 @@ const Header = () => {
   const fetchJobAlerts = async () => {
     try {
       setIsLoadingNotifications(true);
-      const response = await apiClient.get('/job-alerts');
-      
-      if (response.data.success) {
-        const jobAlerts = response.data.data || [];
-        const transformedNotifications = jobAlerts.map(transformJobAlertToNotification);
+      // const response = await apiClient.get('/job-alerts');
+      // if (response.data.success) {
+      //   const jobAlerts = response.data.data || [];
+      //   const transformedNotifications = jobAlerts.map(transformJobAlertToNotification);
         
-        setNotifications(transformedNotifications);
+      //   setNotifications(transformedNotifications);
         
-        // Chỉ tính thông báo active là chưa đọc
-        const activeAlerts = transformedNotifications.filter(n => n.isActive);
-        setNotificationCount(activeAlerts.length);
-        setHasNewNotifications(activeAlerts.length > 0);
-        
-        console.log('✅ Job alerts loaded:', transformedNotifications);
-      } else {
-        console.error('❌ Failed to fetch job alerts:', response.data.message);
-      }
+      //   // Chỉ tính thông báo active là chưa đọc
+      //   const activeAlerts = transformedNotifications.filter(n => n.isActive);
+      //   setNotificationCount(activeAlerts.length);
+      //   setHasNewNotifications(activeAlerts.length > 0);
+
+      // } else {
+      //   console.error('❌ Failed to fetch job alerts:', response.data.message);
+      // }
     } catch (error) {
       console.error('❌ Error fetching job alerts:', error);
       // Fallback to empty state
@@ -407,17 +405,7 @@ const Header = () => {
                           ) : (
                             <div className="p-8 text-center">
                               <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                              <p className="text-sm text-muted-foreground mb-2">Chưa có thông báo việc làm</p>
-                              <p className="text-xs text-muted-foreground mb-4">
-                                Đăng ký thông báo để nhận cơ hội việc làm phù hợp
-                              </p>
-                              <Button
-                                size="sm"
-                                onClick={viewAllNotifications}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              >
-                                Đăng ký thông báo
-                              </Button>
+                              <p className="text-sm text-muted-foreground mb-2">Chưa có thông báo</p>
                             </div>
                           )}
                         </div>
