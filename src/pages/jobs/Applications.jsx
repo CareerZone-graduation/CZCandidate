@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -9,18 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { Skeleton } from '../../components/ui/skeleton';
 import { Separator } from '../../components/ui/separator';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '../../components/ui/dialog';
-import { 
-  FileText, 
-  Calendar, 
-  MapPin, 
-  DollarSign, 
-  Building, 
+  FileText,
+  Calendar,
+  Building,
   Clock,
   Eye,
   CheckCircle,
@@ -31,11 +22,6 @@ import {
   ArrowLeft,
   Download,
   User,
-  Mail,
-  Phone,
-  X,
-  FileIcon,
-  Share2
 } from 'lucide-react';
 import { getMyApplications } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
@@ -48,8 +34,6 @@ const Applications = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const limit = 9;
 
   // Query để lấy danh sách đơn ứng tuyển
@@ -129,15 +113,6 @@ const Applications = () => {
     });
   };
 
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
@@ -146,17 +121,13 @@ const Applications = () => {
     }
   };
 
-  const handleViewJob = (jobId) => {
-    navigate(`/jobs/${jobId}`);
-  };
 
-  const handleDownloadCV = (cvUrl, cvName) => {
+  const handleDownloadCV = (cvUrl) => {
     window.open(cvUrl, '_blank');
   };
 
   const handleViewDetail = (application) => {
-    setSelectedApplication(application);
-    setShowDetailModal(true);
+    navigate(`/dashboard/applications/${application._id}`, { state: { application } });
   };
 
   // Component Skeleton
@@ -184,202 +155,6 @@ const Applications = () => {
     </Card>
   );
 
-  // Application Detail Modal
-  const ApplicationDetailModal = () => {
-    if (!selectedApplication) return null;
-
-    const statusInfo = getStatusInfo(selectedApplication.status);
-
-    return (
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden bg-white">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage 
-                  src={selectedApplication.jobSnapshot?.logo} 
-                  alt={selectedApplication.jobSnapshot?.company} 
-                />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                  {selectedApplication.jobSnapshot?.company?.charAt(0) || 'C'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{selectedApplication.jobSnapshot?.title}</h3>
-                <p className="text-sm text-gray-600">{selectedApplication.jobSnapshot?.company}</p>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 overflow-y-auto pr-2" style={{maxHeight: 'calc(85vh - 120px)'}}>
-            {/* Status và thông tin cơ bản */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-white border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Trạng thái đơn ứng tuyển</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "flex items-center gap-2 w-fit px-4 py-2",
-                      statusInfo.textColor,
-                      statusInfo.borderColor
-                    )}
-                  >
-                    {statusInfo.icon}
-                    {statusInfo.label}
-                  </Badge>
-                  
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Ứng tuyển: {formatDateTime(selectedApplication.appliedAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>Cập nhật: {formatDateTime(selectedApplication.lastStatusUpdateAt)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Thông tin ứng viên</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{selectedApplication.candidateName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span>{selectedApplication.candidateEmail}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span>{selectedApplication.candidatePhone}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Cover Letter */}
-            {selectedApplication.coverLetter && (
-              <Card className="bg-white border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Thư giới thiệu</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
-                      {selectedApplication.coverLetter}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* CV Section */}
-            {selectedApplication.submittedCV && (
-              <Card className="bg-white border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <FileIcon className="h-4 w-4" />
-                    CV đã nộp
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* CV Info */}
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <FileText className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{selectedApplication.submittedCV.name}</p>
-                          <p className="text-sm text-gray-600">
-                            Nguồn: {selectedApplication.submittedCV.source === 'UPLOADED' ? 'Tải lên' : 'Từ hồ sơ'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="border-gray-300 hover:bg-gray-50"
-                          onClick={() => handleDownloadCV(selectedApplication.submittedCV.path, selectedApplication.submittedCV.name)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Tải xuống
-                        </Button>
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => window.open(selectedApplication.submittedCV.path, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Xem PDF
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* PDF Viewer */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <div className="bg-gray-800 text-white p-3 flex items-center justify-between">
-                        <span className="text-sm font-medium">Xem trước CV</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-white hover:bg-gray-700"
-                          onClick={() => window.open(selectedApplication.submittedCV.path, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          Mở toàn màn hình
-                        </Button>
-                      </div>
-                      
-                      <div className="aspect-[3/4] bg-white">
-                        <iframe
-                          src={`${selectedApplication.submittedCV.path}#toolbar=0&navpanes=0&scrollbar=0`}
-                          className="w-full h-full border-0"
-                          title="CV Preview"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-              <Button 
-                variant="outline"
-                className="border-gray-300 hover:bg-gray-50"
-                onClick={() => handleViewJob(selectedApplication.jobId)}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Xem tin tuyển dụng
-              </Button>
-              
-              <Button 
-                variant="default"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => setShowDetailModal(false)}
-              >
-                Đóng
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  };
 
   // Render loading state
   if (isLoading) {
@@ -451,27 +226,37 @@ const Applications = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng số đơn', count: totalItems, icon: FileText, color: 'text-blue-600' },
-          { 
-            label: 'Đang chờ', 
-            count: applications.filter(app => app.status === 'PENDING').length, 
-            icon: Hourglass, 
-            color: 'text-yellow-600' 
+          { label: 'Tổng số đơn', value: 'all', count: totalItems, icon: FileText, color: 'text-blue-600' },
+          {
+            label: 'Đang chờ',
+            value: 'PENDING',
+            count: applications.filter(app => app.status === 'PENDING').length,
+            icon: Hourglass,
+            color: 'text-yellow-600'
           },
-          { 
-            label: 'Đang xem xét', 
-            count: applications.filter(app => app.status === 'REVIEWING').length, 
-            icon: Eye, 
-            color: 'text-purple-600' 
+          {
+            label: 'Đang xem xét',
+            value: 'REVIEWING',
+            count: applications.filter(app => app.status === 'REVIEWING').length,
+            icon: Eye,
+            color: 'text-purple-600'
           },
-          { 
-            label: 'Đã chấp nhận', 
-            count: applications.filter(app => app.status === 'ACCEPTED').length, 
-            icon: CheckCircle, 
-            color: 'text-green-600' 
+          {
+            label: 'Đã chấp nhận',
+            value: 'ACCEPTED',
+            count: applications.filter(app => app.status === 'ACCEPTED').length,
+            icon: CheckCircle,
+            color: 'text-green-600'
           }
         ].map((stat, index) => (
-          <Card key={index} className="bg-white border border-gray-200">
+          <Card
+            key={index}
+            className={cn(
+              "bg-white border border-gray-200 transition-all cursor-pointer",
+              selectedStatus === stat.value ? "ring-2 ring-green-500 shadow-lg" : "hover:shadow-md"
+            )}
+            onClick={() => setSelectedStatus(stat.value)}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -584,7 +369,7 @@ const Applications = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownloadCV(application.submittedCV.path, application.submittedCV.name);
+                              handleDownloadCV(application.submittedCV.path);
                             }}
                             className="text-xs rounded-full shadow-sm bg-gray-100 hover:bg-gray-200"
                           >
@@ -598,7 +383,7 @@ const Applications = () => {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleViewDetail(application);
+                            handleViewDetail(application)
                           }}
                           className="rounded-full bg-green-600 hover:bg-green-700"
                         >
@@ -671,8 +456,6 @@ const Applications = () => {
         </div>
       )}
 
-      {/* Application Detail Modal */}
-      <ApplicationDetailModal />
     </div>
   );
 };

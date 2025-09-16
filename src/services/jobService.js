@@ -76,3 +76,9 @@ export const getMyApplications = async (params = {}) => {
   const response = await apiClient.get(url);
   return response.data;
 };
+
+// Lấy chi tiết một đơn ứng tuyển
+export const getApplicationById = async (applicationId) => {
+  const response = await apiClient.get(`/candidate/my-applications/${applicationId}`);
+  return response.data.data;
+};

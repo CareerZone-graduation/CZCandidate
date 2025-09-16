@@ -15,6 +15,7 @@ import { Menu, LogOut, User, Settings, Bell, ChevronDown, FileText } from "lucid
 import { logoutSuccess } from "@/redux/authSlice";
 import { useHeaderTheme } from "@/hooks/useHeaderTheme";
 import { cn } from "@/lib/utils";
+import NotificationDropdown from "./NotificationDropdown";
 
 // COMMENT: Navigation links, giữ nguyên logic
 const navLinks = [
@@ -66,7 +67,7 @@ const Header = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-full max-w-xs">
+              <SheetContent side="left" className="w-full max-w-xs bg-white">
                 <Link to="/" className="flex items-center space-x-2 mb-8">
                   <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
                 </Link>
@@ -131,23 +132,7 @@ const Header = () => {
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn(
-                  "relative transition-colors",
-                  isHeaderWhite ? "text-white hover:bg-white/10" : ""
-                )} 
-                asChild
-              >
-                <Link to="/notifications">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                  </span>
-                </Link>
-              </Button>
+              <NotificationDropdown />
               
               {/* REPLACED: Dropdown Menu cho user profile, chuyên nghiệp và hiện đại hơn */}
               <DropdownMenu>
@@ -171,7 +156,7 @@ const Header = () => {
                     )} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuContent className="w-56 bg-white border shadow-lg" align="end">
                   <DropdownMenuLabel>
                     <div className="font-bold">{user?.fullname}</div>
                     <div className="text-xs text-muted-foreground font-normal">{user?.email}</div>

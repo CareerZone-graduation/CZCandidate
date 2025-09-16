@@ -1,25 +1,29 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 /* CSS Variables for design system */
 :root {
+  /* --background: 120 25% 97%;   */
   --background: 0 0% 100%;
+          /* Giữ nguyên nền xanh rất nhạt */
   --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
+  --card: 0 0% 100%;                   /* Giữ nguyên card màu trắng */
   --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
+  --popover: 0 0% 100%;                /* Popover nên giống card */
   --popover-foreground: 222.2 84% 4.9%;
+
   --primary: 142.1 76.2% 36.3%;
   --primary-foreground: 355.7 100% 97.3%;
   --primary-light: 142.1 76.2% 96%;
-  --secondary: 210 40% 98%;
+
+  --secondary: 215 28% 95%;           /* Chuyển sang màu xám nhạt trung tính hơn */
   --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 98%;
+  --muted: 220 15% 95%;               /* Xám nhạt hơn một chút */
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 98%;
+  --accent: 215 28% 95%;              /* Accent có thể giống secondary */
   --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
+  
+  --border: 214.3 31.8% 91.4%;         /* Giữ nguyên */
+  --input: 214.3 31.8% 91.4%;          /* Giữ nguyên */
   --ring: 142.1 76.2% 36.3%;
   --radius: 0.75rem;
   --info: 221.2 83.2% 53.3%;
@@ -31,35 +35,34 @@
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
+  --background: 220 14% 10%;           /* Nền chính: Xanh đen rất đậm, gần như đen */
+  --foreground: 210 40% 98%;           /* Chữ trắng */
+  --card: 220 13% 18%;                /* Card: Xám xanh đậm, SÁNG HƠN NỀN MỘT CHÚT */
   --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
+  --popover: 220 13% 18%;             /* Popover giống card */
   --popover-foreground: 210 40% 98%;
   --primary: 142.1 70.6% 45.3%;
   --primary-foreground: 144.9 80.4% 10%;
   --primary-light: 142.1 76.2% 15%;
-  --secondary: 217.2 32.6% 17.5%;
+  --secondary: 217.2 32.6% 24%;       /* Nền phụ: Sáng hơn card một chút */
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
+  --muted: 217.2 32.6% 24%;
   --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 217.2 32.6% 24%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 72% 51%;             /* Màu đỏ sáng hơn để dễ thấy trên nền tối */
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
+  --border: 217.2 32.6% 28%;           /* Viền: Sáng hơn card để có thể nhìn thấy */
+  --input: 217.2 32.6% 28%;
   --ring: 142.1 70.6% 45.3%;
   --info: 217.2 91.2% 59.8%;
   --warning: 32.6 95.2% 58%;
   --success: 142.1 70.6% 45.3%;
-  --footer: 215.3 19.3% 34.5%;
-  --footer-foreground: 215.3 16.3% 46.9%;
+  --footer: 220 14% 10%;
+  --footer-foreground: 215 20.2% 65.1%;
   --footer-muted: 215.4 13.9% 34.1%;
 }
 
-/* Base styles */
 * {
   border-color: hsl(var(--border));
 }
@@ -316,27 +319,23 @@ body {
 
 /* High priority z-index for Select and Dropdown content */
 [data-radix-select-content] {
+  
   z-index: 999999 !important;
   position: fixed !important;
 }
 
 [data-radix-dropdown-menu-content] {
+  background-color: rgb(255 255 255) !important; /* Thay 'white' bằng 'rgb(255 255 255)' */
   z-index: 999999 !important;
   position: fixed !important;
 }
 
-/* Ensure solid background and proper styling */
-[data-radix-select-content],
-[data-radix-dropdown-menu-content] {
-  background-color: white !important;
-  border: 1px solid hsl(var(--border)) !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  backdrop-filter: blur(8px) !important;
-}
+
 
 /* Dark mode support */
 .dark [data-radix-select-content],
 .dark [data-radix-dropdown-menu-content] {
+  
   background-color: hsl(var(--card)) !important;
   color: hsl(var(--card-foreground)) !important;
   border-color: hsl(var(--border)) !important;
@@ -353,11 +352,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   overflow-y: auto !important;
 }
 
-/* Fix opacity issues */
-[data-radix-select-content],
-[data-radix-dropdown-menu-content] {
-  opacity: 1 !important;
-}
+
 
 /* ===== Apply Job Dialog Specific Fixes ===== */
 /* Ensure form inputs have proper styling in dialog */

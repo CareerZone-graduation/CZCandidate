@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import locationData from '@/data/location_tree.json'; // Tải dữ liệu
+import locationData from '@/data/oldtree.json'; // Tải dữ liệu
 
 // Hàm xử lý dữ liệu, chỉ lấy Tỉnh và Quận
 const processLocationData = (tree) => {

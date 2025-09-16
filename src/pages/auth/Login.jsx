@@ -2,18 +2,18 @@ import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { loginSuccess, fetchUser } from '../../redux/authSlice';
-import * as authService from '../../services/authService';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardHeader } from '../../components/ui/card';
-import { Separator } from '../../components/ui/separator';
+import { loginSuccess, fetchUser } from '@/redux/authSlice';
+import * as authService from '@/services/authService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   // COMMENT: Giữ nguyên toàn bộ logic state và xử lý form.
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('c1@gmail.com');
+  const [password, setPassword] = useState('a');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
@@ -32,8 +32,8 @@ const Login = () => {
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
         await dispatch(fetchUser());
         toast.success('Đăng nhập thành công!');
-        // Thay đổi từ /dashboard thành /jobs
-        navigate('/jobs', { replace: true });
+        // Chuyển hướng về trang chủ sau khi đăng nhập thành công
+        navigate('/', { replace: true });
       } else {
         throw new Error('Phản hồi đăng nhập không hợp lệ.');
       }
@@ -48,10 +48,10 @@ const Login = () => {
 
   return (
     // REPLACED: Layout toàn trang với nền gradient nhẹ nhàng.
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4 ">
       <div className="w-full max-w-md">
         {/* REPLACED: Sử dụng <Card> của ShadCN để chứa form, tạo hiệu ứng shadow nổi bật. */}
-        <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm">
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <Link to="/" className="text-3xl font-bold text-foreground mb-6 inline-block">
               Career<span className="text-primary">Zone</span>
@@ -88,8 +88,7 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* REPLACED: Button đăng nhập với hiệu ứng gradient và loading state. */}
-              <Button type="submit" disabled={isLoading} className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-all duration-300">
+              <Button type="submit" variant="default" disabled={isLoading} className="w-full h-11 font-semibold transition-all duration-300 bg-gradient-primary hover:opacity-90">
                 {isLoading ? (
                   <div className="flex items-center"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div> Đang xử lý...</div>
                 ) : (
@@ -101,7 +100,7 @@ const Login = () => {
             {/* REPLACED: Phân tách "hoặc" với <Separator> */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><Separator /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">hoặc tiếp tục với</span></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">hoặc tiếp tục với</span></div>
             </div>
 
             {/* REPLACED: Button đăng nhập với Google. */}

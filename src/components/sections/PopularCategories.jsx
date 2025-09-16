@@ -17,7 +17,7 @@ const categories = [
 
 const PopularCategories = () => {
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-20 bg-muted">
       <div className="container">
         <SectionHeader
           badgeText="🎯 Lĩnh vực hot"
@@ -28,7 +28,7 @@ const PopularCategories = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {categories.map((category, index) => (
-            <Card key={index} className="group text-center hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-2 border-0 shadow-md bg-background">
+            <Card key={index} className="bg-white shadow-md rounded-2xl p-6">
               <CardHeader>
                 <div className="mx-auto bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center group-hover:bg-gradient-primary transition-all duration-300">
                   <div className="transform group-hover:scale-110 group-hover:text-primary-foreground transition-all duration-300">

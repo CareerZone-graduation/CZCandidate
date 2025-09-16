@@ -1,77 +1,86 @@
-import { Search, Briefcase } from 'lucide-react';
+import { Search, Briefcase, User, MapPin } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
 
 const HeroSection = () => {
   return (
-    // Professional Hero Section với thiết kế clean và hiện đại
-    <section className="relative bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 h-screen flex items-center justify-center text-white -mt-16">
-      {/* Clean background overlay */}
-      <div className="absolute inset-0 bg-black/5"></div>
+    // Professional Hero với nền gradient sáng như hình
+    <section className="relative bg-gradient-to-r from-green-600 via-green-500 to-blue-800 h-[67vh] flex items-center justify-center -mt-16">
+      {/* Background pattern overlay */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+          backgroundSize: '30px 30px'
+        }}></div>
+      </div>
       
-      <div className="container relative z-10 pt-20">
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Tiêu đề chính - Professional typography */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
-            Tìm kiếm cơ hội nghề nghiệp,
+      <div className="container relative z-10 pt-20 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              size="lg" 
+              className="bg-white hover:bg-gray-50 text-green-600 font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
+            >
+              <Briefcase className="mr-3 h-6 w-6" />
+              Đăng tuyển
+            </Button>
+            
+            <Button 
+              variant="outline"
+              size="lg" 
+              className="bg-white/10 hover:bg-white/20 text-white font-bold text-lg px-10 py-5 rounded-full border-2 border-white/40 shadow-2xl transform hover:scale-105 transition-all duration-300 min-w-[180px] backdrop-blur-sm"
+            >
+              <User className="mr-3 h-6 w-6" />
+              Ứng tuyển
+            </Button>
+          </div>
+          
+          <h1 className="text-3xl sm:text-3xl lg:text-6xl font-black mb-4 leading-tight tracking-tight text-white drop-shadow-[0_3px_12px_rgba(0,0,0,.35)] text-balance">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-yellow-200 to-lime-200">
+              Tìm kiếm công việc
+            </span>
             <br />
-            <span className="text-green-100 font-light">định hình tương lai</span>
+            <span className="text-2xl sm:text-2xl lg:text-5xl">
+              định hình tương lai của bạn
+            </span>
           </h1>
           
-          {/* Mô tả - Clean và súc tích */}
-          <p className="text-xl text-green-50 mb-12 leading-relaxed max-w-3xl mx-auto font-light">
-            Khám phá hàng ngàn cơ hội việc làm chất lượng từ các công ty hàng đầu. 
-            Tìm công việc phù hợp với kỹ năng và đam mê của bạn ngay hôm nay.
-          </p>
           
-          {/* Professional Search Box */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto border-0">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              {/* Job Title Input */}
-              <div className="relative md:col-span-6">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-gray-200 bg-white/80">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              
+              {/* Job Title Input - Dài hơn */}
+              <div className="relative lg:col-span-6">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <Input
                   type="text"
                   placeholder="Vị trí công việc, kỹ năng, công ty..."
-                  className="h-14 pl-12 text-base border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 bg-white rounded-xl"
+                  className="h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
                 />
               </div>
               
-              {/* Location Input */}
-              <div className="relative md:col-span-3">
+              {/* Location Input - Ngắn hơn */}
+              <div className="relative lg:col-span-3">
+                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <Input
                   type="text"
                   placeholder="Địa điểm"
-                  className="h-14 text-base border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 bg-white rounded-xl"
+                  className="h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
                 />
               </div>
               
-              {/* Search Button */}
-              <Button 
-                size="lg" 
-                className="h-14 md:col-span-3 bg-green-600 hover:bg-green-700 text-white font-semibold text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              {/* Search Button - Đổi màu tương tự nút "Xem tất cả công ty" */}
+              <Button
+                size="lg"
+                className="h-12 lg:col-span-3 bg-gradient-to-r from-green-600 via-green-500 to-blue-800 text-white font-bold text-base rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-0"
               >
                 <Search className="mr-2 h-5 w-5" />
-                Tìm kiếm việc làm
+                Tìm kiếm
               </Button>
             </div>
-            
-            {/* Popular searches - Clean design */}
-            <div className="mt-6 text-center">
-              <span className="text-gray-600 text-sm font-medium mr-4">Tìm kiếm phổ biến:</span>
-              <div className="inline-flex flex-wrap gap-2 mt-2">
-                {['Frontend', 'Marketing', 'Data Science', 'UI/UX', 'Project Manager'].map((term, index) => (
-                  <button
-                    key={index}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-green-50 hover:text-green-700 rounded-full transition-colors duration-200"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
+          <div className="mt-16"></div>
         </div>
       </div>
     </section>

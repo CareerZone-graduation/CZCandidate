@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from 'sonner';
-import { register as registerService } from "../../services/authService";
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardContent, CardHeader } from '../../components/ui/card';
-import { Separator } from '../../components/ui/separator';
+import { register as registerService } from "@/services/authService";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 const Register = () => {
@@ -83,7 +83,7 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="border-0 shadow-xl bg-card backdrop-blur-sm">
+        <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             {/* Logo */}
             <div className="mx-auto mb-6">
@@ -220,7 +220,7 @@ const Register = () => {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">hoặc</span>
+                <span className="bg-white px-2 text-muted-foreground">hoặc</span>
               </div>
             </div>
 

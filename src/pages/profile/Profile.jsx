@@ -94,7 +94,7 @@ const Profile = () => {
         <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-6">
-              <div className="bg-card rounded-lg p-6">
+              <div className="bg-white rounded-lg p-6">
                 <div className="flex items-center space-x-4">
                   <div className="w-24 h-24 bg-skeleton rounded-full"></div>
                   <div className="space-y-2">
@@ -105,7 +105,7 @@ const Profile = () => {
                 </div>
               </div>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-lg p-6">
+                <div key={i} className="bg-white rounded-lg p-6">
                   <div className="h-6 bg-skeleton rounded w-32 mb-4"></div>
                   <div className="space-y-2">
                     <div className="h-4 bg-skeleton rounded w-full"></div>
@@ -125,7 +125,7 @@ const Profile = () => {
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8">
+            <Card className="text-center py-8 bg-white">
               <CardContent>
                 <div className="text-destructive mb-4">
                   <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@ const Profile = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           
           {/* Profile Header */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden bg-white">
             <div className="bg-gradient-to-r from-primary to-info p-6 text-primary-foreground">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
@@ -201,7 +201,7 @@ const Profile = () => {
               
               {/* About */}
               {profile.bio && (
-                <Card>
+                <Card className="bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <User className="w-5 h-5 mr-2 text-primary" />
@@ -216,7 +216,7 @@ const Profile = () => {
 
               {/* Experience */}
               {profile.experiences && profile.experiences.length > 0 && (
-                <Card>
+                <Card className="bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -249,7 +249,7 @@ const Profile = () => {
 
               {/* Education */}
               {profile.educations && profile.educations.length > 0 && (
-                <Card>
+                <Card className="bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <GraduationCap className="w-5 h-5 mr-2 text-primary" />
@@ -284,7 +284,7 @@ const Profile = () => {
               
               {/* Skills */}
               {profile.skills && profile.skills.length > 0 && (
-                <Card>
+                <Card className="bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Star className="w-5 h-5 mr-2 text-primary" />
@@ -305,7 +305,7 @@ const Profile = () => {
 
               {/* CVs */}
               {profile.cvs && profile.cvs.length > 0 && (
-                <Card>
+                <Card className="bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -322,7 +322,7 @@ const Profile = () => {
                     {profile.cvs.map((cv) => (
                       <div key={cv._id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-gray-900 truncate">{cv.name}</h4>
                               {cv.isDefault && (
@@ -349,7 +349,7 @@ const Profile = () => {
               )}
 
               {/* Quick Actions */}
-              <Card>
+              <Card className="bg-white">
                 <CardHeader>
                   <CardTitle>Hành động nhanh</CardTitle>
                 </CardHeader>

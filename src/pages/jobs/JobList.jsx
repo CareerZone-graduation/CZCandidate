@@ -7,15 +7,15 @@ import {
   Heart, ChevronLeft, ChevronRight, X, Sparkles, AlertCircle, Filter,
   Briefcase, Building2, BarChart, Eye, ArrowRight, CheckCircle2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { getAllJobs } from '../../services/jobService';
-import { saveJob, unsaveJob } from '../../services/jobService';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getAllJobs } from '@/services/jobService';
+import { saveJob, unsaveJob } from '@/services/jobService';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobList = () => {
@@ -759,7 +759,7 @@ const JobList = () => {
       </section>
 
       {/* 🎯 Featured Jobs Section - Similar to HomePage */}
-      <section className="py-20 bg-card">
+      <section className="py-20 bg-white">
         <div className="container">
           {/* Header */}
           <div className="text-center mb-16">
