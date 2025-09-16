@@ -1,411 +1,402 @@
-/* src/index.css */
-
-/* Bước 1: Import Tailwind. Đây là cú pháp chuẩn của v4. */
- @import "tailwindcss";
-
-/* Bước 2: Định nghĩa toàn bộ theme của bạn trong khối @theme */
- @theme {
-  /* Radius (Bo góc) */
-  --radius: 0.625rem;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  
-  /* Container - Tương đương với config trong tailwind.config.js v3 */
-  --container-center: true;
-  --container-padding-DEFAULT: 1rem;
-  --container-padding-sm: 1.5rem;
-  --container-padding-lg: 2rem;
-  --screens-2xl: 1400px; /* Định nghĩa màn hình cho container */
-
-  /* Light Mode Colors (Sử dụng bộ màu trắng, đen, xanh lá cải thiện) */
-  --background: oklch(100% 0 0); /* Trắng thuần */
-  --foreground: oklch(15% 0 0); /* Đen đậm */
-  --card: oklch(100% 0 0); /* Trắng thuần cho card */
-  --card-foreground: oklch(15% 0 0); /* Đen đậm cho text trên card */
-  --popover: oklch(100% 0 0);
-  --popover-foreground: oklch(15% 0 0);
-  --primary: oklch(55% 0.18 142.5); /* #22C55E tối hơn cho nền trắng - dễ đọc */
-  --primary-foreground: oklch(98% 0 0); /* Trắng cho text trên primary */
-  --secondary: oklch(96% 0 0); /* Xám rất nhạt */
-  --secondary-foreground: oklch(20% 0 0); /* Đen cho text trên secondary */
-  --muted: oklch(96% 0 0); /* Xám nhạt */
-  --muted-foreground: oklch(55% 0 0); /* Xám trung bình */
-  --accent: oklch(96% 0 0); /* Xám nhạt cho accent */
-  --accent-foreground: oklch(20% 0 0); /* Đen cho text trên accent */
-  --destructive: oklch(58% 0.25 27); /* Đỏ cảnh báo */
-  --destructive-foreground: oklch(98% 0 0); /* Trắng cho text trên destructive */
-  --border: oklch(92% 0 0); /* Xám nhạt cho border */
-  --input: oklch(92% 0 0); /* Xám nhạt cho input border */
-  --ring: oklch(55% 0.18 142.5); /* Tông tối cho focus ring trên nền trắng */
-  
-  /* Thêm màu gradient và support colors */
-  --primary-light: oklch(85% 0.06 142.5); /* Xanh lá rất nhạt cho background */
-  --success: oklch(58% 0.16 142.5); /* Xanh lá success tối cho nền trắng */
-  --success-foreground: oklch(98% 0 0);
-  --warning: oklch(70% 0.15 65); /* Vàng cảnh báo */
-  --warning-foreground: oklch(15% 0 0);
-  --info: oklch(55% 0.12 220); /* Xanh dương thông tin */
-  --info-foreground: oklch(98% 0 0);
-
-  /* Animations */
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  @keyframes accordion-down {
-    from { height: 0 }
-    to { height: var(--radix-accordion-content-height) }
-  }
-  @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height) }
-    to { height: 0 }
-  }
+@import "tailwindcss";
+/* CSS Variables for design system */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 142.1 76.2% 36.3%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --primary-light: 142.1 76.2% 96%;
+  --secondary: 210 40% 98%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 98%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 142.1 76.2% 36.3%;
+  --radius: 0.75rem;
+  --info: 221.2 83.2% 53.3%;
+  --warning: 38.3 92.1% 50.4%;
+  --success: 142.1 76.2% 36.3%;
+  --footer: 220 13% 91%;
+  --footer-foreground: 220 8.9% 46.1%;
+  --footer-muted: 220 5.9% 57.9%;
 }
 
-/* Bước 3: Định nghĩa các biến cho Dark Mode */
 .dark {
-  --background: oklch(8% 0 0); /* Đen đậm */
-  --foreground: oklch(98% 0 0); /* Trắng cho text */
-  --card: oklch(12% 0 0); /* Đen nhạt cho card */
-  --card-foreground: oklch(98% 0 0); /* Trắng cho text trên card */
-  --popover: oklch(12% 0 0);
-  --popover-foreground: oklch(98% 0 0);
-  --primary: oklch(75% 0.16 142.5); /* #22C55E sáng hơn cho nền đen - nổi bật */
-  --primary-foreground: oklch(8% 0 0); /* Đen cho text trên primary sáng */
-  --secondary: oklch(18% 0 0); /* Xám đậm */
-  --secondary-foreground: oklch(98% 0 0); /* Trắng cho text trên secondary */
-  --muted: oklch(18% 0 0); /* Xám đậm */
-  --muted-foreground: oklch(70% 0 0); /* Xám sáng */
-  --accent: oklch(18% 0 0); /* Xám đậm cho accent */
-  --accent-foreground: oklch(98% 0 0); /* Trắng cho text trên accent */
-  --destructive: oklch(65% 0.19 22); /* Đỏ sáng hơn */
-  --destructive-foreground: oklch(98% 0 0);
-  --border: oklch(20% 0 0); /* Xám đậm cho border */
-  --input: oklch(20% 0 0); /* Xám đậm cho input */
-  --ring: oklch(75% 0.16 142.5); /* Tông sáng cho focus ring trên nền đen */
-  
-  /* Dark mode support colors */
-  --primary-light: oklch(30% 0.08 142.5); /* Background nhạt cho dark mode */
-  --success: oklch(72% 0.14 142.5); /* Success sáng cho nền đen */
-  --success-foreground: oklch(8% 0 0);
-  --warning: oklch(75% 0.15 65);
-  --warning-foreground: oklch(8% 0 0);
-  --info: oklch(65% 0.12 220);
-  --info-foreground: oklch(8% 0 0);
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 142.1 70.6% 45.3%;
+  --primary-foreground: 144.9 80.4% 10%;
+  --primary-light: 142.1 76.2% 15%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 142.1 70.6% 45.3%;
+  --info: 217.2 91.2% 59.8%;
+  --warning: 32.6 95.2% 58%;
+  --success: 142.1 70.6% 45.3%;
+  --footer: 215.3 19.3% 34.5%;
+  --footer-foreground: 215.3 16.3% 46.9%;
+  --footer-muted: 215.4 13.9% 34.1%;
 }
 
-/* Bước 4: Định nghĩa các style cơ bản */
- @layer base {
-  * {
-    border-color: var(--border);
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-feature-settings: "rlig" 1, "calt" 1;
+/* Base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Container utility */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
-/* Bước 5 (Tùy chọn): Thêm các utility class tùy chỉnh nếu cần */
- @layer utilities {
-  /* Định nghĩa các utility classes cho theme colors */
-  .bg-primary {
-    background-color: var(--primary);
+@media (min-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
-  .text-primary {
-    color: var(--primary);
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
   }
-  .text-primary-foreground {
-    color: var(--primary-foreground);
+}
+
+/* Custom gradient utilities */
+.text-gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--info)) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(37, 99, 235) 100%);
+  color: white;
+}
+
+.bg-gradient-to-primary {
+  background: linear-gradient(135deg, hsl(var(--primary-light)) 0%, hsl(var(--background)) 100%);
+}
+
+/* Animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
   }
-  .border-primary {
-    border-color: var(--primary);
+  50% {
+    background-position: 100% 50%;
   }
-  
-  /* Secondary */
-  .bg-secondary {
-    background-color: var(--secondary);
+}
+
+/* Enhanced focus styles */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Loading animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  .text-secondary {
-    color: var(--secondary);
+  50% {
+    opacity: 0.5;
   }
-  .text-secondary-foreground {
-    color: var(--secondary-foreground);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-hover:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+}
+
+.card-interactive {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.card-interactive:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+/* Button enhancements */
+.btn-gradient {
+  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--info)));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--info) / 0.9));
+}
+
+.btn-gradient:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 0 4px hsl(var(--background));
+}
+
+/* Glass morphism effect */
+.glass {
+  background-color: hsl(var(--background) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.glass-light {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Footer utility classes */
+.bg-footer {
+  background-color: hsl(var(--footer));
+}
+
+.text-footer-foreground {
+  color: hsl(var(--footer-foreground));
+}
+
+.text-footer-muted {
+  color: hsl(var(--footer-muted));
+}
+
+/* Text selection */
+::selection {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--foreground));
+}
+
+::-moz-selection {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--foreground));
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
   }
-  .border-secondary {
-    border-color: var(--secondary);
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none;
   }
-  
-  /* Card */
-  .bg-card {
-    background-color: var(--card);
+}
+
+@media (min-width: 769px) {
+  .desktop-hidden {
+    display: none;
   }
-  .text-card {
-    color: var(--card);
-  }
-  .text-card-foreground {
-    color: var(--card-foreground);
-  }
-  .border-card {
-    border-color: var(--card);
-  }
-  
-  /* Muted */
-  .bg-muted {
-    background-color: var(--muted);
-  }
-  .text-muted {
-    color: var(--muted);
-  }
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.5rem 1rem;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+  z-index: 50;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
   .text-muted-foreground {
-    color: var(--muted-foreground);
-  }
-  .border-muted {
-    border-color: var(--muted);
-  }
-  
-  /* Accent */
-  .bg-accent {
-    background-color: var(--accent);
-  }
-  .text-accent {
-    color: var(--accent);
-  }
-  .text-accent-foreground {
-    color: var(--accent-foreground);
-  }
-  .border-accent {
-    border-color: var(--accent);
-  }
-  
-  /* Destructive */
-  .bg-destructive {
-    background-color: var(--destructive);
-  }
-  .text-destructive {
-    color: var(--destructive);
-  }
-  .text-destructive-foreground {
-    color: var(--destructive-foreground);
-  }
-  .border-destructive {
-    border-color: var(--destructive);
-  }
-  
-  /* Popover */
-  .bg-popover {
-    background-color: var(--popover);
-  }
-  .text-popover {
-    color: var(--popover);
-  }
-  .text-popover-foreground {
-    color: var(--popover-foreground);
-  }
-  .border-popover {
-    border-color: var(--popover);
-  }
-  
-  /* Input */
-  .bg-input {
-    background-color: var(--input);
-  }
-  .border-input {
-    border-color: var(--input);
-  }
-  
-  /* Foreground */
-  .text-foreground {
-    color: var(--foreground);
-  }
-  .bg-foreground {
-    background-color: var(--foreground);
-  }
-  
-  /* Background */
-  .bg-background {
-    background-color: var(--background);
-  }
-  .text-background {
-    color: var(--background);
-  }
-  
-  /* Ring and Focus styles */
-  .ring-ring {
-    --tw-ring-color: var(--ring);
-  }
-  .focus\:ring-ring:focus {
-    --tw-ring-color: var(--ring);
-  }
-  .focus\:border-primary:focus {
-    border-color: var(--primary);
-  }
-  .focus-visible\:border-ring:focus-visible {
-    border-color: var(--ring);
-  }
-  .focus-visible\:ring-ring:focus-visible {
-    --tw-ring-color: var(--ring);
-  }
-  
-  /* Hover effects */
-  .hover\:bg-primary\/90:hover {
-    background-color: oklch(from var(--primary) calc(l * 0.9) c h);
-  }
-  .hover\:text-primary\/90:hover {
-    color: oklch(from var(--primary) calc(l * 0.9) c h);
-  }
-  .hover\:bg-secondary\/80:hover {
-    background-color: oklch(from var(--secondary) calc(l * 0.8) c h);
-  }
-  .hover\:bg-secondary\/90:hover {
-    background-color: oklch(from var(--secondary) calc(l * 0.9) c h);
-  }
-  .hover\:bg-destructive\/90:hover {
-    background-color: oklch(from var(--destructive) calc(l * 0.9) c h);
-  }
-  .hover\:bg-accent:hover {
-    background-color: var(--accent);
-  }
-  .hover\:text-accent-foreground:hover {
-    color: var(--accent-foreground);
-  }
-  
-  /* Selection styles */
-  .selection\:bg-primary *::selection {
-    background-color: var(--primary);
-  }
-  .selection\:text-primary-foreground *::selection {
-    color: var(--primary-foreground);
-  }
-  
-  /* Placeholder styles */
-  .placeholder\:text-muted-foreground::placeholder {
-    color: var(--muted-foreground);
-  }
-  
-  /* File input styles */
-  .file\:text-foreground::file-selector-button {
-    color: var(--foreground);
-  }
-  
-  /* Dark mode input background */
-  .dark\:bg-input\/30:is(.dark *) {
-    background-color: oklch(from var(--input) l c h / 30%);
-  }
-  .dark\:bg-input\/50:is(.dark *) {
-    background-color: oklch(from var(--input) l c h / 50%);
-  }
-  .dark\:border-input:is(.dark *) {
-    border-color: var(--input);
-  }
-  .dark\:hover\:bg-input\/50:is(.dark *):hover {
-    background-color: oklch(from var(--input) l c h / 50%);
-  }
-  .dark\:hover\:bg-accent\/50:is(.dark *):hover {
-    background-color: oklch(from var(--accent) l c h / 50%);
-  }
-  
-  /* Focus visible ring styles for destructive */
-  .focus-visible\:ring-destructive\/20:focus-visible {
-    --tw-ring-color: oklch(from var(--destructive) l c h / 20%);
-  }
-  .dark\:focus-visible\:ring-destructive\/40:is(.dark *):focus-visible {
-    --tw-ring-color: oklch(from var(--destructive) l c h / 40%);
-  }
-  .aria-invalid\:ring-destructive\/20[aria-invalid="true"] {
-    --tw-ring-color: oklch(from var(--destructive) l c h / 20%);
-  }
-  .dark\:aria-invalid\:ring-destructive\/40:is(.dark *)[aria-invalid="true"] {
-    --tw-ring-color: oklch(from var(--destructive) l c h / 40%);
-  }
-  .aria-invalid\:border-destructive[aria-invalid="true"] {
-    border-color: var(--destructive);
-  }
-  
-  /* Data state styles */
-  .data-\[placeholder\]\:text-muted-foreground[data-placeholder] {
-    color: var(--muted-foreground);
-  }
-  .data-\[state\=open\]\:bg-secondary[data-state="open"] {
-    background-color: var(--secondary);
-  }
-  
-  /* Focus styles for accent */
-  .focus\:bg-accent:focus {
-    background-color: var(--accent);
-  }
-  .focus\:text-accent-foreground:focus {
-    color: var(--accent-foreground);
-  }
-  
-  /* Dark mode destructive */
-  .dark\:bg-destructive\/60:is(.dark *) {
-    background-color: oklch(from var(--destructive) l c h / 60%);
-  }
-  
-  /* Thêm utility classes cho support colors */
-  .bg-primary-light {
-    background-color: var(--primary-light);
-  }
-  .text-primary-light {
-    color: var(--primary-light);
-  }
-  
-  .bg-success {
-    background-color: var(--success);
-  }
-  .text-success {
-    color: var(--success);
-  }
-  .text-success-foreground {
-    color: var(--success-foreground);
-  }
-  
-  .bg-warning {
-    background-color: var(--warning);
-  }
-  .text-warning {
-    color: var(--warning);
-  }
-  .text-warning-foreground {
-    color: var(--warning-foreground);
-  }
-  
-  .bg-info {
-    background-color: var(--info);
-  }
-  .text-info {
-    color: var(--info);
-  }
-  .text-info-foreground {
-    color: var(--info-foreground);
-  }
-  
-  /* Gradient utilities */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, var(--primary), oklch(from var(--primary) calc(l * 1.1) c h));
-  }
-  .bg-gradient-primary-light {
-    background: linear-gradient(135deg, var(--primary-light), var(--background));
-  }
-  .bg-gradient-to-primary {
-    background: linear-gradient(135deg, var(--background), var(--primary-light));
-  }
-  
-  /* Text gradient utilities */
-  .text-gradient-primary {
-    background: linear-gradient(135deg, var(--primary), oklch(from var(--primary) calc(l * 1.2) calc(c * 0.8) h));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  /* Ví dụ, nếu bạn vẫn muốn có class .bg-brand-primary-dark */
-  .bg-brand-primary-dark {
-    background-color: oklch(45% 0.2 142.5); /* Tông màu rất tối của #22C55E */
-  }
-  .hover\:bg-brand-primary-hover:hover {
-    background-color: oklch(45% 0.2 142.5);
+    color: hsl(var(--foreground));
+  }
+}
+
+/* ===== Fix for Radix UI Components in Dialogs ===== */
+
+/* High priority z-index for Select and Dropdown content */
+[data-radix-select-content] {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+
+[data-radix-dropdown-menu-content] {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+
+/* Ensure solid background and proper styling */
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Dark mode support */
+.dark [data-radix-select-content],
+.dark [data-radix-dropdown-menu-content] {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Ensure Select content appears above Dialog */
+body:has([data-radix-dialog-content]) [data-radix-select-content] {
+  z-index: 999999 !important;
+}
+
+/* Fix for Select viewport in Dialog */
+[data-radix-select-viewport] {
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+/* Fix opacity issues */
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  opacity: 1 !important;
+}
+
+/* ===== Apply Job Dialog Specific Fixes ===== */
+/* Ensure form inputs have proper styling in dialog */
+[data-radix-dialog-content] input,
+[data-radix-dialog-content] textarea,
+[data-radix-dialog-content] [data-radix-select-trigger] {
+  border-color: rgb(209 213 219) !important;
+  background-color: white !important;
+}
+
+[data-radix-dialog-content] input:focus,
+[data-radix-dialog-content] textarea:focus,
+[data-radix-dialog-content] [data-radix-select-trigger]:focus {
+  border-color: rgb(34 197 94) !important;
+  box-shadow: 0 0 0 1px rgb(34 197 94) !important;
+}
+
+/* Apply Job Dialog Select Content */
+[data-radix-dialog-content] [data-radix-select-content] {
+  background-color: white !important;
+  border: 1px solid rgb(209 213 219) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  z-index: 999999 !important;
+}
+
+[data-radix-dialog-content] [data-radix-select-item] {
+  color: rgb(17 24 39) !important;
+}
+
+[data-radix-dialog-content] [data-radix-select-item]:hover,
+[data-radix-dialog-content] [data-radix-select-item][data-highlighted] {
+  background-color: rgb(249 250 251) !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

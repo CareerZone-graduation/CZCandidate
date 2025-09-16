@@ -217,31 +217,31 @@ const JobDetail = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="w-full max-w-md mx-auto bg-white">
           <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mb-4">
-              <Coins className="w-6 h-6 text-warning" />
+            <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+              <Coins className="w-6 h-6 text-orange-600" />
             </div>
             <CardTitle className="text-xl">Xem số người đã ứng tuyển</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-2">
-              <p className="text-muted-foreground">
+              <p className="text-gray-600">
                 Để xem số lượng ứng viên đã ứng tuyển vào vị trí này, bạn cần tiêu phí:
               </p>
-              <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-warning">
+              <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-orange-600">
                 <Coins className="w-5 h-5" />
                 <span>50 xu</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
               </p>
             </div>
             
-            <div className="bg-muted/50 p-3 rounded-lg">
+            <div className="bg-gray-50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-gray-600">
                   Thông tin này chỉ hiển thị một lần. Sau khi xem, bạn không thể hoàn tiền.
                 </p>
               </div>
@@ -257,12 +257,12 @@ const JobDetail = () => {
               </Button>
               <Button 
                 onClick={handleConfirmViewApplicants}
-                className="flex-1 bg-gradient-primary hover:opacity-90"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 disabled={isLoadingApplicants}
               >
                 {isLoadingApplicants ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Đang xử lý...
                   </>
                 ) : (
@@ -282,7 +282,7 @@ const JobDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded mb-4 w-1/4"></div>
@@ -302,7 +302,7 @@ const JobDetail = () => {
   if (isError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
               <CardContent>
@@ -328,7 +328,7 @@ const JobDetail = () => {
   if (!job) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
               <CardContent>
@@ -353,7 +353,7 @@ const JobDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <Button 
@@ -455,7 +455,7 @@ const JobDetail = () => {
                   ) : (
                     <Button
                       onClick={handleApply}
-                      className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
+                      className="bg-green-600 hover:bg-green-700 text-white px-8"
                       disabled={job?.status !== 'ACTIVE'}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />

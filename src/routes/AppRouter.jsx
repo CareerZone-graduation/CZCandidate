@@ -18,7 +18,8 @@ import JobDetail from '../pages/jobs/JobDetail';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import Applications from '../pages/jobs/Applications';
 import Profile from '../pages/profile/Profile';
-import JobNotificationManager from '../pages/notification/JobNotificationManager.jsx';
+import NotificationList from '../pages/notification/NotificationList.jsx';
+import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import News from '../pages/news/News';
 
 // Protected Route Component
@@ -74,8 +75,9 @@ const AppRouter = () => {
             <Route path="job-suggestions" element={<JobSuggestion />} />
             <Route path="applications" element={<Applications />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
+            <Route path="settings/job-alerts" element={<JobAlertSettings />} />
           </Route>
-</Route>
+        </Route>
         {/* Protected profile routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/profile" element={<MainLayout />}>
@@ -86,7 +88,7 @@ const AppRouter = () => {
         {/* Protected notifications routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/notifications" element={<MainLayout />}>
-            <Route index element={<JobNotificationManager />} />
+            <Route index element={<NotificationList />} />
           </Route>
         </Route>
         

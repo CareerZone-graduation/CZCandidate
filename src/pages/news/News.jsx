@@ -241,7 +241,7 @@ const News = () => {
 
   // Categories cho cả News và Career Guides
   const newsCategories = [
-    { id: 'all', name: 'Tất cả', count: 12, color: 'bg-primary' },
+    { id: 'all', name: 'Tất cả', count: 12, color: 'bg-green-600' },
     { id: 'technology', name: 'Công nghệ', count: 5, color: 'bg-blue-500' },
     { id: 'career', name: 'Nghề nghiệp', count: 4, color: 'bg-green-500' },
     { id: 'salary', name: 'Lương thưởng', count: 2, color: 'bg-purple-500' },
@@ -249,7 +249,7 @@ const News = () => {
   ];
 
   const guideCategories = [
-    { id: 'all', name: 'Tất cả', count: 25, color: 'bg-emerald-500', icon: BookOpen },
+    { id: 'all', name: 'Tất cả', count: 25, color: 'bg-green-600', icon: BookOpen },
     { id: 'sales', name: 'Bán hàng', count: 8, color: 'bg-blue-500', icon: TrendingUp },
     { id: 'telesales', name: 'Telesales', count: 5, color: 'bg-purple-500', icon: Users },
     { id: 'management', name: 'Quản lý', count: 6, color: 'bg-orange-500', icon: Target },
@@ -305,36 +305,35 @@ const News = () => {
   const fetchContent = async () => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const isNewsTab = activeTab === 'news';
-      const sourceData = isNewsTab ? mockNews : mockCareerGuides;
-      let filteredData = sourceData;
-      
-      // Filter by category
-      if (selectedCategory !== 'all') {
-        filteredData = filteredData.filter(item => item.categorySlug === selectedCategory);
-      }
-      
-      // Filter by search term
-      if (searchTerm) {
-        filteredData = filteredData.filter(item => 
-          item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      
-      if (isNewsTab) {
-        setNews(filteredData);
-        setFeaturedNews(filteredData.filter(item => item.isFeatured));
-      } else {
-        setCareerGuides(filteredData);
-        setFeaturedGuides(filteredData.filter(item => item.isFeatured));
-      }
-      
-      setTotalPages(Math.ceil(filteredData.length / 6));
-      setIsLoading(false);
-    }, 1000);
+  // Simulate API call
+    const isNewsTab = activeTab === 'news';
+    const sourceData = isNewsTab ? mockNews : mockCareerGuides;
+    let filteredData = sourceData;
+    
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filteredData = filteredData.filter(item => item.categorySlug === selectedCategory);
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filteredData = filteredData.filter(item => 
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (isNewsTab) {
+      setNews(filteredData);
+      setFeaturedNews(filteredData.filter(item => item.isFeatured));
+    } else {
+      setCareerGuides(filteredData);
+      setFeaturedGuides(filteredData.filter(item => item.isFeatured));
+    }
+    
+    setTotalPages(Math.ceil(filteredData.length / 6));
+    setIsLoading(false);
+
   };
 
   const handleSearch = (value) => {
@@ -377,7 +376,7 @@ const News = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+      <div className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Header Skeleton */}
@@ -428,7 +427,7 @@ const News = () => {
   const currentFeatured = isNewsTab ? featuredNews : featuredGuides;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-8">
           
@@ -437,20 +436,15 @@ const News = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <div className={cn(
                 "p-3 rounded-full",
-                isNewsTab ? "bg-primary/10" : "bg-emerald-500/10"
+                isNewsTab ? "bg-green-600/10" : "bg-emerald-500/10"
               )}>
                 {isNewsTab ? (
-                  <Newspaper className="h-8 w-8 text-primary" />
+                  <Newspaper className="h-8 w-8 text-green-600" />
                 ) : (
                   <GraduationCap className="h-8 w-8 text-emerald-600" />
                 )}
               </div>
-              <h1 className={cn(
-                "text-4xl font-bold bg-clip-text text-transparent",
-                isNewsTab 
-                  ? "bg-gradient-to-r from-primary via-blue-600 to-purple-600"
-                  : "bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600"
-              )}>
+              <h1 className="text-4xl font-bold text-black">
                 {isNewsTab ? 'Tin tức nghề nghiệp' : 'Kiến thức chuyên ngành'}
               </h1>
             </div>
@@ -470,7 +464,7 @@ const News = () => {
                 onClick={() => handleTabChange('news')}
                 className={cn(
                   "px-6 py-2 rounded-md transition-all duration-300",
-                  isNewsTab && "bg-primary text-primary-foreground shadow-md"
+                  isNewsTab && "bg-green-600 text-white shadow-md"
                 )}
               >
                 <Newspaper className="h-4 w-4 mr-2" />
@@ -501,7 +495,7 @@ const News = () => {
                 className={cn(
                   "pl-10 h-12 bg-white/80",
                   isNewsTab 
-                    ? "border-primary/20 focus:border-primary" 
+                    ? "border-green-600/20 focus:border-green-600" 
                     : "border-emerald-200 focus:border-emerald-500"
                 )}
               />
@@ -522,7 +516,7 @@ const News = () => {
                     selectedCategory === category.id 
                       ? `${category.color} text-white hover:opacity-90` 
                       : isNewsTab
-                        ? "bg-white/80 border-primary/20 hover:bg-primary/10"
+                        ? "bg-white/80 border-green-600/20 hover:bg-green-600/10"
                         : "bg-white/80 border-emerald-200 hover:bg-emerald-50"
                   )}
                 >
@@ -595,7 +589,7 @@ const News = () => {
                     <CardContent className="p-6">
                       <h3 className={cn(
                         "text-xl font-bold text-foreground mb-3 transition-colors line-clamp-2",
-                        isNewsTab ? "group-hover:text-primary" : "group-hover:text-emerald-600"
+                        isNewsTab ? "group-hover:text-green-600" : "group-hover:text-emerald-600"
                       )}>
                         {item.title}
                       </h3>
@@ -644,7 +638,7 @@ const News = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isNewsTab ? (
-                  <BookOpen className="h-5 w-5 text-primary" />
+                  <BookOpen className="h-5 w-5 text-green-600" />
                 ) : (
                   <BookOpen className="h-5 w-5 text-emerald-600" />
                 )}
@@ -694,7 +688,7 @@ const News = () => {
                     <CardContent className="p-4">
                       <h3 className={cn(
                         "text-lg font-bold text-foreground mb-2 transition-colors line-clamp-2",
-                        isNewsTab ? "group-hover:text-primary" : "group-hover:text-emerald-600"
+                        isNewsTab ? "group-hover:text-green-600" : "group-hover:text-emerald-600"
                       )}>
                         {item.title}
                       </h3>
@@ -766,7 +760,7 @@ const News = () => {
                   }}
                   className={cn(
                     isNewsTab 
-                      ? "border-primary/20 hover:bg-primary/10"
+                      ? "border-green-600/20 hover:bg-green-600/10"
                       : "border-emerald-200 hover:bg-emerald-50"
                   )}
                 >
@@ -785,7 +779,7 @@ const News = () => {
                 disabled={currentPage === 1}
                 className={cn(
                   isNewsTab 
-                    ? "border-primary/20 hover:bg-primary/10"
+                    ? "border-green-600/20 hover:bg-green-600/10"
                     : "border-emerald-200 hover:bg-emerald-50"
                 )}
               >
@@ -801,8 +795,8 @@ const News = () => {
                     className={cn(
                       "w-10 h-10",
                       currentPage === i + 1 
-                        ? (isNewsTab ? "bg-primary hover:bg-primary/90" : "bg-emerald-500 hover:bg-emerald-600")
-                        : (isNewsTab ? "border-primary/20 hover:bg-primary/10" : "border-emerald-200 hover:bg-emerald-50")
+                        ? (isNewsTab ? "bg-green-600 hover:bg-green-600/90" : "bg-emerald-500 hover:bg-emerald-600")
+                        : (isNewsTab ? "border-green-600/20 hover:bg-green-600/10" : "border-emerald-200 hover:bg-emerald-50")
                     )}
                   >
                     {i + 1}
@@ -816,7 +810,7 @@ const News = () => {
                 disabled={currentPage === totalPages}
                 className={cn(
                   isNewsTab 
-                    ? "border-primary/20 hover:bg-primary/10"
+                    ? "border-green-600/20 hover:bg-green-600/10"
                     : "border-emerald-200 hover:bg-emerald-50"
                 )}
               >
@@ -824,7 +818,8 @@ const News = () => {
               </Button>
             </div>
           )}
-
+        </div>
+      </div>
 
 {/* Newsletter Subscription */}
 <section className="py-16 bg-gradient-to-br from-emerald-500 to-green-600 relative overflow-hidden">
@@ -863,8 +858,10 @@ const News = () => {
   </div>
 </section>
 
-{/* Popular Tags */}
-<section className="py-16 bg-background">
+<div className="container mx-auto px-4">
+  <div className="max-w-6xl mx-auto space-y-8">
+    {/* Popular Tags */}
+    <section className="py-16 bg-background">
   <div className="max-w-6xl mx-auto px-4">
     <div className="text-center mb-12">
       <h2 className="text-3xl font-bold text-foreground mb-4">

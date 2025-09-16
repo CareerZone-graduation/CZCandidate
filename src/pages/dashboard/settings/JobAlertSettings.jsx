@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Bell, BellOff, Plus, Edit3, Trash2, Search, Filter, 
   Clock, MapPin, DollarSign, Briefcase, Tag, Eye, EyeOff,
-  AlertCircle, CheckCircle2, Calendar, Settings
+  AlertCircle, CheckCircle2, Calendar
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Skeleton } from '../../components/ui/skeleton';
-import { useJobNotifications } from './useJobNotifications';
-import { CreateNotificationDialog } from './components/CreateNotificationDialog';
-import { EditNotificationDialog } from './components/EditNotificationDialog';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Input } from '../../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Skeleton } from '../../../components/ui/skeleton';
+import { useJobAlerts } from '../../notification/useJobAlerts';
+import { CreateJobAlertDialog } from '../../notification/components/CreateJobAlertDialog';
+import { EditJobAlertDialog } from '../../notification/components/EditJobAlertDialog';
 
-const JobNotificationManager = () => {
-  const navigate = useNavigate();
+const JobAlertSettings = () => {
   const {
-    notifications,
+    alerts,
     isLoading,
     isSaving,
     isDeleting,
@@ -26,63 +24,62 @@ const JobNotificationManager = () => {
     totalItems,
     currentPage,
     totalPages,
-    fetchNotifications,
-    createNotification,
-    updateNotification,
-    deleteNotification,
-    toggleNotification,
+    createAlert,
+    updateAlert,
+    deleteAlert,
+    toggleAlertStatus,
     handlePageChange,
-    activeNotifications,
-    hasNotifications,
+    activeAlerts,
+    hasAlerts,
     canCreateMore
-  } = useJobNotifications();
+  } = useJobAlerts();
 
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingNotification, setEditingNotification] = useState(null);
+  const [editingAlert, setEditingAlert] = useState(null);
 
-  // Filter notifications
-  const filteredNotifications = notifications.filter(notification => {
+  // Filter alerts
+  const filteredAlerts = alerts.filter(alert => {
     const matchesSearch = !searchTerm || 
-      notification.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.keywords.toLowerCase().includes(searchTerm.toLowerCase());
+      (alert.name && alert.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (alert.keyword && alert.keyword.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = filterStatus === 'all' || 
-      (filterStatus === 'active' && notification.isActive) ||
-      (filterStatus === 'inactive' && !notification.isActive);
+      (filterStatus === 'active' && alert.active) ||
+      (filterStatus === 'inactive' && !alert.active);
     
     return matchesSearch && matchesStatus;
   });
 
   // Handlers
-  const handleCreateNotification = async (notificationData) => {
-    const success = await createNotification(notificationData);
+  const handleCreateAlert = async (alertData) => {
+    const success = await createAlert(alertData);
     if (success) {
       setShowCreateDialog(false);
     }
     return success;
   };
 
-  const handleUpdateNotification = async (updateData) => {
-    if (!editingNotification) return false;
+  const handleUpdateAlert = async (updateData) => {
+    if (!editingAlert) return false;
     
-    const success = await updateNotification(editingNotification._id, updateData);
+    const success = await updateAlert(editingAlert._id, updateData);
     if (success) {
-      setEditingNotification(null);
+      setEditingAlert(null);
     }
     return success;
   };
 
-  const handleDeleteNotification = async (id, name) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa thông báo "${name}"?`)) {
-      await deleteNotification(id);
+  const handleDeleteAlert = async (id, name) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa đăng ký "${name}"?`)) {
+      await deleteAlert(id);
     }
   };
 
-  const handleToggleNotification = async (id, isActive) => {
-    await toggleNotification(id, !isActive);
+  const handleToggleAlert = async (id, isActive) => {
+    await toggleAlertStatus(id, isActive);
   };
 
   // Format functions
@@ -95,33 +92,15 @@ const JobNotificationManager = () => {
     return frequencyMap[frequency] || frequency;
   };
 
-  const formatLastSent = (date) => {
-    if (!date) return 'Chưa gửi';
-    return new Date(date).toLocaleDateString('vi-VN');
-  };
-
   // Loading skeleton
-  if (isLoading && !hasNotifications) {
+  if (isLoading && !hasAlerts) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <div className="space-y-6">
               {[...Array(3)].map((_, i) => (
-                <Card key={i} className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <Skeleton className="h-6 w-1/3" />
-                      <Skeleton className="h-8 w-20" />
-                    </div>
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16" />
-                      <Skeleton className="h-6 w-20" />
-                      <Skeleton className="h-6 w-24" />
-                    </div>
-                  </div>
-                </Card>
+                <Card key={i} className="p-6"><div className="space-y-4"><div className="flex justify-between"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-8 w-20" /></div><Skeleton className="h-4 w-full" /><div className="flex gap-2"><Skeleton className="h-6 w-16" /><Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-24" /></div></div></Card>
               ))}
             </div>
           </div>
@@ -139,20 +118,20 @@ const JobNotificationManager = () => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent mb-2">
-                  Thông báo việc làm
+                  Đăng ký nhận thông báo
                 </h1>
                 <p className="text-lg text-gray-600">
-                  Quản lý các thông báo việc làm theo từ khóa và tiêu chí của bạn
+                  Quản lý các tiêu chí để nhận thông báo việc làm phù hợp
                 </p>
               </div>
               
               {canCreateMore && (
                 <Button
                   onClick={() => setShowCreateDialog(true)}
-                  className="..."
+                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Tạo thông báo mới
+                  Tạo đăng ký mới
                 </Button>
               )}
             </div>
@@ -163,7 +142,7 @@ const JobNotificationManager = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Tổng thông báo</p>
+                      <p className="text-sm font-medium text-gray-600">Tổng số đăng ký</p>
                       <p className="text-3xl font-bold text-gray-900">{totalItems}</p>
                     </div>
                     <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -178,7 +157,7 @@ const JobNotificationManager = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-                      <p className="text-3xl font-bold text-green-600">{activeNotifications.length}</p>
+                      <p className="text-3xl font-bold text-green-600">{activeAlerts.length}</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                       <CheckCircle2 className="h-6 w-6 text-green-600" />
@@ -192,7 +171,7 @@ const JobNotificationManager = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Tạm dừng</p>
-                      <p className="text-3xl font-bold text-orange-600">{totalItems - activeNotifications.length}</p>
+                      <p className="text-3xl font-bold text-orange-600">{totalItems - activeAlerts.length}</p>
                     </div>
                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                       <BellOff className="h-6 w-6 text-orange-600" />
@@ -234,27 +213,20 @@ const JobNotificationManager = () => {
 
           {/* Error State */}
           {error && (
-            <Card className="mb-8 border-red-200 bg-red-50">
-              <CardContent className="p-6">
-                <div className="flex items-center text-red-700">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  <span>{error}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <Card className="mb-8 border-red-200 bg-red-50"><CardContent className="p-6"><div className="flex items-center text-red-700"><AlertCircle className="h-5 w-5 mr-2" /><span>{error}</span></div></CardContent></Card>
           )}
 
           {/* Empty State */}
-          {!hasNotifications && !isLoading && (
+          {!hasAlerts && !isLoading && (
             <div className="text-center py-20">
               <div className="w-32 h-32 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
                 <Bell className="h-16 w-16 text-emerald-500" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Chưa có thông báo nào
+                Chưa có đăng ký nhận thông báo nào
               </h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Hãy tạo thông báo việc làm đầu tiên để nhận được cơ hội việc làm phù hợp với bạn.
+                Hãy tạo đăng ký đầu tiên để không bỏ lỡ cơ hội việc làm phù hợp.
               </p>
               {canCreateMore && (
                 <Button
@@ -262,20 +234,20 @@ const JobNotificationManager = () => {
                   className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Tạo thông báo đầu tiên
+                  Tạo đăng ký đầu tiên
                 </Button>
               )}
             </div>
           )}
 
-          {/* Notifications List */}
-          {filteredNotifications.length > 0 && (
+          {/* Alerts List */}
+          {filteredAlerts.length > 0 && (
             <div className="space-y-6">
-              {filteredNotifications.map((notification) => (
+              {filteredAlerts.map((alert) => (
                 <Card 
-                  key={notification._id}
+                  key={alert._id}
                   className={`group hover:shadow-xl transition-all duration-300 bg-white border-0 overflow-hidden ${
-                    notification.isActive ? 'hover:-translate-y-1' : 'opacity-75'
+                    alert.active ? 'hover:-translate-y-1' : 'opacity-75'
                   }`}
                 >
                   <CardContent className="p-6">
@@ -283,51 +255,51 @@ const JobNotificationManager = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
-                            {notification.name}
+                            {alert.name}
                           </h3>
                           <Badge 
-                            variant={notification.isActive ? "default" : "secondary"}
+                            variant={alert.active ? "default" : "secondary"}
                             className={`text-xs px-3 py-1 rounded-full ${
-                              notification.isActive 
+                              alert.active 
                                 ? 'bg-green-100 text-green-700' 
                                 : 'bg-gray-100 text-gray-600'
                             }`}
                           >
-                            {notification.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                            {alert.active ? 'Hoạt động' : 'Tạm dừng'}
                           </Badge>
                         </div>
                         
                         <div className="flex items-center text-gray-600 mb-3">
                           <Tag className="h-4 w-4 mr-2 text-emerald-500" />
                           <span className="font-medium">Từ khóa:</span>
-                          <span className="ml-2">{notification.keywords}</span>
+                          <span className="ml-2">{alert.keyword}</span>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                          {notification.location && (
+                          {alert.location && (
                             <div className="flex items-center">
                               <MapPin className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{notification.location}</span>
+                              <span>{alert.location}</span>
                             </div>
                           )}
                           
-                          {notification.category && (
+                          {alert.category && (
                             <div className="flex items-center">
                               <Briefcase className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{notification.category}</span>
+                              <span>{alert.category}</span>
                             </div>
                           )}
                           
-                          {notification.salaryRange && (
+                          {alert.salaryRange && (
                             <div className="flex items-center">
                               <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{notification.salaryRange}</span>
+                              <span>{alert.salaryRange}</span>
                             </div>
                           )}
                           
                           <div className="flex items-center">
                             <Clock className="h-4 w-4 mr-2 text-emerald-500" />
-                            <span>{formatFrequency(notification.frequency)}</span>
+                            <span>{formatFrequency(alert.frequency)}</span>
                           </div>
                         </div>
                       </div>
@@ -336,20 +308,20 @@ const JobNotificationManager = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleToggleNotification(notification._id, notification.isActive)}
+                          onClick={() => handleToggleAlert(alert._id, alert.active)}
                           className={`h-10 w-10 rounded-full transition-all duration-300 ${
-                            notification.isActive 
+                            alert.active 
                               ? 'text-green-600 bg-green-50 hover:bg-green-100' 
                               : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
                           }`}
                         >
-                          {notification.isActive ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                          {alert.active ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                         </Button>
                         
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setEditingNotification(notification)}
+                          onClick={() => setEditingAlert(alert)}
                           className="h-10 w-10 rounded-full text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all duration-300"
                         >
                           <Edit3 className="h-5 w-5" />
@@ -358,11 +330,11 @@ const JobNotificationManager = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteNotification(notification._id, notification.name)}
-                          disabled={isDeleting.has(notification._id)}
+                          onClick={() => handleDeleteAlert(alert._id, alert.name)}
+                          disabled={isDeleting.has(alert._id)}
                           className="h-10 w-10 rounded-full text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-300"
                         >
-                          {isDeleting.has(notification._id) ? (
+                          {isDeleting.has(alert._id) ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
                           ) : (
                             <Trash2 className="h-5 w-5" />
@@ -374,11 +346,7 @@ const JobNotificationManager = () => {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <div className="text-sm text-gray-500">
                         <Calendar className="h-4 w-4 inline mr-1" />
-                        Tạo: {new Date(notification.createdAt).toLocaleDateString('vi-VN')}
-                      </div>
-                      
-                      <div className="text-sm text-gray-500">
-                        Gửi lần cuối: {formatLastSent(notification.lastSent)}
+                        Tạo: {new Date(alert.createdAt).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   </CardContent>
@@ -420,20 +388,20 @@ const JobNotificationManager = () => {
 
       {/* Create Dialog */}
       {showCreateDialog && (
-        <CreateNotificationDialog
+        <CreateJobAlertDialog
           open={showCreateDialog}
           onClose={() => setShowCreateDialog(false)}
-          onSubmit={handleCreateNotification}
+          onSubmit={handleCreateAlert}
           isLoading={isSaving}
         />
       )}
 
       {/* Edit Dialog */}
-      {editingNotification && (
-        <EditNotificationDialog
-          notification={editingNotification}
-          onClose={() => setEditingNotification(null)}
-          onSubmit={handleUpdateNotification}
+      {editingAlert && (
+        <EditJobAlertDialog
+          alert={editingAlert}
+          onClose={() => setEditingAlert(null)}
+          onSubmit={handleUpdateAlert}
           isLoading={isSaving}
         />
       )}
@@ -441,4 +409,4 @@ const JobNotificationManager = () => {
   );
 };
 
-export default JobNotificationManager;
+export default JobAlertSettings;

@@ -25,7 +25,6 @@ import {
   Upload
 } from 'lucide-react';
 import { getMyProfile } from '../../services/profileService';
-import { toast } from 'sonner';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -91,26 +90,26 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-6">
-              <div className="bg-white rounded-lg p-6">
+              <div className="bg-card rounded-lg p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+                  <div className="w-24 h-24 bg-skeleton rounded-full"></div>
                   <div className="space-y-2">
-                    <div className="h-6 bg-gray-200 rounded w-48"></div>
-                    <div className="h-4 bg-gray-200 rounded w-32"></div>
-                    <div className="h-4 bg-gray-200 rounded w-40"></div>
+                    <div className="h-6 bg-skeleton rounded w-48"></div>
+                    <div className="h-4 bg-skeleton rounded w-32"></div>
+                    <div className="h-4 bg-skeleton rounded w-40"></div>
                   </div>
                 </div>
               </div>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-lg p-6">
-                  <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+                <div key={i} className="bg-card rounded-lg p-6">
+                  <div className="h-6 bg-skeleton rounded w-32 mb-4"></div>
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-skeleton rounded w-full"></div>
+                    <div className="h-4 bg-skeleton rounded w-3/4"></div>
                   </div>
                 </div>
               ))}
@@ -123,18 +122,18 @@ const Profile = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
               <CardContent>
-                <div className="text-red-500 mb-4">
+                <div className="text-destructive mb-4">
                   <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Có lỗi xảy ra</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={fetchProfile} size="lg">
                   Thử lại
                 </Button>
@@ -151,17 +150,17 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+      <div className="container mx-auto py-8">
         <div className="max-w-6xl mx-auto space-y-6">
           
           {/* Profile Header */}
           <Card className="overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-600 to-blue-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-info p-6 text-primary-foreground">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+                <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
                   <AvatarImage src={profile.avatar} alt={profile.fullname} />
-                  <AvatarFallback className="bg-white text-emerald-600 text-2xl font-bold">
+                  <AvatarFallback className="bg-primary-foreground text-primary text-2xl font-bold">
                     {profile.fullname?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -170,24 +169,24 @@ const Profile = () => {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold mb-2">{profile.fullname}</h1>
-                      <div className="flex items-center text-emerald-100 mb-2">
+                      <div className="flex items-center text-primary-foreground/80 mb-2">
                         <Mail className="w-4 h-4 mr-2" />
-                        <span>Email của bạn</span>
+                        <span>{profile.email}</span>
                       </div>
-                      <div className="flex items-center text-emerald-100">
+                      <div className="flex items-center text-primary-foreground/80">
                         <Phone className="w-4 h-4 mr-2" />
                         <span>{profile.phone || 'Chưa cập nhật số điện thoại'}</span>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-emerald-100 text-sm mb-1">Thành viên từ</div>
+                      <div className="text-primary-foreground/80 text-sm mb-1">Thành viên từ</div>
                       <div className="font-semibold">{formatDate(profile.createdAt)}</div>
                     </div>
                   </div>
                 </div>
                 
-                <Button variant="secondary" className="bg-white text-emerald-600 hover:bg-gray-50">
+                <Button variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
                   <Edit3 className="w-4 h-4 mr-2" />
                   Chỉnh sửa
                 </Button>
@@ -210,7 +209,7 @@ const Profile = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+                    <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
                   </CardContent>
                 </Card>
               )}
@@ -230,17 +229,17 @@ const Profile = () => {
                   <CardContent className="space-y-4">
                     {profile.experiences.map((exp, index) => (
                       <div key={exp._id || index} className="border-l-2 border-primary/20 pl-4 pb-4 last:pb-0">
-                        <h3 className="font-semibold text-lg text-gray-900">{exp.position}</h3>
+                        <h3 className="font-semibold text-lg text-foreground">{exp.position}</h3>
                         <div className="flex items-center text-primary font-medium mb-2">
                           <Building className="w-4 h-4 mr-1" />
                           {exp.company}
                         </div>
-                        <div className="flex items-center text-gray-600 text-sm mb-2">
+                        <div className="flex items-center text-muted-foreground text-sm mb-2">
                           <Calendar className="w-4 h-4 mr-1" />
                           {formatDate(exp.startDate)} - {exp.endDate ? formatDate(exp.endDate) : 'Hiện tại'}
                         </div>
                         {exp.description && (
-                          <p className="text-gray-700 mt-2">{exp.description}</p>
+                          <p className="text-muted-foreground mt-2">{exp.description}</p>
                         )}
                       </div>
                     ))}
@@ -260,18 +259,18 @@ const Profile = () => {
                   <CardContent className="space-y-4">
                     {profile.educations.map((edu, index) => (
                       <div key={edu._id || index} className="border-l-2 border-primary/20 pl-4 pb-4 last:pb-0">
-                        <h3 className="font-semibold text-lg text-gray-900">{edu.school}</h3>
+                        <h3 className="font-semibold text-lg text-foreground">{edu.school}</h3>
                         <div className="text-primary font-medium mb-1">{edu.major}</div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <span>{edu.degree}</span>
                           {edu.gpa && <span>GPA: {edu.gpa}</span>}
                         </div>
-                        <div className="flex items-center text-gray-600 text-sm mb-2">
+                        <div className="flex items-center text-muted-foreground text-sm mb-2">
                           <Calendar className="w-4 h-4 mr-1" />
                           {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
                         </div>
                         {edu.description && (
-                          <p className="text-gray-700 mt-2">{edu.description}</p>
+                          <p className="text-muted-foreground mt-2">{edu.description}</p>
                         )}
                       </div>
                     ))}
@@ -327,7 +326,7 @@ const Profile = () => {
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-gray-900 truncate">{cv.name}</h4>
                               {cv.isDefault && (
-                                <Badge className="bg-emerald-600 text-white">Mặc định</Badge>
+                                <Badge className="bg-primary text-primary-foreground">Mặc định</Badge>
                               )}
                             </div>
                             <p className="text-sm text-gray-500 mt-1">

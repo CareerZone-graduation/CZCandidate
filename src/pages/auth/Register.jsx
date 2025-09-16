@@ -198,11 +198,11 @@ const Register = () => {
               <Button 
                 type="submit" 
                 disabled={isLoading} 
-                className="w-full h-11 bg-gradient-primary hover:opacity-90 text-primary-foreground font-medium transition-all duration-300"
+                className="w-full h-11 bg-gradient-primary hover:opacity-90 text-white font-medium transition-all duration-300"
               >
                 {isLoading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Đang tạo tài khoản...
                   </div>
                 ) : (

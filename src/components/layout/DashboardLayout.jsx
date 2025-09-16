@@ -6,8 +6,10 @@ const DashboardLayout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow p-4 bg-gray-50">
-        <Outlet />
+      <main className="flex-grow bg-muted/30">
+        <div className="container py-8">
+          <Outlet />
+        </div>
       </main>
       <Footer />
     </div>

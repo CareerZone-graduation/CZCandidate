@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
@@ -59,7 +59,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
 
   const userProfile = profileData?.data?.profile;
   const user = profileData?.data?.user;
-  const cvs = userProfile?.cvs || [];
+  const cvs = useMemo(() => userProfile?.cvs || [], [userProfile?.cvs]);
 
   useEffect(() => {
     if (open && userProfile) {
@@ -149,6 +149,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
               value={candidateName}
               onChange={(e) => setCandidateName(e.target.value)}
               required
+              className="border-gray-300 focus:border-green-600 focus:ring-green-600"
             />
           </div>
           <div className="space-y-2">
@@ -158,6 +159,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
               value={candidatePhone}
               onChange={(e) => setCandidatePhone(e.target.value)}
               required
+              className="border-gray-300 focus:border-green-600 focus:ring-green-600"
             />
           </div>
         </div>
@@ -169,23 +171,24 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
             value={candidateEmail}
             onChange={(e) => setCandidateEmail(e.target.value)}
             required
+            className="border-gray-300 focus:border-green-600 focus:ring-green-600"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="cv">Chọn CV</Label>
           <Select onValueChange={setSelectedCv} value={selectedCv} required>
-            <SelectTrigger id="cv">
+            <SelectTrigger id="cv" className="w-full border-gray-300 focus:border-green-600 focus:ring-green-600">
               <SelectValue placeholder="Chọn CV để ứng tuyển..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto" container={document.body}>
               {cvs.length > 0 ? (
                 cvs.map((cv) => (
-                  <SelectItem key={cv._id} value={cv._id}>
+                  <SelectItem key={cv._id} value={cv._id} className="hover:bg-gray-50 focus:bg-gray-50">
                     {cv.name}
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="p-4 text-center text-sm text-gray-600">
                   Bạn chưa có CV nào. Vui lòng vào trang cá nhân để tải lên.
                 </div>
               )}
@@ -201,30 +204,32 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
             onChange={(e) => setCoverLetter(e.target.value)}
             rows={10}
             placeholder="Viết một vài lời giới thiệu về bản thân và tại sao bạn phù hợp với vị trí này..."
+            className="border-gray-300 focus:border-green-600 focus:ring-green-600"
           />
         </div>
 
         {submitError && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Lỗi</AlertTitle>
             <AlertDescription>{submitError}</AlertDescription>
           </Alert>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
+            className="border-gray-300 hover:bg-gray-50"
           >
             Hủy
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting || cvs.length === 0 || isLoading}
-            className="bg-gradient-primary"
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? 'Đang nộp đơn...' : 'Xác nhận ứng tuyển'}
@@ -236,10 +241,10 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Ứng tuyển vị trí</DialogTitle>
-          <DialogDescription>{jobTitle}</DialogDescription>
+          <DialogTitle className="text-2xl text-gray-900">Ứng tuyển vị trí</DialogTitle>
+          <DialogDescription className="text-gray-600">{jobTitle}</DialogDescription>
         </DialogHeader>
         {renderContent()}
       </DialogContent>

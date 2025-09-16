@@ -192,8 +192,8 @@ const Applications = () => {
 
     return (
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden bg-white">
+          <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage 
@@ -205,18 +205,18 @@ const Applications = () => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-lg font-semibold">{selectedApplication.jobSnapshot?.title}</h3>
-                <p className="text-sm text-muted-foreground">{selectedApplication.jobSnapshot?.company}</p>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedApplication.jobSnapshot?.title}</h3>
+                <p className="text-sm text-gray-600">{selectedApplication.jobSnapshot?.company}</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 mt-4">
+          <div className="space-y-6 overflow-y-auto pr-2" style={{maxHeight: 'calc(85vh - 120px)'}}>
             {/* Status và thông tin cơ bản */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Trạng thái đơn ứng tuyển</CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-white border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Trạng thái đơn ứng tuyển</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Badge 
@@ -244,9 +244,9 @@ const Applications = () => {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Thông tin ứng viên</CardTitle>
+              <Card className="bg-white border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Thông tin ứng viên</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -267,13 +267,13 @@ const Applications = () => {
 
             {/* Cover Letter */}
             {selectedApplication.coverLetter && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Thư giới thiệu</CardTitle>
+              <Card className="bg-white border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Thư giới thiệu</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-muted/30 p-4 rounded-lg border">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
                       {selectedApplication.coverLetter}
                     </p>
                   </div>
@@ -283,9 +283,9 @@ const Applications = () => {
 
             {/* CV Section */}
             {selectedApplication.submittedCV && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
+              <Card className="bg-white border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <FileIcon className="h-4 w-4" />
                     CV đã nộp
                   </CardTitle>
@@ -293,14 +293,14 @@ const Applications = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {/* CV Info */}
-                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <FileText className="h-5 w-5 text-primary" />
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <FileText className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-medium">{selectedApplication.submittedCV.name}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-medium text-gray-900">{selectedApplication.submittedCV.name}</p>
+                          <p className="text-sm text-gray-600">
                             Nguồn: {selectedApplication.submittedCV.source === 'UPLOADED' ? 'Tải lên' : 'Từ hồ sơ'}
                           </p>
                         </div>
@@ -310,6 +310,7 @@ const Applications = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="border-gray-300 hover:bg-gray-50"
                           onClick={() => handleDownloadCV(selectedApplication.submittedCV.path, selectedApplication.submittedCV.name)}
                         >
                           <Download className="h-4 w-4 mr-2" />
@@ -318,6 +319,7 @@ const Applications = () => {
                         <Button 
                           variant="default" 
                           size="sm"
+                          className="bg-green-600 hover:bg-green-700"
                           onClick={() => window.open(selectedApplication.submittedCV.path, '_blank')}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
@@ -327,7 +329,7 @@ const Applications = () => {
                     </div>
 
                     {/* PDF Viewer */}
-                    <div className="border rounded-lg overflow-hidden bg-gray-100">
+                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                       <div className="bg-gray-800 text-white p-3 flex items-center justify-between">
                         <span className="text-sm font-medium">Xem trước CV</span>
                         <Button 
@@ -355,9 +357,10 @@ const Applications = () => {
             )}
 
             {/* Action buttons */}
-            <div className="flex justify-between items-center pt-4 border-t">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <Button 
                 variant="outline"
+                className="border-gray-300 hover:bg-gray-50"
                 onClick={() => handleViewJob(selectedApplication.jobId)}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -366,6 +369,7 @@ const Applications = () => {
               
               <Button 
                 variant="default"
+                className="bg-green-600 hover:bg-green-700"
                 onClick={() => setShowDetailModal(false)}
               >
                 Đóng
@@ -407,14 +411,14 @@ const Applications = () => {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="text-center py-12">
-          <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">
+          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Chưa có đơn ứng tuyển nào
           </h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-gray-600 mb-6">
             Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp!
           </p>
-          <Button onClick={() => navigate('/jobs')} className="bg-gradient-primary">
+          <Button onClick={() => navigate('/jobs')} className="bg-green-600 hover:bg-green-700">
             <ExternalLink className="h-4 w-4 mr-2" />
             Tìm việc làm
           </Button>
@@ -428,8 +432,8 @@ const Applications = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Đơn ứng tuyển của tôi</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-gray-900">Đơn ứng tuyển của tôi</h1>
+          <p className="text-gray-600">
             Theo dõi trạng thái {totalItems} đơn ứng tuyển của bạn
           </p>
         </div>
@@ -437,7 +441,7 @@ const Applications = () => {
         <Button 
           variant="outline" 
           onClick={() => navigate('/dashboard')}
-          className="w-fit"
+          className="w-fit border-gray-300 hover:bg-gray-50"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại Dashboard
@@ -467,12 +471,12 @@ const Applications = () => {
             color: 'text-green-600' 
           }
         ].map((stat, index) => (
-          <Card key={index}>
+          <Card key={index} className="bg-white border border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold">{stat.count}</p>
+                  <p className="text-sm text-gray-600">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
                 </div>
                 <stat.icon className={cn("h-8 w-8", stat.color)} />
               </div>
@@ -490,24 +494,24 @@ const Applications = () => {
             <Card 
               key={application._id} 
               className={cn(
-                "group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl cursor-pointer",
+                "group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl cursor-pointer bg-white",
                 statusInfo.bgColor,
                 statusInfo.borderColor
               )}
               onClick={() => handleViewDetail(application)}
             >
               {/* Hiệu ứng highlight khi hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
               <CardContent className="relative p-6">
                 <div className="flex items-start space-x-4">
                   {/* Logo công ty trong vòng tròn có shadow */}
-                  <Avatar className="h-14 w-14 shadow-md ring-2 ring-muted/20">
+                  <Avatar className="h-14 w-14 shadow-md ring-2 ring-gray-200">
                     <AvatarImage 
                       src={application.jobSnapshot?.logo} 
                       alt={application.jobSnapshot?.company} 
                     />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    <AvatarFallback className="bg-green-100 text-green-600 font-bold">
                       {application.jobSnapshot?.company?.charAt(0) || 'C'}
                     </AvatarFallback>
                   </Avatar>
@@ -516,10 +520,10 @@ const Applications = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate group-hover:text-green-600 transition-colors">
                           {application.jobSnapshot?.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground flex items-center">
+                        <p className="text-sm text-gray-600 flex items-center">
                           <Building className="h-4 w-4 mr-1" />
                           {application.jobSnapshot?.company}
                         </p>
@@ -541,14 +545,14 @@ const Applications = () => {
                     </div>
 
                     {/* Info */}
-                    <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground mb-4">
+                    <div className="grid grid-cols-1 gap-2 text-sm text-gray-600 mb-4">
                       <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-primary" />
+                        <User className="h-4 w-4 mr-2 text-green-600" />
                         <span className="truncate">{application.candidateName}</span>
                       </div>
                       
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-primary" />
+                        <Calendar className="h-4 w-4 mr-2 text-green-600" />
                         <span>Ứng tuyển: {formatDate(application.appliedAt)}</span>
                       </div>
                     </div>
@@ -556,8 +560,8 @@ const Applications = () => {
                     {/* Cover Letter Preview */}
                     {application.coverLetter && (
                       <div className="mb-4">
-                        <div className="bg-muted/40 p-3 rounded-md border border-muted/30">
-                          <p className="text-sm text-muted-foreground line-clamp-2 italic">
+                        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                          <p className="text-sm text-gray-600 line-clamp-2 italic">
                             "{application.coverLetter}"
                           </p>
                         </div>
@@ -568,8 +572,8 @@ const Applications = () => {
 
                     {/* Actions */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1 text-primary" />
+                      <div className="flex items-center text-xs text-gray-600">
+                        <Clock className="h-3 w-3 mr-1 text-green-600" />
                         <span>{formatDate(application.lastStatusUpdateAt)}</span>
                       </div>
 
@@ -582,7 +586,7 @@ const Applications = () => {
                               e.stopPropagation();
                               handleDownloadCV(application.submittedCV.path, application.submittedCV.name);
                             }}
-                            className="text-xs rounded-full shadow-sm"
+                            className="text-xs rounded-full shadow-sm bg-gray-100 hover:bg-gray-200"
                           >
                             <Download className="h-3 w-3 mr-1" />
                             CV
@@ -596,7 +600,7 @@ const Applications = () => {
                             e.stopPropagation();
                             handleViewDetail(application);
                           }}
-                          className="rounded-full bg-gradient-to-r from-primary to-indigo-500 hover:opacity-90"
+                          className="rounded-full bg-green-600 hover:bg-green-700"
                         >
                           Chi tiết
                           <Eye className="h-4 w-4 ml-1" />
@@ -619,6 +623,7 @@ const Applications = () => {
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1}
+            className="border-gray-300 hover:bg-gray-50"
           >
             Trước
           </Button>
@@ -641,7 +646,12 @@ const Applications = () => {
                     variant={currentPage === page ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageChange(page)}
-                    className="w-8 h-8 p-0"
+                    className={cn(
+                      "w-8 h-8 p-0",
+                      currentPage === page 
+                        ? "bg-green-600 hover:bg-green-700" 
+                        : "border-gray-300 hover:bg-gray-50"
+                    )}
                   >
                     {page}
                   </Button>
@@ -654,6 +664,7 @@ const Applications = () => {
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
+            className="border-gray-300 hover:bg-gray-50"
           >
             Sau
           </Button>
