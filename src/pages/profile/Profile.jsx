@@ -90,7 +90,7 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+      <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
         <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-6">
@@ -122,7 +122,7 @@ const Profile = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+      <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8 bg-white">
@@ -150,13 +150,13 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+    <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
       <div className="container mx-auto py-8">
         <div className="max-w-6xl mx-auto space-y-6">
           
           {/* Profile Header */}
           <Card className="overflow-hidden bg-white">
-            <div className="bg-gradient-to-r from-primary to-info p-6 text-primary-foreground">
+            <div className="bg-linear-to-r from-primary to-info p-6 text-primary-foreground">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
                   <AvatarImage src={profile.avatar} alt={profile.fullname} />

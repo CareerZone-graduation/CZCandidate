@@ -434,7 +434,7 @@ const JobList = () => {
             src={job.company?.logo}
             alt={job.company?.name || 'Company Logo'}
           />
-          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
+          <AvatarFallback className="bg-linear-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
             {job.company?.name?.charAt(0) || job.title?.charAt(0) || '?'}
           </AvatarFallback>
         </Avatar>
@@ -465,22 +465,22 @@ const JobList = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="pt-2 flex-grow">
+      <CardContent className="pt-2 grow">
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <div className="flex items-center text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+            <MapPin className="h-4 w-4 mr-2 text-primary shrink-0" />
             <span className="font-medium truncate">{formatLocation(job.location)}</span>
           </div>
           <div className="flex items-center text-success font-semibold">
-            <DollarSign className="h-4 w-4 mr-2 text-success flex-shrink-0" />
+            <DollarSign className="h-4 w-4 mr-2 text-success shrink-0" />
             <span className="truncate">{formatSalary(job)}</span>
           </div>
           <div className="flex items-center text-muted-foreground">
-            <Clock className="h-4 w-4 mr-2 text-info flex-shrink-0" />
+            <Clock className="h-4 w-4 mr-2 text-info shrink-0" />
             <span className="truncate">{timeAgo(job.createdAt || job.postedAt)}</span>
           </div>
           <div className="flex items-center text-muted-foreground">
-            <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+            <Users className="h-4 w-4 mr-2 text-primary shrink-0" />
             <span className="font-medium truncate">{formatExperience(job.level)}</span>
           </div>
         </div>

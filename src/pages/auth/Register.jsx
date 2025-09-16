@@ -81,7 +81,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="border-0 shadow-xl bg-white backdrop-blur-sm">
           <CardHeader className="text-center pb-6">

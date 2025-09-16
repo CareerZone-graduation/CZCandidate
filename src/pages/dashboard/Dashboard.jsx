@@ -83,7 +83,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
+      <div className="bg-linear-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
         <h1 className="text-2xl font-bold mb-2">
           Chào mừng trở lại, {profile?.fullname}! 👋
         </h1>

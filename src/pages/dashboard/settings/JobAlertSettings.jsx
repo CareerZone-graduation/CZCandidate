@@ -95,7 +95,7 @@ const JobAlertSettings = () => {
   // Loading skeleton
   if (isLoading && !hasAlerts) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+      <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <div className="space-y-6">
@@ -110,14 +110,14 @@ const JobAlertSettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-4xl font-bold bg-linear-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent mb-2">
                   Đăng ký nhận thông báo
                 </h1>
                 <p className="text-lg text-gray-600">
@@ -128,7 +128,7 @@ const JobAlertSettings = () => {
               {canCreateMore && (
                 <Button
                   onClick={() => setShowCreateDialog(true)}
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-linear-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Tạo đăng ký mới
@@ -219,7 +219,7 @@ const JobAlertSettings = () => {
           {/* Empty State */}
           {!hasAlerts && !isLoading && (
             <div className="text-center py-20">
-              <div className="w-32 h-32 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
+              <div className="w-32 h-32 bg-linear-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
                 <Bell className="h-16 w-16 text-emerald-500" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -231,7 +231,7 @@ const JobAlertSettings = () => {
               {canCreateMore && (
                 <Button
                   onClick={() => setShowCreateDialog(true)}
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-linear-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Tạo đăng ký đầu tiên

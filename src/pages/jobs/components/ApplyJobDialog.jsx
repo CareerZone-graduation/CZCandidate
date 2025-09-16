@@ -180,7 +180,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
             <SelectTrigger id="cv" className="w-full border-gray-300 focus:border-green-600 focus:ring-green-600">
               <SelectValue placeholder="Chọn CV để ứng tuyển..." />
             </SelectTrigger>
-            <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto" container={document.body}>
+            <SelectContent className="z-9999 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto" container={document.body}>
               {cvs.length > 0 ? (
                 cvs.map((cv) => (
                   <SelectItem key={cv._id} value={cv._id} className="hover:bg-gray-50 focus:bg-gray-50">

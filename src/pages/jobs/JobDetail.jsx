@@ -240,7 +240,7 @@ const JobDetail = () => {
             
             <div className="bg-gray-50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
                 <p className="text-xs text-gray-600">
                   Thông tin này chỉ hiển thị một lần. Sau khi xem, bạn không thể hoàn tiền.
                 </p>
@@ -281,7 +281,7 @@ const JobDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
@@ -301,7 +301,7 @@ const JobDetail = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
@@ -327,7 +327,7 @@ const JobDetail = () => {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
@@ -352,7 +352,7 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
       <div className="container mx-auto py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
@@ -367,7 +367,7 @@ const JobDetail = () => {
 
           {/* Job Header */}
           <Card className="mb-6 overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-600 to-blue-600 p-6 text-white">
+            <div className="bg-linear-to-r from-emerald-600 to-blue-600 p-6 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h1 className="text-2xl md:text-3xl font-bold mb-2">{job.title}</h1>

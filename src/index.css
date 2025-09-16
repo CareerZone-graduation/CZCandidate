@@ -1,75 +1,152 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-/* CSS Variables for design system */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  /* --background: 120 25% 97%;   */
-  --background: 0 0% 100%;
-          /* Giữ nguyên nền xanh rất nhạt */
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;                   /* Giữ nguyên card màu trắng */
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;                /* Popover nên giống card */
-  --popover-foreground: 222.2 84% 4.9%;
-
-  --primary: 142.1 76.2% 36.3%;
-  --primary-foreground: 355.7 100% 97.3%;
-  --primary-light: 142.1 76.2% 96%;
-
-  --secondary: 215 28% 95%;           /* Chuyển sang màu xám nhạt trung tính hơn */
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 220 15% 95%;               /* Xám nhạt hơn một chút */
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 215 28% 95%;              /* Accent có thể giống secondary */
-  --accent-foreground: 222.2 84% 4.9%;
-  
-  --border: 214.3 31.8% 91.4%;         /* Giữ nguyên */
-  --input: 214.3 31.8% 91.4%;          /* Giữ nguyên */
-  --ring: 142.1 76.2% 36.3%;
+  --background: oklch(100% 0 0);
+  --foreground: oklch(20.33% 0.088 261.2);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(20.33% 0.088 261.2);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(20.33% 0.088 261.2);
+  --primary: oklch(46.36% 0.149 151.2);
+  --primary-foreground: oklch(97.59% 0.021 16.5);
+  --primary-light: oklch(96.39% 0.033 151.2);
+  --secondary: oklch(98.13% 0.006 257);
+  --secondary-foreground: oklch(20.33% 0.088 261.2);
+  --muted: oklch(98.13% 0.006 257);
+  --muted-foreground: oklch(50.48% 0.023 259.7);
+  --accent: oklch(98.13% 0.006 257);
+  --accent-foreground: oklch(20.33% 0.088 261.2);
+  --destructive: oklch(62.8% 0.224 25.4);
+  --destructive-foreground: oklch(98.13% 0.006 257);
+  --border: oklch(92.11% 0.016 258.4);
+  --input: oklch(92.11% 0.016 258.4);
+  --ring: oklch(46.36% 0.149 151.2);
   --radius: 0.75rem;
-  --info: 221.2 83.2% 53.3%;
-  --warning: 38.3 92.1% 50.4%;
-  --success: 142.1 76.2% 36.3%;
-  --footer: 220 13% 91%;
-  --footer-foreground: 220 8.9% 46.1%;
-  --footer-muted: 220 5.9% 57.9%;
+  --info: oklch(59.94% 0.199 261.8);
+  --warning: oklch(79.37% 0.176 83.2);
+  --success: oklch(46.36% 0.149 151.2);
+  --footer: oklch(91.75% 0.012 260.1);
+  --footer-foreground: oklch(49.98% 0.015 260.6);
+  --footer-muted: oklch(61.03% 0.008 260.5);
 }
 
 .dark {
-  --background: 220 14% 10%;           /* Nền chính: Xanh đen rất đậm, gần như đen */
-  --foreground: 210 40% 98%;           /* Chữ trắng */
-  --card: 220 13% 18%;                /* Card: Xám xanh đậm, SÁNG HƠN NỀN MỘT CHÚT */
-  --card-foreground: 210 40% 98%;
-  --popover: 220 13% 18%;             /* Popover giống card */
-  --popover-foreground: 210 40% 98%;
-  --primary: 142.1 70.6% 45.3%;
-  --primary-foreground: 144.9 80.4% 10%;
-  --primary-light: 142.1 76.2% 15%;
-  --secondary: 217.2 32.6% 24%;       /* Nền phụ: Sáng hơn card một chút */
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 24%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 24%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 72% 51%;             /* Màu đỏ sáng hơn để dễ thấy trên nền tối */
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 28%;           /* Viền: Sáng hơn card để có thể nhìn thấy */
-  --input: 217.2 32.6% 28%;
-  --ring: 142.1 70.6% 45.3%;
-  --info: 217.2 91.2% 59.8%;
-  --warning: 32.6 95.2% 58%;
-  --success: 142.1 70.6% 45.3%;
-  --footer: 220 14% 10%;
-  --footer-foreground: 215 20.2% 65.1%;
-  --footer-muted: 215.4 13.9% 34.1%;
+  --background: oklch(20.33% 0.088 261.2);
+  --foreground: oklch(98.13% 0.006 257);
+  --card: oklch(20.33% 0.088 261.2);
+  --card-foreground: oklch(98.13% 0.006 257);
+  --popover: oklch(20.33% 0.088 261.2);
+  --popover-foreground: oklch(98.13% 0.006 257);
+  --primary: oklch(53.94% 0.142 151.2);
+  --primary-foreground: oklch(27.44% 0.063 152.8);
+  --primary-light: oklch(20.93% 0.054 151.2);
+  --secondary: oklch(29.56% 0.038 260.1);
+  --secondary-foreground: oklch(98.13% 0.006 257);
+  --muted: oklch(29.56% 0.038 260.1);
+  --muted-foreground: oklch(67.92% 0.024 259);
+  --accent: oklch(29.56% 0.038 260.1);
+  --accent-foreground: oklch(98.13% 0.006 257);
+  --destructive: oklch(45.14% 0.158 24.9);
+  --destructive-foreground: oklch(98.13% 0.006 257);
+  --border: oklch(29.56% 0.038 260.1);
+  --input: oklch(29.56% 0.038 260.1);
+  --ring: oklch(53.94% 0.142 151.2);
+  --info: oklch(67.43% 0.174 259.6);
+  --warning: oklch(76.24% 0.16 77.2);
+  --success: oklch(53.94% 0.142 151.2);
+  --footer: oklch(40.17% 0.026 259.3);
+  --footer-foreground: oklch(50.46% 0.023 259.4);
+  --footer-muted: oklch(39.73% 0.02 259.5);
 }
 
+/* Base styles */
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--background);
+  color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
@@ -105,7 +182,7 @@ body {
 
 /* Custom gradient utilities */
 .text-gradient-primary {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--info)) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -119,7 +196,7 @@ body {
 }
 
 .bg-gradient-to-primary {
-  background: linear-gradient(135deg, hsl(var(--primary-light)) 0%, hsl(var(--background)) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--background) 100%);
 }
 
 /* Animations */
@@ -135,12 +212,12 @@ body {
 /* Enhanced focus styles */
 .focus-ring {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--background);
 }
 
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--background);
 }
 
 /* Smooth transitions */
@@ -155,17 +232,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: var(--muted);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: var(--border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: var(--muted-foreground);
 }
 
 /* Loading animations */
@@ -201,31 +278,35 @@ body {
 .card-interactive:hover {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-4px);
-  border-color: hsl(var(--primary) / 0.2);
+  border-color: color-mix(in oklch, transparent, var(--primary) 20%);
 }
 
 /* Button enhancements */
 .btn-gradient {
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--info)));
-  color: hsl(var(--primary-foreground));
+  background: linear-gradient(to right, var(--primary), var(--info));
+  color: var(--primary-foreground);
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--info) / 0.9));
+  background: linear-gradient(
+    to right,
+    color-mix(in oklch, black 10%, var(--primary)),
+    color-mix(in oklch, black 10%, var(--info))
+  );
 }
 
 .btn-gradient:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 0 4px hsl(var(--background));
+  box-shadow: 0 0 0 2px var(--primary), 0 0 0 4px var(--background);
 }
 
 /* Glass morphism effect */
 .glass {
-  background-color: hsl(var(--background) / 0.8);
+  background-color: color-mix(in oklch, transparent, var(--background) 80%);
   backdrop-filter: blur(12px);
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid color-mix(in oklch, transparent, var(--border) 50%);
 }
 
 .glass-light {
@@ -236,26 +317,26 @@ body {
 
 /* Footer utility classes */
 .bg-footer {
-  background-color: hsl(var(--footer));
+  background-color: var(--footer);
 }
 
 .text-footer-foreground {
-  color: hsl(var(--footer-foreground));
+  color: var(--footer-foreground);
 }
 
 .text-footer-muted {
-  color: hsl(var(--footer-muted));
+  color: var(--footer-muted);
 }
 
 /* Text selection */
 ::selection {
-  background: hsl(var(--primary) / 0.15);
-  color: hsl(var(--foreground));
+  background: color-mix(in oklch, transparent, var(--primary) 15%);
+  color: var(--foreground);
 }
 
 ::-moz-selection {
-  background: hsl(var(--primary) / 0.15);
-  color: hsl(var(--foreground));
+  background: color-mix(in oklch, transparent, var(--primary) 15%);
+  color: var(--foreground);
 }
 
 /* Print styles */
@@ -296,8 +377,8 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: var(--primary);
+  color: var(--primary-foreground);
   padding: 0.5rem 1rem;
   transform: translateY(-100%);
   transition: transform 0.2s ease;
@@ -311,77 +392,66 @@ body {
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .text-muted-foreground {
-    color: hsl(var(--foreground));
+    color: var(--foreground);
   }
 }
 
 /* ===== Fix for Radix UI Components in Dialogs ===== */
+/* (Phần này không thay đổi vì sử dụng màu cố định, không dùng biến) */
 
-/* High priority z-index for Select and Dropdown content */
 [data-radix-select-content] {
-  
   z-index: 999999 !important;
   position: fixed !important;
 }
-
 [data-radix-dropdown-menu-content] {
-  background-color: rgb(255 255 255) !important; /* Thay 'white' bằng 'rgb(255 255 255)' */
   z-index: 999999 !important;
   position: fixed !important;
 }
-
-
-
-/* Dark mode support */
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  background-color: white !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: blur(8px) !important;
+}
 .dark [data-radix-select-content],
 .dark [data-radix-dropdown-menu-content] {
-  
-  background-color: hsl(var(--card)) !important;
-  color: hsl(var(--card-foreground)) !important;
-  border-color: hsl(var(--border)) !important;
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
 }
-
-/* Ensure Select content appears above Dialog */
 body:has([data-radix-dialog-content]) [data-radix-select-content] {
   z-index: 999999 !important;
 }
-
-/* Fix for Select viewport in Dialog */
 [data-radix-select-viewport] {
   max-height: 200px !important;
   overflow-y: auto !important;
 }
-
-
-
-/* ===== Apply Job Dialog Specific Fixes ===== */
-/* Ensure form inputs have proper styling in dialog */
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  opacity: 1 !important;
+}
 [data-radix-dialog-content] input,
 [data-radix-dialog-content] textarea,
 [data-radix-dialog-content] [data-radix-select-trigger] {
   border-color: rgb(209 213 219) !important;
   background-color: white !important;
 }
-
 [data-radix-dialog-content] input:focus,
 [data-radix-dialog-content] textarea:focus,
 [data-radix-dialog-content] [data-radix-select-trigger]:focus {
   border-color: rgb(34 197 94) !important;
   box-shadow: 0 0 0 1px rgb(34 197 94) !important;
 }
-
-/* Apply Job Dialog Select Content */
 [data-radix-dialog-content] [data-radix-select-content] {
   background-color: white !important;
   border: 1px solid rgb(209 213 219) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   z-index: 999999 !important;
 }
-
 [data-radix-dialog-content] [data-radix-select-item] {
   color: rgb(17 24 39) !important;
 }
-
 [data-radix-dialog-content] [data-radix-select-item]:hover,
 [data-radix-dialog-content] [data-radix-select-item][data-highlighted] {
   background-color: rgb(249 250 251) !important;
@@ -393,5 +463,14 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

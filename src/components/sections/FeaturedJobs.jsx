@@ -17,7 +17,7 @@ const FeaturedJobs = () => {
       <div className="container">
         <SectionHeader 
           badgeText="⭐ Việc làm nổi bật"
-          title={<>Cơ hội nghề nghiệp <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">hàng đầu</span></>}
+          title={<>Cơ hội nghề nghiệp <span className="bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">hàng đầu</span></>}
           description="Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp."
         />
 
@@ -36,7 +36,7 @@ const FeaturedJobs = () => {
               <CardHeader className="flex flex-row items-start space-y-0 gap-4 pb-4">
                 <Avatar className="h-14 w-14 rounded-xl border-2 border-green-200">
                   <AvatarImage src={job.logo} alt={job.company} />
-                  <AvatarFallback className="bg-gradient-to-br from-green-100 to-green-200 text-green-700 text-lg font-bold rounded-xl">{job.company.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-linear-to-br from-green-100 to-green-200 text-green-700 text-lg font-bold rounded-xl">{job.company.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <CardTitle className="text-lg font-bold text-foreground group-hover:text-green-700 transition-colors">{job.title}</CardTitle>
@@ -50,19 +50,19 @@ const FeaturedJobs = () => {
               <CardContent className="pt-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-2 text-green-600 flex-shrink-0" /> 
+                    <MapPin className="h-4 w-4 mr-2 text-green-600 shrink-0" /> 
                     <span className="font-medium truncate">{job.location}</span>
                   </div>
                   <div className="flex items-center text-green-600 font-semibold">
-                    <DollarSign className="h-4 w-4 mr-2 text-success flex-shrink-0" /> 
+                    <DollarSign className="h-4 w-4 mr-2 text-success shrink-0" /> 
                     <span className="truncate">{job.salary}</span>
                   </div>
                   <div className="flex items-center text-muted-foreground">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" /> 
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground shrink-0" /> 
                     <span>{job.posted}</span>
                   </div>
                   <div className="flex items-center text-muted-foreground">
-                    <Briefcase className="h-4 w-4 mr-2 text-green-600 flex-shrink-0" /> 
+                    <Briefcase className="h-4 w-4 mr-2 text-green-600 shrink-0" /> 
                     <span className="font-medium truncate">{job.type}</span>
                   </div>
                 </div>

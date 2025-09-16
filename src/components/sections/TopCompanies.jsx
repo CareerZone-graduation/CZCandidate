@@ -39,7 +39,7 @@ const TopCompanies = () => {
                   <Badge className="absolute top-4 right-4 bg-gradient-primary text-white">Top</Badge>
                 )}
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="grow">
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
                     <Users className="h-4 w-4 text-primary" /> 

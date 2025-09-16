@@ -103,11 +103,11 @@ const Header = () => {
             <Link to="/" className="flex items-center space-x-2">
               <span className={cn(
                 "font-bold text-xl transition-colors",
-                isHeaderWhite ? "text-white" : "text-foreground"
+                 "text-foreground"
               )}>
                 Career<span className={cn(
                   "transition-colors",
-                  isHeaderWhite ? "text-white" : "text-primary"
+                  "text-primary"
                 )}>Zone</span>
               </span>
             </Link>
@@ -117,8 +117,8 @@ const Header = () => {
                   key={link.to} 
                   to={link.to} 
                   className={cn(
-                    "hover:text-primary transition-colors font-semibold",
-                    isHeaderWhite ? "text-white/90 hover:text-white" : "text-foreground/80"
+                    "hover:text-primary transition-colors font-semibold text-sm",
+                    "text-foreground/80"
                   )}
                 >
                   {link.label}
@@ -141,7 +141,7 @@ const Header = () => {
                     variant="ghost" 
                     className={cn(
                       "flex items-center gap-2 px-2 py-1 h-auto transition-colors",
-                      isHeaderWhite ? "text-white hover:bg-white/10" : ""
+                      ""
                     )}
                   >
                     <Avatar className="h-9 w-9">
@@ -152,7 +152,7 @@ const Header = () => {
                     </Avatar>
                     <ChevronDown className={cn(
                       "h-4 w-4 transition-colors",
-                      isHeaderWhite ? "text-white/70" : "text-muted-foreground"
+                      "text-muted-foreground"
                     )} />
                   </Button>
                 </DropdownMenuTrigger>
@@ -180,7 +180,6 @@ const Header = () => {
                 variant="ghost"
                 className={cn(
                   "transition-colors",
-                  isHeaderWhite ? "text-white hover:bg-white/10 hover:text-white" : ""
                 )}
               >
                 <Link to="/login">Đăng nhập</Link>
@@ -189,9 +188,7 @@ const Header = () => {
                 asChild 
                 className={cn(
                   "transition-colors",
-                  isHeaderWhite 
-                    ? "bg-white text-green-700 hover:bg-white/90" 
-                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+ "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
               >
                 <Link to="/register">Đăng ký</Link>

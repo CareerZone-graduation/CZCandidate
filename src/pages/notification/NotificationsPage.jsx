@@ -25,7 +25,7 @@ const NotificationItem = ({ notification }) => (
     "flex items-start gap-4 p-4 border-b last:border-b-0",
     !notification.read && "bg-green-50"
   )}>
-    <div className="flex-shrink-0">
+    <div className="shrink-0">
       <div className={cn(
         "w-10 h-10 rounded-full flex items-center justify-center",
         !notification.read ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -33,7 +33,7 @@ const NotificationItem = ({ notification }) => (
         <BellRing size={20} />
       </div>
     </div>
-    <div className="flex-grow">
+    <div className="grow">
       <p className="font-semibold">{notification.title}</p>
       <p className="text-sm text-muted-foreground">{notification.description}</p>
       <p className="text-xs text-muted-foreground mt-1">
@@ -41,7 +41,7 @@ const NotificationItem = ({ notification }) => (
       </p>
     </div>
     {!notification.read && (
-      <div className="flex-shrink-0 self-center">
+      <div className="shrink-0 self-center">
         <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
       </div>
     )}
@@ -118,7 +118,7 @@ const NotificationsPage = () => {
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-start gap-4 p-4">
               <Skeleton className="w-10 h-10 rounded-full" />
-              <div className="flex-grow space-y-2">
+              <div className="grow space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-3 w-1/4" />

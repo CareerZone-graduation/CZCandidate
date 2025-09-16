@@ -1,3 +1,20 @@
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import {
+  Bell,
+  LogOut,
+  MessageCircle,
+  User,
+  Search,
+  Coins,
+} from 'lucide-react';
 import AppRouter from './routes/AppRouter';
 import { Toaster } from 'sonner';
 
@@ -7,8 +24,10 @@ function App() {
   // This keeps the App component clean and focused on rendering the router.
   return (
     <>
+
       <AppRouter />
       <Toaster position="top-right" richColors />
+
     </>
   );
 }

@@ -822,7 +822,7 @@ const News = () => {
       </div>
 
 {/* Newsletter Subscription */}
-<section className="py-16 bg-gradient-to-br from-emerald-500 to-green-600 relative overflow-hidden">
+<section className="py-16 bg-linear-to-br from-emerald-500 to-green-600 relative overflow-hidden">
   <div className="absolute inset-0 bg-black/10"></div>
   <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
     <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12">
@@ -927,7 +927,7 @@ const News = () => {
 </section>
 
 {/* Career Resources */}
-<section className="py-16 bg-gradient-to-br from-emerald-50/50 to-blue-50/50">
+<section className="py-16 bg-linear-to-br from-emerald-50/50 to-blue-50/50">
   <div className="max-w-6xl mx-auto px-4">
     <div className="text-center mb-12">
       <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-emerald-600 border-emerald-300 bg-background mb-4">
@@ -1012,13 +1012,13 @@ const News = () => {
             <ul className="space-y-2 mb-6">
               {resource.features.map((feature, featureIndex) => (
                 <li key={featureIndex} className="flex items-center text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-emerald-500 mr-2 shrink-0" />
                   {feature}
                 </li>
               ))}
             </ul>
             
-            <Button className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold">
+            <Button className="w-full bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold">
               {resource.buttonText}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -1040,7 +1040,7 @@ const News = () => {
         { icon: TrendingUp, value: '10M+', label: 'Lượt xem tổng cộng', color: 'text-orange-600' }
       ].map((stat, index) => (
         <div key={index} className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-emerald-100 to-green-100 rounded-full mb-4">
             <stat.icon className={`h-8 w-8 ${stat.color}`} />
           </div>
           <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
@@ -1052,9 +1052,9 @@ const News = () => {
 </section>
 
 {/* Call to Action */}
-<section className="py-20 bg-gradient-to-br from-emerald-600 via-green-600 to-blue-600 relative overflow-hidden">
+<section className="py-20 bg-linear-to-br from-emerald-600 via-green-600 to-blue-600 relative overflow-hidden">
   <div className="absolute inset-0 bg-black/20"></div>
-  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-transparent"></div>
+  <div className="absolute inset-0 bg-linear-to-r from-emerald-600/20 to-transparent"></div>
   
   <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
     <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-6">

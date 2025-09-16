@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 
 const NewsletterBanner = () => {
   return (
-    <section className="relative bg-gradient-to-r from-green-500 via-teal-500 to-blue-600 py-20">
+    <section className="relative bg-linear-to-r from-green-500 via-teal-500 to-blue-600 py-20">
       {/* Background pattern overlay */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{

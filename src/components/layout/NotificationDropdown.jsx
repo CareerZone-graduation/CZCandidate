@@ -19,10 +19,10 @@ import { vi } from 'date-fns/locale';
 const NotificationDropdownItem = ({ notification }) => (
   <DropdownMenuItem asChild>
     <Link to={`/notifications`} className="flex items-start gap-3 p-2.5">
-       <div className="flex-shrink-0 mt-1">
+       <div className="shrink-0 mt-1">
          <BellRing size={16} className="text-primary"/>
        </div>
-       <div className="flex-grow">
+       <div className="grow">
         <p className="font-semibold text-sm leading-tight">{notification.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
            {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true, locale: vi })}
@@ -48,7 +48,7 @@ const NotificationDropdown = () => {
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex items-start gap-3">
               <Skeleton className="w-4 h-4 rounded-full" />
-              <div className="flex-grow space-y-1.5">
+              <div className="grow space-y-1.5">
                 <Skeleton className="h-3 w-3/4" />
                 <Skeleton className="h-2 w-1/4" />
               </div>

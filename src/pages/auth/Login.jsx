@@ -48,7 +48,7 @@ const Login = () => {
 
   return (
     // REPLACED: Layout toàn trang với nền gradient nhẹ nhàng.
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4 ">
+    <div className="min-h-screen bg-linear-to-br from-primary-light/20 via-background to-muted/30 flex items-center justify-center p-4 ">
       <div className="w-full max-w-md">
         {/* REPLACED: Sử dụng <Card> của ShadCN để chứa form, tạo hiệu ứng shadow nổi bật. */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
