@@ -1,31 +1,27 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// Thay đổi import này:
-// import { getMe } from '../services/authService';
-import { getMyProfile } from '../services/profileService';
+import { getMe, getMyProfile } from '../services/profileService';
 import { saveAccessToken, clearAccessToken, getAccessToken } from '../utils/token';
 
-// Async thunk to fetch user data after login or on app load
+// Async thunk to fetch user data
 export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWithValue }) => {
   const token = getAccessToken();
   if (!token) {
     return rejectWithValue('No token found');
   }
   try {
-    // Thay đổi từ getMe() thành getMyProfile()
-    const response = await getMyProfile();
-    // Lấy data từ response (vì getMyProfile trả về response.data)
+    const response = await getMe();
+    // Giả định response.data chứa { user: { ..., coinBalance: 100 }, profile: {...} }
     return response.data;
   } catch (error) {
-    clearAccessToken(); // Clear token if fetching user fails
+    clearAccessToken();
     return rejectWithValue(error.response?.data || 'Failed to fetch user');
   }
 });
 
-// Phần còn lại giữ nguyên...
 const initialState = {
-  user: null, // Will hold user and profile info
+  user: null,
   isAuthenticated: !!getAccessToken(),
-  isInitializing: true, // To track the initial user fetch
+  isInitializing: true,
   error: null,
 };
 
@@ -44,6 +40,12 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+    },
+    // Thêm reducer này để cập nhật số dư xu
+    updateCoinBalance: (state, action) => {
+      if (state.user && state.user.user) {
+        state.user.user.coinBalance = action.payload;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -66,6 +68,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginSuccess, logoutSuccess } = authSlice.actions;
+export const { loginSuccess, logoutSuccess, updateCoinBalance } = authSlice.actions;
 
 export default authSlice.reducer;
