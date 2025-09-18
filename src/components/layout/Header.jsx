@@ -186,9 +186,9 @@ const Header = () => {
               </Button>
               <Button 
                 asChild 
+                variant={"default"}
                 className={cn(
                   "transition-colors",
- "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
               >
                 <Link to="/register">Đăng ký</Link>

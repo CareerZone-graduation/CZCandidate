@@ -31,7 +31,6 @@ const Login = () => {
       if (loginData && loginData.data.accessToken) {
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
         await dispatch(fetchUser());
-        toast.success('Đăng nhập thành công!');
         // Chuyển hướng về trang chủ sau khi đăng nhập thành công
         navigate('/', { replace: true });
       } else {

@@ -61,7 +61,7 @@ const TopCompanies = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg" className="bg-gradient-primary text-white hover:opacity-90">
+          <Button size="lg">
             Xem tất cả công ty
           </Button>
         </div>
