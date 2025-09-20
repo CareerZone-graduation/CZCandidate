@@ -56,8 +56,8 @@ const categories = [
 
 const JobCategoriesSection = () => {
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+    <section className="py-20 bg-muted/30">
+      <div className="container">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div>
             <Badge variant="outline" className="text-primary mb-4">Khám phá lĩnh vực</Badge>

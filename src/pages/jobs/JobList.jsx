@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Search, Building, MapPin, DollarSign, Clock, Users, TrendingUp, Star,
   Heart, ChevronLeft, ChevronRight, X, Sparkles, AlertCircle, Filter,
   Briefcase, Building2, BarChart, Eye, ArrowRight, CheckCircle2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { getAllJobs, getAppliedJobIds } from '../../services/jobService';
-import { saveJob, unsaveJob } from '../../services/jobService';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getAllJobs } from '@/services/jobService';
+import { saveJob, unsaveJob } from '@/services/jobService';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobList = () => {
@@ -37,19 +36,8 @@ const JobList = () => {
 
   // State for Apply Job Dialog
   const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [selectedJob] = useState(null);
 
-  // Fetch applied job IDs
-  const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
-    queryKey: ['appliedJobIds'],
-    queryFn: getAppliedJobIds,
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const appliedJobIds = useMemo(() => {
-    return new Set(appliedJobIdsData?.data || []);
-  }, [appliedJobIdsData]);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -214,31 +202,56 @@ const JobList = () => {
   const formatLocation = (location) => {
     if (!location) return 'Chưa xác định';
     if (typeof location === 'string') return location;
+    // Updated to handle nested province/district objects
     if (typeof location === 'object') {
-      const { province, ward } = location;
-      if (province && ward) return `${ward}, ${province}`;
-      if (province) return province;
-      if (ward) return ward;
+      const provinceName = location.province?.name || location.province;
+      const districtName = location.district?.name || location.district;
+      if (provinceName && districtName) return `${districtName}, ${provinceName}`;
+      if (provinceName) return provinceName;
+      if (districtName) return districtName;
     }
     return 'Chưa xác định';
   };
 
-  const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return 'Thỏa thuận';
-    if (minSalary && maxSalary) return `${minSalary} - ${maxSalary} triệu`;
-    if (minSalary) return `Từ ${minSalary} triệu`;
-    return `Lên đến ${maxSalary} triệu`;
+  const formatSalary = (job) => {
+    if (job.salaryType === 'NEGOTIABLE' || (!job.minSalary && !job.maxSalary)) {
+      return 'Thỏa thuận';
+    }
+    if (job.minSalary && job.maxSalary) {
+      return `${job.minSalary} - ${job.maxSalary} triệu`;
+    }
+    if (job.minSalary) {
+      return `Từ ${job.minSalary} triệu`;
+    }
+    if (job.maxSalary) {
+      return `Lên đến ${job.maxSalary} triệu`;
+    }
+    return 'Thỏa thuận';
   };
 
   const formatWorkType = (type) => {
     const typeMap = {
-      'Full-time': 'Toàn thời gian',
-      'Part-time': 'Bán thời gian',
-      'Contract': 'Hợp đồng',
-      'Freelance': 'Tự do',
-      'Internship': 'Thực tập'
+      FULL_TIME: 'Toàn thời gian',
+      PART_TIME: 'Bán thời gian',
+      CONTRACT: 'Hợp đồng',
+      FREELANCE: 'Tự do',
+      INTERNSHIP: 'Thực tập',
     };
-    return typeMap[type] || type;
+    return typeMap[type] || type || 'Linh hoạt';
+  };
+
+  const formatExperience = (level) => {
+    const levelMap = {
+      INTERN: 'Thực tập sinh',
+      FRESHER: 'Mới tốt nghiệp',
+      JUNIOR: 'Sơ cấp',
+      MID_LEVEL: 'Trung cấp',
+      SENIOR_LEVEL: 'Cao cấp',
+      EXPERT: 'Chuyên gia',
+      MANAGER: 'Quản lý',
+      DIRECTOR: 'Giám đốc',
+    };
+    return levelMap[level] || level || 'Không yêu cầu';
   };
 
   const timeAgo = (dateString) => {
@@ -336,7 +349,7 @@ const JobList = () => {
           job.id === jobId ? { ...job, isSaved: true } : job
         ));
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi lưu việc làm');
     }
   };
@@ -358,7 +371,7 @@ const JobList = () => {
           job.id === jobId ? { ...job, isSaved: false } : job
         ));
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi bỏ lưu việc làm');
     }
   };
@@ -367,19 +380,9 @@ const JobList = () => {
     navigate(`/jobs/${jobId}`);
   };
 
-  const handleOpenApplyDialog = (job) => {
-    if (!user) {
-      toast.error('Vui lòng đăng nhập để ứng tuyển');
-      navigate('/login');
-      return;
-    }
-    setSelectedJob(job);
-    setIsApplyDialogOpen(true);
-  };
 
   const handleApplySuccess = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
-    refetchAppliedJobIds();
   };
 
   const handlePageChange = (newPage) => {
@@ -419,7 +422,7 @@ const JobList = () => {
     >
       {featured && (
         <div className="absolute -top-2 -right-2 z-10">
-          <Badge className="bg-gradient-primary text-primary-foreground px-3 py-1 shadow-lg">
+          <Badge className="bg-gradient-primary text-white px-3 py-1 shadow-lg">
             <Star className="h-3 w-3 mr-1 fill-current" /> Nổi bật
           </Badge>
         </div>
@@ -431,7 +434,7 @@ const JobList = () => {
             src={job.company?.logo}
             alt={job.company?.name || 'Company Logo'}
           />
-          <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
+          <AvatarFallback className="bg-linear-to-br from-primary/10 to-primary/20 text-primary text-lg font-bold rounded-xl">
             {job.company?.name?.charAt(0) || job.title?.charAt(0) || '?'}
           </AvatarFallback>
         </Avatar>
@@ -462,54 +465,49 @@ const JobList = () => {
         </div>
       </CardHeader>
       
-      <CardContent className="pt-2">
-        <div className="space-y-4 text-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-2 text-primary" />
-              <span className="font-medium">{formatLocation(job.location)}</span>
-            </div>
-            <div className="flex items-center text-success font-semibold">
-              <DollarSign className="h-4 w-4 mr-1" />
-              <span>{formatSalary(job.minSalary, job.maxSalary)}</span>
-            </div>
+      <CardContent className="pt-2 grow">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+          <div className="flex items-center text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-2 text-primary shrink-0" />
+            <span className="font-medium truncate">{formatLocation(job.location)}</span>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-muted-foreground">
-              <Clock className="h-4 w-4 mr-2 text-info" />
-              <span>{timeAgo(job.createdAt || job.postedAt)}</span>
-            </div>
-            <div className="flex items-center text-muted-foreground">
-              <Users className="h-4 w-4 mr-2 text-primary" />
-              <span>{job.experience || 'Không yêu cầu'}</span>
-            </div>
+          <div className="flex items-center text-success font-semibold">
+            <DollarSign className="h-4 w-4 mr-2 text-success shrink-0" />
+            <span className="truncate">{formatSalary(job)}</span>
           </div>
-          
-          {job.skills && job.skills.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {job.skills.slice(0, 3).map((tag, index) => (
-                <Badge key={index} variant="secondary" className="font-normal text-xs hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer">
-                  {tag}
-                </Badge>
-              ))}
-              {job.skills.length > 3 && (
-                <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                  +{job.skills.length - 3}
-                </Badge>
-              )}
-            </div>
-          )}
+          <div className="flex items-center text-muted-foreground">
+            <Clock className="h-4 w-4 mr-2 text-info shrink-0" />
+            <span className="truncate">{timeAgo(job.createdAt || job.postedAt)}</span>
+          </div>
+          <div className="flex items-center text-muted-foreground">
+            <Users className="h-4 w-4 mr-2 text-primary shrink-0" />
+            <span className="font-medium truncate">{formatExperience(job.level)}</span>
+          </div>
         </div>
+        
+        {job.skills && job.skills.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {job.skills.slice(0, 3).map((tag, index) => (
+              <Badge key={index} variant="secondary" className="font-normal text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {job.skills.length > 3 && (
+              <Badge variant="secondary" className="text-xs font-normal bg-gray-100 text-gray-600">
+                +{job.skills.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
       </CardContent>
       
-      <CardFooter className="border-t pt-4 flex justify-between items-center bg-muted/20">
+      <CardFooter className="border-t pt-3 flex justify-between items-center bg-transparent">
         <Badge
-          variant={formatWorkType(job.type) === 'Remote' ? 'outline' : 'secondary'}
+          variant="secondary"
           className="px-3 py-1 font-medium"
         >
-          <Briefcase className="h-3 w-3 mr-1" />
-          {formatWorkType(job.type)}
+          <Briefcase className="h-3 w-3 mr-1.5" />
+          {formatWorkType(job.workType)}
         </Badge>
         <div className="flex items-center gap-4">
           {isApplied && (
@@ -544,7 +542,7 @@ const JobList = () => {
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl"></div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 relative z-10 w-full">
+        <div className="container relative z-10 w-full">
           <div className="max-w-4xl mx-auto text-center mb-12">
            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background/80 backdrop-blur-sm mb-6">
               🚀 Nền tảng việc làm hàng đầu tại Việt Nam
@@ -589,7 +587,7 @@ const JobList = () => {
                     </SelectContent>
                   </Select>
                 </div>
-               <Button size="lg" className="h-14 w-full bg-gradient-primary hover:opacity-90 text-primary-foreground transition-all duration-300 shadow-lg hover:shadow-xl font-semibold">
+               <Button size="lg" className="h-14 w-full bg-gradient-primary hover:opacity-90 text-white transition-all duration-300 shadow-lg hover:shadow-xl font-semibold">
                   <Search className="mr-2 h-5 w-5" />
                   Tìm kiếm ngay
                 </Button>
@@ -635,7 +633,7 @@ const JobList = () => {
 
       {/* 🎯 Job Search Section - Similar to HomePage */}
       <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               <span className="text-gradient-primary bg-clip-text text-transparent">Tìm kiếm cơ hội nghề nghiệp</span>
@@ -761,8 +759,8 @@ const JobList = () => {
       </section>
 
       {/* 🎯 Featured Jobs Section - Similar to HomePage */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+      <section className="py-20 bg-white">
+        <div className="container">
           {/* Header */}
           <div className="text-center mb-16">
             <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
@@ -810,7 +808,7 @@ const JobList = () => {
                   onSave={handleSaveJob}
                   onUnsave={handleUnsaveJob}
                   onClick={handleJobClick}
-                  isApplied={appliedJobIds.has(job._id)}
+                  isApplied={job.isApplied}
                   featured={true}
                 />
               ))}
@@ -834,7 +832,7 @@ const JobList = () => {
 
       {/* 🎯 Top Categories Section */}
       <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="container">
           <div className="text-center mb-16">
             <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
               🏢 Khám phá lĩnh vực
@@ -873,335 +871,6 @@ const JobList = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 🎯 All Jobs Section */}
-      <section id="jobs-section" className="py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          {/* Header */}
-            <div className="text-center mb-16">
-            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
-              💼 Tất cả việc làm
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Khám phá <span className="text-gradient-primary bg-clip-text text-transparent">cơ hội nghề nghiệp</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Danh sách đầy đủ tất cả các vị trí việc làm hiện có, được cập nhật liên tục
-            </p>
-          </div>
-
-          {/* Advanced Filters */}
-          <Card className="mb-12 shadow-xl border-0 bg-background/95 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {/* Experience Filter */}
-                <Select value={selectedExperience || 'all'} onValueChange={setSelectedExperience}>
-                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
-                    <SelectValue placeholder="Kinh nghiệm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {experiences.map((exp) => (
-                      <SelectItem key={exp.value} value={exp.value}>
-                        {exp.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Salary Filter */}
-                <Select value={selectedSalary || 'all'} onValueChange={setSelectedSalary}>
-                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
-                    <SelectValue placeholder="Mức lương" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {salaryRanges.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Category Filter */}
-                <Select value={selectedCategory || 'all'} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-12 bg-white border-border/50 focus:border-primary">
-                    <SelectValue placeholder="Ngành nghề" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jobCategories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Clear Filters Button */}
-                {hasActiveFilters && (
-                  <Button
-                    variant="outline"
-                    onClick={clearAllFilters}
-                    className="h-12 px-6 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Xóa bộ lọc
-                  </Button>
-                )}
-              </div>
-
-              {/* Active Filters Display */}
-              {hasActiveFilters && (
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-                  {searchTerm && (
-                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                      🔍 "{searchTerm}"
-                    </Badge>
-                  )}
-                  {selectedLocation && selectedLocation !== 'all' && (
-                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                      📍 {locations.find(l => l.value === selectedLocation)?.label}
-                    </Badge>
-                  )}
-                  {selectedExperience && selectedExperience !== 'all' && (
-                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                      💼 {experiences.find(e => e.value === selectedExperience)?.label}
-                    </Badge>
-                  )}
-                  {selectedSalary && selectedSalary !== 'all' && (
-                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                      💰 {salaryRanges.find(s => s.value === selectedSalary)?.label}
-                    </Badge>
-                  )}
-                  {selectedCategory && selectedCategory !== 'all' && (
-                    <Badge variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                      🏢 {jobCategories.find(c => c.value === selectedCategory)?.label}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Results Summary */}
-          <div className="flex justify-between items-center mb-8">
-            <div className="text-sm text-muted-foreground">
-              {totalItems > 0 ? (
-                <span className="font-medium">
-                  Tìm thấy <span className="text-primary font-bold">{totalItems}</span> việc làm
-                  {hasActiveFilters && " phù hợp với bộ lọc"}
-                </span>
-              ) : !isLoading ? (
-                <span>Không có kết quả</span>
-              ) : (
-                <span>Đang tìm kiếm...</span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-medium">Trang {currentPage} / {totalPages}</span>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              {[...Array(12)].map((_, i) => (
-                <Card key={i} className="h-80 shadow-lg">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <Skeleton className="w-16 h-16 rounded-xl" />
-                        <Skeleton className="w-12 h-12 rounded-full" />
-                      </div>
-                      <div className="space-y-3">
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-4 w-3/4" />
-                      </div>
-                      <div className="space-y-2">
-                        <Skeleton className="h-5 w-1/2" />
-                        <Skeleton className="h-4 w-2/3" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !isLoading && (
-            <div className="text-center py-20">
-              <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-8">
-                <AlertCircle className="h-16 w-16 text-red-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Có lỗi xảy ra
-              </h3>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                {error}
-              </p>
-              <Button 
-                onClick={() => fetchJobs(1, true)}
-                className="bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold"
-              >
-                Thử lại
-              </Button>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {jobs.length === 0 && !isLoading && !error && (
-            <div className="text-center py-20">
-              <div className="w-32 h-32 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
-                <Building className="h-16 w-16 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Không tìm thấy công việc nào
-              </h3>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                {hasActiveFilters 
-                  ? 'Không có kết quả phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác.'
-                  : 'Hiện tại chưa có công việc nào được đăng tuyển.'
-                }
-              </p>
-              {hasActiveFilters && (
-                <Button 
-                  variant="outline" 
-                  onClick={clearAllFilters}
-                  className="bg-background border-primary/30 text-primary hover:bg-primary/10 font-semibold"
-                >
-                  Xóa tất cả bộ lọc
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Jobs Grid */}
-          {!isLoading && !error && jobs.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-                {jobs.map((job) => (
-                  <JobCard
-                    key={job.id || job._id}
-                    job={job}
-                    onSave={handleSaveJob}
-                    onUnsave={handleUnsaveJob}
-                    onClick={handleJobClick}
-                    isApplied={appliedJobIds.has(job._id)}
-                  />
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-6 h-12 border-primary/30 bg-background hover:bg-primary/10 font-semibold"
-                  >
-                    <ChevronLeft className="h-5 w-5 mr-2" />
-                    Trước
-                  </Button>
-                  
-                  <div className="flex space-x-2">
-                    <span className="px-6 py-3 text-sm text-primary bg-primary/10 border-2 border-primary/30 rounded-xl font-bold">
-                      {currentPage} / {totalPages}
-                    </span>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-6 h-12 border-primary/30 bg-background hover:bg-primary/10 font-semibold"
-                  >
-                    Sau
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* 🎯 Top Companies Section */}
-     <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
-              🏢 Khám phá lĩnh vực
-            </Badge>
-             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                 Việc làm theo <span className="text-primary font-bold">công ty</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tìm hiểu về các ngành nghề đang có nhu cầu tuyển dụng cao và khám phá cơ hội phát triển sự nghiệp
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {topCompanies.map((company) => (
-              <Card 
-                key={company.id}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 bg-background border-0 relative overflow-hidden hover:-translate-y-1 transform"
-                onClick={() => handleCompanyClick(company.name)}
-              >
-                {company.isTop && (
-                  <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full z-10">
-                    TOP
-                  </Badge>
-                )}
-                <CardContent className="p-8 text-center">
-                  <div className="w-full h-24 bg-muted/30 rounded-lg flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
-                    <img 
-                      src={company.logo} 
-                      alt={company.name}
-                      className="max-w-full max-h-full object-contain"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className="hidden w-full h-full bg-gradient-primary flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-xl">
-                        {company.name.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-lg line-clamp-2 mb-4">
-                    {company.name}
-                  </h3>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center justify-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>{company.employees}</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Building className="h-4 w-4" />
-                      <span className="text-primary font-medium">{company.jobs}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* View All Companies Button */}
-          <div className="text-center">
-            <Button 
-              size="lg" 
-              className="bg-gradient-primary hover:opacity-90 text-primary-foreground px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => navigate('/companies')}
-            >
-              Xem tất cả công ty
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
           </div>
         </div>
       </section>

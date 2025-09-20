@@ -2,6 +2,7 @@ import { Users, Briefcase, Star, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { SectionHeader } from '../common/SectionHeader';
 
 const companies = [
   { id: 1, name: 'FPT Software', logo: '🏢', employees: '10,000+ nhân viên', jobs: '120 việc làm', industry: 'Công nghệ thông tin', rating: 4.8, featured: true },
@@ -15,18 +16,13 @@ const companies = [
 const TopCompanies = () => {
   return (
     <section className="py-20 bg-background">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="text-primary mb-4 bg-background border-primary/30">
-            🏢 Đối tác uy tín
-          </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Top công ty <span className="text-gradient-primary">hàng đầu</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Khám phá và ứng tuyển vào các công ty uy tín, môi trường làm việc tốt nhất.
-          </p>
-        </div>
+      <div className="container">
+        <SectionHeader
+          badgeText="🏢 Đối tác uy tín"
+          title={<>Top công ty <span className="text-gradient-primary">hàng đầu</span></>}
+          description="Khám phá và ứng tuyển vào các công ty uy tín, môi trường làm việc tốt nhất."
+          className="mb-12"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {companies.map((company) => (
@@ -40,10 +36,10 @@ const TopCompanies = () => {
                   <span className="font-semibold text-foreground">{company.rating}</span>
                 </div>
                 {company.featured && (
-                  <Badge className="absolute top-4 right-4 bg-gradient-primary text-primary-foreground">Top</Badge>
+                  <Badge className="absolute top-4 right-4 bg-gradient-primary text-white">Top</Badge>
                 )}
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="grow">
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
                     <Users className="h-4 w-4 text-primary" /> 
@@ -65,7 +61,7 @@ const TopCompanies = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+          <Button size="lg">
             Xem tất cả công ty
           </Button>
         </div>

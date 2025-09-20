@@ -16,9 +16,17 @@ import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobList from '../pages/jobs/JobList';
 import JobDetail from '../pages/jobs/JobDetail';
 import SavedJobs from '../pages/jobs/SavedJobs';
+import Applications from '../pages/jobs/Applications';
+import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
 import Profile from '../pages/profile/Profile';
-import JobNotificationManager from '../pages/notification/JobNotificationManager.jsx';
+import NotificationsPage from '../pages/notification/NotificationsPage.jsx';
+import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import News from '../pages/news/News';
+import NotFound from '../pages/NotFound';
+import BillingPage from '../pages/billing/Billing';
+import Billing from '../pages/billing/Billing'; // Import trang nạp xu
+import PaymentSuccess from '../pages/payment/PaymentSuccess';
+import PaymentFailure from '../pages/payment/PaymentFailure';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -56,25 +64,30 @@ const AppRouter = () => {
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={isAuthenticated ? <Navigate to="/jobs" /> : <HomePage />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/jobs" element={<JobList />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/news" element={<News />} />
         </Route>
 
         {/* Auth routes */}
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/jobs" /> : <Login />} />
-        <Route path="/register" element={isAuthenticated ? <Navigate to="/jobs" /> : <Register />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
 
         {/* Protected dashboard routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="job-suggestions" element={<JobSuggestion />} />
+            <Route path="applications" element={<Applications />} />
+            <Route path="applications/:id" element={<ApplicationDetailPage />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
+            <Route path="settings/job-alerts" element={<JobAlertSettings />} />
+            {/* Thêm route cho trang nạp xu */}
+            <Route path="billing" element={<BillingPage />} />
+            <Route path="top-up" element={<Billing />} />
           </Route>
         </Route>
-
         {/* Protected profile routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/profile" element={<MainLayout />}>
@@ -85,12 +98,16 @@ const AppRouter = () => {
         {/* Protected notifications routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/notifications" element={<MainLayout />}>
-            <Route index element={<JobNotificationManager />} />
+            <Route index element={<NotificationsPage />} />
           </Route>
         </Route>
+
+        {/* Payment result routes - không cần layout */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failure" element={<PaymentFailure />} />
         
         {/* Fallback for any other route */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/jobs" : "/"} />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

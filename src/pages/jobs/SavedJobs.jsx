@@ -25,7 +25,6 @@ import {
 import { unsaveJob } from '../../services/savedJobService';
 import apiClient from '../../services/apiClient';
 import { toast } from 'sonner';
-import { cn } from '../../lib/utils';
 
 const SavedJobs = () => {
   const navigate = useNavigate();
@@ -50,7 +49,7 @@ const SavedJobs = () => {
       return;
     }
     fetchSavedJobs();
-  }, [isAuthenticated, navigate, currentPage]);
+  }, [isAuthenticated, navigate, currentPage, searchTerm]);
 
   /**
    * Fetch saved jobs - Gọi trực tiếp API backend
@@ -71,7 +70,8 @@ const SavedJobs = () => {
         params: {
           page: currentPage,
           limit: limit,
-          sortBy: 'createdAt:desc'
+          sortBy: 'createdAt:desc',
+          keyword: searchTerm
         }
       });
       
@@ -127,11 +127,6 @@ const SavedJobs = () => {
   /**
    * Filter jobs based on search term
    */
-  const filteredJobs = savedJobs.filter(job => {
-    if (!searchTerm) return true;
-    return job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           job.company?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-  });
 
   /**
    * Handle view job details
@@ -159,7 +154,7 @@ const SavedJobs = () => {
       toast.success('Đã bỏ công việc khỏi danh sách đã lưu');
       
       // Nếu trang hiện tại không còn items và không phải trang đầu, chuyển về trang trước
-      if (filteredJobs.length === 1 && currentPage > 1) {
+      if (savedJobs.length === 1 && currentPage > 1) {
         setCurrentPage(prev => prev - 1);
       }
     } catch (err) {
@@ -211,7 +206,7 @@ const SavedJobs = () => {
   // Loading skeleton - 8 items (4x2)
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+      <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse">
@@ -239,12 +234,12 @@ const SavedJobs = () => {
     const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tải dữ liệu';
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+      <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-col items-center justify-center py-20">
               <div className="text-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-24 h-24 bg-linear-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6">
                   <AlertCircle className="h-12 w-12 text-red-500" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -255,7 +250,7 @@ const SavedJobs = () => {
                 </p>
                 <Button 
                   onClick={handleRetry}
-                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg"
+                  className="bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg"
                 >
                   <RefreshCw className="h-5 w-5 mr-2" />
                   Thử lại
@@ -269,7 +264,7 @@ const SavedJobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -283,7 +278,7 @@ const SavedJobs = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                   Việc làm đã lưu
                 </h1>
                 <p className="text-gray-600 mt-1">
@@ -315,7 +310,7 @@ const SavedJobs = () => {
           {/* Results Count */}
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
-              Hiển thị <strong className="text-emerald-600">{filteredJobs.length}</strong> kết quả trên trang <strong>{currentPage}</strong>
+              Hiển thị <strong className="text-emerald-600">{savedJobs.length}</strong> kết quả trên trang <strong>{currentPage}</strong>
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>Trang {currentPage} / {totalPages}</span>
@@ -323,7 +318,7 @@ const SavedJobs = () => {
           </div>
 
           {/* Job Grid */}
-          {filteredJobs.length === 0 ? (
+          {savedJobs.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
                 <div className="text-gray-400 mb-4">
@@ -351,7 +346,7 @@ const SavedJobs = () => {
             <>
               {/* 🎯 Grid layout 4 cột x 2 hàng = 8 items */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8 min-h-[500px]">
-                {filteredJobs.map((job, index) => {
+                {savedJobs.map((job, index) => {
                   const isDeleting = deletingJobs.has(job._id);
                   
                   return (

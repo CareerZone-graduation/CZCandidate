@@ -32,7 +32,7 @@ const NewsletterSection = () => {
                 <div className="space-y-4 mb-8">
                   {features.map((feature, index) => (
                     <div key={index} className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="h-5 w-5 text-primary mr-3 mt-0.5 shrink-0" />
                       <span className="text-muted-foreground">{feature}</span>
                     </div>
                   ))}
@@ -44,7 +44,7 @@ const NewsletterSection = () => {
                     placeholder="Email của bạn" 
                     className="h-12 sm:max-w-sm"
                   />
-                  <Button size="lg" className="h-12 bg-gradient-primary hover:opacity-90">
+                  <Button size="lg" className="h-12 bg-gradient-primary hover:opacity-90 text-white">
                     Đăng ký ngay <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>

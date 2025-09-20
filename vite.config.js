@@ -15,12 +15,13 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3004,
+    port: 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
+    allowedHosts: ['a8519f6f7a72.ngrok-free.app','7fb469cc720ec13a5d6ffcf5dc861b78.serveo.net'],
   },
 })

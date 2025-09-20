@@ -106,12 +106,12 @@ const Testimonials = () => {
         </div>
 
         <div className="mt-20 text-center">
-          <Card className="max-w-4xl mx-auto bg-gradient-primary text-primary-foreground p-8 md:p-12 shadow-2xl border-0">
+          <Card className="max-w-4xl mx-auto bg-gradient-primary text-white p-8 md:p-12 shadow-2xl border-0">
             <CardContent className="p-0">
               <h3 className="text-2xl md:text-3xl font-bold mb-4">
                 Bạn cũng muốn có câu chuyện thành công như vậy?
               </h3>
-              <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
                 Hãy tham gia CareerZone ngay hôm nay và khám phá hàng ngàn cơ hội việc làm tuyệt vời!
                 Việc làm mơ ước của bạn đang chờ phía trước.
               </p>

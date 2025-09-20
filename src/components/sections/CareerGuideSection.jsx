@@ -62,7 +62,7 @@ const CareerGuideSection = () => {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-4 left-4">
-                  <Badge className="bg-gradient-primary text-primary-foreground hover:opacity-90">{item.category}</Badge>
+                  <Badge className="bg-gradient-primary text-white hover:opacity-90">{item.category}</Badge>
                 </div>
               </div>
               <CardContent className="p-6">

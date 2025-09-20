@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
+=======
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,26 +34,36 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
+<<<<<<< HEAD
 import { getJobApplicantCount, getJobById, getAppliedJobIds } from '../../services/jobService';
 import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
+=======
+import { getJobApplicantCount, getJobById } from '../../services/jobService';
+import { saveJob, unsaveJob } from '../../services/savedJobService';
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+<<<<<<< HEAD
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+=======
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
+
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
   const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
+<<<<<<< HEAD
   // Fetch applied job IDs
   const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
     queryKey: ['appliedJobIds'],
@@ -97,6 +114,17 @@ const JobDetail = () => {
 
     checkSavedStatus();
   }, [id, isAuthenticated]);
+=======
+  // Fetch job details using React Query
+  const { data: jobData, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['jobDetail', id],
+    queryFn: () => getJobById(id),
+    enabled: !!id,
+    select: (data) => data.data.data,
+  });
+  
+  const job = jobData;
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
@@ -179,46 +207,71 @@ const JobDetail = () => {
 
   const handleApplySuccess = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
+<<<<<<< HEAD
     refetchAppliedJobIds();
+=======
+    queryClient.invalidateQueries(['jobDetail', id]);
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
   };
+  
+  const { mutate: toggleSaveJob } = useMutation({
+    mutationFn: () => {
+      return job?.isSaved ? unsaveJob(id) : saveJob(id);
+    },
+    onMutate: async () => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['jobDetail', id] });
 
-  const handleSave = async () => {
+      // Snapshot the previous value
+      const previousJobData = queryClient.getQueryData(['jobDetail', id]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['jobDetail', id], (oldQueryData) => {
+        if (!oldQueryData) return undefined;
+        
+        return {
+          ...oldQueryData,
+          data: {
+            ...oldQueryData.data,
+            data: {
+              ...oldQueryData.data.data,
+              isSaved: !oldQueryData.data.data.isSaved,
+            }
+          }
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousJobData };
+    },
+    onSuccess: () => {
+      // The UI is already updated optimistically. We can show a toast.
+      // We need to get the *new* state to show the correct message.
+      const updatedJob = queryClient.getQueryData(['jobDetail', id]);
+      const message = updatedJob?.data?.data?.isSaved ? 'Đã lưu công việc thành công' : 'Đã bỏ lưu công việc';
+      toast.success(message);
+    },
+    onError: (err, _newVariables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousJobData) {
+        queryClient.setQueryData(['jobDetail', id], context.previousJobData);
+      }
+      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái lưu';
+      toast.error(errorMessage);
+      
+      // Inform the user the optimistic update was reverted.
+      toast.info('Trạng thái lưu công việc đã được hoàn tác do có lỗi.');
+    },
+    // By not having onSettled or invalidating in onSuccess, we prevent the refetch.
+  });
+
+  const handleSave = () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-
-    try {
-      setIsSaving(true);
-      
-      if (isSaved) {
-        // Unsave job
-        await unsaveJob(id);
-        setIsSaved(false);
-        toast.success('Đã bỏ lưu công việc');
-      } else {
-        // Save job
-        try {
-          await saveJob(id);
-          setIsSaved(true);
-          toast.success('Đã lưu công việc thành công');
-        } catch (err) {
-          // Xử lý trường hợp đặc biệt: job đã được lưu
-          if (err.response?.data?.message === 'Bạn đã lưu công việc này rồi.') {
-            setIsSaved(true);
-            toast.info('Công việc này đã được lưu trước đó');
-          } else {
-            throw err; // Re-throw lỗi khác
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
-      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
-      toast.error(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
+    toggleSaveJob();
   };
 
   const handleShare = () => {
@@ -240,31 +293,31 @@ const JobDetail = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="w-full max-w-md mx-auto bg-white">
           <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mb-4">
-              <Coins className="w-6 h-6 text-warning" />
+            <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+              <Coins className="w-6 h-6 text-orange-600" />
             </div>
             <CardTitle className="text-xl">Xem số người đã ứng tuyển</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-2">
-              <p className="text-muted-foreground">
+              <p className="text-gray-600">
                 Để xem số lượng ứng viên đã ứng tuyển vào vị trí này, bạn cần tiêu phí:
               </p>
-              <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-warning">
+              <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-orange-600">
                 <Coins className="w-5 h-5" />
                 <span>50 xu</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
               </p>
             </div>
             
-            <div className="bg-muted/50 p-3 rounded-lg">
+            <div className="bg-gray-50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-gray-600">
                   Thông tin này chỉ hiển thị một lần. Sau khi xem, bạn không thể hoàn tiền.
                 </p>
               </div>
@@ -280,12 +333,12 @@ const JobDetail = () => {
               </Button>
               <Button 
                 onClick={handleConfirmViewApplicants}
-                className="flex-1 bg-gradient-primary hover:opacity-90"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 disabled={isLoadingApplicants}
               >
                 {isLoadingApplicants ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Đang xử lý...
                   </>
                 ) : (
@@ -304,8 +357,8 @@ const JobDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded mb-4 w-1/4"></div>
@@ -322,10 +375,10 @@ const JobDetail = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
               <CardContent>
@@ -335,10 +388,10 @@ const JobDetail = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
-                <Button onClick={() => navigate(-1)} variant="outline">
+                <p className="text-gray-600 mb-4">{error.message}</p>
+                <Button onClick={() => refetch()} variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại
+                  Thử lại
                 </Button>
               </CardContent>
             </Card>
@@ -350,8 +403,8 @@ const JobDetail = () => {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+        <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8">
               <CardContent>
@@ -375,8 +428,8 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+      <div className="container mx-auto py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <Button 
@@ -390,7 +443,7 @@ const JobDetail = () => {
 
           {/* Job Header */}
           <Card className="mb-6 overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-600 to-blue-600 p-6 text-white">
+            <div className="bg-linear-to-r from-emerald-600 to-blue-600 p-6 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h1 className="text-2xl md:text-3xl font-bold mb-2">{job.title}</h1>
@@ -470,7 +523,11 @@ const JobDetail = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex space-x-3">
+<<<<<<< HEAD
                   {isApplied ? (
+=======
+                  {job?.isApplied ? (
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
                     <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border border-green-200 px-8 py-2.5">
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Đã ứng tuyển
@@ -478,7 +535,11 @@ const JobDetail = () => {
                   ) : (
                     <Button
                       onClick={handleApply}
+<<<<<<< HEAD
                       className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
+=======
+                      className="bg-green-600 hover:bg-green-700 text-white px-8"
+>>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
                       disabled={job?.status !== 'ACTIVE'}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
@@ -486,18 +547,13 @@ const JobDetail = () => {
                     </Button>
                   )}
                   
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleSave}
-                    disabled={isSaving}
-                    className={isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
+                    className={job?.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
                   >
-                    {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                    ) : (
-                      <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
-                    )}
-                    {isSaved ? "Đã lưu" : "Lưu việc làm"}
+                    <Bookmark className={`w-4 h-4 mr-2 ${job?.isSaved ? "fill-current" : ""}`} />
+                    {job?.isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>
 

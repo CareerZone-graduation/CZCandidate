@@ -2,6 +2,7 @@ import { Cpu, Megaphone, Palette, Landmark, Users, ShoppingCart, BookOpen, Steth
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { SectionHeader } from '../common/SectionHeader';
 
 const categories = [
   { name: 'Công nghệ thông tin', jobs: '2,500+ việc làm', icon: <Cpu className="h-10 w-10 text-primary" /> },
@@ -16,23 +17,18 @@ const categories = [
 
 const PopularCategories = () => {
   return (
-    <section className="py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="text-primary mb-4 bg-background border-primary/30">
-            🎯 Lĩnh vực hot
-          </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Danh mục <span className="text-gradient-primary">phổ biến</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Khám phá các lĩnh vực việc làm hot nhất hiện nay.
-          </p>
-        </div>
+    <section className="py-20 bg-muted">
+      <div className="container">
+        <SectionHeader
+          badgeText="🎯 Lĩnh vực hot"
+          title={<>Danh mục <span className="text-gradient-primary">phổ biến</span></>}
+          description="Khám phá các lĩnh vực việc làm hot nhất hiện nay."
+          className="mb-12"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {categories.map((category, index) => (
-            <Card key={index} className="group text-center hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-2 border-0 shadow-md bg-background">
+            <Card key={index} className="bg-white shadow-md rounded-2xl p-6">
               <CardHeader>
                 <div className="mx-auto bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center group-hover:bg-gradient-primary transition-all duration-300">
                   <div className="transform group-hover:scale-110 group-hover:text-primary-foreground transition-all duration-300">
