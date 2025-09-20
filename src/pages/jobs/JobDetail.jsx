@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,7 +27,7 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
-import { getJobApplicantCount, getJobById } from '../../services/jobService';
+import { getJobApplicantCount, getJobById, getAppliedJobIds } from '../../services/jobService';
 import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
@@ -34,7 +35,7 @@ import { ApplyJobDialog } from './components/ApplyJobDialog';
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +46,19 @@ const JobDetail = () => {
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  // Fetch applied job IDs
+  const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
+    queryKey: ['appliedJobIds'],
+    queryFn: getAppliedJobIds,
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const isApplied = useMemo(() => {
+    const appliedIds = new Set(appliedJobIdsData?.data || []);
+    return appliedIds.has(id);
+  }, [appliedJobIdsData, id]);
 
   useEffect(() => {
     const fetchJobDetail = async () => {
@@ -164,12 +178,8 @@ const JobDetail = () => {
   };
 
   const handleApplySuccess = () => {
-    // Optionally refetch data or update UI
-    navigate('/dashboard', {
-      state: {
-        message: 'Ứng tuyển thành công! Nhà tuyển dụng sẽ liên hệ với bạn sớm.'
-      }
-    });
+    toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
+    refetchAppliedJobIds();
   };
 
   const handleSave = async () => {
@@ -460,14 +470,21 @@ const JobDetail = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex space-x-3">
-                 <Button
-                   onClick={handleApply}
-                   className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
-                   disabled={job?.status !== 'ACTIVE'}
-                 >
-                   <CheckCircle className="w-4 h-4 mr-2" />
-                   {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
-                 </Button>
+                  {isApplied ? (
+                    <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border border-green-200 px-8 py-2.5">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Đã ứng tuyển
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={handleApply}
+                      className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
+                      disabled={job?.status !== 'ACTIVE'}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
+                    </Button>
+                  )}
                   
                   <Button 
                     variant="outline" 
