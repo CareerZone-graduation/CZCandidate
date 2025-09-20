@@ -218,6 +218,36 @@ const Header = () => {
     }
   }, [isAuthenticated]);
 
+  // Close dropdowns on Escape key
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setShowUserDropdown(false);
+        setShowNotificationDropdown(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if click is outside both dropdowns
+      const isClickInsideDropdown = event.target.closest('[data-dropdown]');
+      if (!isClickInsideDropdown) {
+        setShowUserDropdown(false);
+        setShowNotificationDropdown(false);
+      }
+    };
+
+    if (showUserDropdown || showNotificationDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showUserDropdown, showNotificationDropdown]);
+
   const handleLogout = async () => {
     try {
       await logoutService();
@@ -341,9 +371,9 @@ const Header = () => {
               {navLinks.map((link) => (
                 <Link key={link.title} to={link.href} className={cn(
                   "transition-colors duration-300",
-                 isHeaderWhite
-  ? "black font-semibold hover:text-primary"
-  : "text-muted-foreground font-semibold hover:text-primary"
+                  isHeaderWhite
+                    ? "black font-semibold hover:text-primary"
+                    : "text-muted-foreground font-semibold hover:text-primary"
 
                 )}>
                   {link.title}
@@ -358,7 +388,7 @@ const Header = () => {
           {isAuthenticated ? (
             <div className="flex items-center space-x-4">
               {/* Notification Bell */}
-              <div className="relative">
+              <div className="relative" data-dropdown>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -386,133 +416,127 @@ const Header = () => {
 
                 {/* Notification Dropdown */}
                 {showNotificationDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowNotificationDropdown(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-xl z-20 max-h-96 overflow-hidden">
-                      {/* Header */}
-                      <div className="px-4 py-3 border-b border-border bg-muted/30">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-foreground">
-                            Thông báo việc làm
-                            {isLoadingNotifications && (
-                              <span className="ml-2 text-xs text-muted-foreground">(Đang tải...)</span>
-                            )}
-                          </h3>
-                          <div className="flex items-center gap-2">
-                            {notificationCount > 0 && !isLoadingNotifications && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={markAllAsRead}
-                                className="text-xs text-emerald-600 hover:text-emerald-700"
-                              >
-                                Đánh dấu đã đọc
-                              </Button>
-                            )}
+                  <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-xl z-50 max-h-96 overflow-hidden" data-dropdown>
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-border bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-foreground">
+                          Thông báo việc làm
+                          {isLoadingNotifications && (
+                            <span className="ml-2 text-xs text-muted-foreground">(Đang tải...)</span>
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {notificationCount > 0 && !isLoadingNotifications && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={viewAllNotifications}
-                              className="text-xs text-primary hover:text-primary/80"
+                              onClick={markAllAsRead}
+                              className="text-xs text-emerald-600 hover:text-emerald-700"
                             >
-                              Quản lý
+                              Đánh dấu đã đọc
                             </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Notifications List */}
-                      <div className="max-h-80 overflow-y-auto">
-                        {isLoadingNotifications ? (
-                          <div className="p-8 text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-3"></div>
-                            <p className="text-sm text-muted-foreground">Đang tải thông báo...</p>
-                          </div>
-                        ) : notifications.length > 0 ? (
-                          <div className="divide-y divide-border">
-                            {notifications.slice(0, 5).map((notification) => (
-                              <div
-                                key={notification.id}
-                                onClick={() => handleNotificationItemClick(notification)}
-                                className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors duration-200 ${!notification.isRead && notification.isActive ? 'bg-emerald-50/50 border-l-4 border-l-emerald-500' : ''
-                                  } ${!notification.isActive ? 'opacity-60' : ''}`}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 mt-1">
-                                    {notification.icon}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className={`text-sm ${!notification.isRead && notification.isActive ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
-                                        {notification.title}
-                                      </p>
-                                      {notification.isActive ? (
-                                        <Badge className="text-xs bg-green-100 text-green-700 px-2 py-0.5">
-                                          Hoạt động
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5">
-                                          Tạm dừng
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                      {notification.message}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                      <Clock className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">{notification.time}</span>
-                                      {!notification.isRead && notification.isActive && (
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full ml-auto"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-8 text-center">
-                            <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground mb-2">Chưa có thông báo việc làm</p>
-                            <p className="text-xs text-muted-foreground mb-4">
-                              Đăng ký thông báo để nhận cơ hội việc làm phù hợp
-                            </p>
-                            <Button
-                              size="sm"
-                              onClick={viewAllNotifications}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                              Đăng ký thông báo
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Footer */}
-                      {notifications.length > 5 && !isLoadingNotifications && (
-                        <div className="px-4 py-3 border-t border-border bg-muted/30">
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={viewAllNotifications}
-                            className="w-full text-center text-primary hover:text-primary/80"
+                            className="text-xs text-primary hover:text-primary/80"
                           >
-                            Xem thêm {notifications.length - 5} thông báo khác
-                            <ExternalLink className="h-3 w-3 ml-1" />
+                            Quản lý
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="max-h-80 overflow-y-auto">
+                      {isLoadingNotifications ? (
+                        <div className="p-8 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-3"></div>
+                          <p className="text-sm text-muted-foreground">Đang tải thông báo...</p>
+                        </div>
+                      ) : notifications.length > 0 ? (
+                        <div className="divide-y divide-border">
+                          {notifications.slice(0, 5).map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => handleNotificationItemClick(notification)}
+                              className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors duration-200 ${!notification.isRead && notification.isActive ? 'bg-emerald-50/50 border-l-4 border-l-emerald-500' : ''
+                                } ${!notification.isActive ? 'opacity-60' : ''}`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  {notification.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className={`text-sm ${!notification.isRead && notification.isActive ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                                      {notification.title}
+                                    </p>
+                                    {notification.isActive ? (
+                                      <Badge className="text-xs bg-green-100 text-green-700 px-2 py-0.5">
+                                        Hoạt động
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5">
+                                        Tạm dừng
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {notification.message}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">{notification.time}</span>
+                                    {!notification.isRead && notification.isActive && (
+                                      <div className="w-2 h-2 bg-emerald-500 rounded-full ml-auto"></div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground mb-2">Chưa có thông báo việc làm</p>
+                          <p className="text-xs text-muted-foreground mb-4">
+                            Đăng ký thông báo để nhận cơ hội việc làm phù hợp
+                          </p>
+                          <Button
+                            size="sm"
+                            onClick={viewAllNotifications}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            Đăng ký thông báo
                           </Button>
                         </div>
                       )}
                     </div>
-                  </>
+
+                    {/* Footer */}
+                    {notifications.length > 5 && !isLoadingNotifications && (
+                      <div className="px-4 py-3 border-t border-border bg-muted/30">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={viewAllNotifications}
+                          className="w-full text-center text-primary hover:text-primary/80"
+                        >
+                          Xem thêm {notifications.length - 5} thông báo khác
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
               {/* User Dropdown */}
-              <div className="relative">
+              <div className="relative" data-dropdown>
                 <button
                   onClick={handleUserDropdownClick}
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors"
@@ -536,118 +560,112 @@ const Header = () => {
 
                 {/* Professional Dropdown Menu */}
                 {showUserDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowUserDropdown(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-background border border-border rounded-xl shadow-2xl z-20 overflow-hidden">
-                      {/* User Profile Header */}
-                      <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-4 border-b border-border">
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-                            <AvatarImage src={user?.profile?.avatar} alt={user?.profile?.fullname} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {getUserInitials(user)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="font-semibold text-foreground">{user?.profile?.fullname || 'Người dùng'}</div>
-                            <div className="text-sm text-muted-foreground">{user?.user.email || ''}</div>
-                          </div>
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden" data-dropdown>
+                    {/* User Profile Header */}
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-4 border-b border-border">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="w-12 h-12 ring-2 ring-primary/20">
+                          <AvatarImage src={user?.profile?.avatar} alt={user?.profile?.fullname} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getUserInitials(user)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="font-semibold text-foreground">{user?.profile?.fullname || 'Người dùng'}</div>
+                          <div className="text-sm text-muted-foreground">{user?.user.email || ''}</div>
                         </div>
-                      </div>
-
-                      {/* Navigation Menu */}
-                      <div className="p-2">
-                        <div className="space-y-1">
-                          <Link
-                            to="/dashboard"
-                            className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <Home className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                            <span className="font-medium">Tổng quan</span>
-                          </Link>
-
-                          <Link
-                            to="/profile"
-                            className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <User className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                            <span className="font-medium">Hồ sơ của tôi</span>
-                          </Link>
-
-                          <Link
-                            to="/dashboard/saved-jobs"
-                            className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <Bookmark className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                            <span className="font-medium">Việc làm đã lưu</span>
-                          </Link>
-
-                          <Link
-                            to="/dashboard/applications"
-                            className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <FileText className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                            <span className="font-medium">Đơn ứng tuyển</span>
-                          </Link>
-
-                          <Link
-                            to="/notifications"
-                            className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <Bell className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                            <span className="font-medium">Quản lý thông báo</span>
-                            {notificationCount > 0 && (
-                              <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
-                                {notificationCount}
-                              </Badge>
-                            )}
-                          </Link>
-                        </div>
-
-                        <Separator className="my-2" />
-
-                        {/* Account Balance - Clickable */}
-                        <Link
-                          to="/dashboard/billing"
-                          className="block px-3 py-2 mb-2"
-                          onClick={() => setShowUserDropdown(false)}
-                        >
-                          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer">
-                            <div className="flex items-center space-x-2">
-                              <Coins className="h-4 w-4 text-yellow-600" />
-                              <span className="text-sm text-muted-foreground">Quản lý số dư</span>
-                            </div>
-                            <div className="text-sm font-semibold text-foreground">
-                              {user?.user?.coinBalance?.toLocaleString() || 0} xu
-                            </div>
-                          </div>
-                        </Link>
-
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors group"
-                        >
-                          <LogOut className="mr-3 h-4 w-4" />
-                          <span className="font-medium">Đăng xuất</span>
-                        </button>
                       </div>
                     </div>
-                  </>
+
+                    {/* Navigation Menu */}
+                    <div className="p-2">
+                      <div className="space-y-1">
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <Home className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <span className="font-medium">Tổng quan</span>
+                        </Link>
+
+                        <Link
+                          to="/profile"
+                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <User className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <span className="font-medium">Hồ sơ của tôi</span>
+                        </Link>
+
+                        <Link
+                          to="/dashboard/saved-jobs"
+                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <Bookmark className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <span className="font-medium">Việc làm đã lưu</span>
+                        </Link>
+
+                        <Link
+                          to="/dashboard/applications"
+                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <FileText className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <span className="font-medium">Đơn ứng tuyển</span>
+                        </Link>
+
+                        <Link
+                          to="/notifications"
+                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <Bell className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <span className="font-medium">Quản lý thông báo</span>
+                          {notificationCount > 0 && (
+                            <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                              {notificationCount}
+                            </Badge>
+                          )}
+                        </Link>
+                      </div>
+
+                      <Separator className="my-2" />
+
+                      {/* Account Balance - Clickable */}
+                      <Link
+                        to="/dashboard/billing"
+                        className="block px-3 py-2 mb-2"
+                        onClick={() => setShowUserDropdown(false)}
+                      >
+                        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                          <div className="flex items-center space-x-2">
+                            <Coins className="h-4 w-4 text-yellow-600" />
+                            <span className="text-sm text-muted-foreground">Quản lý số dư</span>
+                          </div>
+                          <div className="text-sm font-semibold text-foreground">
+                            {user?.user?.coinBalance?.toLocaleString() || 0} xu
+                          </div>
+                        </div>
+                      </Link>
+
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors group"
+                      >
+                        <LogOut className="mr-3 h-4 w-4" />
+                        <span className="font-medium">Đăng xuất</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
             <>
               <Button variant="ghost" asChild className={cn(
-                isHeaderWhite ? "text-white hover:bg-white/10" : ""
+                isHeaderWhite ? "" : ""
               )}>
                 <Link to="/login">
                   <LogIn className="mr-2 h-4 w-4" /> Đăng nhập

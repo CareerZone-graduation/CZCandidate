@@ -317,7 +317,7 @@ body {
 
 /* Footer utility classes */
 .bg-footer {
-  background-color: var(--footer);
+  background-color: rgba(235, 255, 232, 0.801);
 }
 
 .text-footer-foreground {

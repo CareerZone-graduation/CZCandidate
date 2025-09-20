@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 const HeroSection = () => {
   return (
     // Professional Hero với nền gradient sáng như hình
-    <section className="relative bg-linear-to-r from-green-100 via-green-200 to-blue-100 h-[67vh] flex items-center justify-center -mt-16">
+    <section className="relative bg-linear-to-r from-green-100 via-green-200 to-blue-200 h-[67vh] flex items-center justify-center -mt-16">
       {/* Background pattern overlay */}
       <div className="absolute inset-0 opacity-10">
         <div

@@ -455,7 +455,7 @@ const JobDetail = () => {
                   ) : (
                     <Button
                       onClick={handleApply}
-                      className="bg-green-600 hover:bg-green-700 text-white px-8"
+                      className="bg-gradient-primary  text-white px-8"
                       disabled={job?.status !== 'ACTIVE'}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
@@ -591,7 +591,7 @@ const JobDetail = () => {
                   )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Trạng thái:</span>
-                    <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                    <Badge className="bg-gradient-primary" variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
                     </Badge>
                   </div>

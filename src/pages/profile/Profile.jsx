@@ -156,7 +156,7 @@ const Profile = () => {
           
           {/* Profile Header */}
           <Card className="overflow-hidden bg-white">
-            <div className="bg-linear-to-r from-primary to-info p-6 text-primary-foreground">
+            <div className="bg-gradient-primary p-6 text-primary-foreground">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
                   <AvatarImage src={profile.avatar} alt={profile.fullname} />

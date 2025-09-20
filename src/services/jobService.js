@@ -82,3 +82,17 @@ export const getApplicationById = async (applicationId) => {
   const response = await apiClient.get(`/candidate/my-applications/${applicationId}`);
   return response.data.data;
 };
+
+// Lấy danh sách công việc đã lưu
+export const getSavedJobs = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.page) queryParams.append('page', params.page);
+  if (params.limit) queryParams.append('limit', params.limit);
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  
+  const url = `/jobs/saved/list${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const response = await apiClient.get(url);
+  return response.data;
+};
