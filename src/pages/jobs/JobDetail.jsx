@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { useQuery } from '@tanstack/react-query';
-=======
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,122 +11,53 @@ import {
   MapPin, 
   Clock, 
   DollarSign, 
-  Users, 
   Building, 
   Calendar,
   Bookmark,
   Share2,
   ArrowLeft,
   CheckCircle,
-  Globe,
-  Phone,
-  Mail,
   Briefcase,
   UserCheck,
   Coins,
   Eye,
   AlertTriangle
 } from 'lucide-react';
-<<<<<<< HEAD
-import { getJobApplicantCount, getJobById, getAppliedJobIds } from '../../services/jobService';
-import { saveJob, unsaveJob, checkJobSaved } from '../../services/savedJobService';
-=======
 import { getJobApplicantCount, getJobById } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { EmptyState } from '@/components/common/EmptyState';
 
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const [job, setJob] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-=======
   const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
-
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-<<<<<<< HEAD
-  // Fetch applied job IDs
-  const { data: appliedJobIdsData, refetch: refetchAppliedJobIds } = useQuery({
-    queryKey: ['appliedJobIds'],
-    queryFn: getAppliedJobIds,
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const isApplied = useMemo(() => {
-    const appliedIds = new Set(appliedJobIdsData?.data || []);
-    return appliedIds.has(id);
-  }, [appliedJobIdsData, id]);
-
-  useEffect(() => {
-    const fetchJobDetail = async () => {
-      try {
-        setIsLoading(true);
-        const response = await getJobById(id);
-        if (response.data.success) {
-          setJob(response.data.data);
-        } else {
-          throw new Error(response.data.message || 'Có lỗi xảy ra');
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchJobDetail();
-    }
-  }, [id]);
-
-  // Kiểm tra trạng thái đã lưu khi component load và user đã đăng nhập
-  useEffect(() => {
-    const checkSavedStatus = async () => {
-      if (!isAuthenticated || !id) return;
-      
-      try {
-        const savedStatus = await checkJobSaved(id);
-        setIsSaved(savedStatus);
-      } catch (err) {
-        console.error('Lỗi khi kiểm tra trạng thái lưu job:', err);
-      }
-    };
-
-    checkSavedStatus();
-  }, [id, isAuthenticated]);
-=======
   // Fetch job details using React Query
-  const { data: jobData, isLoading, isError, error, refetch } = useQuery({
+  const { data: job, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['jobDetail', id],
     queryFn: () => getJobById(id),
     enabled: !!id,
     select: (data) => data.data.data,
   });
-  
-  const job = jobData;
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
 
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
     if (!minSalary && !maxSalary) return 'Thỏa thuận';
     if (minSalary && maxSalary) {
-      return `${minSalary}-${maxSalary} USD`;
+      return `${minSalary.toLocaleString()}-${maxSalary.toLocaleString()} USD`;
     }
-    if (minSalary) return `Từ ${minSalary} USD`;
-    if (maxSalary) return `Đến ${maxSalary} USD`;
+    if (minSalary) return `Từ ${minSalary.toLocaleString()} USD`;
+    if (maxSalary) return `Đến ${maxSalary.toLocaleString()} USD`;
   };
 
   const formatWorkType = (type) => {
@@ -162,7 +86,8 @@ const JobDetail = () => {
 
   const handleViewApplicants = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      toast.error('Vui lòng đăng nhập để sử dụng chức năng này.');
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     setShowConfirmDialog(true);
@@ -178,14 +103,12 @@ const JobDetail = () => {
       if (response.data.success) {
         setApplicantCount(response.data.data.applicantCount);
         setHasViewedApplicants(true);
-        
-        // Hiển thị thông báo từ API về việc trừ xu
         if (response.data.message) {
           toast.success(response.data.message);
         }
+        queryClient.invalidateQueries(['userProfile']);
       }
     } catch (err) {
-      console.error('Lỗi khi lấy số lượng ứng viên:', err);
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin ứng viên';
       toast.error(errorMessage);
     } finally {
@@ -199,7 +122,8 @@ const JobDetail = () => {
 
   const handleApply = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      toast.error('Vui lòng đăng nhập để ứng tuyển.');
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     setShowApplyDialog(true);
@@ -207,11 +131,8 @@ const JobDetail = () => {
 
   const handleApplySuccess = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
-<<<<<<< HEAD
-    refetchAppliedJobIds();
-=======
-    queryClient.invalidateQueries(['jobDetail', id]);
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
+    queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
+    queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
   };
   
   const { mutate: toggleSaveJob } = useMutation({
@@ -219,56 +140,38 @@ const JobDetail = () => {
       return job?.isSaved ? unsaveJob(id) : saveJob(id);
     },
     onMutate: async () => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ['jobDetail', id] });
-
-      // Snapshot the previous value
       const previousJobData = queryClient.getQueryData(['jobDetail', id]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(['jobDetail', id], (oldQueryData) => {
-        if (!oldQueryData) return undefined;
-        
+      queryClient.setQueryData(['jobDetail', id], (oldData) => {
+        if (!oldData) return undefined;
         return {
-          ...oldQueryData,
-          data: {
-            ...oldQueryData.data,
-            data: {
-              ...oldQueryData.data.data,
-              isSaved: !oldQueryData.data.data.isSaved,
-            }
-          }
+          ...oldData,
+          isSaved: !oldData.isSaved,
         };
       });
-
-      // Return a context object with the snapshotted value
       return { previousJobData };
     },
-    onSuccess: () => {
-      // The UI is already updated optimistically. We can show a toast.
-      // We need to get the *new* state to show the correct message.
-      const updatedJob = queryClient.getQueryData(['jobDetail', id]);
-      const message = updatedJob?.data?.data?.isSaved ? 'Đã lưu công việc thành công' : 'Đã bỏ lưu công việc';
+    onSuccess: (data) => {
+      const message = data.data.message || (job?.isSaved ? 'Đã bỏ lưu công việc' : 'Đã lưu công việc thành công');
       toast.success(message);
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
     },
     onError: (err, _newVariables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousJobData) {
         queryClient.setQueryData(['jobDetail', id], context.previousJobData);
       }
-      console.error('Lỗi khi lưu/bỏ lưu công việc:', err);
-      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái lưu';
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
       toast.error(errorMessage);
-      
-      // Inform the user the optimistic update was reverted.
-      toast.info('Trạng thái lưu công việc đã được hoàn tác do có lỗi.');
     },
-    // By not having onSettled or invalidating in onSuccess, we prevent the refetch.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
+    }
   });
 
   const handleSave = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      toast.error('Vui lòng đăng nhập để lưu việc làm.');
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     toggleSaveJob();
@@ -280,20 +183,19 @@ const JobDetail = () => {
         title: job?.title,
         text: `Xem công việc tuyệt vời này tại ${job?.company?.name}`,
         url: window.location.href,
-      });
+      }).catch(() => toast.info("Chia sẻ đã bị hủy"));
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Đã sao chép liên kết vào clipboard');
     }
   };
 
-  // Component hiển thị dialog xác nhận
   const ConfirmDialog = () => {
     if (!showConfirmDialog) return null;
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md mx-auto bg-white">
+        <Card className="w-full max-w-md mx-auto bg-card">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
               <Coins className="w-6 h-6 text-orange-600" />
@@ -302,22 +204,22 @@ const JobDetail = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center space-y-2">
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Để xem số lượng ứng viên đã ứng tuyển vào vị trí này, bạn cần tiêu phí:
               </p>
               <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-orange-600">
                 <Coins className="w-5 h-5" />
                 <span>50 xu</span>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
               </p>
             </div>
             
-            <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-muted-foreground">
                   Thông tin này chỉ hiển thị một lần. Sau khi xem, bạn không thể hoàn tiền.
                 </p>
               </div>
@@ -333,12 +235,12 @@ const JobDetail = () => {
               </Button>
               <Button 
                 onClick={handleConfirmViewApplicants}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 btn-gradient text-primary-foreground"
                 disabled={isLoadingApplicants}
               >
                 {isLoadingApplicants ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                     Đang xử lý...
                   </>
                 ) : (
@@ -357,18 +259,28 @@ const JobDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded mb-4 w-1/4"></div>
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded mb-4 w-1/3"></div>
-                <div className="h-32 bg-gray-200 rounded"></div>
-              </div>
-            </div>
+            <Skeleton className="h-8 w-32 mb-6" />
+            <Card className="mb-6 overflow-hidden">
+              <Skeleton className="h-40 w-full" />
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -376,74 +288,28 @@ const JobDetail = () => {
   }
 
   if (isError) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8">
-              <CardContent>
-                <div className="text-red-500 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
-                <p className="text-gray-600 mb-4">{error.message}</p>
-                <Button onClick={() => refetch()} variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Thử lại
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState onRetry={refetch} message={error.response?.data?.message || error.message} />;
   }
 
   if (!job) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
-        <div className="container mx-auto py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8">
-              <CardContent>
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy công việc</h3>
-                <p className="text-gray-600 mb-4">Công việc bạn đang tìm có thể đã bị xóa hoặc không tồn tại.</p>
-                <Button onClick={() => navigate(-1)} variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Quay lại
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+    return <EmptyState message="Công việc bạn đang tìm có thể đã bị xóa hoặc không tồn tại." />;
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-emerald-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Back Button */}
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
-            className="mb-6 hover:bg-white/80"
+            className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
 
-          {/* Job Header */}
           <Card className="mb-6 overflow-hidden">
-            <div className="bg-linear-to-r from-emerald-600 to-blue-600 p-6 text-white">
+            <div className="bg-linear-to-r from-emerald-600 to-blue-600 p-6 text-primary-foreground">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h1 className="text-2xl md:text-3xl font-bold mb-2">{job.title}</h1>
@@ -454,14 +320,13 @@ const JobDetail = () => {
                     </div>
                     <div className="flex items-center">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {job.location.province}
-                      {job.location.ward && `, ${job.location.ward}`}
+                      {job.location?.province}
                     </div>
                   </div>
                 </div>
-                <Avatar className="w-16 h-16 border-2 border-white">
+                <Avatar className="w-16 h-16 border-2 border-background">
                   <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                  <AvatarFallback className="bg-white text-emerald-600 text-lg font-semibold">
+                  <AvatarFallback className="bg-background text-primary text-lg font-semibold">
                     {job.company?.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -469,7 +334,7 @@ const JobDetail = () => {
             </div>
 
             <CardContent className="p-6">
-              <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center">
                   <DollarSign className="w-4 h-4 mr-2 text-green-600" />
                   <span className="font-semibold text-green-600">
@@ -489,9 +354,8 @@ const JobDetail = () => {
                   <span>Hạn nộp: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
                 </div>
                 
-                {/* Hiển thị số lượng ứng viên hoặc nút xem */}
                 {isAuthenticated && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-muted-foreground">
                     <UserCheck className="w-4 h-4 mr-2 text-primary" />
                     {hasViewedApplicants && applicantCount !== null ? (
                       <span className="font-semibold text-primary">
@@ -523,37 +387,29 @@ const JobDetail = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex space-x-3">
-<<<<<<< HEAD
-                  {isApplied ? (
-=======
-                  {job?.isApplied ? (
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
-                    <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border border-green-200 px-8 py-2.5">
+                  {job.isApplied ? (
+                    <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border-green-200 px-8 py-2.5">
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Đã ứng tuyển
                     </Badge>
                   ) : (
                     <Button
                       onClick={handleApply}
-<<<<<<< HEAD
-                      className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-8"
-=======
-                      className="bg-green-600 hover:bg-green-700 text-white px-8"
->>>>>>> 66115cbd2cf76fc07fc4c1a2c0aee75b8cecf09e
-                      disabled={job?.status !== 'ACTIVE'}
+                      className="btn-gradient text-primary-foreground px-8"
+                      disabled={job.status !== 'ACTIVE'}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      {job?.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
+                      {job.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
                     </Button>
                   )}
                   
                   <Button
                     variant="outline"
                     onClick={handleSave}
-                    className={job?.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700" : ""}
+                    className={job.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100" : ""}
                   >
-                    <Bookmark className={`w-4 h-4 mr-2 ${job?.isSaved ? "fill-current" : ""}`} />
-                    {job?.isSaved ? "Đã lưu" : "Lưu việc làm"}
+                    <Bookmark className={`w-4 h-4 mr-2 ${job.isSaved ? "fill-current" : ""}`} />
+                    {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>
 
@@ -566,64 +422,40 @@ const JobDetail = () => {
           </Card>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Main Content */}
             <div className="md:col-span-2 space-y-6">
-              {/* Job Description */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-xl">Mô tả công việc</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose max-w-none">
-                    {job.description?.split('\n').map((paragraph, index) => (
-                      <p key={index} className="mb-3 text-gray-700 leading-relaxed">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                 </CardContent>
               </Card>
 
-              {/* Requirements */}
               {job.requirements && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-xl">Yêu cầu công việc</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none">
-                      {job.requirements.split('\n').map((requirement, index) => (
-                        <p key={index} className="mb-3 text-gray-700 leading-relaxed">
-                          {requirement}
-                        </p>
-                      ))}
-                    </div>
+                    <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
 
-              {/* Benefits */}
               {job.benefits && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-xl">Quyền lợi</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none">
-                      {job.benefits.split('\n').map((benefit, index) => (
-                        <p key={index} className="mb-3 text-gray-700 leading-relaxed">
-                          {benefit}
-                        </p>
-                      ))}
-                    </div>
+                    <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-6">
-              {/* Company Info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Thông tin công ty</CardTitle>
@@ -638,63 +470,55 @@ const JobDetail = () => {
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.company?.name}</h3>
-                      <p className="text-sm text-gray-600">{job.company?.industry || 'Công nghệ thông tin'}</p>
+                      <p className="text-sm text-muted-foreground">{job.company?.industry || 'N/A'}</p>
                     </div>
                   </div>
                   
                   <Separator />
                   
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      <span>{job.address || `${job.location.province}, ${job.location.ward}`}</span>
+                    <div className="flex items-start">
+                      <MapPin className="w-4 h-4 mr-2 text-muted-foreground mt-1 shrink-0" />
+                      <span>{job.address || 'N/A'}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Job Stats */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Thông tin tuyển dụng</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Cấp bậc:</span>
+                    <span className="text-muted-foreground">Cấp bậc:</span>
                     <span className="font-medium">{formatExperience(job.experience)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Hình thức:</span>
+                    <span className="text-muted-foreground">Hình thức:</span>
                     <span className="font-medium">{formatWorkType(job.type)}</span>
                   </div>
-                  {job.workType && job.workType !== job.type && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Làm việc:</span>
-                      <span className="font-medium">{formatWorkType(job.workType)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Trạng thái:</span>
-                    <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                    <span className="text-muted-foreground">Trạng thái:</span>
+                    <Badge variant={job.status === 'ACTIVE' ? 'default' : 'destructive'}>
                       {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
                     </Badge>
                   </div>
                   
-                  {/* Hiển thị số ứng viên trong sidebar */}
                   {isAuthenticated && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Số ứng viên:</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Số ứng viên:</span>
                       {hasViewedApplicants && applicantCount !== null ? (
                         <span className="font-medium text-primary">
                           {applicantCount} người
                         </span>
                       ) : (
                         <Button
-                          variant="ghost"
+                          variant="link"
                           size="sm"
                           onClick={handleViewApplicants}
                           disabled={isLoadingApplicants}
-                          className="h-6 p-1 text-xs text-primary hover:text-primary-foreground hover:bg-primary"
+                          className="h-6 p-1 text-xs text-primary"
                         >
                           <Eye className="w-3 h-3 mr-1" />
                           Xem (50 xu)
@@ -709,10 +533,8 @@ const JobDetail = () => {
         </div>
       </div>
 
-      {/* Confirm Dialog */}
       <ConfirmDialog />
 
-      {/* Apply Dialog */}
       {job && (
         <ApplyJobDialog
           jobId={job._id}
