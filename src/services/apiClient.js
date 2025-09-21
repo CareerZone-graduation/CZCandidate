@@ -2,11 +2,11 @@ import axios from 'axios';
 import { getAccessToken, saveAccessToken } from '@/utils/token';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL + '/api',
+  baseURL:  '/api',
 });
 
 const apiRefreshClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL + '/api',
+  baseURL:  '/api',
   withCredentials: true,
 });
 

@@ -591,8 +591,8 @@ const JobDetail = () => {
 
               {/* Location Map */}
               <JobLocationMap
+                location={job.location}
                 address={job.address}
-                province={job.location?.province}
                 companyName={job.company?.name}
               />
 

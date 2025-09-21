@@ -1,130 +1,160 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 
-const JobLocationMap = ({ address, province, companyName }) => {
-  const [mapError, setMapError] = useState(false);
+const JobLocationMap = ({ location, address, companyName }) => {
+  const mapContainer = useRef(null);
+  const map = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapError, setMapError] = useState(false);
 
-  // Create a formatted address for the map
-  const formatAddressForMap = () => {
-    const parts = [];
-    if (address) parts.push(address);
-    if (province) parts.push(province);
-    if (companyName) parts.push(companyName);
+  const hasCoordinates = location?.coordinates?.coordinates && location.coordinates.coordinates.length === 2;
+  const [longitude, latitude] = hasCoordinates ? location.coordinates.coordinates : [null, null];
 
-    return parts.join(', ');
+  useEffect(() => {
+    if (hasCoordinates && mapContainer.current) {
+      const apiKey = import.meta.env.VITE_GOONG_MAPS_API_KEY;
+      // Ensure goongjs and API key are available
+      if (typeof window.goongjs === 'undefined') {
+        console.error('Goong Maps JS SDK is not loaded.');
+        setMapError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!apiKey) {
+        console.error('Goong Maps API key is missing.');
+        setMapError(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Prevent re-initialization
+      if (map.current) return;
+
+      try {
+        // Set Goong Maps API key immediately before initialization
+        window.goongjs.accessToken = apiKey;
+        
+        map.current = new window.goongjs.Map({
+          container: mapContainer.current,
+          style: 'https://tiles.goong.io/assets/goong_map_web.json',
+          center: [longitude, latitude],
+          zoom: 14,
+        });
+
+        // Add marker
+        new window.goongjs.Marker({ color: '#c026d3' }) // Using a purple color to match the theme
+          .setLngLat([longitude, latitude])
+          .addTo(map.current);
+
+        map.current.on('load', () => {
+          setIsLoading(false);
+        });
+
+        map.current.on('error', () => {
+          setMapError(true);
+          setIsLoading(false);
+        });
+      } catch (error) {
+        console.error("Failed to initialize Goong Map:", error);
+        setMapError(true);
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
+    }
+    
+    // Cleanup map instance on component unmount
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, [longitude, latitude, hasCoordinates]);
+
+  const displayAddress = address || [location?.commune, location?.district, location?.province].filter(Boolean).join(', ');
+
+  const getGoogleMapsUrl = () => {
+    if (!latitude || !longitude) return '#';
+    return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
   };
-
-  const mapAddress = formatAddressForMap();
-  const hasLocationData = address || province;
-
-  // Generate map URL - using Google Maps search which doesn't require API key
-  const getMapUrl = () => {
-    if (!hasLocationData) return null;
-
-    const encodedAddress = encodeURIComponent(mapAddress);
-    return `https://www.google.com/maps?q=${encodedAddress}&output=embed`;
-  };
-
-  const handleMapError = () => {
-    setMapError(true);
-    setIsLoading(false);
-  };
-
-  const handleMapLoad = () => {
-    setIsLoading(false);
-  };
-
-  if (!hasLocationData) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center">
-            <MapPin className="w-5 h-5 mr-2 text-muted-foreground" />
-            Địa điểm làm việc
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Không có thông tin địa điểm cho công việc này.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center">
-          <MapPin className="w-5 h-5 mr-2 text-muted-foreground" />
-          Địa điểm làm việc
+    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-bold flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+            <MapPin className="w-5 h-5 text-purple-600" />
+          </div>
+          Bản đồ
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="relative">
-          {isLoading && (
-            <div className="absolute inset-0 bg-muted/20 flex items-center justify-center z-10">
-              <div className="flex items-center space-x-2 text-muted-foreground">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                <span className="text-sm">Đang tải bản đồ...</span>
-              </div>
-            </div>
-          )}
-
-          {mapError ? (
-            <div className="p-4">
+        <div className="relative h-[300px] overflow-hidden">
+          {!hasCoordinates ? (
+            <div className="flex items-center justify-center h-full p-4">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Không thể tải bản đồ. Vui lòng thử lại sau.
+                  Không có dữ liệu tọa độ để hiển thị bản đồ.
                 </AlertDescription>
               </Alert>
-              <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Địa chỉ:</strong> {mapAddress}
-                </p>
-              </div>
+            </div>
+          ) : mapError ? (
+            <div className="flex items-center justify-center h-full p-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Không thể tải bản đồ. Vui lòng kiểm tra lại cấu hình hoặc thử lại sau.
+                </AlertDescription>
+              </Alert>
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-b-lg">
-              <iframe
-                src={getMapUrl()}
-                width="100%"
-                height="300"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                onError={handleMapError}
-                onLoad={handleMapLoad}
-                title={`Bản đồ địa điểm làm việc tại ${mapAddress}`}
-                className="w-full h-[300px] border-0"
-              />
+            <div
+              ref={mapContainer}
+              className="absolute top-0 bottom-0 w-full h-full"
+            />
+          )}
+          {isLoading && hasCoordinates && (
+            <div className="absolute inset-0 bg-muted/30 flex items-center justify-center z-10">
+              <Skeleton className="w-full h-full" />
+              <div className="absolute flex items-center space-x-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                <span className="text-sm font-medium">Đang tải bản đồ...</span>
+              </div>
             </div>
           )}
+          {hasCoordinates && !mapError && (
+            <Button
+              asChild
+              size="sm"
+              className="absolute top-3 right-3 z-10 bg-white/80 backdrop-blur-sm text-foreground hover:bg-white shadow-lg"
+            >
+              <a href={getGoogleMapsUrl()} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Xem trên Google Maps
+              </a>
+            </Button>
+          )}
         </div>
-
-        {/* Display address info below the map */}
-        <div className="p-4 bg-muted/30 border-t">
-          <div className="flex items-start space-x-2">
-            <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium text-foreground">{mapAddress}</p>
-              {address && province && (
-                <p className="text-muted-foreground mt-1">
-                  {address}, {province}
-                </p>
-              )}
+        
+        {displayAddress && (
+          <div className="p-4 bg-muted/30 border-t rounded-b-lg">
+            <div className="flex items-start space-x-3">
+              <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">{companyName}</p>
+                <p className="text-muted-foreground">{displayAddress}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
