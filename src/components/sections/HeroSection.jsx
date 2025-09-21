@@ -23,6 +23,7 @@ const HeroSection = () => {
   <Button
     size="lg"
     className="bg-white hover:bg-gray-50 text-green-600 font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
+    onClick={() => window.open('http://localhost:4000/', '_blank')}
   >
     <Briefcase className="mr-3 h-6 w-6" />
     Đăng tuyển

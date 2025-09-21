@@ -30,6 +30,7 @@ import { ApplyJobDialog } from './components/ApplyJobDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
+import JobLocationMap from '@/components/common/JobLocationMap';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -296,124 +297,200 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <div className="max-w-4xl mx-auto">
-          <Button 
-            variant="ghost" 
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="container mx-auto py-6 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
             onClick={() => navigate(-1)}
-            className="mb-6"
+            className="mb-6 hover:bg-white/80 transition-all duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
 
-          <Card className="mb-6 overflow-hidden">
-            <div className="bg-linear-to-r from-emerald-600 to-blue-600 p-6 text-primary-foreground">
-              <div className="flex items-start justify-between">
+          {/* Hero Header Card */}
+          <Card className="mb-8 overflow-hidden shadow-xl border-0 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600">
+            <div className="relative p-8 text-white">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-32 translate-x-32"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full translate-y-24 -translate-x-24"></div>
+              </div>
+
+              <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div className="flex-1">
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2">{job.title}</h1>
-                  <div className="flex items-center space-x-4 text-emerald-100">
-                    <div className="flex items-center">
-                      <Building className="w-4 h-4 mr-1" />
-                      {job.company?.name}
+                  <div className="flex items-center gap-3 mb-3">
+                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                      {formatWorkType(job.type)}
+                    </Badge>
+                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                      {formatExperience(job.experience)}
+                    </Badge>
+                  </div>
+                  <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">{job.title}</h1>
+                  <div className="flex flex-wrap items-center gap-6 text-emerald-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <Building className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">{job.company?.name}</span>
                     </div>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {job.location?.province}
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <span>{job.location?.province}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold text-white">
+                        {formatSalary(job.minSalary, job.maxSalary)}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <Avatar className="w-16 h-16 border-2 border-background">
-                  <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                  <AvatarFallback className="bg-background text-primary text-lg font-semibold">
-                    {job.company?.name?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+
+                <div className="flex flex-col items-center lg:items-end gap-4">
+                  <Avatar className="w-20 h-20 border-4 border-white/30 shadow-lg">
+                    <AvatarImage src={job.company?.logo} alt={job.company?.name} />
+                    <AvatarFallback className="bg-white/20 text-white text-xl font-bold">
+                      {job.company?.name?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center lg:text-right">
+                    <p className="text-emerald-100 text-sm">Hạn nộp</p>
+                    <p className="font-semibold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                </div>
               </div>
             </div>
+          </Card>
 
+          {/* Action Section */}
+          <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardContent className="p-6">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-4">
-                <div className="flex items-center">
-                  <DollarSign className="w-4 h-4 mr-2 text-green-600" />
-                  <span className="font-semibold text-green-600">
-                    {formatSalary(job.minSalary, job.maxSalary)}
-                  </span>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Mức lương</p>
+                    <span className="font-semibold text-green-600">
+                      {formatSalary(job.minSalary, job.maxSalary)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Clock className="w-4 h-4 mr-2 text-blue-600" />
-                  <span>{formatWorkType(job.type)}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Hình thức</p>
+                    <span className="font-medium">{formatWorkType(job.type)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Briefcase className="w-4 h-4 mr-2 text-purple-600" />
-                  <span>{formatExperience(job.experience)}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Briefcase className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Kinh nghiệm</p>
+                    <span className="font-medium">{formatExperience(job.experience)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-2 text-orange-600" />
-                  <span>Hạn nộp: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Hạn nộp</p>
+                    <span className="font-medium">{new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                  </div>
                 </div>
-                
+
                 {isAuthenticated && (
-                  <div className="flex items-center text-muted-foreground">
-                    <UserCheck className="w-4 h-4 mr-2 text-primary" />
-                    {hasViewedApplicants && applicantCount !== null ? (
-                      <span className="font-semibold text-primary">
-                        {applicantCount} ứng viên đã ứng tuyển
-                      </span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleViewApplicants}
-                        disabled={isLoadingApplicants}
-                        className="h-7 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        Xem số ứng viên (50 xu)
-                      </Button>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <UserCheck className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Ứng viên</p>
+                      {hasViewedApplicants && applicantCount !== null ? (
+                        <span className="font-semibold text-primary">
+                          {applicantCount} người
+                        </span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleViewApplicants}
+                          disabled={isLoadingApplicants}
+                          className="h-7 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Xem (50 xu)
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {job.skills?.map((skill, index) => (
-                  <Badge key={index} variant="secondary" className="bg-emerald-100 text-emerald-800">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
+              {job.skills && job.skills.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Kỹ năng yêu cầu</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {job.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   {job.isApplied ? (
-                    <Badge variant="secondary" size="lg" className="bg-green-100 text-green-700 border-green-200 px-8 py-2.5">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Đã ứng tuyển
                     </Badge>
                   ) : (
                     <Button
                       onClick={handleApply}
-                      className="bg-gradient-primary  text-white px-8"
+                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-8 py-2.5 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                       disabled={job?.status !== 'ACTIVE'}
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       {job.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
                     </Button>
                   )}
-                  
+
                   <Button
                     variant="outline"
                     onClick={handleSave}
-                    className={job.isSaved ? "bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100" : ""}
+                    className={`px-6 py-2.5 font-medium transition-all duration-200 ${
+                      job.isSaved
+                        ? "bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100 shadow-md"
+                        : "hover:bg-slate-50 hover:shadow-md"
+                    }`}
                   >
                     <Bookmark className={`w-4 h-4 mr-2 ${job.isSaved ? "fill-current" : ""}`} />
                     {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
                   </Button>
                 </div>
 
-                <Button variant="ghost" onClick={handleShare}>
+                <Button
+                  variant="ghost"
+                  onClick={handleShare}
+                  className="hover:bg-slate-100 px-4 py-2.5 transition-all duration-200"
+                >
                   <Share2 className="w-4 h-4 mr-2" />
                   Chia sẻ
                 </Button>
@@ -421,111 +498,179 @@ const JobDetail = () => {
             </CardContent>
           </Card>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Mô tả công việc</CardTitle>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              {/* Job Description */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-blue-600" />
+                    </div>
+                    Mô tả công việc
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
+                <CardContent className="pt-0">
+                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                 </CardContent>
               </Card>
 
+              {/* Job Requirements */}
               {job.requirements && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Yêu cầu công việc</CardTitle>
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                        <UserCheck className="w-5 h-5 text-orange-600" />
+                      </div>
+                      Yêu cầu công việc
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                  <CardContent className="pt-0">
+                    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
 
+              {/* Job Benefits */}
               {job.benefits && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Quyền lợi</CardTitle>
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <Coins className="w-5 h-5 text-green-600" />
+                      </div>
+                      Quyền lợi
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                  <CardContent className="pt-0">
+                    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
             </div>
 
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Thông tin công ty</CardTitle>
+            <div className="space-y-8">
+              {/* Company Information */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <Building className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    Thông tin công ty
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-12 h-12">
+                <CardContent className="pt-0 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-indigo-100">
                       <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
+                      <AvatarFallback className="bg-indigo-100 text-indigo-600 text-lg font-bold">
                         {job.company?.name?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="font-semibold">{job.company?.name}</h3>
-                      <p className="text-sm text-muted-foreground">{job.company?.industry || 'N/A'}</p>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-gray-900">{job.company?.name}</h3>
+                      <p className="text-sm text-muted-foreground">{job.company?.industry || 'Chưa cập nhật'}</p>
                     </div>
                   </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-start">
-                      <MapPin className="w-4 h-4 mr-2 text-muted-foreground mt-1 shrink-0" />
-                      <span>{job.address || 'N/A'}</span>
+
+                  <Separator className="my-4" />
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Địa chỉ</p>
+                        <p className="text-sm text-gray-600">{job.address || 'Chưa cập nhật'}</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Thông tin tuyển dụng</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cấp bậc:</span>
-                    <span className="font-medium">{formatExperience(job.experience)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Hình thức:</span>
-                    <span className="font-medium">{formatWorkType(job.type)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Trạng thái:</span>
-                    <Badge className="bg-gradient-primary" variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                      {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
-                    </Badge>
-                  </div>
-                  
-                  {isAuthenticated && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Số ứng viên:</span>
-                      {hasViewedApplicants && applicantCount !== null ? (
-                        <span className="font-medium text-primary">
-                          {applicantCount} người
-                        </span>
-                      ) : (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={handleViewApplicants}
-                          disabled={isLoadingApplicants}
-                          className="h-6 p-1 text-xs text-primary"
-                        >
-                          <Eye className="w-3 h-3 mr-1" />
-                          Xem (50 xu)
-                        </Button>
-                      )}
+              {/* Location Map */}
+              <JobLocationMap
+                address={job.address}
+                province={job.location?.province}
+                companyName={job.company?.name}
+              />
+
+              {/* Job Details Summary */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-purple-600" />
                     </div>
-                  )}
+                    Tóm tắt công việc
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <UserCheck className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Cấp bậc</span>
+                      </div>
+                      <span className="font-semibold text-blue-700">{formatExperience(job.experience)}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Clock className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Hình thức</span>
+                      </div>
+                      <span className="font-semibold text-green-700">{formatWorkType(job.type)}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Trạng thái</span>
+                      </div>
+                      <Badge className={`font-medium ${
+                        job.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-700 border-green-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}>
+                        {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
+                      </Badge>
+                    </div>
+
+                    {isAuthenticated && (
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <Eye className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">Ứng viên</span>
+                        </div>
+                        {hasViewedApplicants && applicantCount !== null ? (
+                          <span className="font-semibold text-purple-700">
+                            {applicantCount} người
+                          </span>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleViewApplicants}
+                            disabled={isLoadingApplicants}
+                            className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            Xem (50 xu)
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>

@@ -30,9 +30,6 @@ const JobList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // State for featured jobs
-  const [featuredJobs, setFeaturedJobs] = useState([]);
-  const [isLoadingFeatured, setIsLoadingFeatured] = useState(false);
 
   // State for Apply Job Dialog
   const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
@@ -307,29 +304,6 @@ const JobList = () => {
     }
   };
 
-  const fetchFeaturedJobs = async () => {
-    try {
-      setIsLoadingFeatured(true);
-      
-      const response = await getAllJobs({
-        page: 1,
-        limit: 6,
-        featured: true,
-        sort: 'newest'
-      });
-      
-      const responseData = response.data;
-      
-      if (responseData.success) {
-        const jobsData = responseData.data?.jobs || responseData.data || [];
-        setFeaturedJobs(jobsData);
-      }
-    } catch (err) {
-      console.error('❌ Error fetching featured jobs:', err);
-    } finally {
-      setIsLoadingFeatured(false);
-    }
-  };
 
   const handleSaveJob = async (jobId) => {
     if (!user) {
@@ -342,10 +316,7 @@ const JobList = () => {
       const response = await saveJob(jobId);
       if (response.success) {
         toast.success('Đã lưu việc làm thành công!');
-        setJobs(prev => prev.map(job => 
-          job.id === jobId ? { ...job, isSaved: true } : job
-        ));
-        setFeaturedJobs(prev => prev.map(job => 
+        setJobs(prev => prev.map(job =>
           job.id === jobId ? { ...job, isSaved: true } : job
         ));
       }
@@ -364,10 +335,7 @@ const JobList = () => {
       const response = await unsaveJob(jobId);
       if (response.success) {
         toast.success('Đã bỏ lưu việc làm');
-        setJobs(prev => prev.map(job => 
-          job.id === jobId ? { ...job, isSaved: false } : job
-        ));
-        setFeaturedJobs(prev => prev.map(job => 
+        setJobs(prev => prev.map(job =>
           job.id === jobId ? { ...job, isSaved: false } : job
         ));
       }
@@ -388,7 +356,7 @@ const JobList = () => {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
       setCurrentPage(newPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Stay in place - no scrolling when changing pages
     }
   };
 
@@ -410,9 +378,6 @@ const JobList = () => {
     }
   }, [currentPage]);
 
-  useEffect(() => {
-    fetchFeaturedJobs();
-  }, []);
 
   // Job Card Component
   const JobCard = ({ job, onSave, onUnsave, onClick, isApplied, featured = false }) => (
@@ -534,7 +499,7 @@ const JobList = () => {
   return (
     <div className="flex flex-col min-h-full">
       {/* 🎯 Hero Section - Similar to HomePage */}
-     <section className="relative bg-gradient-to-primary min-h-[60vh] flex items-center pt-20 lg:pt-24 pb-20">
+      <section className="relative bg-gradient-to-primary min-h-[60vh] flex items-center pt-20 lg:pt-24 pb-20">
         {/* Background decorations */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
@@ -758,27 +723,97 @@ const JobList = () => {
         </div>
       </section>
 
-      {/* 🎯 Featured Jobs Section - Similar to HomePage */}
-      <section className="py-20 bg-white">
+      {/* 🎯 All Jobs Section with Pagination */}
+      <section id="jobs-section" className="py-20 bg-white">
         <div className="container">
           {/* Header */}
           <div className="text-center mb-16">
             <Badge variant="outline" className="px-4 py-2 text-sm font-medium text-primary border-primary/30 bg-background mb-4">
-              ⭐ Việc làm nổi bật
+              💼 Cơ hội nghề nghiệp hàng đầu
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              <span className="text-gradient-primary bg-clip-text text-transparent">Cơ hội nghề nghiệp</span> <span className="text-gradient-primary bg-clip-text text-transparent">hàng đầu</span>
+              <span className="text-gradient-primary bg-clip-text text-transparent">Tất cả cơ hội</span> <span className="text-gradient-primary bg-clip-text text-transparent">việc làm</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Khám phá những vị trí việc làm chất lượng cao từ các công ty uy tín, 
+              Khám phá tất cả vị trí việc làm chất lượng từ các công ty uy tín,
               với mức lương hấp dẫn và môi trường làm việc chuyên nghiệp.
             </p>
           </div>
 
-          {/* Featured Jobs Grid */}
-          {isLoadingFeatured ? (
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="mb-8">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="text-sm font-medium text-muted-foreground">Bộ lọc đang áp dụng:</span>
+                {searchTerm && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Tìm kiếm: {searchTerm}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setSearchTerm('')}
+                    />
+                  </Badge>
+                )}
+                {selectedLocation && selectedLocation !== 'all' && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Địa điểm: {locations.find(l => l.value === selectedLocation)?.label}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setSelectedLocation('all')}
+                    />
+                  </Badge>
+                )}
+                {selectedExperience && selectedExperience !== 'all' && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Kinh nghiệm: {experiences.find(e => e.value === selectedExperience)?.label}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setSelectedExperience('all')}
+                    />
+                  </Badge>
+                )}
+                {selectedSalary && selectedSalary !== 'all' && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Mức lương: {salaryRanges.find(s => s.value === selectedSalary)?.label}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setSelectedSalary('all')}
+                    />
+                  </Badge>
+                )}
+                {selectedCategory && selectedCategory !== 'all' && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Ngành nghề: {jobCategories.find(c => c.value === selectedCategory)?.label}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setSelectedCategory('all')}
+                    />
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  Xóa tất cả
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Results Summary */}
+          <div className="mb-8 text-center">
+            <p className="text-muted-foreground">
+              Hiển thị <span className="font-semibold text-foreground">{jobs.length}</span> trong tổng số{' '}
+              <span className="font-semibold text-foreground">{totalItems}</span> việc làm
+            </p>
+          </div>
+
+          {/* Jobs Grid */}
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(12)].map((_, i) => (
                 <Card key={i} className="h-80 shadow-lg">
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -799,9 +834,31 @@ const JobList = () => {
                 </Card>
               ))}
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">Không thể tải danh sách việc làm</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => fetchJobs(currentPage, true)} variant="outline">
+                Thử lại
+              </Button>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">Không tìm thấy việc làm nào</h3>
+              <p className="text-muted-foreground mb-4">
+                Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
+              </p>
+              {hasActiveFilters && (
+                <Button onClick={clearAllFilters} variant="outline">
+                  Xóa bộ lọc
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {featuredJobs.slice(0, 6).map((job) => (
+              {jobs.map((job) => (
                 <JobCard
                   key={job.id || job._id}
                   job={job}
@@ -809,24 +866,64 @@ const JobList = () => {
                   onUnsave={handleUnsaveJob}
                   onClick={handleJobClick}
                   isApplied={job.isApplied}
-                  featured={true}
+                  featured={false}
                 />
               ))}
             </div>
           )}
 
-          {/* View All Button */}
-          <div className="text-center">
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="px-8 py-3 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-sm hover:shadow-lg"
-              onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Xem tất cả việc làm
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+          {/* Pagination */}
+          {totalPages > 1 && !isLoading && !error && (
+            <div className="flex justify-center items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Trước
+              </Button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNum)}
+                      className={currentPage === pageNum ? "bg-primary text-primary-foreground" : ""}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
