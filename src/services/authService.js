@@ -13,6 +13,17 @@ export const login = async (credentials) => {
   return response.data;
 };
 
+export const googleLogin = async (token) => {
+  const response = await authClient.post('/auth/google-login', {
+    token,
+    role: 'candidate'
+  },
+{
+    withCredentials: true
+});
+  return response.data;
+};
+
 export const getMe = async () => {
   const response = await apiClient.get('/users/me');
   return response.data;
