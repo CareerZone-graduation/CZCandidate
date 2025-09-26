@@ -15,7 +15,7 @@ import { useDebounce } from './useDebounce';
  */
 export const useAutocomplete = (options = {}) => {
   const {
-    delay = 300,
+    delay = 10, //10ms
     minLength = 1,
     maxSuggestions = 10,
     cacheSize = 50

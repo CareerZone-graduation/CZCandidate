@@ -1,9 +1,42 @@
 import { Search, Briefcase, User, MapPin } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import SearchAutocomplete from "../common/SearchAutocomplete";
+import { useNavigate } from "react-router-dom";
+import { useState, useRef } from "react";
+import HomeSearchAutocomplete from "../common/HomeSearchAutocomplete";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState("");
+  const autocompleteRef = useRef(null);
+
+  /**
+   * Handle search from hero section
+   */
+  const handleHeroSearch = (query) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('query', query);
+    searchParams.set('page', '1');
+    searchParams.set('size', '10');
+    
+    // Add location if provided
+    if (location.trim()) {
+      searchParams.set('province', location.trim());
+    }
+    
+    navigate(`/jobs/search?${searchParams.toString()}`);
+  };
+
+  /**
+   * Handle form submission
+   */
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    const currentQuery = autocompleteRef.current?.getValue();
+    if (currentQuery?.trim()) {
+      handleHeroSearch(currentQuery.trim());
+    }
+  };
   return (
     // Professional Hero với nền gradient sáng như hình
     <section className="relative bg-linear-to-r from-green-100 via-green-200 to-blue-200 h-[67vh] flex items-center justify-center -mt-16">
@@ -47,12 +80,14 @@ const HeroSection = () => {
             </h1>
 
           <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-gray-200 bg-white/80">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <form onSubmit={handleFormSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Job Title Input with Autocomplete - Dài hơn */}
               <div className="relative lg:col-span-6">
-                <SearchAutocomplete
+                <HomeSearchAutocomplete
+                  ref={autocompleteRef}
                   placeholder="Vị trí công việc, kỹ năng, công ty..."
                   className="w-full"
+                  onSearch={handleHeroSearch}
                   inputProps={{
                     className: "h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
                   }}
@@ -65,19 +100,22 @@ const HeroSection = () => {
                 <Input
                   type="text"
                   placeholder="Địa điểm"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                   className="h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
                 />
               </div>
 
               {/* Search Button - Đổi màu tương tự nút "Xem tất cả công ty" */}
               <Button
+                type="submit"
                 size="lg"
                 className={"bg-gradient-primary text-white hover:opacity-90 h-12 w-full lg:col-span-3 rounded-xl font-semibold text-lg"}
               >
                 <Search className="mr-2 h-5 w-5" />
                 Tìm kiếm
               </Button>
-            </div>
+            </form>
           </div>
           <div className="mt-16"></div>
         </div>

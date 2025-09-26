@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAutocomplete } from '@/hooks/useAutocomplete';
-import AutocompleteDropdown from './AutocompleteDropdown';
+import HomeAutocompleteDropdown from './HomeAutocompleteDropdown';
 
 /**
- * Component tìm kiếm với autocomplete cho job titles
+ * Component tìm kiếm với autocomplete cho job titles (phiên bản cho trang Home)
  * Tích hợp với navigation để chuyển đến trang kết quả tìm kiếm
  * 
  * @param {Object} props
@@ -18,7 +18,7 @@ import AutocompleteDropdown from './AutocompleteDropdown';
  * @param {Object} props.inputProps - Additional props cho Input component
  * @param {Object} props.autocompleteOptions - Options cho useAutocomplete hook
  */
-const SearchAutocomplete = forwardRef(({
+const HomeSearchAutocomplete = forwardRef(({
   placeholder = "Vị trí công việc, kỹ năng, công ty...",
   initialValue = "",
   onSearch,
@@ -52,7 +52,7 @@ const SearchAutocomplete = forwardRef(({
     ...autocompleteOptions
   });
 
-  // Set initial value if provided
+ // Set initial value if provided
   React.useEffect(() => {
     if (initialValue && !query) {
       handleInputChange(initialValue);
@@ -75,13 +75,13 @@ const SearchAutocomplete = forwardRef(({
         query: searchQuery.trim()
       });
     } else {
-      // Mặc định navigate đến /jobs/search với query parameters
+      // Mặc định navigate đến /jobs với query parameters
       const searchParams = new URLSearchParams();
       searchParams.set('query', searchQuery.trim());
       searchParams.set('page', '1');
       searchParams.set('size', '10');
       
-      navigate(`/jobs/search?${searchParams.toString()}`);
+      navigate(`/jobs?${searchParams.toString()}`);
     }
   };
 
@@ -113,10 +113,6 @@ const SearchAutocomplete = forwardRef(({
   /**
    * Xử lý submit form (khi click search button hoặc submit)
    */
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    handleSearch();
-  };
 
   /**
    * Focus vào input
@@ -137,7 +133,7 @@ const SearchAutocomplete = forwardRef(({
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
-      <form onSubmit={handleSubmit} className="relative">
+      <div className="relative">
         {/* Search Icon */}
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
         
@@ -147,7 +143,7 @@ const SearchAutocomplete = forwardRef(({
           type="text"
           placeholder={placeholder}
           value={query}
-          onChange={(e) => handleInputChange(e.target.value)}  
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleInputKeyDown}
           onFocus={() => {
             // Hiển thị dropdown nếu có suggestions và query đủ dài
@@ -176,7 +172,7 @@ const SearchAutocomplete = forwardRef(({
         />
 
         {/* Autocomplete Dropdown */}
-        <AutocompleteDropdown
+        <HomeAutocompleteDropdown
           suggestions={suggestions}
           query={query}
           isLoading={isLoading}
@@ -193,11 +189,11 @@ const SearchAutocomplete = forwardRef(({
             "border-2 border-primary focus-within:border-primary"
           )}
         />
-      </form>
+      </div>
     </div>
   );
 });
 
-SearchAutocomplete.displayName = 'SearchAutocomplete';
+HomeSearchAutocomplete.displayName = 'HomeSearchAutocomplete';
 
-export default SearchAutocomplete;
+export default HomeSearchAutocomplete;

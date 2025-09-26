@@ -5,7 +5,7 @@ import SuggestionItem from './SuggestionItem';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
- * Component dropdown chứa autocomplete suggestions với keyboard navigation
+ * Component dropdown chứa autocomplete suggestions với keyboard navigation (phiên bản cho trang Home)
  * 
  * @param {Object} props
  * @param {Array} props.suggestions - Mảng suggestions
@@ -20,7 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @param {function} props.onRetry - Handler để retry khi có lỗi
  * @param {string} props.className - Additional CSS classes
  */
-const AutocompleteDropdown = ({
+const HomeAutocompleteDropdown = ({
   suggestions = [],
   query = '',
   isLoading = false,
@@ -70,18 +70,21 @@ const AutocompleteDropdown = ({
     }
   }, [selectedIndex]);
 
-  // Không render nếu không visible
+ // Không render nếu không visible
   if (!isVisible) return null;
 
   return (
     <div
       ref={dropdownRef}
       className={cn(
+        "absolute top-full left-0 z-50 mt-1",
         "bg-background border border-border rounded-lg shadow-lg",
         "max-h-[300px] overflow-hidden",
         "animate-in fade-in-0 zoom-in-95 duration-200",
-        // Match the width of the parent container
+        // Mobile: full available width
         "w-full",
+        // Desktop: span across the entire search row (input + location + button)
+        "lg:w-[calc(200%+2rem)]", // Double width + gaps to cover all 3 grid sections
         className
       )}
     >
@@ -200,4 +203,4 @@ const AutocompleteDropdown = ({
   );
 };
 
-export default AutocompleteDropdown;
+export default HomeAutocompleteDropdown;

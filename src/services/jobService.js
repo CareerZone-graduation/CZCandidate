@@ -139,11 +139,153 @@ export const searchJobsHybrid = async (params = {}) => {
     if (params.maxSalary) queryParams.append('maxSalary', params.maxSalary);
     if (params.userLocation) queryParams.append('userLocation', params.userLocation);
     
-    const url = `/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/jobs/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get(url);
     return response.data;
   } catch (error) {
     console.error('Error performing hybrid search:', error);
     throw error;
   }
+};
+
+// Lấy danh sách các lĩnh vực công việc
+export const getJobCategories = async () => {
+  try {
+    const response = await apiClient.get('/jobs/categories');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching job categories:', error);
+    // Return static data as fallback
+    return {
+      success: true,
+      data: [
+        { value: 'TECHNOLOGY', label: 'Công nghệ thông tin', count: 0 },
+        { value: 'MARKETING', label: 'Marketing & PR', count: 0 },
+        { value: 'FINANCE', label: 'Tài chính & Kế toán', count: 0 },
+        { value: 'SALES', label: 'Kinh doanh & Bán hàng', count: 0 },
+        { value: 'DESIGN', label: 'Thiết kế', count: 0 },
+        { value: 'HUMAN_RESOURCES', label: 'Nhân sự', count: 0 },
+        { value: 'EDUCATION', label: 'Giáo dục & Đào tạo', count: 0 },
+        { value: 'HEALTHCARE', label: 'Y tế & Sức khỏe', count: 0 },
+        { value: 'OTHER', label: 'Khác', count: 0 }
+      ]
+    };
+  }
+};
+
+// Lấy danh sách loại hình công việc
+export const getJobTypes = async () => {
+  try {
+    const response = await apiClient.get('/jobs/types');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching job types:', error);
+    // Return static data as fallback
+    return {
+      success: true,
+      data: [
+        { value: 'FULL_TIME', label: 'Toàn thời gian', count: 0 },
+        { value: 'PART_TIME', label: 'Bán thời gian', count: 0 },
+        { value: 'CONTRACT', label: 'Hợp đồng', count: 0 },
+        { value: 'TEMPORARY', label: 'Tạm thời', count: 0 },
+        { value: 'INTERNSHIP', label: 'Thực tập', count: 0 },
+        { value: 'FREELANCE', label: 'Tự do', count: 0 }
+      ]
+    };
+  }
+};
+
+// Lấy danh sách hình thức làm việc
+export const getWorkTypes = async () => {
+  try {
+    const response = await apiClient.get('/jobs/work-types');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching work types:', error);
+    // Return static data as fallback
+    return {
+      success: true,
+      data: [
+        { value: 'ON_SITE', label: 'Tại văn phòng', count: 0 },
+        { value: 'REMOTE', label: 'Làm việc từ xa', count: 0 },
+        { value: 'HYBRID', label: 'Kết hợp', count: 0 }
+      ]
+    };
+  }
+};
+
+// Lấy danh sách mức kinh nghiệm
+export const getExperienceLevels = async () => {
+  try {
+    const response = await apiClient.get('/jobs/experience-levels');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching experience levels:', error);
+    // Return static data as fallback
+    return {
+      success: true,
+      data: [
+        { value: 'FRESH', label: 'Sinh viên mới tốt nghiệp', count: 0 },
+        { value: 'JUNIOR', label: 'Dưới 1 năm', count: 0 },
+        { value: 'MID_LEVEL', label: '1-3 năm', count: 0 },
+        { value: 'SENIOR', label: '3-5 năm', count: 0 },
+        { value: 'EXPERT', label: 'Trên 5 năm', count: 0 },
+        { value: 'MANAGER', label: 'Quản lý', count: 0 },
+        { value: 'DIRECTOR', label: 'Giám đốc', count: 0 }
+      ]
+    };
+  }
+};
+
+// Lấy thống kê tìm kiếm
+export const getSearchStats = async (query) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query) queryParams.append('query', query);
+    
+    const url = `/search/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching search stats:', error);
+    return {
+      success: false,
+      data: {
+        totalJobs: 0,
+        totalCompanies: 0,
+        averageSalary: 0,
+        topCategories: []
+      }
+    };
+  }
+};
+
+// Helper function để format search parameters cho URL
+export const formatSearchParams = (params) => {
+  const searchParams = new URLSearchParams();
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value.toString());
+    }
+  });
+  
+  return searchParams.toString();
+};
+
+// Helper function để parse search parameters từ URL
+export const parseSearchParams = (searchString) => {
+  const params = new URLSearchParams(searchString);
+  const result = {};
+  
+  for (const [key, value] of params) {
+    // Convert numeric parameters
+    if (['page', 'size', 'minSalary', 'maxSalary'].includes(key)) {
+      result[key] = parseInt(value) || undefined;
+    } else {
+      result[key] = value || undefined;
+    }
+  }
+  
+  return result;
 };

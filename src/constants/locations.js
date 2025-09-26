@@ -1,0 +1,91 @@
+export const provinceNames = [
+  'Thành phố Hà Nội',
+  'Thành phố Hồ Chí Minh',
+  'Thành phố Đà Nẵng',
+  'Tỉnh Hải Dương',
+  'Tỉnh Hưng Yên',
+];
+
+const locationData = [
+  {
+    name: 'Thành phố Hà Nội',
+    districts: [
+      { name: 'Quận Ba Đình' },
+      { name: 'Quận Hoàn Kiếm' },
+      { name: 'Quận Hai Bà Trưng' },
+      { name: 'Quận Đống Đa' },
+      { name: 'Quận Tây Hồ' },
+      { name: 'Quận Cầu Giấy' },
+      { name: 'Quận Thanh Xuân' },
+      { name: 'Quận Hoàng Mai' },
+      { name: 'Quận Long Biên' },
+      { name: 'Huyện Từ Liêm' },
+    ],
+  },
+  {
+    name: 'Thành phố Hồ Chí Minh',
+    districts: [
+      { name: 'Quận 1' },
+      { name: 'Quận 3' },
+      { name: 'Quận 4' },
+      { name: 'Quận 5' },
+      { name: 'Quận 6' },
+      { name: 'Quận 7' },
+      { name: 'Quận 8' },
+      { name: 'Quận 10' },
+      { name: 'Quận 11' },
+      { name: 'Quận 12' },
+      { name: 'Quận Bình Thạnh' },
+      { name: 'Quận Phú Nhuận' },
+      { name: 'Quận Gò Vấp' },
+      { name: 'Quận Tân Bình' },
+      { name: 'Quận Tân Phú' },
+      { name: 'Thành phố Thủ Đức' },
+    ],
+  },
+  {
+    name: 'Thành phố Đà Nẵng',
+    districts: [
+      { name: 'Quận Hải Châu' },
+      { name: 'Quận Thanh Khê' },
+      { name: 'Quận Sơn Trà' },
+      { name: 'Quận Ngũ Hành Sơn' },
+      { name: 'Quận Liên Chiểu' },
+      { name: 'Huyện Hòa Vang' },
+    ],
+  },
+  {
+    name: 'Tỉnh Hải Dương',
+    districts: [
+        { name: 'Thành phố Hải Dương' },
+        { name: 'Thành phố Chí Linh' },
+        { name: 'Huyện Nam Sách' },
+        { name: 'Huyện Kinh Môn' },
+        { name: 'Huyện Gia Lộc' },
+        { name: 'Huyện Tứ Kỳ' },
+        { name: 'Huyện Thanh Miện' },
+        { name: 'Huyện Ninh Giang' },
+        { name: 'Huyện Cẩm Giàng' },
+        { name: 'Huyện Thanh Hà' },
+        { name: 'Huyện Kim Thành' },
+        { name: 'Huyện Bình Giang' },
+    ],
+  },
+  {
+    name: 'Tỉnh Hưng Yên',
+    districts: [
+        { name: 'Thành phố Hưng Yên' },
+        { name: 'Huyện Văn Lâm' },
+        { name: 'Huyện Văn Giang' },
+        { name: 'Huyện Mỹ Hào' },
+        { name: 'Huyện Yên Mỹ' },
+        { name: 'Huyện Khoái Châu' },
+        { name: 'Huyện Ân Thi' },
+        { name: 'Huyện Tiên Lữ' },
+        { name: 'Huyện Phù Cừ' },
+        { name: 'Huyện Kim Động' },
+    ],
+  },
+];
+
+export const locationMap = new Map(locationData.map(p => [p.name, { districts: p.districts }]));

@@ -15,8 +15,8 @@ import ForgotPassword from '../pages/auth/ForgotPassword';
 import ResetPassword from '../pages/auth/ResetPassword';
 import Dashboard from '../pages/dashboard/Dashboard';
 import JobSuggestion from '../pages/dashboard/JobSuggestion';
-import JobList from '../pages/jobs/JobList';
 import JobDetail from '../pages/jobs/JobDetail';
+import JobSearch from '../pages/jobs/JobSearch';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
@@ -67,7 +67,7 @@ const AppRouter = () => {
         {/* Public routes */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/jobs" element={<JobList />} />
+          <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/news" element={<News />} />
         </Route>
