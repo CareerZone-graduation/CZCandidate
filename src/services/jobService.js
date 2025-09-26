@@ -96,3 +96,54 @@ export const getSavedJobs = async (params = {}) => {
   const response = await apiClient.get(url);
   return response.data;
 };
+
+// Lấy gợi ý tự động cho tiêu đề công việc
+export const getJobTitleSuggestions = async (query, limit = 10) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query) queryParams.append('query', query.trim());
+    if (limit) queryParams.append('limit', Math.min(limit, 20)); // Giới hạn tối đa 20
+    
+    const url = `/jobs/autocomplete/titles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching job title suggestions:', error);
+    // Trả về empty array để component có thể hoạt động bình thường
+    return {
+      success: false,
+      data: [],
+      message: error.response?.data?.message || 'Không thể tải gợi ý'
+    };
+  }
+};
+
+// Tìm kiếm hybrid với MongoDB Atlas Search
+export const searchJobsHybrid = async (params = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    // Required parameters
+    if (params.query) queryParams.append('query', params.query);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.size) queryParams.append('size', params.size);
+    
+    // Optional filter parameters
+    if (params.category) queryParams.append('category', params.category);
+    if (params.type) queryParams.append('type', params.type);
+    if (params.workType) queryParams.append('workType', params.workType);
+    if (params.experience) queryParams.append('experience', params.experience);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.district) queryParams.append('district', params.district);
+    if (params.minSalary) queryParams.append('minSalary', params.minSalary);
+    if (params.maxSalary) queryParams.append('maxSalary', params.maxSalary);
+    if (params.userLocation) queryParams.append('userLocation', params.userLocation);
+    
+    const url = `/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error performing hybrid search:', error);
+    throw error;
+  }
+};

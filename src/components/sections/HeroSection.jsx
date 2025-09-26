@@ -1,6 +1,7 @@
 import { Search, Briefcase, User, MapPin } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import SearchAutocomplete from "../common/SearchAutocomplete";
 
 const HeroSection = () => {
   return (
@@ -47,13 +48,14 @@ const HeroSection = () => {
 
           <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-gray-200 bg-white/80">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Job Title Input - Dài hơn */}
+              {/* Job Title Input with Autocomplete - Dài hơn */}
               <div className="relative lg:col-span-6">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-                <Input
-                  type="text"
+                <SearchAutocomplete
                   placeholder="Vị trí công việc, kỹ năng, công ty..."
-                  className="h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
+                  className="w-full"
+                  inputProps={{
+                    className: "h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
+                  }}
                 />
               </div>
 

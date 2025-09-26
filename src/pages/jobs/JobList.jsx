@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import {
@@ -20,6 +20,7 @@ import { ApplyJobDialog } from './components/ApplyJobDialog';
 
 const JobList = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useSelector((state) => state.auth.user);
 
   // State for main job list
@@ -42,6 +43,40 @@ const JobList = () => {
   const [selectedExperience, setSelectedExperience] = useState('');
   const [selectedSalary, setSelectedSalary] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Process URL parameters on component mount
+  useEffect(() => {
+    const query = searchParams.get('query');
+    const page = searchParams.get('page');
+    const category = searchParams.get('category');
+    const location = searchParams.get('location');
+    const experience = searchParams.get('experience');
+    const salary = searchParams.get('salary');
+    
+    // Set search term from URL if present
+    if (query && query !== searchTerm) {
+      setSearchTerm(query);
+    }
+    
+    // Set page from URL if present
+    if (page && parseInt(page) !== currentPage) {
+      setCurrentPage(parseInt(page) || 1);
+    }
+    
+    // Set other filters from URL if present
+    if (category && category !== selectedCategory) {
+      setSelectedCategory(category);
+    }
+    if (location && location !== selectedLocation) {
+      setSelectedLocation(location);
+    }
+    if (experience && experience !== selectedExperience) {
+      setSelectedExperience(experience);
+    }
+    if (salary && salary !== selectedSalary) {
+      setSelectedSalary(salary);
+    }
+  }, [searchParams]);
 
   // Filter options
   const locations = [
