@@ -129,68 +129,48 @@ const FeaturedJobs = () => {
                 className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
-                <CardHeader className="flex flex-row items-start space-y-0 gap-4 pb-4">
-                  <Avatar className="h-14 w-14 rounded-xl border-2 border-green-200">
-                    <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                    <AvatarFallback className="bg-linear-to-br from-green-100 to-green-200 text-green-700 text-lg font-bold rounded-xl">
-                      {job.company?.name?.charAt(0) || job.title?.charAt(0) || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <CardTitle className="text-lg font-bold text-foreground group-hover:text-green-700 transition-colors line-clamp-2">
-                      {job.title}
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground font-medium">
-                      {job.company?.name || 'Công ty chưa xác định'}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle save/unsave logic here if needed
-                    }}
-                  >
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
+               <CardHeader>
+  <div className="flex items-center space-x-4">
+    <Avatar className="w-16 h-16">
+      <AvatarImage src={job.company?.logo || ''} alt={job.company?.name || 'Logo'} />
+      <AvatarFallback>{job.company?.name?.[0] || 'C'}</AvatarFallback>
+    </Avatar>
+    <div>
+      <CardTitle>{job.title || 'Không có tiêu đề'}</CardTitle>
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Building className="w-4 h-4" />
+        <span>{job.company?.name || 'Không rõ công ty'}</span>
+        <MapPin className="w-4 h-4" />
+        <span>{
+          job.location?.province 
+            ? `${job.location.district ? job.location.district + ', ' : ''}${job.location.province}`
+            : 'Không rõ địa điểm'
+        }</span>
+      </div>
+    </div>
+  </div>
+</CardHeader>
 
                 <CardContent className="pt-2">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-2 text-green-600 shrink-0" />
-                      <span className="font-medium truncate">{formatLocation(job.location)}</span>
-                    </div>
-                    <div className="flex items-center text-green-600 font-semibold">
-                      <DollarSign className="h-4 w-4 mr-2 text-success shrink-0" />
-                      <span className="truncate">{formatSalary(job.minSalary, job.maxSalary)}</span>
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <Clock className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                      <span>{formatTimeAgo(job.createdAt || job.postedAt)}</span>
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <Briefcase className="h-4 w-4 mr-2 text-green-600 shrink-0" />
-                      <span className="font-medium truncate">{formatWorkType(job.workType)}</span>
-                    </div>
-                  </div>
-
-                  {job.skills && job.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {job.skills.slice(0, 3).map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="font-normal text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {job.skills.length > 3 && (
-                        <Badge variant="secondary" className="text-xs font-normal bg-gray-100 text-gray-600">
-                          +{job.skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                 <div className="flex flex-wrap gap-4">
+  <Badge variant="secondary" className="flex items-center gap-1">
+    <DollarSign className="w-3 h-3" />
+    {formatSalaryVND(job.minSalary, job.maxSalary)}
+  </Badge>
+  <Badge variant="secondary" className="flex items-center gap-1">
+    <Clock className="w-3 h-3" />
+    {formatWorkType(job.workType)}
+  </Badge>
+  <Badge variant="secondary" className="flex items-center gap-1">
+    <Briefcase className="w-3 h-3" />
+    {formatExperience(job.experience)}
+  </Badge>
+  <Badge variant="secondary" className="flex items-center gap-1">
+    <Calendar className="w-3 h-3" />
+    {job.deadline ? `Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : 'N/A'}
+  </Badge>
+</div>
+              
                 </CardContent>
 
                 <CardFooter className="border-t pt-3 flex justify-end items-center bg-transparent">
