@@ -54,11 +54,17 @@ const JobDetail = () => {
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
     if (!minSalary && !maxSalary) return 'Thỏa thuận';
+    
+    const formatNumber = (num) => {
+      return new Intl.NumberFormat('vi-VN').format(num);
+    };
+    
     if (minSalary && maxSalary) {
-      return `${minSalary.toLocaleString()}-${maxSalary.toLocaleString()} USD`;
+      return `${formatNumber(minSalary)} - ${formatNumber(maxSalary)} VNĐ`;
     }
-    if (minSalary) return `Từ ${minSalary.toLocaleString()} USD`;
-    if (maxSalary) return `Đến ${maxSalary.toLocaleString()} USD`;
+    if (minSalary) return `Từ ${formatNumber(minSalary)} VNĐ`;
+    if (maxSalary) return `Đến ${formatNumber(maxSalary)} VNĐ`;
+    return 'Thỏa thuận';
   };
 
   const formatWorkType = (type) => {
@@ -191,6 +197,8 @@ const JobDetail = () => {
     }
   };
 
+  
+
   const ConfirmDialog = () => {
     if (!showConfirmDialog) return null;
 
@@ -297,7 +305,7 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <div className="container mx-auto py-6 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Back Button */}
@@ -311,7 +319,7 @@ const JobDetail = () => {
           </Button>
 
           {/* Hero Header Card */}
-          <Card className="mb-8 overflow-hidden shadow-xl border-0 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600">
+          <Card className="mb-8 overflow-hidden shadow-lg border-0 bg-gradient-to-r from-emerald-600 to-blue-600">
             <div className="relative p-8 text-white">
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-10">
@@ -373,73 +381,52 @@ const JobDetail = () => {
           {/* Action Section */}
           <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardContent className="p-6">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Mức lương</p>
-                    <span className="font-semibold text-green-600">
-                      {formatSalary(job.minSalary, job.maxSalary)}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Hình thức</p>
-                    <span className="font-medium">{formatWorkType(job.type)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Briefcase className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Kinh nghiệm</p>
-                    <span className="font-medium">{formatExperience(job.experience)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Hạn nộp</p>
-                    <span className="font-medium">{new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                </div>
-
-                {isAuthenticated && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <UserCheck className="w-4 h-4 text-primary" />
+              {/* View Applicants Section */}
+              {isAuthenticated && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                        <UserCheck className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">Thông tin ứng viên</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {hasViewedApplicants && applicantCount !== null 
+                            ? `${applicantCount} người đã ứng tuyển` 
+                            : 'Xem số lượng ứng viên đã ứng tuyển'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Ứng viên</p>
-                      {hasViewedApplicants && applicantCount !== null ? (
-                        <span className="font-semibold text-primary">
-                          {applicantCount} người
-                        </span>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleViewApplicants}
-                          disabled={isLoadingApplicants}
-                          className="h-7 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <Eye className="w-3 h-3 mr-1" />
-                          Xem (50 xu)
-                        </Button>
-                      )}
-                    </div>
+                    
+                    {hasViewedApplicants && applicantCount !== null ? (
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-semibold">
+                        {applicantCount} người
+                      </Badge>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewApplicants}
+                        disabled={isLoadingApplicants}
+                        className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-medium"
+                      >
+                        {isLoadingApplicants ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Xem (50 xu)
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {job.skills && job.skills.length > 0 && (
                 <div className="mb-6">
@@ -595,84 +582,6 @@ const JobDetail = () => {
                 address={job.address}
                 companyName={job.company?.name}
               />
-
-              {/* Job Details Summary */}
-              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-purple-600" />
-                    </div>
-                    Tóm tắt công việc
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <UserCheck className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Cấp bậc</span>
-                      </div>
-                      <span className="font-semibold text-blue-700">{formatExperience(job.experience)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-green-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Hình thức</span>
-                      </div>
-                      <span className="font-semibold text-green-700">{formatWorkType(job.type)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                          <Calendar className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Trạng thái</span>
-                      </div>
-                      <Badge className={`font-medium ${
-                        job.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-700 border-green-200'
-                          : 'bg-gray-100 text-gray-700 border-gray-200'
-                      }`}>
-                        {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
-                      </Badge>
-                    </div>
-
-                    {isAuthenticated && (
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <Eye className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">Ứng viên</span>
-                        </div>
-                        {hasViewedApplicants && applicantCount !== null ? (
-                          <span className="font-semibold text-purple-700">
-                            {applicantCount} người
-                          </span>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleViewApplicants}
-                            disabled={isLoadingApplicants}
-                            className="border-purple-300 text-purple-700 hover:bg-purple-100"
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Xem (50 xu)
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

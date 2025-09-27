@@ -14,6 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getAllJobs } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/jobService';
+import { formatSalary, formatTimeAgo } from '../../utils/formatters';
 
 const JobSearchSection = () => {
   const navigate = useNavigate();
@@ -64,11 +65,11 @@ const JobSearchSection = () => {
   // Handle search
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchTerm) params.set('search', searchTerm);
-    if (selectedLocation) params.set('location', selectedLocation);
+    if (searchTerm) params.set('query', searchTerm);
+    if (selectedLocation) params.set('province', selectedLocation);
     if (selectedCategory) params.set('category', selectedCategory);
-    
-    navigate(`/jobs?${params.toString()}`);
+
+    navigate(`/jobs/search?${params.toString()}`);
   };
 
   // Handle save/unsave job
@@ -94,24 +95,7 @@ const JobSearchSection = () => {
     }
   };
 
-  const formatSalary = (min, max, currency = 'VND') => {
-    if (!min && !max) return 'Thỏa thuận';
-    if (!max) return `Từ ${min?.toLocaleString()} ${currency}`;
-    if (!min) return `Lên đến ${max?.toLocaleString()} ${currency}`;
-    return `${min?.toLocaleString()} - ${max?.toLocaleString()} ${currency}`;
-  };
-
-  const timeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Hôm qua';
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} tuần trước`;
-    return `${Math.ceil(diffDays / 30)} tháng trước`;
-  };
+  // Removed local format functions - now using utils/formatters.js
 
   return (
     <section className="py-20 bg-background">
@@ -192,9 +176,9 @@ const JobSearchSection = () => {
               <h3 className="text-2xl font-bold text-foreground mb-2">Việc làm nổi bật</h3>
               <p className="text-muted-foreground">Những cơ hội nghề nghiệp tốt nhất dành cho bạn</p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/jobs')}
+            <Button
+              variant="outline"
+              onClick={() => navigate('/jobs/search')}
               className="hidden sm:flex items-center gap-2"
             >
               Xem tất cả
@@ -298,14 +282,14 @@ const JobSearchSection = () => {
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         <DollarSign className="h-3 w-3 mr-1" />
-                        {formatSalary(job.salaryMin, job.salaryMax)}
+                        {formatSalary(job.salaryMin || job.minSalary, job.salaryMax || job.maxSalary)}
                       </Badge>
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
                       <div className="flex items-center gap-2">
                         <Clock className="h-3 w-3" />
-                        {timeAgo(job.createdAt)}
+                        {formatTimeAgo(job.createdAt)}
                       </div>
                       {job.applicants && (
                         <div className="flex items-center gap-1">
@@ -334,8 +318,8 @@ const JobSearchSection = () => {
 
         {/* View All Button for Mobile */}
         <div className="text-center sm:hidden">
-          <Button 
-            onClick={() => navigate('/jobs')}
+          <Button
+            onClick={() => navigate('/jobs/search')}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Xem tất cả việc làm

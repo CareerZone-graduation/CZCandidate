@@ -5,12 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  MapPin, 
-  Clock, 
-  DollarSign, 
-  Briefcase, 
-  Building, 
+import {
+  MapPin,
+  Clock,
+  DollarSign,
+  Briefcase,
+  Building,
   Heart,
   ArrowRight,
   Users,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatSalary, formatLocation, formatTimeAgo } from '@/utils/formatters';
 
 /**
  * JobResultCard component for displaying individual job search results
@@ -33,49 +34,7 @@ const JobResultCard = ({
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
 
-  /**
-   * Format salary range
-   * @param {number} min - Minimum salary
-   * @param {number} max - Maximum salary
-   * @returns {string} - Formatted salary string
-   */
-  const formatSalary = (min, max) => {
-    if (!min && !max) return 'Thỏa thuận';
-    if (min && max) return `${min}-${max} triệu`;
-    if (min) return `Từ ${min} triệu`;
-    if (max) return `Lên đến ${max} triệu`;
-    return 'Thỏa thuận';
-  };
-
-  /**
-   * Format time ago
-   * @param {string} dateString - Date string
-   * @returns {string} - Time ago string
-   */
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = now - date;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Hôm nay';
-    if (diffDays === 1) return 'Hôm qua';
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} tuần trước`;
-    return `${Math.ceil(diffDays / 30)} tháng trước`;
-  };
-
-  const formatLocation = (location) => {
-    if (!location) return 'N/A';
-    if (typeof location === 'string') return location;
-    if (typeof location === 'object') {
-      const parts = [];
-      if (location.district) parts.push(location.district);
-      if (location.province) parts.push(location.province);
-      return parts.join(', ');
-    }
-    return 'N/A';
-  };
+  // Removed local format functions - now using utils/formatters.js
 
   /**
    * Handle job card click
@@ -192,7 +151,7 @@ const JobResultCard = ({
               
               <Badge variant="outline" className="text-xs">
                 <DollarSign className="h-3 w-3 mr-1" />
-                {formatSalary(job.salaryMin, job.salaryMax)}
+                {formatSalary(job.salaryMin || job.minSalary, job.salaryMax || job.maxSalary)}
               </Badge>
               
               {job.location && (

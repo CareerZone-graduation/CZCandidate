@@ -67,6 +67,7 @@ const AppRouter = () => {
         {/* Public routes */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/jobs" element={<Navigate to="/jobs/search" replace />} />
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/news" element={<News />} />
