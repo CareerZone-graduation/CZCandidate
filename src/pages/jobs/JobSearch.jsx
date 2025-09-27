@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Filter, ArrowLeft } from 'lucide-react';
-import { searchJobsHybrid } from '@/services/jobService';
+import { searchJobsHybrid, getAllJobs } from '@/services/jobService';
 import { validateSearchParams, validateHybridSearchRequest } from '@/schemas/searchSchemas';
 import { toast } from 'sonner';
 
@@ -30,7 +30,7 @@ const JobSearch = () => {
   const rawParams = {
     query: searchParams.get('query') || '',
     page: searchParams.get('page') || '1',
-    size: searchParams.get('size') || '10',
+    size: searchParams.get('size') || (searchParams.get('query') ? '10' : '50'), // Show more jobs when no search query
     category: searchParams.get('category') || '',
     type: searchParams.get('type') || '',
     workType: searchParams.get('workType') || '',
@@ -96,9 +96,9 @@ const JobSearch = () => {
     error,
     refetch
   } = useQuery({
-    queryKey: ['jobs', 'search', apiValidation.data || searchParameters],
-    queryFn: () => searchJobsHybrid(apiValidation.data || searchParameters),
-    enabled: !!query && apiValidation.success, // Only fetch when there's a valid query
+    queryKey: query ? ['jobs', 'search', apiValidation.data || searchParameters] : ['jobs', 'all', searchParameters],
+    queryFn: () => query ? searchJobsHybrid(apiValidation.data || searchParameters) : getAllJobs(searchParameters),
+    enabled: apiValidation.success, // Always fetch when parameters are valid
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false, // Prevent refetch on window focus

@@ -9,23 +9,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 import { SectionHeader } from '../common/SectionHeader';
 import { getAllJobs } from '../../services/jobService';
+import { formatSalary, formatLocation, formatWorkType, formatTimeAgo } from '../../utils/formatters';
 
 const FeaturedJobs = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     // Only fetch jobs if user is authenticated
-    if (!isAuthenticated) {
-      console.log('👤 User not authenticated, skipping featured jobs fetch');
-      setIsLoading(false);
-      setError('Vui lòng đăng nhập để xem danh sách việc làm');
-      setJobs([]);
-      return;
-    }
 
     const fetchFeaturedJobs = async () => {
       try {
@@ -85,63 +78,12 @@ const FeaturedJobs = () => {
     };
 
     fetchFeaturedJobs();
-  }, [isAuthenticated]);
-
-  const formatSalary = (job) => {
-    if (job.salaryType === 'NEGOTIABLE' || (!job.minSalary && !job.maxSalary)) {
-      return 'Thỏa thuận';
-    }
-    if (job.minSalary && job.maxSalary) {
-      return `${job.minSalary} - ${job.maxSalary} triệu`;
-    }
-    if (job.minSalary) {
-      return `Từ ${job.minSalary} triệu`;
-    }
-    if (job.maxSalary) {
-      return `Lên đến ${job.maxSalary} triệu`;
-    }
-    return 'Thỏa thuận';
-  };
-
-  const formatLocation = (location) => {
-    if (!location) return 'Chưa xác định';
-    if (typeof location === 'string') return location;
-    if (typeof location === 'object') {
-      const provinceName = location.province?.name || location.province;
-      const districtName = location.district?.name || location.district;
-      if (provinceName && districtName) return `${districtName}, ${provinceName}`;
-      if (provinceName) return provinceName;
-      if (districtName) return districtName;
-    }
-    return 'Chưa xác định';
-  };
-
-  const formatWorkType = (type) => {
-    const typeMap = {
-      FULL_TIME: 'Toàn thời gian',
-      PART_TIME: 'Bán thời gian',
-      CONTRACT: 'Hợp đồng',
-      FREELANCE: 'Tự do',
-      INTERNSHIP: 'Thực tập',
-    };
-    return typeMap[type] || type || 'Linh hoạt';
-  };
-
-  const timeAgo = (dateString) => {
-    const now = new Date();
-    const postDate = new Date(dateString);
-    const diffInMs = now - postDate;
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'Hôm nay';
-    if (diffInDays === 1) return 'Hôm qua';
-    if (diffInDays < 7) return `${diffInDays} ngày trước`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} tuần trước`;
-    return `${Math.floor(diffInDays / 30)} tháng trước`;
-  };
+  }, []);
+// ====== Format dữ liệu =======
+  // Removed local format functions - now using utils/formatters.js
 
   const handleViewAll = () => {
-    navigate('/jobs');
+    navigate('/jobs/search');
   };
 
   const handleJobClick = (jobId) => {
@@ -180,24 +122,6 @@ const FeaturedJobs = () => {
                 </CardContent>
               </Card>
             ))
-          ) : error ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">{error}</p>
-              {!isAuthenticated && (
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => navigate('/login')}
-                >
-                  Đăng nhập để xem việc làm
-                </Button>
-              )}
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">Chưa có việc làm nổi bật nào</p>
-              <p className="text-sm text-muted-foreground mt-2">Hãy quay lại sau để xem các cơ hội mới</p>
-            </div>
           ) : (
             jobs.slice(0, 6).map((job) => (
               <Card
@@ -241,11 +165,11 @@ const FeaturedJobs = () => {
                     </div>
                     <div className="flex items-center text-green-600 font-semibold">
                       <DollarSign className="h-4 w-4 mr-2 text-success shrink-0" />
-                      <span className="truncate">{formatSalary(job)}</span>
+                      <span className="truncate">{formatSalary(job.minSalary, job.maxSalary)}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                      <span>{timeAgo(job.createdAt || job.postedAt)}</span>
+                      <span>{formatTimeAgo(job.createdAt || job.postedAt)}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <Briefcase className="h-4 w-4 mr-2 text-green-600 shrink-0" />
