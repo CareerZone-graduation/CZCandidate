@@ -50,16 +50,26 @@ const JobDetail = () => {
     enabled: !!id,
     select: (data) => data.data.data,
   });
+const formatCurrency = (amount) => {
+  if (amount == null || amount === '') return 'Thỏa thuận';
+  const num = Number(amount); // ép kiểu sang số
+  if (isNaN(num)) return 'Thỏa thuận';
+  return num.toLocaleString('vi-VN') + ' VNĐ';
+};
 
   // Format functions
-  const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return 'Thỏa thuận';
-    if (minSalary && maxSalary) {
-      return `${minSalary.toLocaleString()}-${maxSalary.toLocaleString()} USD`;
-    }
-    if (minSalary) return `Từ ${minSalary.toLocaleString()} USD`;
-    if (maxSalary) return `Đến ${maxSalary.toLocaleString()} USD`;
+const formatSalary = (minSalary, maxSalary) => {
+  const format = (value) => {
+    const num = Number(value);
+    return isNaN(num) ? 'Thỏa thuận' : num.toLocaleString('vi-VN') + ' VNĐ';
   };
+
+  if (!minSalary && !maxSalary) return 'Thỏa thuận';
+  if (minSalary && maxSalary) return `${format(minSalary)} - ${format(maxSalary)}`;
+  if (minSalary) return `Từ ${format(minSalary)}`;
+  if (maxSalary) return `Đến ${format(maxSalary)}`;
+};
+
 
   const formatWorkType = (type) => {
     const typeMap = {
@@ -595,84 +605,6 @@ const JobDetail = () => {
                 address={job.address}
                 companyName={job.company?.name}
               />
-
-              {/* Job Details Summary */}
-              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-purple-600" />
-                    </div>
-                    Tóm tắt công việc
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <UserCheck className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Cấp bậc</span>
-                      </div>
-                      <span className="font-semibold text-blue-700">{formatExperience(job.experience)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-green-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Hình thức</span>
-                      </div>
-                      <span className="font-semibold text-green-700">{formatWorkType(job.type)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                          <Calendar className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Trạng thái</span>
-                      </div>
-                      <Badge className={`font-medium ${
-                        job.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-700 border-green-200'
-                          : 'bg-gray-100 text-gray-700 border-gray-200'
-                      }`}>
-                        {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
-                      </Badge>
-                    </div>
-
-                    {isAuthenticated && (
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <Eye className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">Ứng viên</span>
-                        </div>
-                        {hasViewedApplicants && applicantCount !== null ? (
-                          <span className="font-semibold text-purple-700">
-                            {applicantCount} người
-                          </span>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleViewApplicants}
-                            disabled={isLoadingApplicants}
-                            className="border-purple-300 text-purple-700 hover:bg-purple-100"
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Xem (50 xu)
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

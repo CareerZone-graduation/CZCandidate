@@ -106,7 +106,7 @@ const JobSuggestion = () => {
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="text-success font-bold text-lg">
-                      {job.minSalary} - {job.maxSalary} USD
+                      {job.minSalary} - {job.maxSalary} triệu
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}

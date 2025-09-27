@@ -102,7 +102,7 @@ const JobSearch = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false, // Prevent refetch on window focus
-    keepPreviousData: true // Keep previous data while loading new data to prevent layout shift
+    keepPreviotriệuata: true // Keep previous data while loading new data to prevent layout shift
   });
 
   /**

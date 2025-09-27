@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Star, Heart } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Heart } from 'lucide-react';
+import {
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
+} from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -12,140 +13,98 @@ import { getAllJobs } from '../../services/jobService';
 
 const FeaturedJobs = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // State dữ liệu
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Only fetch jobs if user is authenticated
-    if (!isAuthenticated) {
-      console.log('👤 User not authenticated, skipping featured jobs fetch');
-      setIsLoading(false);
-      setError('Vui lòng đăng nhập để xem danh sách việc làm');
-      setJobs([]);
-      return;
-    }
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);          // số job mỗi trang
+  const [totalPages, setTotalPages] = useState(1);
 
-    const fetchFeaturedJobs = async () => {
+  // Lấy dữ liệu từ API
+  useEffect(() => {
+    const fetchJobs = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        console.log('🔄 Fetching featured jobs...');
-
         const response = await getAllJobs({
-          page: 1,
-          limit: 6,
-          sortBy: 'newest'
+          page,
+          limit,
+          sortBy: 'newest',
         });
 
-        console.log('✅ Featured jobs API response:', response);
-
-        // Check if the API response indicates success
         if (response.data && response.data.success) {
-          // Extract jobs data from the response
-          let jobsData = [];
-          if (Array.isArray(response.data.data)) {
-            jobsData = response.data.data;
-          } else if (response.data.data && Array.isArray(response.data.data)) {
-            jobsData = response.data.data;
-          } else {
-            jobsData = [];
-          }
-
-          console.log('📋 Jobs data extracted:', jobsData);
-          setJobs(jobsData);
+          setJobs(response.data.data || []);
+          setTotalPages(response.data.pagination?.totalPages || 1);
         } else {
-          throw new Error(response.data?.message || 'Không thể tải danh sách việc làm nổi bật');
+          throw new Error(response.data?.message || 'Không thể tải danh sách việc làm');
         }
       } catch (err) {
-        console.error('❌ Error fetching featured jobs:', err);
-        console.error('❌ Error details:', {
-          message: err.message,
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data
-        });
-
-        // For network errors or auth issues, show a user-friendly message
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
-        } else if (err.response?.status >= 500) {
-          setError('Máy chủ đang gặp sự cố. Vui lòng thử lại sau');
-        } else {
-          setError(err.response?.data?.message || err.message || 'Không thể tải danh sách việc làm');
-        }
-
-        // Set empty array instead of leaving it undefined
+        setError(err.response?.data?.message || err.message || 'Không thể tải danh sách việc làm');
         setJobs([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFeaturedJobs();
-  }, [isAuthenticated]);
+    fetchJobs();
+  }, [page, limit]);
+
+  // ====== Format dữ liệu =======
+  const formatCurrency = (value) => {
+    if (!value) return '';
+    if (typeof value === 'object' && value.$numberDecimal) value = value.$numberDecimal;
+    const num = Number(value);
+    return isNaN(num) ? '' : new Intl.NumberFormat('vi-VN').format(num);
+  };
 
   const formatSalary = (job) => {
-    if (job.salaryType === 'NEGOTIABLE' || (!job.minSalary && !job.maxSalary)) {
-      return 'Thỏa thuận';
-    }
-    if (job.minSalary && job.maxSalary) {
-      return `${job.minSalary} - ${job.maxSalary} triệu`;
-    }
-    if (job.minSalary) {
-      return `Từ ${job.minSalary} triệu`;
-    }
-    if (job.maxSalary) {
-      return `Lên đến ${job.maxSalary} triệu`;
-    }
+    if (job.salaryType === 'NEGOTIABLE' || (!job.minSalary && !job.maxSalary)) return 'Thỏa thuận';
+    if (job.minSalary && job.maxSalary)
+      return `${formatCurrency(job.minSalary)} - ${formatCurrency(job.maxSalary)} VND`;
+    if (job.minSalary) return `Từ ${formatCurrency(job.minSalary)} VND`;
+    if (job.maxSalary) return `Lên đến ${formatCurrency(job.maxSalary)} VND`;
     return 'Thỏa thuận';
   };
 
   const formatLocation = (location) => {
     if (!location) return 'Chưa xác định';
     if (typeof location === 'string') return location;
-    if (typeof location === 'object') {
-      const provinceName = location.province?.name || location.province;
-      const districtName = location.district?.name || location.district;
-      if (provinceName && districtName) return `${districtName}, ${provinceName}`;
-      if (provinceName) return provinceName;
-      if (districtName) return districtName;
-    }
-    return 'Chưa xác định';
+    const province = location.province?.name || location.province;
+    const district = location.district?.name || location.district;
+    if (province && district) return `${district}, ${province}`;
+    return province || district || 'Chưa xác định';
   };
 
   const formatWorkType = (type) => {
-    const typeMap = {
+    const map = {
       FULL_TIME: 'Toàn thời gian',
       PART_TIME: 'Bán thời gian',
       CONTRACT: 'Hợp đồng',
       FREELANCE: 'Tự do',
       INTERNSHIP: 'Thực tập',
     };
-    return typeMap[type] || type || 'Linh hoạt';
+    return map[type] || type || 'Linh hoạt';
   };
 
-  const timeAgo = (dateString) => {
-    const now = new Date();
-    const postDate = new Date(dateString);
-    const diffInMs = now - postDate;
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'Hôm nay';
-    if (diffInDays === 1) return 'Hôm qua';
-    if (diffInDays < 7) return `${diffInDays} ngày trước`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} tuần trước`;
-    return `${Math.floor(diffInDays / 30)} tháng trước`;
+  const timeAgo = (date) => {
+    const diff = Math.floor((Date.now() - new Date(date)) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return 'Hôm nay';
+    if (diff === 1) return 'Hôm qua';
+    if (diff < 7) return `${diff} ngày trước`;
+    if (diff < 30) return `${Math.floor(diff / 7)} tuần trước`;
+    return `${Math.floor(diff / 30)} tháng trước`;
   };
 
-  const handleViewAll = () => {
-    navigate('/jobs');
-  };
-
-  const handleJobClick = (jobId) => {
-    navigate(`/jobs/${jobId}`);
+  // ====== Handler ======
+  const handleJobClick = (id) => navigate(`/jobs/${id}`);
+  const handleViewAll = () => navigate('/jobs');
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
   };
 
   return (
@@ -153,51 +112,35 @@ const FeaturedJobs = () => {
       <div className="container">
         <SectionHeader
           badgeText="⭐ Việc làm nổi bật"
-          title={<>Cơ hội nghề nghiệp <span className="bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">hàng đầu</span></>}
+          title={
+            <>Cơ hội nghề nghiệp <span className="bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">hàng đầu</span></>
+          }
           description="Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp."
         />
 
+        {error && <p className="text-red-600 text-center mb-6">{error}</p>}
+
+        {/* Job list */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {isLoading ? (
-            // Loading skeletons
             [...Array(6)].map((_, i) => (
               <Card key={i} className="h-80 shadow-lg">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <Skeleton className="w-16 h-16 rounded-xl" />
-                      <Skeleton className="w-12 h-12 rounded-full" />
-                    </div>
-                    <div className="space-y-3">
-                      <Skeleton className="h-6 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-5 w-1/2" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="w-16 h-16 rounded-xl" />
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-4 w-2/3" />
                   </div>
                 </CardContent>
               </Card>
             ))
-          ) : error ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">{error}</p>
-              {!isAuthenticated && (
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => navigate('/login')}
-                >
-                  Đăng nhập để xem việc làm
-                </Button>
-              )}
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">Chưa có việc làm nổi bật nào</p>
-              <p className="text-sm text-muted-foreground mt-2">Hãy quay lại sau để xem các cơ hội mới</p>
-            </div>
           ) : (
             jobs.slice(0, 6).map((job) => (
               <Card
@@ -252,7 +195,6 @@ const FeaturedJobs = () => {
                       <span className="font-medium truncate">{formatWorkType(job.workType)}</span>
                     </div>
                   </div>
-
                   {job.skills && job.skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-4">
                       {job.skills.slice(0, 3).map((tag, index) => (
@@ -303,3 +245,4 @@ const FeaturedJobs = () => {
 };
 
 export default FeaturedJobs;
+

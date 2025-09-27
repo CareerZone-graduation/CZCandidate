@@ -56,7 +56,7 @@ const NotificationsPage = () => {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['notifications', page, limit],
     queryFn: () => getNotifications({ page, limit }),
-    keepPreviousData: true,
+    keepPreviotriệuata: true,
   });
 
   const mutation = useMutation({
