@@ -34,7 +34,7 @@ export const getMyCoinBalance = async () => {
 
 // Upload CV
 export const uploadCV = async (formData) => {
-  const response = await apiClient.post('/candidate/upload-cv', formData, {
+  const response = await apiClient.post('/candidate/cvs', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -44,13 +44,21 @@ export const uploadCV = async (formData) => {
 
 // Xóa CV
 export const deleteCV = async (cvId) => {
-  const response = await apiClient.delete(`/candidate/cv/${cvId}`);
+  const response = await apiClient.delete(`/candidate/cvs/${cvId}`);
   return response.data;
 };
 
 // Set CV mặc định
 export const setDefaultCV = async (cvId) => {
-  const response = await apiClient.put(`/candidate/cv/${cvId}/set-default`);
+  const response = await apiClient.put(`/candidate/cvs/${cvId}/set-default`);
+  return response.data;
+};
+
+// Download CV
+export const downloadCV = async (cvId) => {
+  const response = await apiClient.get(`/candidate/cvs/${cvId}/download`, {
+    responseType: 'blob',
+  });
   return response.data;
 };
 // Lấy danh sách CV profiles
