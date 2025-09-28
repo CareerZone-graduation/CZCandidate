@@ -126,7 +126,7 @@ const FeaturedJobs = () => {
             jobs.slice(0, 6).map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer"
+                className="group relative overflow-hidden border-0 shadow-md card-yellow-hover bg-background cursor-pointer"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                <CardHeader>

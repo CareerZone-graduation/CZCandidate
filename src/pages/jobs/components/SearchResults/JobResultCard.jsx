@@ -80,11 +80,9 @@ const JobResultCard = ({
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "group hover:shadow-lg transition-all duration-300 cursor-pointer",
-        "border-border hover:border-primary/50",
-        "bg-background hover:bg-muted/30",
+        "group card-yellow-hover",
         className
       )}
       onClick={handleCardClick}

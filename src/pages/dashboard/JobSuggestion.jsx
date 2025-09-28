@@ -90,7 +90,7 @@ const JobSuggestion = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
           {jobs.map((job) => (
-            <Card key={job._id} className="hover:shadow-lg transition-shadow">
+            <Card key={job._id} className="card-yellow-hover">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">

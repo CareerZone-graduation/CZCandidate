@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { 
   MapPin, 
   Clock, 
@@ -23,7 +24,7 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
-import { getJobApplicantCount, getJobById } from '../../services/jobService';
+import { getJobApplicantCount, getJobById, getAllJobs } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
@@ -31,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
 import JobLocationMap from '@/components/common/JobLocationMap';
+import { parseCurrencyValue } from '../../utils/formatters';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -42,6 +44,8 @@ const JobDetail = () => {
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [relatedJobsPage, setRelatedJobsPage] = useState(1);
+  const jobsPerPage = 6;
 
   // Fetch job details using React Query
   const { data: job, isLoading, isError, error, refetch } = useQuery({
@@ -51,19 +55,34 @@ const JobDetail = () => {
     select: (data) => data.data.data,
   });
 
+  // Fetch related jobs
+  const { data: relatedJobs, isLoading: isLoadingRelated } = useQuery({
+    queryKey: ['relatedJobs', job?.company?._id, job?.skills],
+    queryFn: () => getAllJobs({
+      limit: 20,
+      companyId: job?.company?._id,
+      excludeId: id
+    }),
+    enabled: !!job?.company?._id,
+    select: (data) => data.data.data?.filter(j => j._id !== id) || [],
+  });
+
   // Format functions
   const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return 'Thỏa thuận';
-    
+    const min = parseCurrencyValue(minSalary);
+    const max = parseCurrencyValue(maxSalary);
+
+    if (!min && !max) return 'Thỏa thuận';
+
     const formatNumber = (num) => {
       return new Intl.NumberFormat('vi-VN').format(num);
     };
-    
-    if (minSalary && maxSalary) {
-      return `${formatNumber(minSalary)} - ${formatNumber(maxSalary)} VNĐ`;
+
+    if (min && max) {
+      return `${formatNumber(min)} - ${formatNumber(max)} VNĐ`;
     }
-    if (minSalary) return `Từ ${formatNumber(minSalary)} VNĐ`;
-    if (maxSalary) return `Đến ${formatNumber(maxSalary)} VNĐ`;
+    if (min) return `Từ ${formatNumber(min)} VNĐ`;
+    if (max) return `Đến ${formatNumber(max)} VNĐ`;
     return 'Thỏa thuận';
   };
 
@@ -89,6 +108,21 @@ const JobDetail = () => {
       'DIRECTOR_LEVEL': 'Giám đốc'
     };
     return levelMap[level] || level;
+  };
+
+  // Pagination logic for related jobs
+  const totalRelatedJobs = relatedJobs?.length || 0;
+  const totalPages = Math.ceil(totalRelatedJobs / jobsPerPage);
+  const startIndex = (relatedJobsPage - 1) * jobsPerPage;
+  const endIndex = startIndex + jobsPerPage;
+  const currentJobs = relatedJobs?.slice(startIndex, endIndex) || [];
+
+  const handlePrevPage = () => {
+    setRelatedJobsPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setRelatedJobsPage(prev => Math.min(prev + 1, totalPages));
   };
 
   const handleViewApplicants = () => {
@@ -305,277 +339,377 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="bg-background min-h-screen">
       <div className="container mx-auto py-6 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Back Button */}
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            className="mb-6 hover:bg-white/80 transition-all duration-200"
+            className="mb-6 hover:bg-muted transition-all duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Quay lại
           </Button>
 
-          {/* Hero Header Card */}
-          <Card className="mb-8 overflow-hidden shadow-lg border-0 bg-gradient-to-r from-emerald-600 to-blue-600">
-            <div className="relative p-8 text-white">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-32 translate-x-32"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full translate-y-24 -translate-x-24"></div>
-              </div>
-
-              <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          {/* Header Section */}
+          <div className="mb-8">
+            <div className="relative bg-gradient-to-r from-green-100 via-green-200 to-blue-200
+                   h-[45vh] w-full
+                   flex flex-col justify-between
+                   rounded-xl shadow-lg p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-                      {formatWorkType(job.type)}
-                    </Badge>
-                    <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-                      {formatExperience(job.experience)}
-                    </Badge>
-                  </div>
-                  <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">{job.title}</h1>
-                  <div className="flex flex-wrap items-center gap-6 text-emerald-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                        <Building className="w-4 h-4" />
-                      </div>
-                      <span className="font-medium">{job.company?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <span>{job.location?.province}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                        <DollarSign className="w-4 h-4" />
-                      </div>
-                      <span className="font-semibold text-white">
-                        {formatSalary(job.minSalary, job.maxSalary)}
-                      </span>
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="w-16 h-16 border-2 border-border">
+                      <AvatarImage src={job.company?.logo} alt={job.company?.name} />
+                      <AvatarFallback className="bg-muted text-foreground text-lg font-bold">
+                        {job.company?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-1">{job.title}</h1>
+                      <p className="text-lg text-muted-foreground">{job.company?.name}</p>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col items-center lg:items-end gap-4">
-                  <Avatar className="w-20 h-20 border-4 border-white/30 shadow-lg">
-                    <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                    <AvatarFallback className="bg-white/20 text-white text-xl font-bold">
-                      {job.company?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-center lg:text-right">
-                    <p className="text-emerald-100 text-sm">Hạn nộp</p>
-                    <p className="font-semibold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
+                  {/* Salary - Only show if authenticated or has salary */}
+                  {(isAuthenticated || job.minSalary || job.maxSalary) && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 text-xl font-semibold text-primary">
+                        <DollarSign className="w-5 h-5" />
+                        <span>{formatSalary(job.minSalary, job.maxSalary)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* View Applicants Section */}
+                  {isAuthenticated && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                            <UserCheck className="w-5 h-5 text-orange-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900">Thông tin ứng viên</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {hasViewedApplicants && applicantCount !== null
+                                ? `${applicantCount} người đã ứng tuyển`
+                                : 'Xem số lượng ứng viên đã ứng tuyển'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {hasViewedApplicants && applicantCount !== null ? (
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-semibold">
+                            {applicantCount} người
+                          </Badge>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleViewApplicants}
+                            disabled={isLoadingApplicants}
+                            className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-medium"
+                          >
+                            {isLoadingApplicants ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                                Đang xử lý...
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-4 h-4 mr-2" />
+                                Xem (50 xu)
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {job.isApplied ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Đã ứng tuyển
+                      </Badge>
+                    ) : (
+                      <Button
+                        onClick={handleApply}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-2.5 font-medium"
+                        disabled={job?.status !== 'ACTIVE'}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {job.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      onClick={handleSave}
+                      className={`px-6 py-2.5 font-medium transition-all duration-200 ${
+                        job.isSaved
+                          ? "bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <Bookmark className={`w-4 h-4 mr-2 ${job.isSaved ? "fill-current" : ""}`} />
+                      {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      onClick={handleShare}
+                      className="hover:bg-muted px-4 py-2.5 transition-all duration-200"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Chia sẻ
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          {/* Action Section */}
-          <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              {/* View Applicants Section */}
-              {isAuthenticated && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
-                  <div className="flex items-center justify-between">
+          {/* Job Overview + Company Info (Left) and Related Jobs (Right) */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+            {/* Job Overview and Company Info - Left Column */}
+            <div className="space-y-8">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold">Tổng quan công việc</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <UserCheck className="w-5 h-5 text-orange-600" />
-                      </div>
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">Thông tin ứng viên</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {hasViewedApplicants && applicantCount !== null 
-                            ? `${applicantCount} người đã ứng tuyển` 
-                            : 'Xem số lượng ứng viên đã ứng tuyển'}
-                        </p>
+                        <p className="text-sm font-medium text-muted-foreground">Địa điểm làm việc</p>
+                        <p className="text-foreground">{job.location?.province}</p>
                       </div>
                     </div>
-                    
-                    {hasViewedApplicants && applicantCount !== null ? (
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-semibold">
-                        {applicantCount} người
-                      </Badge>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleViewApplicants}
-                        disabled={isLoadingApplicants}
-                        className="border-orange-300 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-medium"
-                      >
-                        {isLoadingApplicants ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                            Đang xử lý...
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Xem (50 xu)
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
 
-              {job.skills && job.skills.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Kỹ năng yêu cầu</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hình thức làm việc</p>
+                        <p className="text-foreground">{formatWorkType(job.type)}</p>
+                      </div>
+                    </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  {job.isApplied ? (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Đã ứng tuyển
-                    </Badge>
-                  ) : (
-                    <Button
-                      onClick={handleApply}
-                      className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-8 py-2.5 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                      disabled={job?.status !== 'ACTIVE'}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      {job.status === 'ACTIVE' ? 'Ứng tuyển ngay' : 'Việc làm đã đóng'}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
+                        <p className="text-foreground">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
+                        <p className="text-foreground">{formatExperience(job.experience)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {job.skills && job.skills.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Kỹ năng yêu cầu</p>
+                      <div className="flex flex-wrap gap-2">
+                        {job.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   )}
+                </CardContent>
+              </Card>
 
-                  <Button
-                    variant="outline"
-                    onClick={handleSave}
-                    className={`px-6 py-2.5 font-medium transition-all duration-200 ${
-                      job.isSaved
-                        ? "bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100 shadow-md"
-                        : "hover:bg-slate-50 hover:shadow-md"
-                    }`}
-                  >
-                    <Bookmark className={`w-4 h-4 mr-2 ${job.isSaved ? "fill-current" : ""}`} />
-                    {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
-                  </Button>
-                </div>
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold">Thông tin công ty</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-border">
+                      <AvatarImage src={job.company?.logo} alt={job.company?.name} />
+                      <AvatarFallback className="bg-muted text-foreground text-lg font-bold">
+                        {job.company?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-foreground">{job.company?.name}</h3>
+                      <p className="text-sm text-muted-foreground">{job.company?.industry || 'Chưa cập nhật'}</p>
+                    </div>
+                  </div>
 
-                <Button
-                  variant="ghost"
-                  onClick={handleShare}
-                  className="hover:bg-slate-100 px-4 py-2.5 transition-all duration-200"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Chia sẻ
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Địa chỉ</p>
+                        <p className="text-sm text-muted-foreground">{job.address || 'Chưa cập nhật'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Related Jobs - Right Column */}
+            <div className="space-y-8">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold">Việc làm liên quan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingRelated ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="p-4 border rounded-lg">
+                          <div className="flex gap-3">
+                            <Skeleton className="w-12 h-12 rounded" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/2" />
+                              <Skeleton className="h-3 w-1/4" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : relatedJobs && relatedJobs.length > 0 ? (
+                    <>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                        {currentJobs.map((relatedJob) => (
+                          <div
+                            key={relatedJob._id}
+                            className="p-4 border rounded-lg card-yellow-hover"
+                            onClick={() => navigate(`/jobs/${relatedJob._id}`)}
+                          >
+                            <div className="flex gap-3 mb-3">
+                              <Avatar className="w-12 h-12 border">
+                                <AvatarImage src={relatedJob.company?.logo} alt={relatedJob.company?.name} />
+                                <AvatarFallback className="text-sm">
+                                  {relatedJob.company?.name?.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm text-foreground truncate">
+                                  {relatedJob.title}
+                                </h4>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {relatedJob.company?.name}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Badge variant="secondary" className="text-xs px-2 py-0 w-fit">
+                                {formatSalary(relatedJob.minSalary, relatedJob.maxSalary)}
+                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                  {relatedJob.location?.province}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePrevPage}
+                            disabled={relatedJobsPage === 1}
+                            className="flex items-center gap-2"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            Trước
+                          </Button>
+
+                          <span className="text-sm text-muted-foreground">
+                            Trang {relatedJobsPage} / {totalPages}
+                          </span>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPage}
+                            disabled={relatedJobsPage === totalPages}
+                            className="flex items-center gap-2"
+                          >
+                            Sau
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Briefcase className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">Không có việc làm liên quan</p>
+                      <p className="text-sm">Chúng tôi sẽ cập nhật thêm cơ hội việc làm từ công ty này</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
 
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               {/* Job Description */}
-              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-blue-600" />
-                    </div>
-                    Mô tả công việc
-                  </CardTitle>
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold">Mô tả công việc</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
+                <CardContent>
+                  <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                 </CardContent>
               </Card>
 
-              {/* Job Requirements */}
+              {/* Your skills and experience */}
               {job.requirements && (
-                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <UserCheck className="w-5 h-5 text-orange-600" />
-                      </div>
-                      Yêu cầu công việc
-                    </CardTitle>
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold">Kỹ năng và kinh nghiệm của bạn</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                  <CardContent>
+                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
 
-              {/* Job Benefits */}
+              {/* Why you'll love working here */}
               {job.benefits && (
-                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <Coins className="w-5 h-5 text-green-600" />
-                      </div>
-                      Quyền lợi
-                    </CardTitle>
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold">Tại sao bạn sẽ yêu thích làm việc tại đây</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                  <CardContent>
+                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
               )}
             </div>
 
             <div className="space-y-8">
-              {/* Company Information */}
-              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <Building className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    Thông tin công ty
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-16 h-16 border-2 border-indigo-100">
-                      <AvatarImage src={job.company?.logo} alt={job.company?.name} />
-                      <AvatarFallback className="bg-indigo-100 text-indigo-600 text-lg font-bold">
-                        {job.company?.name?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-gray-900">{job.company?.name}</h3>
-                      <p className="text-sm text-muted-foreground">{job.company?.industry || 'Chưa cập nhật'}</p>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                      <MapPin className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Địa chỉ</p>
-                        <p className="text-sm text-gray-600">{job.address || 'Chưa cập nhật'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Location Map */}
               <JobLocationMap
                 location={job.location}
@@ -584,6 +718,7 @@ const JobDetail = () => {
               />
             </div>
           </div>
+
         </div>
       </div>
 
@@ -603,3 +738,4 @@ const JobDetail = () => {
 };
 
 export default JobDetail;
+
