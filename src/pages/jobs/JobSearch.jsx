@@ -30,7 +30,7 @@ const JobSearch = () => {
   const rawParams = {
     query: searchParams.get('query') || '',
     page: searchParams.get('page') || '1',
-    size: searchParams.get('size') || (searchParams.get('query') ? '10' : '50'), // Show more jobs when no search query
+    size: searchParams.get('size') || (searchParams.get('query') ? '10' : '1000'), // Show all jobs when no search query
     category: searchParams.get('category') || '',
     type: searchParams.get('type') || '',
     workType: searchParams.get('workType') || '',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Star, Heart } from 'lucide-react';
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Star, Heart, Building, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 import { SectionHeader } from '../common/SectionHeader';
 import { getAllJobs } from '../../services/jobService';
-import { formatSalary, formatLocation, formatWorkType, formatTimeAgo } from '../../utils/formatters';
+import { formatSalary, formatSalaryVND, formatLocation, formatWorkType, formatTimeAgo, formatExperience } from '../../utils/formatters';
 
 const FeaturedJobs = () => {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ const FeaturedJobs = () => {
             jobs.slice(0, 6).map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-background cursor-pointer"
+                className="group relative overflow-hidden border-0 shadow-md card-yellow-hover bg-background cursor-pointer"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                <CardHeader>

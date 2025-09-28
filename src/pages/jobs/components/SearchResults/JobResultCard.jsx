@@ -80,11 +80,9 @@ const JobResultCard = ({
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "group hover:shadow-lg transition-all duration-300 cursor-pointer",
-        "border-border hover:border-primary/50",
-        "bg-background hover:bg-muted/30",
+        "group card-yellow-hover",
         className
       )}
       onClick={handleCardClick}
@@ -93,9 +91,9 @@ const JobResultCard = ({
         <div className="flex gap-4">
           {/* Company Logo */}
           <div className="flex-shrink-0">
-            <Avatar className={cn("rounded-lg border-2 border-muted", compact ? "h-12 w-12" : "h-16 w-16")}>
-              <AvatarImage 
-                src={job.recruiterProfileId.company?.logo} 
+            <Avatar className={cn("rounded-lg border-2 border-muted", compact ? "h-16 w-16" : "h-24 w-24")}>
+              <AvatarImage
+                src={job.recruiterProfileId.company?.logo}
                 alt={job.recruiterProfileId.company?.name}
                 className="object-cover"
               />

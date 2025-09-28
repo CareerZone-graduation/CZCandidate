@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
@@ -7,6 +7,9 @@ import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Separator } from '../../components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../../components/ui/dialog';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 import { 
   User, 
   Mail, 
@@ -24,7 +27,15 @@ import {
   Star,
   Upload
 } from 'lucide-react';
-import { getMyProfile } from '../../services/profileService';
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { getMyProfile, uploadCV, downloadCV, deleteCV, updateProfile, uploadAvatar } from '../../services/profileService';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -32,6 +43,52 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [deletingCvId, setDeletingCvId] = useState(null);
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullname: '',
+    phone: '',
+    bio: '',
+    avatarFile: null,
+  });
+
+  const [isEditBioOpen, setIsEditBioOpen] = useState(false);
+  const [editBio, setEditBio] = useState('');
+
+  const [isEditExperienceOpen, setIsEditExperienceOpen] = useState(false);
+  const [editExperiences, setEditExperiences] = useState([]);
+
+  const [isEditEducationOpen, setIsEditEducationOpen] = useState(false);
+  const [editEducations, setEditEducations] = useState([]);
+
+  const [isEditSkillsOpen, setIsEditSkillsOpen] = useState(false);
+  const [editSkills, setEditSkills] = useState([]);
+
+  const [isAddExperienceOpen, setIsAddExperienceOpen] = useState(false);
+  const [newExperience, setNewExperience] = useState({
+    company: '',
+    position: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    responsibilities: []
+  });
+
+  const [isAddEducationOpen, setIsAddEducationOpen] = useState(false);
+  const [newEducation, setNewEducation] = useState({
+    school: '',
+    major: '',
+    degree: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    gpa: '',
+    type: ''
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -145,6 +202,243 @@ const Profile = () => {
     );
   }
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Chỉ chấp nhận file PDF, DOC, DOCX.');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước file không được vượt quá 5MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('cv', file);
+      // Optionally append name if backend expects it
+      // formData.append('name', file.name);
+
+      const response = await uploadCV(formData);
+      e.target.value = ''; // Reset input
+      setProfile(prev => ({ ...prev, cvs: response.data }));
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('Tải lên thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDownloadCV = async (cvId, cvName) => {
+    try {
+      const blob = await downloadCV(cvId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = cvName || `cv-${cvId}`; // Use cv.name, assume it has extension
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Tải xuống thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteCV = async (cvId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa CV này?')) return;
+
+    try {
+      setDeletingCvId(cvId);
+      await deleteCV(cvId);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Xóa thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDeletingCvId(null);
+    }
+  };
+
+  const handleOpenEditDialog = () => {
+    setEditForm({
+      fullname: profile.fullname || '',
+      phone: profile.phone || '',
+      bio: profile.bio || '',
+      avatarFile: null,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      if (editForm.avatarFile) {
+        const formData = new FormData();
+        formData.append('avatar', editForm.avatarFile);
+        await uploadAvatar(formData);
+      }
+      const updateData = {
+        fullname: editForm.fullname,
+        phone: editForm.phone,
+        bio: editForm.bio,
+      };
+      await updateProfile(updateData);
+      setIsEditDialogOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Update failed:', err);
+      alert('Cập nhật thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenEditBio = () => {
+    setEditBio(profile.bio || '');
+    setIsEditBioOpen(true);
+  };
+
+  const handleSaveBio = async () => {
+    try {
+      const updateData = {
+        bio: editBio,
+      };
+      await updateProfile(updateData);
+      setIsEditBioOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Update bio failed:', err);
+      alert('Cập nhật giới thiệu thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenEditExperience = () => {
+    setEditExperiences(JSON.parse(JSON.stringify(profile.experiences || [])));
+    setIsEditExperienceOpen(true);
+  };
+
+  const handleSaveExperience = async () => {
+    try {
+      const updateData = {
+        experiences: editExperiences,
+      };
+      await updateProfile(updateData);
+      setIsEditExperienceOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Update experience failed:', err);
+      alert('Cập nhật kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenEditEducation = () => {
+    setEditEducations(JSON.parse(JSON.stringify(profile.educations || [])));
+    setIsEditEducationOpen(true);
+  };
+
+  const handleSaveEducation = async () => {
+    try {
+      const updateData = {
+        educations: editEducations,
+      };
+      await updateProfile(updateData);
+      setIsEditEducationOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Update education failed:', err);
+      alert('Cập nhật học vấn thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenEditSkills = () => {
+    setEditSkills({
+      skills: JSON.parse(JSON.stringify(profile.skills || [])),
+      newSkill: ''
+    });
+    setIsEditSkillsOpen(true);
+  };
+
+  const handleSaveSkills = async () => {
+    try {
+      const updateData = {
+        skills: editSkills.skills,
+      };
+      await updateProfile(updateData);
+      setIsEditSkillsOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Update skills failed:', err);
+      alert('Cập nhật kỹ năng thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenAddExperience = () => {
+    setNewExperience({
+      company: '',
+      position: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+      responsibilities: []
+    });
+    setIsAddExperienceOpen(true);
+  };
+
+  const handleSaveAddExperience = async () => {
+    try {
+      const updatedExperiences = [...(profile.experiences || []), newExperience];
+      const updateData = {
+        experiences: updatedExperiences,
+      };
+      await updateProfile(updateData);
+      setIsAddExperienceOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Add experience failed:', err);
+      alert('Thêm kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenAddEducation = () => {
+    setNewEducation({
+      school: '',
+      major: '',
+      degree: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+      gpa: '',
+      type: ''
+    });
+    setIsAddEducationOpen(true);
+  };
+
+  const handleSaveAddEducation = async () => {
+    try {
+      const updatedEducations = [...(profile.educations || []), newEducation];
+      const updateData = {
+        educations: updatedEducations,
+      };
+      await updateProfile(updateData);
+      setIsAddEducationOpen(false);
+      await fetchProfile();
+    } catch (err) {
+      console.error('Add education failed:', err);
+      alert('Thêm học vấn thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   if (!profile) {
     return null;
   }
@@ -152,7 +446,14 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
       <div className="container mx-auto py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              accept=".pdf,.doc,.docx"
+              style={{ display: 'none' }}
+            />
           
           {/* Profile Header */}
           <Card className="overflow-hidden bg-white">
@@ -186,7 +487,7 @@ const Profile = () => {
                   </div>
                 </div>
                 
-                <Button variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                <Button variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90" onClick={handleOpenEditDialog}>
                   <Edit3 className="w-4 h-4 mr-2" />
                   Chỉnh sửa
                 </Button>
@@ -203,9 +504,19 @@ const Profile = () => {
               {profile.bio && (
                 <Card className="bg-white">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <User className="w-5 h-5 mr-2 text-primary" />
-                      Giới thiệu
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <User className="w-5 h-5 mr-2 text-primary" />
+                        Giới thiệu
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleOpenEditBio}
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -223,7 +534,17 @@ const Profile = () => {
                         <Briefcase className="w-5 h-5 mr-2 text-primary" />
                         Kinh nghiệm làm việc
                       </div>
-                      <Badge variant="outline">{calculateExperience(profile.experiences)}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{calculateExperience(profile.experiences)}</Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleOpenEditExperience}
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -251,9 +572,19 @@ const Profile = () => {
               {profile.educations && profile.educations.length > 0 && (
                 <Card className="bg-white">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <GraduationCap className="w-5 h-5 mr-2 text-primary" />
-                      Học vấn
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <GraduationCap className="w-5 h-5 mr-2 text-primary" />
+                        Học vấn
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleOpenEditEducation}
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -286,9 +617,19 @@ const Profile = () => {
               {profile.skills && profile.skills.length > 0 && (
                 <Card className="bg-white">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Star className="w-5 h-5 mr-2 text-primary" />
-                      Kỹ năng
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Star className="w-5 h-5 mr-2 text-primary" />
+                        Kỹ năng
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleOpenEditSkills}
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -312,9 +653,20 @@ const Profile = () => {
                         <FileText className="w-5 h-5 mr-2 text-primary" />
                         CV của tôi
                       </div>
-                      <Button size="sm" variant="outline">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Tải lên
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          'Đang tải lên...'
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Tải lên
+                          </>
+                        )}
                       </Button>
                     </CardTitle>
                   </CardHeader>
@@ -334,11 +686,21 @@ const Profile = () => {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleDownloadCV(cv._id, cv.name)}
+                            >
                               <Download className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="w-4 h-4" />
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteCV(cv._id)}
+                              disabled={deletingCvId === cv._id}
+                            >
+                              {deletingCvId === cv._id ? 'Đang xóa...' : <Trash2 className="w-4 h-4" />}
                             </Button>
                           </div>
                         </div>
@@ -354,22 +716,650 @@ const Profile = () => {
                   <CardTitle>Hành động nhanh</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button className="w-full justify-start" variant="outline" onClick={handleOpenEditDialog}>
                     <Edit3 className="w-4 h-4 mr-2" />
                     Chỉnh sửa hồ sơ
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
                     <Upload className="w-4 h-4 mr-2" />
                     Tải lên CV mới
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button className="w-full justify-start" variant="outline" onClick={handleOpenAddExperience}>
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm kinh nghiệm
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={handleOpenAddEducation}>
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Thêm học vấn
                   </Button>
                 </CardContent>
               </Card>
             </div>
           </div>
+
+          {/* Edit Profile Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa hồ sơ</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullname">Họ và tên</Label>
+                  <Input
+                    id="fullname"
+                    value={editForm.fullname}
+                    onChange={(e) => setEditForm({ ...editForm, fullname: e.target.value })}
+                    placeholder="Nhập họ và tên"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    placeholder="Nhập số điện thoại"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Giới thiệu</Label>
+                  <Textarea
+                    id="bio"
+                    value={editForm.bio}
+                    onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                    placeholder="Viết về bản thân..."
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="avatar">Ảnh đại diện</Label>
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setEditForm({ ...editForm, avatarFile: e.target.files?.[0] || null })}
+                  />
+                  {editForm.avatarFile && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Đã chọn: {editForm.avatarFile.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveProfile} disabled={!editForm.fullname.trim()}>
+                  Lưu thay đổi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Bio Dialog */}
+          <Dialog open={isEditBioOpen} onOpenChange={setIsEditBioOpen}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa giới thiệu</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editBio">Giới thiệu</Label>
+                  <Textarea
+                    id="editBio"
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Viết về bản thân..."
+                    rows={6}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditBioOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveBio}>
+                  Lưu thay đổi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Skills Dialog */}
+          <Dialog open={isEditSkillsOpen} onOpenChange={setIsEditSkillsOpen}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa kỹ năng</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newSkill">Thêm kỹ năng mới</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="newSkill"
+                      placeholder="Nhập tên kỹ năng"
+                      value={editSkills.newSkill || ''}
+                      onChange={(e) => setEditSkills({ ...editSkills, newSkill: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && editSkills.newSkill?.trim()) {
+                          setEditSkills(prev => ({
+                            ...prev,
+                            skills: [...(prev.skills || []), { name: prev.newSkill.trim() }],
+                            newSkill: ''
+                          }));
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        if (editSkills.newSkill?.trim()) {
+                          setEditSkills(prev => ({
+                            ...prev,
+                            skills: [...(prev.skills || []), { name: prev.newSkill.trim() }],
+                            newSkill: ''
+                          }));
+                        }
+                      }}
+                      disabled={!editSkills.newSkill?.trim()}
+                    >
+                      Thêm
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Kỹ năng hiện tại</Label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {editSkills.skills?.map((skill, index) => (
+                      <div key={skill._id || index} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-sm">{skill.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => {
+                            setEditSkills(prev => ({
+                              ...prev,
+                              skills: prev.skills.filter((_, i) => i !== index)
+                            }));
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )) || <p className="text-sm text-muted-foreground">Chưa có kỹ năng nào</p>}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditSkillsOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveSkills}>
+                  Lưu thay đổi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Experience Dialog */}
+          <Dialog open={isEditExperienceOpen} onOpenChange={setIsEditExperienceOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa kinh nghiệm làm việc</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {editExperiences.map((exp, index) => (
+                    <div key={exp._id || index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Kinh nghiệm {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => {
+                            setEditExperiences(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Công ty</Label>
+                          <Input
+                            value={exp.company || ''}
+                            onChange={(e) => {
+                              const newExps = [...editExperiences];
+                              newExps[index].company = e.target.value;
+                              setEditExperiences(newExps);
+                            }}
+                            placeholder="Tên công ty"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Vị trí</Label>
+                          <Input
+                            value={exp.position || ''}
+                            onChange={(e) => {
+                              const newExps = [...editExperiences];
+                              newExps[index].position = e.target.value;
+                              setEditExperiences(newExps);
+                            }}
+                            placeholder="Vị trí công việc"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ngày bắt đầu</Label>
+                          <Input
+                            type="date"
+                            value={exp.startDate ? exp.startDate.split('T')[0] : ''}
+                            onChange={(e) => {
+                              const newExps = [...editExperiences];
+                              newExps[index].startDate = e.target.value;
+                              setEditExperiences(newExps);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ngày kết thúc</Label>
+                          <Input
+                            type="date"
+                            value={exp.endDate ? exp.endDate.split('T')[0] : ''}
+                            onChange={(e) => {
+                              const newExps = [...editExperiences];
+                              newExps[index].endDate = e.target.value;
+                              setEditExperiences(newExps);
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Mô tả công việc</Label>
+                        <Textarea
+                          value={exp.description || ''}
+                          onChange={(e) => {
+                            const newExps = [...editExperiences];
+                            newExps[index].description = e.target.value;
+                            setEditExperiences(newExps);
+                          }}
+                          placeholder="Mô tả về công việc..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Trách nhiệm (mỗi dòng một trách nhiệm)</Label>
+                        <Textarea
+                          value={exp.responsibilities ? exp.responsibilities.join('\n') : ''}
+                          onChange={(e) => {
+                            const newExps = [...editExperiences];
+                            newExps[index].responsibilities = e.target.value.split('\n').filter(r => r.trim());
+                            setEditExperiences(newExps);
+                          }}
+                          placeholder="Liệt kê các trách nhiệm..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditExperiences(prev => [...prev, {
+                      company: '',
+                      position: '',
+                      startDate: '',
+                      endDate: '',
+                      description: '',
+                      responsibilities: []
+                    }]);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Thêm kinh nghiệm
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditExperienceOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveExperience}>
+                  Lưu thay đổi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Education Dialog */}
+          <Dialog open={isEditEducationOpen} onOpenChange={setIsEditEducationOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa học vấn</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {editEducations.map((edu, index) => (
+                    <div key={edu._id || index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Học vấn {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => {
+                            setEditEducations(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Trường học</Label>
+                          <Input
+                            value={edu.school || ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].school = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                            placeholder="Tên trường học"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Chuyên ngành</Label>
+                          <Input
+                            value={edu.major || ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].major = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                            placeholder="Chuyên ngành học"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Bằng cấp</Label>
+                          <Input
+                            value={edu.degree || ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].degree = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                            placeholder="Ví dụ: Cử nhân, Thạc sĩ"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Loại hình</Label>
+                          <Input
+                            value={edu.type || ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].type = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                            placeholder="Ví dụ: Đại học, Cao đẳng"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ngày bắt đầu</Label>
+                          <Input
+                            type="date"
+                            value={edu.startDate ? edu.startDate.split('T')[0] : ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].startDate = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ngày kết thúc</Label>
+                          <Input
+                            type="date"
+                            value={edu.endDate ? edu.endDate.split('T')[0] : ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].endDate = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Điểm GPA</Label>
+                          <Input
+                            value={edu.gpa || ''}
+                            onChange={(e) => {
+                              const newEdus = [...editEducations];
+                              newEdus[index].gpa = e.target.value;
+                              setEditEducations(newEdus);
+                            }}
+                            placeholder="Ví dụ: 3.5"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Mô tả</Label>
+                        <Textarea
+                          value={edu.description || ''}
+                          onChange={(e) => {
+                            const newEdus = [...editEducations];
+                            newEdus[index].description = e.target.value;
+                            setEditEducations(newEdus);
+                          }}
+                          placeholder="Mô tả về quá trình học tập..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditEducations(prev => [...prev, {
+                      school: '',
+                      major: '',
+                      degree: '',
+                      startDate: '',
+                      endDate: '',
+                      description: '',
+                      gpa: '',
+                      type: ''
+                    }]);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Thêm học vấn
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditEducationOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveEducation}>
+                  Lưu thay đổi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Experience Dialog */}
+          <Dialog open={isAddExperienceOpen} onOpenChange={setIsAddExperienceOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Thêm kinh nghiệm làm việc</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Công ty</Label>
+                    <Input
+                      value={newExperience.company}
+                      onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                      placeholder="Tên công ty"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Vị trí</Label>
+                    <Input
+                      value={newExperience.position}
+                      onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
+                      placeholder="Vị trí công việc"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ngày bắt đầu</Label>
+                    <Input
+                      type="date"
+                      value={newExperience.startDate}
+                      onChange={(e) => setNewExperience({ ...newExperience, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ngày kết thúc</Label>
+                    <Input
+                      type="date"
+                      value={newExperience.endDate}
+                      onChange={(e) => setNewExperience({ ...newExperience, endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mô tả công việc</Label>
+                  <Textarea
+                    value={newExperience.description}
+                    onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                    placeholder="Mô tả về công việc..."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Trách nhiệm (mỗi dòng một trách nhiệm)</Label>
+                  <Textarea
+                    value={newExperience.responsibilities.join('\n')}
+                    onChange={(e) => setNewExperience({
+                      ...newExperience,
+                      responsibilities: e.target.value.split('\n').filter(r => r.trim())
+                    })}
+                    placeholder="Liệt kê các trách nhiệm..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddExperienceOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveAddExperience} disabled={!newExperience.company.trim() || !newExperience.position.trim()}>
+                  Thêm kinh nghiệm
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Education Dialog */}
+          <Dialog open={isAddEducationOpen} onOpenChange={setIsAddEducationOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Thêm học vấn</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Trường học</Label>
+                    <Input
+                      value={newEducation.school}
+                      onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })}
+                      placeholder="Tên trường học"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Chuyên ngành</Label>
+                    <Input
+                      value={newEducation.major}
+                      onChange={(e) => setNewEducation({ ...newEducation, major: e.target.value })}
+                      placeholder="Chuyên ngành học"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bằng cấp</Label>
+                    <Input
+                      value={newEducation.degree}
+                      onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                      placeholder="Ví dụ: Cử nhân, Thạc sĩ"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Loại hình</Label>
+                    <Input
+                      value={newEducation.type}
+                      onChange={(e) => setNewEducation({ ...newEducation, type: e.target.value })}
+                      placeholder="Ví dụ: Đại học, Cao đẳng"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ngày bắt đầu</Label>
+                    <Input
+                      type="date"
+                      value={newEducation.startDate}
+                      onChange={(e) => setNewEducation({ ...newEducation, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ngày kết thúc</Label>
+                    <Input
+                      type="date"
+                      value={newEducation.endDate}
+                      onChange={(e) => setNewEducation({ ...newEducation, endDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Điểm GPA</Label>
+                    <Input
+                      value={newEducation.gpa}
+                      onChange={(e) => setNewEducation({ ...newEducation, gpa: e.target.value })}
+                      placeholder="Ví dụ: 3.5"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mô tả</Label>
+                  <Textarea
+                    value={newEducation.description}
+                    onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
+                    placeholder="Mô tả về quá trình học tập..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddEducationOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="button" onClick={handleSaveAddEducation} disabled={!newEducation.school.trim() || !newEducation.major.trim()}>
+                  Thêm học vấn
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
