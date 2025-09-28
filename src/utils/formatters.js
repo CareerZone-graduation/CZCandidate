@@ -9,14 +9,21 @@
  */
 export const parseCurrencyValue = (value) => {
   if (!value) return null;
-  
+
   // Handle MongoDB $numberDecimal objects
   if (typeof value === 'object' && value.$numberDecimal) {
     const num = Number(value.$numberDecimal);
     return isNaN(num) ? null : num;
   }
-  
+
   // Handle regular numbers and strings
+  if (typeof value === 'string') {
+    // Remove dots (thousand separators) before parsing
+    const cleanedValue = value.replace(/\./g, '');
+    const num = Number(cleanedValue);
+    return isNaN(num) ? null : num;
+  }
+
   const num = Number(value);
   return isNaN(num) ? null : num;
 };
@@ -60,27 +67,27 @@ export const formatSalary = (minSalary, maxSalary, unit = 'triệu') => {
  * @returns {string} - Formatted salary with VND
  */
 export const formatSalaryVND = (minSalary, maxSalary) => {
-  const min = parseCurrencyValue(minSalary);
-  const max = parseCurrencyValue(maxSalary);
-  
+  let min = parseCurrencyValue(minSalary);
+  let max = parseCurrencyValue(maxSalary);
+
   if (!min && !max) return 'Thỏa thuận';
-  
+
   const formatNumber = (num) => {
     return new Intl.NumberFormat('vi-VN').format(num);
   };
-  
+
   if (min && max) {
     return `${formatNumber(min)} - ${formatNumber(max)} VNĐ`;
   }
-  
+
   if (min) {
     return `Từ ${formatNumber(min)} VNĐ`;
   }
-  
+
   if (max) {
     return `Đến ${formatNumber(max)} VNĐ`;
   }
-  
+
   return 'Thỏa thuận';
 };
 
