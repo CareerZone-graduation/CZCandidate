@@ -475,16 +475,16 @@ const JobDetail = () => {
             </div>
           </div>
 
-          {/* Job Overview + Company Info (Left) and Related Jobs (Right) */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
-            {/* Job Overview and Company Info - Left Column */}
-            <div className="space-y-8">
+          {/* Job Overview and Company Info - Top Row */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-6">
+            {/* Job Overview - Left Column */}
+            <div className="space-y-6">
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold">Tổng quan công việc</CardTitle>
+                  <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-muted-foreground" />
                       <div>
@@ -532,10 +532,13 @@ const JobDetail = () => {
                   )}
                 </CardContent>
               </Card>
+            </div>
 
+            {/* Company Info - Right Column */}
+            <div className="space-y-6">
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold">Thông tin công ty</CardTitle>
+                  <CardTitle className="text-lg font-bold">Thông tin công ty</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
@@ -565,22 +568,62 @@ const JobDetail = () => {
                 </CardContent>
               </Card>
             </div>
+          </div>
 
-            {/* Related Jobs - Right Column */}
-            <div className="space-y-8">
+          {/* Job Description and Related Jobs - Side by Side */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-10">
+            {/* Job Description Sections - Left Column */}
+            <div className="space-y-6">
+              {/* Job Description */}
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold">Việc làm liên quan</CardTitle>
+                  <CardTitle className="text-lg font-bold">Mô tả công việc</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
+                </CardContent>
+              </Card>
+
+              {/* Your skills and experience */}
+              {job.requirements && (
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Kỹ năng và kinh nghiệm của bạn</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Why you'll love working here */}
+              {job.benefits && (
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Tại sao bạn sẽ yêu thích làm việc tại đây</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Related Jobs - Right Column */}
+            <div className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold">Việc làm liên quan</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingRelated ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                    <div className="grid gap-3">
                       {[...Array(6)].map((_, i) => (
-                        <div key={i} className="p-4 border rounded-lg">
+                        <div key={i} className="p-3 border rounded-lg">
                           <div className="flex gap-3">
-                            <Skeleton className="w-12 h-12 rounded" />
+                            <Skeleton className="w-10 h-10 rounded" />
                             <div className="flex-1 space-y-2">
-                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-3/4" />
                               <Skeleton className="h-3 w-1/2" />
                               <Skeleton className="h-3 w-1/4" />
                             </div>
@@ -590,17 +633,17 @@ const JobDetail = () => {
                     </div>
                   ) : relatedJobs && relatedJobs.length > 0 ? (
                     <>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
+                      <div className="grid gap-3">
                         {currentJobs.map((relatedJob) => (
                           <div
                             key={relatedJob._id}
-                            className="p-4 border rounded-lg card-yellow-hover"
+                            className="p-3 border rounded-lg card-yellow-hover"
                             onClick={() => navigate(`/jobs/${relatedJob._id}`)}
                           >
-                            <div className="flex gap-3 mb-3">
-                              <Avatar className="w-12 h-12 border">
+                            <div className="flex gap-3 mb-2">
+                              <Avatar className="w-10 h-10 border">
                                 <AvatarImage src={relatedJob.company?.logo} alt={relatedJob.company?.name} />
-                                <AvatarFallback className="text-sm">
+                                <AvatarFallback className="text-xs">
                                   {relatedJob.company?.name?.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
@@ -613,7 +656,7 @@ const JobDetail = () => {
                                 </p>
                               </div>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                               <Badge variant="secondary" className="text-xs px-2 py-0 w-fit">
                                 {formatSalary(relatedJob.minSalary, relatedJob.maxSalary)}
                               </Badge>
@@ -630,20 +673,20 @@ const JobDetail = () => {
 
                       {/* Pagination Controls */}
                       {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={handlePrevPage}
                             disabled={relatedJobsPage === 1}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-1 text-xs"
                           >
-                            <ChevronLeft className="w-4 h-4" />
+                            <ChevronLeft className="w-3 h-3" />
                             Trước
                           </Button>
 
-                          <span className="text-sm text-muted-foreground">
-                            Trang {relatedJobsPage} / {totalPages}
+                          <span className="text-xs text-muted-foreground">
+                            {relatedJobsPage} / {totalPages}
                           </span>
 
                           <Button
@@ -651,10 +694,10 @@ const JobDetail = () => {
                             size="sm"
                             onClick={handleNextPage}
                             disabled={relatedJobsPage === totalPages}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-1 text-xs"
                           >
                             Sau
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRight className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
@@ -671,52 +714,13 @@ const JobDetail = () => {
             </div>
           </div>
 
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              {/* Job Description */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">Mô tả công việc</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
-                </CardContent>
-              </Card>
-
-              {/* Your skills and experience */}
-              {job.requirements && (
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold">Kỹ năng và kinh nghiệm của bạn</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Why you'll love working here */}
-              {job.benefits && (
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold">Tại sao bạn sẽ yêu thích làm việc tại đây</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            <div className="space-y-8">
-              {/* Location Map */}
-              <JobLocationMap
-                location={job.location}
-                address={job.address}
-                companyName={job.company?.name}
-              />
-            </div>
+          {/* Location Map - Full Width at Bottom */}
+          <div className="mb-6">
+            <JobLocationMap
+              location={job.location}
+              address={job.address}
+              companyName={job.company?.name}
+            />
           </div>
 
         </div>
@@ -738,4 +742,5 @@ const JobDetail = () => {
 };
 
 export default JobDetail;
+
 
