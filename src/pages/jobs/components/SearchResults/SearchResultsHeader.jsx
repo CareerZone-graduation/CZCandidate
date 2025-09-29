@@ -36,8 +36,13 @@ const SearchResultsHeader = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-xl font-bold text-foreground">
-            {query ? `Kết quả tìm kiếm` : 'Tìm kiếm việc làm'}
+            {query ? `Kết quả tìm kiếm cho "${query}"` : 'Tất cả việc làm'}
           </h1>
+          {!query && (
+            <p className="text-sm text-muted-foreground">
+              Khám phá các cơ hội việc làm mới nhất
+            </p>
+          )}
         </div>
         
         <div className="flex items-center gap-2">

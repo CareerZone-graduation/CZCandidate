@@ -54,16 +54,15 @@ const SearchBar = forwardRef(({
    * @param {string} searchQuery - The search query to execute
    */
   const handleSearch = (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
-
     closeDropdown();
-    
+
     // Blur the input to remove focus after search
     if (inputRef.current) {
       inputRef.current.blur();
     }
-    
+
     if (onSearch) {
+      // Allow empty search to show all jobs
       onSearch(searchQuery.trim());
     }
   };
@@ -74,13 +73,12 @@ const SearchBar = forwardRef(({
    */
   const handleInputKeyDown = (event) => {
     const result = handleKeyDown(event);
-    
+
     if (event.key === 'Enter') {
       event.preventDefault();
       const searchTerm = result || query;
-      if (searchTerm) {
-        handleSearch(searchTerm);
-      }
+      // Allow search even with empty query
+      handleSearch(searchTerm);
     }
   };
 
@@ -127,14 +125,14 @@ const SearchBar = forwardRef(({
         <div className="relative flex-1">
           {/* Search Icon */}
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
-          
+
           {/* Input Field */}
           <Input
             ref={inputRef}
             type="text"
             placeholder={placeholder}
             value={query}
-            onChange={(e) => handleInputChange(e.target.value)}  
+            onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleInputKeyDown}
             onFocus={() => {
               // Show dropdown if there are suggestions and query is long enough
@@ -188,7 +186,6 @@ const SearchBar = forwardRef(({
           type="submit"
           size="lg"
           className="h-12 px-6 rounded-xl font-medium flex-shrink-0"
-          disabled={!query.trim()}
           onClick={() => {
             // Blur input when clicking search button
             if (inputRef.current) {

@@ -124,7 +124,9 @@ export const searchJobsHybrid = async (params = {}) => {
     const queryParams = new URLSearchParams();
     
     // Required parameters
-    if (params.query) queryParams.append('query', params.query);
+    if (params.query !== undefined && params.query !== null) {
+      queryParams.append('query', params.query); // Include even if empty string
+    }
     if (params.page) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
     
@@ -140,6 +142,8 @@ export const searchJobsHybrid = async (params = {}) => {
     if (params.userLocation) queryParams.append('userLocation', params.userLocation);
     
     const url = `/jobs/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log('Final URL:', url);
+    console.log('Query params string:', queryParams.toString());
     const response = await apiClient.get(url);
     return response.data;
   } catch (error) {

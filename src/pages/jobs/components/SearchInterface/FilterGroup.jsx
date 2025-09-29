@@ -1,62 +1,40 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronDown, ChevronUp, ChevronRight, X } from 'lucide-react';
 
-/**
- * Reusable FilterGroup component for radio button filters
- * Used for category, job type, work type, and experience filters
- */
 const FilterGroup = ({
   title,
   value,
   options = [],
   onChange,
-  className,
+  className = '',
   showClearButton = true,
   layout = 'vertical', // 'vertical' or 'horizontal'
-  collapsible = true, // Enable collapsible functionality
-  defaultExpanded = false, // Default expansion state
-  maxVisibleItems = 5, // Maximum items to show when collapsed
-  allowFullCollapse = true // Allow collapsing to just title
+  collapsible = true,
+  defaultExpanded = false,
+  maxVisibleItems = 5,
+  allowFullCollapse = true
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(false);
-  /**
-   * Handle value change
-   * @param {string} newValue - New selected value
-   */
+
   const handleValueChange = (newValue) => {
-    // If the same value is selected, clear it (toggle behavior)
     const valueToSet = newValue === value ? '' : newValue;
     onChange(valueToSet);
   };
 
-  /**
-   * Clear the selected value
-   */
-  const handleClear = () => {
+  const handleClear = (e) => {
+    e.stopPropagation();
     onChange('');
   };
 
-  /**
-   * Toggle full collapse state
-   */
   const toggleFullCollapse = () => {
     setIsFullyCollapsed(!isFullyCollapsed);
   };
 
-  /**
-   * Toggle expanded state
-   */
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
 
-  // Determine which options to show
   const shouldCollapse = collapsible && options.length > maxVisibleItems;
   const visibleOptions = shouldCollapse && !isExpanded 
     ? options.slice(0, maxVisibleItems)
@@ -64,127 +42,122 @@ const FilterGroup = ({
   const hiddenCount = options.length - maxVisibleItems;
 
   return (
-    <Card className={cn("border-none shadow-none", className)}>
-      <CardHeader className={cn("pb-3", isFullyCollapsed && "pb-0")}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base font-semibold text-foreground">
-              {title}
-            </CardTitle>
-            {/* Show selected value when collapsed */}
-            {isFullyCollapsed && value && (
-              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-                {options.find(opt => (typeof opt === 'string' ? opt : opt.value) === value)?.label || 
-                 options.find(opt => (typeof opt === 'string' ? opt : opt.value) === value) || 
-                 value}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {showClearButton && value && !isFullyCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClear}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-            {allowFullCollapse && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleFullCollapse}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              >
-                {isFullyCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-          </div>
+    <div className={`border rounded-lg bg-white shadow-sm transition-all duration-300 ${className}`}>
+      <div 
+        className={`
+          flex items-center justify-between p-4 cursor-pointer
+          bg-gray-50 hover:bg-gray-100 transition-colors duration-200
+          rounded-t-lg
+          ${isFullyCollapsed ? 'rounded-b-lg' : ''}
+        `}
+        onClick={allowFullCollapse ? toggleFullCollapse : undefined}
+        role={allowFullCollapse ? 'button' : undefined}
+        aria-expanded={!isFullyCollapsed}
+      >
+        <div className="flex items-center gap-3">
+          <ChevronRight 
+            className={`
+              h-5 w-5 text-gray-500 transition-transform duration-300
+              ${isFullyCollapsed ? 'rotate-0' : 'rotate-90'}
+            `}
+          />
+          <h3 className="text-lg font-semibold text-gray-800">
+            {title}
+          </h3>
+          {isFullyCollapsed && value && (
+            <span className="text-sm text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full font-medium">
+              {options.find(opt => (typeof opt === 'string' ? opt : opt.value) === value)?.label || value}
+            </span>
+          )}
         </div>
-      </CardHeader>
-      
+        {showClearButton && value && !isFullyCollapsed && (
+          <button
+            onClick={handleClear}
+            className="p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+            aria-label="Xóa bộ lọc"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
       {!isFullyCollapsed && (
-        <CardContent className="pt-0">
-          <RadioGroup
-            value={value || ''}
-            onValueChange={handleValueChange}
-            className={cn(
-              layout === 'horizontal' 
-                ? "flex flex-wrap gap-4" 
-                : "space-y-3"
-            )}
+        <div className="p-4 animate-slide-down">
+          <div 
+            className={`
+              ${layout === 'horizontal' ? 'flex flex-wrap gap-3' : 'space-y-2'}
+            `}
+            role="radiogroup"
+            aria-label={title}
           >
             {visibleOptions.map((option) => {
               const optionValue = typeof option === 'string' ? option : option.value;
               const optionLabel = typeof option === 'string' ? option : option.label;
-              
+
               return (
-                <div 
-                  key={optionValue} 
-                  className={cn(
-                    "flex items-center space-x-2",
-                    layout === 'horizontal' && "flex-none"
-                  )}
+                <label
+                  key={optionValue}
+                  className={`
+                    flex items-center gap-2 p-2 rounded-md cursor-pointer
+                    transition-all duration-200
+                    hover:bg-gray-100
+                    ${value === optionValue ? 'bg-blue-50 border border-blue-200' : ''}
+                    ${layout === 'horizontal' ? 'flex-none' : ''}
+                  `}
                 >
-                  <RadioGroupItem 
-                    value={optionValue} 
+                  <input
+                    type="radio"
+                    value={optionValue}
+                    checked={value === optionValue}
+                    onChange={() => handleValueChange(optionValue)}
+                    className="
+                      h-4 w-4 text-blue-600 border-gray-300 
+                      focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                    "
                     id={`${title}-${optionValue}`}
-                    className="text-primary"
                   />
-                  <Label 
-                    htmlFor={`${title}-${optionValue}`}
-                    className={cn(
-                      "text-sm font-medium cursor-pointer",
-                      "text-muted-foreground hover:text-foreground",
-                      "transition-colors duration-200",
-                      value === optionValue && "text-primary font-semibold"
-                    )}
-                  >
-                    <span>{optionLabel}</span>
-                  </Label>
-                </div>
+                  <span className="text-sm text-gray-700 font-medium">
+                    {optionLabel}
+                  </span>
+                </label>
               );
             })}
-          </RadioGroup>
+          </div>
 
-          {/* Expand/Collapse Button */}
           {shouldCollapse && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <button
                 onClick={toggleExpanded}
-                className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                className="
+                  w-full flex items-center justify-center gap-1
+                  text-sm text-gray-500 hover:text-gray-700
+                  py-2 transition-colors duration-200
+                  focus:outline-none focus:ring-2 focus:ring-blue-500
+                "
               >
                 {isExpanded ? (
                   <>
-                    <ChevronUp className="h-3 w-3 mr-1" />
+                    <ChevronUp className="h-4 w-4" />
                     Thu gọn
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="h-3 w-3 mr-1" />
+                    <ChevronDown className="h-4 w-4" />
                     Xem thêm {hiddenCount} mục
                   </>
                 )}
-              </Button>
+              </button>
             </div>
           )}
-          
+
           {options.length === 0 && (
-            <div className="text-sm text-muted-foreground py-2">
+            <p className="text-sm text-gray-500 py-2">
               Không có tùy chọn nào
-            </div>
+            </p>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

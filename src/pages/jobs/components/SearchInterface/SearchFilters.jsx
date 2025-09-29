@@ -1,4 +1,6 @@
 import React from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
   jobCategoryEnum,
@@ -16,7 +18,9 @@ import LocationFilter from './LocationFilter';
  */
 const SearchFilters = ({
   filters = {},
-  onFilterChange
+  onFilterChange,
+  onNearMeChange,
+  isNearMe
 }) => {
   // Filter configurations aligned with searchSchemas.js
   const categoryOptions = [
@@ -132,7 +136,18 @@ const SearchFilters = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="nearMe"
+          checked={isNearMe}
+          onCheckedChange={onNearMeChange}
+        />
+        <Label htmlFor="nearMe" className="font-medium">
+          Ưu tiên gần tôi
+        </Label>
+      </div>
+      <Separator />
       {/* Job Category Filter */}
       <FilterGroup
         title="Lĩnh vực"

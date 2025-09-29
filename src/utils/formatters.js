@@ -38,25 +38,31 @@ export const parseCurrencyValue = (value) => {
 export const formatSalary = (minSalary, maxSalary, unit = 'triệu') => {
   const min = parseCurrencyValue(minSalary);
   const max = parseCurrencyValue(maxSalary);
-  
+
   if (!min && !max) return 'Thỏa thuận';
-  
-  const formatNumber = (num) => {
-    return new Intl.NumberFormat('vi-VN').format(num);
+
+  const formatToMillion = (num) => {
+    if (num === null || num === undefined) return null;
+    const millions = num / 1000000;
+    // Use toFixed to handle decimals and remove unnecessary trailing zeros
+    return parseFloat(millions.toFixed(1)).toString();
   };
-  
-  if (min && max) {
-    return `${formatNumber(min)} - ${formatNumber(max)} ${unit}`;
+
+  const formattedMin = formatToMillion(min);
+  const formattedMax = formatToMillion(max);
+
+  if (formattedMin && formattedMax) {
+    return `${formattedMin} - ${formattedMax} ${unit}`;
   }
-  
-  if (min) {
-    return `Từ ${formatNumber(min)} ${unit}`;
+
+  if (formattedMin) {
+    return `Từ ${formattedMin} ${unit}`;
   }
-  
-  if (max) {
-    return `Đến ${formatNumber(max)} ${unit}`;
+
+  if (formattedMax) {
+    return `Đến ${formattedMax} ${unit}`;
   }
-  
+
   return 'Thỏa thuận';
 };
 
@@ -173,4 +179,50 @@ export const formatTimeAgo = (dateString) => {
   if (diffDays < 7) return `${diffDays} ngày trước`;
   if (diffDays < 30) return `${Math.ceil(diffDays / 7)} tuần trước`;
   return `${Math.ceil(diffDays / 30)} tháng trước`;
+};
+
+/**
+ * Format distance for display
+ * @param {number} distanceInMeters - Distance in meters
+ * @returns {string|null} - Formatted distance string or null
+ */
+export const formatDistance = (distanceInMeters) => {
+  if (distanceInMeters === null || distanceInMeters === undefined) {
+    return null;
+  }
+
+  if (distanceInMeters < 1000) {
+    return `cách ${Math.round(distanceInMeters)} m`;
+  }
+
+  const distanceInKm = distanceInMeters / 1000;
+  return `cách ${distanceInKm.toFixed(1)} km`;
+};
+
+/**
+ * Calculate the distance between two coordinates using Haversine formula
+ * @param {[number, number]} coords1 - [longitude, latitude]
+ * @param {[number, number]} coords2 - [longitude, latitude]
+ * @returns {number} - Distance in meters
+ */
+export const calculateDistance = (coords1, coords2) => {
+  if (!coords1 || !coords2 || coords1.length !== 2 || coords2.length !== 2) {
+    return null;
+  }
+
+  const toRad = (value) => (value * Math.PI) / 180;
+
+  const R = 6371e3; // Earth's radius in meters
+  const [lon1, lat1] = coords1;
+  const [lon2, lat2] = coords2;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // in meters
 };

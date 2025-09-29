@@ -1,5 +1,5 @@
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '../ui/card';
+import { EnhancedCard, EnhancedCardContent } from '../ui/enhanced-card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -66,11 +66,11 @@ const Testimonials = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="hover:shadow-2xl transition-all duration-300 overflow-visible relative border-0 shadow-md bg-background transform hover:-translate-y-1">
+            <EnhancedCard key={testimonial.id} variant="interactive" className="overflow-visible relative">
               <div className="absolute -top-5 left-8 w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center shadow-lg">
                 <Quote className="h-5 w-5 text-primary-foreground" />
               </div>
-              <CardContent className="p-8 pt-10">
+              <EnhancedCardContent className="p-8 pt-10">
                 <div className="flex items-center mb-6">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-warning fill-warning" />
@@ -100,14 +100,14 @@ const Testimonials = () => {
                     <span className="font-semibold text-foreground">{testimonial.company}</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </EnhancedCardContent>
+            </EnhancedCard>
           ))}
         </div>
 
         <div className="mt-20 text-center">
-          <Card className="max-w-4xl mx-auto bg-gradient-primary text-white p-8 md:p-12 shadow-2xl border-0">
-            <CardContent className="p-0">
+          <EnhancedCard className="max-w-4xl mx-auto bg-gradient-primary text-white p-8 md:p-12 shadow-2xl border-0">
+            <EnhancedCardContent className="p-0">
               <h3 className="text-2xl md:text-3xl font-bold mb-4">
                 Bạn cũng muốn có câu chuyện thành công như vậy?
               </h3>
@@ -123,8 +123,8 @@ const Testimonials = () => {
                   Đăng ký ngay
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </EnhancedCardContent>
+          </EnhancedCard>
         </div>
       </div>
     </section>

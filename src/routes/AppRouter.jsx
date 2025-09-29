@@ -29,6 +29,8 @@ import BillingPage from '../pages/billing/Billing';
 import Billing from '../pages/billing/Billing'; // Import trang nạp xu
 import PaymentSuccess from '../pages/payment/PaymentSuccess';
 import PaymentFailure from '../pages/payment/PaymentFailure';
+import AnimatedBackgroundDemo from '../pages/demo/AnimatedBackgroundDemo';
+import CompanyDetail from '../pages/company/CompanyDetail';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -70,7 +72,9 @@ const AppRouter = () => {
           <Route path="/jobs" element={<Navigate to="/jobs/search" replace />} />
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
+          <Route path="/demo/background" element={<AnimatedBackgroundDemo />} />
         </Route>
 
         {/* Auth routes */}

@@ -62,9 +62,7 @@ export const userLocationFlexible = z.array(z.number()).length(2).optional();
 
 // Schema for hybrid search request
 export const hybridSearchJobSchema = z.object({
-  query: z.string({
-    required_error: 'Query là bắt buộc cho tìm kiếm hybrid'
-  }).trim().min(1, 'Query không được để trống').max(200, 'Query không được vượt quá 200 ký tự'),
+  query: z.string().max(200, 'Query không được vượt quá 200 ký tự').default(''),
   page: z.coerce.number().int().min(1, 'Trang phải lớn hơn 0').default(1),
   size: z.coerce.number().int().min(1, 'Kích thước trang phải lớn hơn 0').max(50, 'Kích thước trang không được vượt quá 50').default(10),
   // Filters cho tìm kiếm
@@ -81,7 +79,7 @@ export const hybridSearchJobSchema = z.object({
   // Weight parameters for RRF
   textWeight: z.coerce.number().min(0).max(1).default(0.4),
   vectorWeight: z.coerce.number().min(0).max(1).default(0.6),
-  userLocation: userLocationFlexible.optional(),
+  userLocation: z.string().optional(),
 })
   .refine(data => !data.minSalary || !data.maxSalary || data.maxSalary >= data.minSalary, {
     message: 'Mức lương tối đa phải lớn hơn hoặc bằng mức lương tối thiểu',
@@ -146,10 +144,12 @@ export const validateSearchParams = (params) => {
 
 export const validateHybridSearchRequest = (params) => {
   try {
+    console.log('Input params to validate:', params);
+    const result = hybridSearchJobSchema.parse(params);
+    console.log('Validated result:', result);
     return {
       success: true,
-      data: hybridSearchJobSchema.parse(params),
-      errors: null
+      data: result
     };
   } catch (error) {
     return {

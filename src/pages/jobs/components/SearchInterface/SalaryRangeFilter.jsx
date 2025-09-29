@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { X, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronRight, X, DollarSign } from 'lucide-react';
 
 const SalaryRangeFilter = ({
   minSalary = '',
   maxSalary = '',
   onChange,
-  className,
+  className = '',
   allowFullCollapse = true
 }) => {
   const [selectedRange, setSelectedRange] = useState('');
@@ -97,7 +91,8 @@ const SalaryRangeFilter = ({
     setCustomMax(formatted);
   };
 
-  const handleClear = () => {
+  const handleClear = (e) => {
+    e.stopPropagation();
     setSelectedRange('');
     setCustomMin('');
     setCustomMax('');
@@ -105,16 +100,12 @@ const SalaryRangeFilter = ({
     onChange({ minSalary: '', maxSalary: '' });
   };
 
-  /**
-   * Toggle full collapse state
-   */
   const toggleFullCollapse = () => {
     setIsFullyCollapsed(!isFullyCollapsed);
   };
 
   const hasActiveFilter = selectedRange !== '' && selectedRange !== 'all';
 
-  // Get selected range label for display when collapsed
   const getSelectedRangeLabel = () => {
     if (selectedRange === 'custom') {
       return `${customMin || '0'} - ${customMax || '∞'} triệu`;
@@ -124,85 +115,153 @@ const SalaryRangeFilter = ({
   };
 
   return (
-    <Card className={cn("border-none shadow-none", className)}>
-      <CardHeader className={cn("pb-3", isFullyCollapsed && "pb-0")}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Mức lương
-            </CardTitle>
-            {/* Show selected salary when collapsed */}
-            {isFullyCollapsed && hasActiveFilter && (
-              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-                {getSelectedRangeLabel()}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {hasActiveFilter && !isFullyCollapsed && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleClear} 
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-            {allowFullCollapse && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleFullCollapse}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              >
-                {isFullyCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-          </div>
+    <div className={`border rounded-lg bg-white shadow-sm transition-all duration-300 ${className}`}>
+      <div 
+        className={`
+          flex items-center justify-between p-4 cursor-pointer
+          bg-gray-50 hover:bg-gray-100 transition-colors duration-200
+          rounded-t-lg
+          ${isFullyCollapsed ? 'rounded-b-lg' : ''}
+        `}
+        onClick={allowFullCollapse ? toggleFullCollapse : undefined}
+        role={allowFullCollapse ? 'button' : undefined}
+        aria-expanded={!isFullyCollapsed}
+      >
+        <div className="flex items-center gap-3">
+          <ChevronRight 
+            className={`
+              h-5 w-5 text-gray-500 transition-transform duration-300
+              ${isFullyCollapsed ? 'rotate-0' : 'rotate-90'}
+            `}
+          />
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Mức lương
+          </h3>
+          {isFullyCollapsed && hasActiveFilter && (
+            <span className="text-sm text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full font-medium">
+              {getSelectedRangeLabel()}
+            </span>
+          )}
         </div>
-      </CardHeader>
-      
+        {hasActiveFilter && !isFullyCollapsed && (
+          <button
+            onClick={handleClear}
+            className="p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+            aria-label="Xóa bộ lọc"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
       {!isFullyCollapsed && (
-        <CardContent className="pt-0 space-y-4">
-          <RadioGroup value={selectedRange} onValueChange={handleRangeChange} className="space-y-3">
+        <div className="p-4 animate-slide-down space-y-4">
+          <div className="space-y-2" role="radiogroup" aria-label="Mức lương">
             {salaryRanges.map((range) => (
-              <div key={range.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={range.value} id={`salary-${range.value}`} className="text-primary" />
-                <Label htmlFor={`salary-${range.value}`} className={cn("text-sm font-medium cursor-pointer", "text-muted-foreground hover:text-foreground", "transition-colors duration-200", selectedRange === range.value && "text-primary font-semibold")}>
+              <label
+                key={range.value}
+                className={`
+                  flex items-center gap-2 p-2 rounded-md cursor-pointer
+                  transition-all duration-200
+                  hover:bg-gray-100
+                  ${selectedRange === range.value ? 'bg-blue-50 border border-blue-200' : ''}
+                `}
+              >
+                <input
+                  type="radio"
+                  value={range.value}
+                  checked={selectedRange === range.value}
+                  onChange={() => handleRangeChange(range.value)}
+                  className="
+                    h-4 w-4 text-blue-600 border-gray-300 
+                    focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                  "
+                  id={`salary-${range.value}`}
+                />
+                <span className="text-sm text-gray-700 font-medium">
                   {range.label}
-                </Label>
-              </div>
+                </span>
+              </label>
             ))}
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="custom" id="salary-custom" className="text-primary" />
-              <Label htmlFor="salary-custom" className={cn("text-sm font-medium cursor-pointer", "text-muted-foreground hover:text-foreground", "transition-colors duration-200", selectedRange === 'custom' && "text-primary font-semibold")}>
+            <label
+              className={`
+                flex items-center gap-2 p-2 rounded-md cursor-pointer
+                transition-all duration-200
+                hover:bg-gray-100
+                ${selectedRange === 'custom' ? 'bg-blue-50 border border-blue-200' : ''}
+              `}
+            >
+              <input
+                type="radio"
+                value="custom"
+                checked={selectedRange === 'custom'}
+                onChange={() => handleRangeChange('custom')}
+                className="
+                  h-4 w-4 text-blue-600 border-gray-300 
+                  focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                "
+                id="salary-custom"
+              />
+              <span className="text-sm text-gray-700 font-medium">
                 Tùy chỉnh
-              </Label>
-            </div>
-          </RadioGroup>
+              </span>
+            </label>
+          </div>
 
           {isCustomMode && (
-            <div className="space-y-3 pt-2 border-t border-border">
-              <div className="space-y-2">
-                <Label htmlFor="min-salary" className="text-sm font-medium">Lương tối thiểu (triệu VND)</Label>
-                <Input id="min-salary" type="text" placeholder="VD: 10" value={customMin} onChange={(e) => handleCustomMinChange(e.target.value)} onBlur={handleCustomSalaryChange} className="h-9" />
+            <div className="space-y-3 pt-3 border-t border-gray-200">
+              <div className="space-y-1">
+                <label htmlFor="min-salary" className="text-sm font-medium text-gray-700">
+                  Lương tối thiểu (triệu VND)
+                </label>
+                <input
+                  id="min-salary"
+                  type="text"
+                  placeholder="VD: 10"
+                  value={customMin}
+                  onChange={(e) => handleCustomMinChange(e.target.value)}
+                  onBlur={handleCustomSalaryChange}
+                  className="
+                    w-full h-10 px-3 rounded-md border border-gray-300
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    text-sm text-gray-700
+                  "
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="max-salary" className="text-sm font-medium">Lương tối đa (triệu VND)</Label>
-                <Input id="max-salary" type="text" placeholder="VD: 20" value={customMax} onChange={(e) => handleCustomMaxChange(e.target.value)} onBlur={handleCustomSalaryChange} className="h-9" />
+              <div className="space-y-1">
+                <label htmlFor="max-salary" className="text-sm font-medium text-gray-700">
+                  Lương tối đa (triệu VND)
+                </label>
+                <input
+                  id="max-salary"
+                  type="text"
+                  placeholder="VD: 20"
+                  value={customMax}
+                  onChange={(e) => handleCustomMaxChange(e.target.value)}
+                  onBlur={handleCustomSalaryChange}
+                  className="
+                    w-full h-10 px-3 rounded-md border border-gray-300
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    text-sm text-gray-700
+                  "
+                />
               </div>
-              <Button variant="outline" size="sm" onClick={handleCustomSalaryChange} className="w-full">Áp dụng</Button>
+              <button
+                onClick={handleCustomSalaryChange}
+                className="
+                  w-full h-10 rounded-md bg-blue-600 text-white
+                  hover:bg-blue-700 focus:ring-2 focus:ring-blue-500
+                  transition-colors duration-200
+                "
+              >
+                Áp dụng
+              </button>
             </div>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

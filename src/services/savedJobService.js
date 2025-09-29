@@ -58,10 +58,7 @@ const getSavedJobsRaw = async (params = {}) => {
       page: 1,
       limit: 10, // Backend force về 10
       ...params
-    };
-
-    console.log('getSavedJobsRaw params:', defaultParams);
-    
+    };    
     const response = await apiClient.get('/jobs/saved/list', { 
       params: defaultParams 
     });
@@ -149,92 +146,5 @@ export const getSavedJobs = async (params = {}) => {
   } catch (error) {
     console.error('Lỗi khi lấy danh sách công việc đã lưu (virtual):', error);
     throw error;
-  }
-};
-
-/**
- * Kiểm tra xem một công việc đã được lưu chưa
- * @param {string} jobId - ID của công việc cần kiểm tra
- * @returns {boolean} - true nếu đã lưu, false nếu chưa lưu
- */
-export const checkJobSaved = async (jobId) => {
-  try {
-    // Kiểm tra cache trước
-    const now = Date.now();
-    if (now - savedJobsCache.lastFetch < savedJobsCache.ttl && savedJobsCache.data.size > 0) {
-      return savedJobsCache.data.has(jobId);
-    }
-
-    // Lấy danh sách saved jobs và cache lại (sử dụng API gốc)
-    const response = await getSavedJobsRaw({ page: 1, limit: 10 });
-    
-    const jobs = response.data.data || [];
-    const savedIds = new Set();
-    
-    jobs.forEach(job => {
-      // Thêm các ID khả dụng vào Set
-      if (job.jobId) savedIds.add(job.jobId);
-      if (job.job?._id) savedIds.add(job.job._id);
-      if (job._id) savedIds.add(job._id);
-    });
-    
-    // Cập nhật cache
-    savedJobsCache.data = savedIds;
-    savedJobsCache.lastFetch = now;
-    
-    console.log(`Cached ${savedIds.size} saved job IDs (from page 1)`);
-    return savedIds.has(jobId);
-    
-  } catch (error) {
-    console.error('Lỗi khi kiểm tra trạng thái lưu công việc:', error);
-    return false; // Nếu có lỗi, mặc định là chưa lưu
-  }
-};
-
-/**
- * Lấy tất cả công việc đã lưu (với nhiều request để bypass limit 10)
- * @returns {Array} - Danh sách tất cả job IDs đã lưu
- */
-export const getAllSavedJobIds = async () => {
-  try {
-    const allJobIds = new Set();
-    let currentPage = 1;
-    let hasMore = true;
-    
-    while (hasMore) {
-      const response = await getSavedJobsRaw({ 
-        page: currentPage, 
-        limit: 10,
-        sortBy: 'createdAt:desc' 
-      });
-      
-      const jobs = response.data.data || [];
-      
-      jobs.forEach(job => {
-        // Thêm các ID khả dụng vào Set
-        if (job.jobId) allJobIds.add(job.jobId);
-        if (job.job?._id) allJobIds.add(job.job._id);
-        if (job._id) allJobIds.add(job._id);
-      });
-      
-      // Kiểm tra còn trang nào không
-      const meta = response.data.meta;
-      hasMore = currentPage < (meta?.totalPages || 1);
-      currentPage++;
-      
-      console.log(`Page ${currentPage-1}: Got ${jobs.length} jobs`);
-      
-      // Tránh infinite loop
-      if (currentPage > 100) {
-        console.warn('Dừng tại trang 100 để tránh infinite loop');
-        break;
-      }
-    }
-    
-    console.log(`Đã lấy ${allJobIds.size} job IDs đã lưu từ ${currentPage-1} trang`);
-    return Array.from(allJobIds);
-  } catch (error) {
-    console.error('Lỗi khi lấy tất cả job IDs đã lưu:', error);
-    return [];
   }
 };

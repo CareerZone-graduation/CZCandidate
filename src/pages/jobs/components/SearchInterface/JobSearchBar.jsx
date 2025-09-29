@@ -55,8 +55,6 @@ const JobSearchBar = forwardRef(({
    * @param {string} searchQuery - The search query to execute
    */
   const handleSearch = (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
-
     setIsActive(false);
     closeDropdown();
     
@@ -66,6 +64,7 @@ const JobSearchBar = forwardRef(({
     }
     
     if (onSearch) {
+      // Allow empty search - will show all jobs
       onSearch(searchQuery.trim());
     }
   };
@@ -81,9 +80,8 @@ const JobSearchBar = forwardRef(({
     if (event.key === 'Enter') {
       event.preventDefault();
       const searchTerm = result || query;
-      if (searchTerm) {
-        handleSearch(searchTerm);
-      }
+      // Allow search even with empty query
+      handleSearch(searchTerm);
     }
   };
 
@@ -93,9 +91,8 @@ const JobSearchBar = forwardRef(({
    */
   const handleSuggestionSelect = (suggestion) => {
     const selectedTitle = handleSuggestionClick(suggestion);
-    if (selectedTitle) {
-      handleSearch(selectedTitle);
-    }
+    // Always search, even if empty
+    handleSearch(selectedTitle || '');
   };
 
   /**
@@ -196,7 +193,6 @@ const JobSearchBar = forwardRef(({
           type="button"
           size="lg"
           className="h-12 px-6 rounded-xl font-medium flex-shrink-0"
-          disabled={!query.trim()}
           onClick={handleSearchButtonClick}
         >
           <Search className="h-5 w-5 mr-2" />

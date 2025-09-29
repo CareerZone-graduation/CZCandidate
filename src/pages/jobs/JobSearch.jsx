@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Filter, ArrowLeft } from 'lucide-react';
-import { searchJobsHybrid, getAllJobs } from '@/services/jobService';
+import { searchJobsHybrid } from '@/services/jobService';
 import { validateSearchParams, validateHybridSearchRequest } from '@/schemas/searchSchemas';
 import { toast } from 'sonner';
 
@@ -26,11 +26,13 @@ const JobSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
+  const [isNearMe, setIsNearMe] = useState(searchParams.get('userLocation') ? true : false);
+
   // Extract and validate search parameters from URL
   const rawParams = {
     query: searchParams.get('query') || '',
-    page: searchParams.get('page') || '1',
-    size: searchParams.get('size') || (searchParams.get('query') ? '10' : '1000'), // Show all jobs when no search query
+    page: searchParams.get('page') || 1,
+    size: searchParams.get('size') || 10, // Show all jobs when no search query
     category: searchParams.get('category') || '',
     type: searchParams.get('type') || '',
     workType: searchParams.get('workType') || '',
@@ -38,12 +40,13 @@ const JobSearch = () => {
     province: searchParams.get('province') || '',
     district: searchParams.get('district') || '',
     minSalary: searchParams.get('minSalary') || '',
-    maxSalary: searchParams.get('maxSalary') || ''
+    maxSalary: searchParams.get('maxSalary') || '',
+    userLocation: searchParams.get('userLocation') || ''
   };
 
   // Validate URL parameters
   const paramValidation = validateSearchParams(rawParams);
-  
+
   if (!paramValidation.success) {
     console.warn('Invalid search parameters:', paramValidation.errors);
     // Show validation errors to user if needed
@@ -65,12 +68,15 @@ const JobSearch = () => {
   const district = validatedParams.district || '';
   const minSalary = validatedParams.minSalary || '';
   const maxSalary = validatedParams.maxSalary || '';
+  const userLocationParam = validatedParams.userLocation || '';
 
   // Search parameters object for API calls
   const searchParameters = {
-    query,
+    query: query || '', // Always include query, even if empty string
     page,
     size,
+    textWeight: 0.4, // Default weight for text search
+    vectorWeight: 0.6, // Default weight for vector search
     ...(category && { category }),
     ...(type && { type }),
     ...(workType && { workType }),
@@ -78,17 +84,23 @@ const JobSearch = () => {
     ...(province && { province }),
     ...(district && { district }),
     ...(minSalary && { minSalary: parseInt(minSalary) }),
-    ...(maxSalary && { maxSalary: parseInt(maxSalary) })
+    ...(maxSalary && { maxSalary: parseInt(maxSalary) }),
+    ...(userLocationParam && { userLocation: userLocationParam })
   };
 
-  // Validate API request parameters
-  const apiValidation = query ? validateHybridSearchRequest(searchParameters) : { success: true, data: searchParameters };
-  
+  // Debug: Log search parameters
+  console.log('Search Parameters:', searchParameters);
+
+  // Validate API request parameters - always use hybrid search now
+  const apiValidation = validateHybridSearchRequest(searchParameters);
+
   if (!apiValidation.success) {
     console.warn('Invalid API parameters:', apiValidation.errors);
+  } else {
+    console.log('Validated API Parameters:', apiValidation.data);
   }
 
-  // React Query for search results
+  // React Query for search results - always use hybrid search
   const {
     data: searchResults,
     isLoading,
@@ -96,8 +108,8 @@ const JobSearch = () => {
     error,
     refetch
   } = useQuery({
-    queryKey: query ? ['jobs', 'search', apiValidation.data || searchParameters] : ['jobs', 'all', searchParameters],
-    queryFn: () => query ? searchJobsHybrid(apiValidation.data || searchParameters) : getAllJobs(searchParameters),
+    queryKey: ['jobs', 'search', apiValidation.data || searchParameters],
+    queryFn: () => searchJobsHybrid(apiValidation.data || searchParameters),
     enabled: apiValidation.success, // Always fetch when parameters are valid
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
@@ -111,8 +123,9 @@ const JobSearch = () => {
    */
   const handleSearch = (newQuery) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('query', newQuery);
-    newParams.set('page', '1'); // Reset to first page
+    // Always set query, even if empty string
+    newParams.set('query', newQuery ? newQuery.trim() : '');
+    newParams.set('page', 1); // Reset to first page
     setSearchParams(newParams);
   };
 
@@ -122,7 +135,7 @@ const JobSearch = () => {
    */
   const handleFilterChange = (filters) => {
     const newParams = new URLSearchParams(searchParams);
-    
+
     // Update all filter parameters
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
@@ -131,10 +144,40 @@ const JobSearch = () => {
         newParams.delete(key);
       }
     });
-    
+
     // Reset to first page when filters change
-    newParams.set('page', '1');
+    newParams.set('page', 1);
     setSearchParams(newParams);
+  };
+
+  const handleNearMeChange = (checked) => {
+    setIsNearMe(checked);
+    const newParams = new URLSearchParams(searchParams);
+    if (checked) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { longitude, latitude } = position.coords;
+            const locationString = `[${longitude}, ${latitude}]`;
+            newParams.set('userLocation', locationString);
+            newParams.set('page', 1);
+            setSearchParams(newParams);
+          },
+          (error) => {
+            toast.error('Không thể lấy vị trí của bạn. Vui lòng cấp quyền truy cập vị trí.');
+            console.error('Geolocation error:', error);
+            setIsNearMe(false);
+          }
+        );
+      } else {
+        toast.error('Trình duyệt của bạn không hỗ trợ định vị.');
+        setIsNearMe(false);
+      }
+    } else {
+      newParams.delete('userLocation');
+      newParams.set('page', 1);
+      setSearchParams(newParams);
+    }
   };
 
   /**
@@ -143,9 +186,9 @@ const JobSearch = () => {
    */
   const handlePageChange = (newPage) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('page', newPage.toString());
+    newParams.set('page', newPage);
     setSearchParams(newParams);
-    
+
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -159,6 +202,7 @@ const JobSearch = () => {
     newParams.set('page', '1');
     newParams.set('size', size.toString());
     setSearchParams(newParams);
+    setIsNearMe(false);
   };
 
   /**
@@ -184,7 +228,7 @@ const JobSearch = () => {
   const hasActiveFilters = Object.values(currentFilters).some(value => value !== '');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background/80 backdrop-blur-sm relative z-10">
       {/* Header with search bar */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="container py-4">
@@ -198,7 +242,7 @@ const JobSearch = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            
+
             {/* Search Bar */}
             <div className="flex-1">
               <JobSearchBar
@@ -207,12 +251,12 @@ const JobSearch = () => {
                 placeholder="Tìm kiếm công việc, kỹ năng, công ty..."
               />
             </div>
-            
+
             {/* Mobile Filter Button */}
             <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
               <SheetTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="icon"
                   className="lg:hidden flex-shrink-0"
                 >
@@ -227,6 +271,8 @@ const JobSearch = () => {
                     onFilterChange={handleFilterChange}
                     onClearFilters={handleClearFilters}
                     hasActiveFilters={hasActiveFilters}
+                    onNearMeChange={handleNearMeChange}
+                    isNearMe={isNearMe}
                   />
                 </div>
               </SheetContent>
@@ -241,7 +287,7 @@ const JobSearch = () => {
           {/* Desktop Filters Sidebar */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-24">
-              <Card>
+              <Card className="enhanced-card-with-background">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Bộ lọc tìm kiếm</h3>
@@ -262,6 +308,8 @@ const JobSearch = () => {
                     onFilterChange={handleFilterChange}
                     onClearFilters={handleClearFilters}
                     hasActiveFilters={hasActiveFilters}
+                    onNearMeChange={handleNearMeChange}
+                    isNearMe={isNearMe}
                   />
                 </CardContent>
               </Card>
@@ -290,6 +338,7 @@ const JobSearch = () => {
                 error={error}
                 onRetry={refetch}
                 query={query}
+                userLocation={userLocationParam}
               />
             </div>
 

@@ -81,15 +81,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(98% 0.02 85);
+  --background: oklch(100% 0 0);
   --foreground: oklch(20.33% 0.088 261.2);
   --card: oklch(100% 0 0);
   --card-foreground: oklch(20.33% 0.088 261.2);
   --popover: oklch(100% 0 0);
   --popover-foreground: oklch(20.33% 0.088 261.2);
-  --primary: oklch(46.36% 0.149 151.2);
-  --primary-foreground: oklch(97.59% 0.021 16.5);
+  --primary: oklch(0.7227 0.192 149.58);
+  --primary-foreground: oklch(100% 0.0 0);
   --primary-light: oklch(96.39% 0.033 151.2);
+  --brand-accent: oklch(46.36% 0.149 151.2);
   --secondary: oklch(98.13% 0.006 257);
   --secondary-foreground: oklch(20.33% 0.088 261.2);
   --muted: oklch(98.13% 0.006 257);
@@ -108,6 +109,17 @@
   --footer: oklch(91.75% 0.012 260.1);
   --footer-foreground: oklch(25% 0.015 260.6);
   --footer-muted: oklch(61.03% 0.008 260.5);
+  --blue-primary: oklch(53.94% 0.142 240.2);
+  --blue-secondary: oklch(62.8% 0.224 240.4);
+  --purple-primary: oklch(58.4% 0.168 300.8);
+  --purple-secondary: oklch(46.36% 0.149 300.2);
+  --orange-primary: oklch(72.37% 0.183 60.8);
+  --orange-secondary: oklch(62.8% 0.224 60.4);
+  --indigo-primary: oklch(53.94% 0.142 270.2);
+  --pink-primary: oklch(62.8% 0.224 330.8);
+  --cyan-primary: oklch(67.43% 0.174 200.6);
+  --amber-primary: oklch(79.37% 0.176 83.2);
+  --emerald-primary: oklch(46.36% 0.149 151.2);
 }
 
 .dark {
@@ -118,6 +130,7 @@
   --popover: oklch(20.33% 0.088 261.2);
   --popover-foreground: oklch(98.13% 0.006 257);
   --primary: oklch(53.94% 0.142 151.2);
+  --brand-accent: oklch(53.94% 0.142 151.2);
   --primary-foreground: oklch(27.44% 0.063 152.8);
   --primary-light: oklch(20.93% 0.054 151.2);
   --secondary: oklch(29.56% 0.038 260.1);
@@ -197,6 +210,171 @@ body {
 
 .bg-gradient-to-primary {
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--background) 100%);
+}
+
+/* Enhanced gradient utilities for better visual appeal */
+.btn-gradient {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(37, 99, 235) 100%);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, rgb(22, 163, 74) 0%, rgb(29, 78, 216) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -5px rgba(34, 197, 94, 0.3);
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* Micro-interactions: subtle entrance and hover animations */
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(6px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.enter-up {
+  animation: enter-up 360ms cubic-bezier(.2,.9,.2,1) both;
+}
+
+.hover-lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 30px -8px rgba(2,6,23,0.2), 0 6px 12px -6px rgba(2,6,23,0.08);
+}
+
+/* Prefer reduced motion: disable non-essential animations */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; }
+  .enter-up { animation: none; }
+  .hover-lift, .btn-gradient { transition: none; transform: none !important; }
+}
+
+/* Subtle background patterns */
+.grainy-background {
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(34, 197, 94, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
+    var(--background);
+}
+
+.subtle-gradient-bg {
+  background: linear-gradient(135deg, 
+    var(--background) 0%, 
+    rgba(248, 250, 252, 0.5) 50%, 
+    var(--background) 100%);
+}
+
+/* Card enhancements for animated background */
+.enhanced-card-with-background {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.enhanced-card-with-background:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Dark theme card enhancements */
+.dark .enhanced-card-with-background {
+  background: rgba(31, 41, 55, 0.85);
+  border-color: rgba(75, 85, 99, 0.8);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.2),
+    0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark .enhanced-card-with-background:hover {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Legacy enhanced-card for backward compatibility */
+.enhanced-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.enhanced-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Job card specific styles */
+.job-card-enhanced {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.job-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.3), rgba(37, 99, 235, 0.3));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.job-card-enhanced:hover::before {
+  opacity: 1;
+}
+
+.job-card-enhanced:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 
+    0 10px 25px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
 /* Animations */
@@ -281,18 +459,6 @@ body {
   border-color: color-mix(in oklch, transparent, var(--primary) 20%);
 }
 
-/* Yellow hover effect for all cards */
-.card-yellow-hover {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.card-yellow-hover:hover {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-color: #f59e0b;
-  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.1), 0 4px 6px -2px rgba(245, 158, 11, 0.05);
-  transform: translateY(-2px);
-}
 
 /* Button enhancements */
 .btn-gradient {
@@ -470,8 +636,43 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   background-color: rgb(249 250 251) !important;
 }
 
+/* Animated background specific styles */
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gradient-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  opacity: 0.6;
+}
+
+/* Performance optimizations for animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+  .animated-background {
+    display: none;
+  }
+  
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
