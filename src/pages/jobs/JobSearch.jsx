@@ -339,6 +339,7 @@ const JobSearch = () => {
                 onRetry={refetch}
                 query={query}
                 userLocation={userLocationParam}
+                searchParameters={apiValidation.data || searchParameters}
               />
             </div>
 

@@ -18,7 +18,8 @@ const JobResultsList = ({
   onRetry,
   query = '',
   className,
-  userLocation
+  userLocation,
+  searchParameters
 }) => {
   /**
    * Render loading skeleton
@@ -138,6 +139,7 @@ const JobResultsList = ({
             showSaveButton={true}
             compact={false}
             userLocation={userLocation}
+            searchParameters={searchParameters}
           />
         ))}
       </div>

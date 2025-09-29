@@ -28,7 +28,7 @@ function App() {
     <BackgroundProvider>
       <SimpleAnimatedBackground />
       <AppRouter />
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-center" richColors />
     </BackgroundProvider>
   );
 }

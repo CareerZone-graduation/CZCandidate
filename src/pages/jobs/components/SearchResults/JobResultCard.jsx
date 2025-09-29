@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { saveJob, unsaveJob } from '@/services/savedJobService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,10 +32,13 @@ const JobResultCard = ({
   className,
   showSaveButton = true,
   compact = false,
-  userLocation
+  userLocation,
+  onSaveToggle,
+  searchParameters
 }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
 
   const distance = React.useMemo(() => {
     if (!userLocation || !job.location?.coordinates?.coordinates) {
@@ -60,7 +65,7 @@ const JobResultCard = ({
     if (onClick) {
       onClick(job);
     } else {
-      navigate(`/jobs/${job.id || job._id}`);
+      navigate(`/jobs/${job._id}`);
     }
   };
 
@@ -68,16 +73,55 @@ const JobResultCard = ({
    * Handle save job
    * @param {Event} event - Click event
    */
+  const { mutate: toggleSaveJob } = useMutation({
+    mutationFn: () => {
+      if (onSaveToggle) {
+        onSaveToggle(job);
+        return Promise.resolve();
+      }
+      return job.isSaved ? unsaveJob(job._id) : saveJob(job._id);
+    },
+    onMutate: async () => {
+      if (onSaveToggle) return;
+
+      const queryKey = ['jobs', 'search', searchParameters];
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData(queryKey);
+
+      queryClient.setQueryData(queryKey, (oldData) => {
+        if (!oldData) return;
+        const newData = {
+          ...oldData,
+          data: oldData.data.map(j =>
+            j._id === job._id ? { ...j, isSaved: !j.isSaved } : j
+          ),
+        };
+        return newData;
+      });
+
+      return { previousData };
+    },
+    onSuccess: () => {
+      if (onSaveToggle) return;
+      toast.success(job.isSaved ? 'Đã bỏ lưu việc làm' : 'Đã lưu việc làm thành công');
+      queryClient.invalidateQueries({queryKey: ['savedJobs']});
+    },
+    onError: (err, _vars, context) => {
+      if (onSaveToggle) return;
+      if (context?.previousData) {
+        queryClient.setQueryData(['jobs', 'search', searchParameters], context.previousData);
+      }
+      toast.error(err.response?.data?.message || 'Đã có lỗi xảy ra.');
+    },
+  });
+
   const handleSaveJob = (event) => {
     event.stopPropagation();
-    
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để lưu việc làm');
+      toast.error('Vui lòng đăng nhập để lưu việc làm.');
       return;
     }
-
-    // TODO: Implement save job functionality
-    toast.success('Đã lưu việc làm');
+    toggleSaveJob();
   };
 
   /**
@@ -223,7 +267,7 @@ const JobResultCard = ({
                 </h3>
                 <div className="flex items-center gap-2 mt-1 text-muted-foreground group-hover:text-foreground transition-colors duration-300">
                   <Building className="h-4 w-4 flex-shrink-0 text-primary/70" />
-                  <span className="font-medium truncate">{job.recruiterProfileId?.company?.name}</span>
+                  <span className="font-medium truncate">{job.company?.name}</span>
                 </div>
               </div>
               

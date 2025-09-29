@@ -45,15 +45,13 @@ const JobDetailHeader = ({
                 {/* Left Column (2/3 width) */}
                 <div className="lg:col-span-2">
                     <div className="flex items-center gap-4 mb-4">
-                        <Avatar className="w-16 h-16 border-2 border-border">
-                            <AvatarImage src={job.recruiterProfileId?.company?.logo} alt={job.recruiterProfileId?.company?.name} />
-                            <AvatarFallback className="bg-muted text-foreground text-lg font-bold">
-                                {job.recruiterProfileId?.company?.name?.charAt(0)}
-                            </AvatarFallback>
-                        </Avatar>
                         <div>
                             <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-1">{job.title}</h1>
-                            <p className="text-lg text-muted-foreground">{job.recruiterProfileId?.company?.name}</p>
+                            <p className="text-lg text-muted-foreground">{job.company?.name}</p>
+                            <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                                <MapPin className="w-4 h-4 text-primary/80" />
+                                <span className="text-sm">{[job.address, job.location?.commune, job.location?.district, job.location?.province].filter(p => p && p !== 'OTHER').join(', ') || 'Địa điểm chưa được cập nhật'}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -74,7 +72,10 @@ const JobDetailHeader = ({
                                         <UserCheck className="w-5 h-5 text-orange-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-medium text-gray-900">Thông tin ứng viên</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-medium text-gray-900">Thông tin ứng viên</h3>
+                                            <Badge variant="destructive" className="text-xs px-1.5 py-0.5 animate-pulse">MỚI</Badge>
+                                        </div>
                                         <p className="text-xs text-muted-foreground">
                                             {hasViewedApplicants && applicantCount !== null
                                                 ? `${applicantCount} người đã ứng tuyển`
@@ -175,13 +176,6 @@ const JobDetailHeader = ({
                             <Separator />
 
                             <div className="space-y-3">
-                                <div className="flex items-start gap-3">
-                                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Địa chỉ</p>
-                                        <p className="text-sm text-muted-foreground">{job.address || 'Chưa cập nhật'}</p>
-                                    </div>
-                                </div>
                                <Button
                                    className="w-full"
                                    variant="outline"
