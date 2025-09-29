@@ -31,6 +31,8 @@ import PaymentSuccess from '../pages/payment/PaymentSuccess';
 import PaymentFailure from '../pages/payment/PaymentFailure';
 import AnimatedBackgroundDemo from '../pages/demo/AnimatedBackgroundDemo';
 import CompanyDetail from '../pages/company/CompanyDetail';
+import CVBuilder from '../components/buildCV/CVBuilder';
+import CVRenderOnlyPage from '../pages/cv/CVRenderOnlyPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -75,6 +77,9 @@ const AppRouter = () => {
           <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
           <Route path="/demo/background" element={<AnimatedBackgroundDemo />} />
+          <Route path="/editor" element={<CVBuilder />} />
+          <Route path="/editor/:cvId" element={<CVBuilder />} />
+          <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
         </Route>
 
         {/* Auth routes */}
