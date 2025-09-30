@@ -32,12 +32,14 @@ export const getCvById = async (cvId) => {
 /**
  * Tạo một CV mới trên backend.
  * Backend sẽ tự tạo một CV trống với template được chỉ định.
- * @param {string} templateId - ID của template để tạo CV mới.
+ * @param {Object} cvData - Dữ liệu CV bao gồm name và templateId.
+ * @param {string} cvData.name - Tên của CV mới.
+ * @param {string} cvData.templateId - ID của template để tạo CV mới.
  * @returns {Promise<Object>} Dữ liệu CV vừa được tạo.
  */
-export const createCv = async (templateId) => {
+export const createCv = async (cvData) => {
   try {
-    const response = await apiClient.post('/cvs', { templateId });
+    const response = await apiClient.post('/cvs', cvData);
     return response.data;
   } catch (error) {
     console.error('Error creating new CV:', error);
@@ -89,6 +91,20 @@ export const deleteCv = async (cvId) => {
     return response.data;
   } catch (error) {
     console.error(`Error deleting CV with ID ${cvId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách tất cả các template CV từ backend.
+ * @returns {Promise<Array>} Danh sách các template CV.
+ */
+export const getTemplates = async () => {
+  try {
+    const response = await apiClient.get('/templates');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching templates:', error);
     throw error;
   }
 };

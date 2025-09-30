@@ -1,8 +1,32 @@
-import React from 'react';
-import { cvTemplates } from '../../data/templates';
+import React, { useState, useEffect } from 'react';
+import { getTemplates } from '../../services/api';
 import { Check } from 'lucide-react';
 
 const TemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        const response = await getTemplates();
+        // The API returns templates in the expected format
+        setTemplates(response.data || []);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+        setError('Failed to load templates');
+        // Fallback to empty array
+        setTemplates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
   const getTemplatePreview = (template) => {
     const baseClasses = "w-full h-48 rounded-lg border-2 transition-all duration-200 cursor-pointer relative overflow-hidden";
     const selectedClasses = selectedTemplate === template.id ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-gray-300";
@@ -211,12 +235,41 @@ const TemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-800">Choose Template</h3>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading templates...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-800">Choose Template</h3>
+        <div className="text-center py-12">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-800">Choose Template</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cvTemplates.map((template) => (
+        {templates.map((template) => (
           <div key={template.id} className="space-y-3">
             {getTemplatePreview(template)}
             <div className="text-center">

@@ -62,7 +62,8 @@ const CVBuilder = () => {
           }
         } else {
           // Create a new CV
-          const newCv = await createCv({ name: 'New CV', templateId: 'modern-blue' }); // Default template
+          const newCvResponse = await createCv({ name: 'New CV', templateId: 'modern-blue' }); // Default template
+          const newCv = newCvResponse.data;
           setCVData(mapToFrontend(newCv));
           navigate(`/editor/${newCv._id}`, { replace: true });
         }
