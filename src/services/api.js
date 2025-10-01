@@ -30,19 +30,58 @@ export const getCvById = async (cvId) => {
 };
 
 /**
- * Tạo một CV mới trên backend.
- * Backend sẽ tự tạo một CV trống với template được chỉ định.
- * @param {Object} cvData - Dữ liệu CV bao gồm name và templateId.
- * @param {string} cvData.name - Tên của CV mới.
- * @param {string} cvData.templateId - ID của template để tạo CV mới.
- * @returns {Promise<Object>} Dữ liệu CV vừa được tạo.
+ * Lấy danh sách templates từ backend.
+ * @returns {Promise<Array>} Danh sách các template.
  */
-export const createCv = async (cvData) => {
+export const getTemplates = async () => {
   try {
-    const response = await apiClient.post('/cvs', cvData);
+    console.log('🔄 Fetching templates...');
+    const response = await apiClient.get('/templates');
+    console.log('✅ Templates fetched:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error creating new CV:', error);
+    console.error('❌ Error fetching templates:', error);
+    throw error;
+  }
+};
+
+/**
+ * Tạo một CV mới từ template.
+ * @param {Object} templateData - Dữ liệu template và thông tin CV.
+ * @param {string} templateData.templateId - ID của template.
+ * @param {string} templateData.title - Tên của CV mới.
+ * @returns {Promise<Object>} Dữ liệu CV vừa được tạo.
+ */
+export const createCvFromTemplate = async (templateData) => {
+  try {
+    console.log('🔄 Creating CV from template:', templateData);
+    
+    if (!templateData.templateId || !templateData.title) {
+      throw new Error('Missing required fields: templateId and title');
+    }
+    
+    const response = await apiClient.post('/cvs/from-template', templateData);
+    console.log('✅ CV created from template:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error creating CV from template:', error);
+    
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+      
+      // Log the exact error message from backend
+      if (error.response.data && error.response.data.message) {
+        console.error('Backend error message:', error.response.data.message);
+      }
+      
+      // Try to understand what backend expects
+      if (error.response.data && error.response.data.errors) {
+        console.error('Validation errors:', error.response.data.errors);
+      }
+    }
+    
     throw error;
   }
 };
@@ -70,12 +109,51 @@ export const updateCv = async (cvId, cvData) => {
  */
 export const exportPdf = async (cvId) => {
   try {
+    console.log('🔄 Exporting PDF for CV ID:', cvId);
+    
     const response = await apiClient.post(`/cvs/${cvId}/export-pdf`, {}, {
       responseType: 'blob', // Rất quan trọng để xử lý file tải về
+      timeout: 30000, // 30 seconds timeout
     });
+    
+    console.log('✅ PDF export successful');
     return response.data;
   } catch (error) {
-    console.error('Error exporting PDF:', error);
+    console.error('❌ Error exporting PDF:', error);
+    
+    if (error.response) {
+      console.error('Error response status:', error.response.status);
+      console.error('Error response data:', error.response.data);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Gọi API để export CV dưới dạng Excel.
+ * @param {string} cvId - ID của CV cần export.
+ * @returns {Promise<Blob>} - Dữ liệu Excel dưới dạng Blob.
+ */
+export const exportExcel = async (cvId) => {
+  try {
+    console.log('🔄 Exporting Excel for CV ID:', cvId);
+    
+    const response = await apiClient.post(`/cvs/${cvId}/export-excel`, {}, {
+      responseType: 'blob',
+      timeout: 30000, // 30 seconds timeout
+    });
+    
+    console.log('✅ Excel export successful');
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error exporting Excel:', error);
+    
+    if (error.response) {
+      console.error('Error response status:', error.response.status);
+      console.error('Error response data:', error.response.data);
+    }
+    
     throw error;
   }
 };
@@ -91,20 +169,6 @@ export const deleteCv = async (cvId) => {
     return response.data;
   } catch (error) {
     console.error(`Error deleting CV with ID ${cvId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Lấy danh sách tất cả các template CV từ backend.
- * @returns {Promise<Array>} Danh sách các template CV.
- */
-export const getTemplates = async () => {
-  try {
-    const response = await apiClient.get('/templates');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching templates:', error);
     throw error;
   }
 };

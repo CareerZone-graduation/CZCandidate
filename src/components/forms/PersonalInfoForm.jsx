@@ -23,7 +23,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="text"
-            value={personalInfo.fullName}
+            value={personalInfo?.fullName || ''}
             onChange={(e) => handleChange('fullName', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="John Doe"
@@ -38,7 +38,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="email"
-            value={personalInfo.email}
+            value={personalInfo?.email || ''}
             onChange={(e) => handleChange('email', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="john@example.com"
@@ -53,7 +53,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="tel"
-            value={personalInfo.phone}
+            value={personalInfo?.phone || ''}
             onChange={(e) => handleChange('phone', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="+1 (555) 123-4567"
@@ -68,7 +68,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="text"
-            value={personalInfo.address}
+            value={personalInfo?.address || ''}
             onChange={(e) => handleChange('address', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="City, State, Country"
@@ -83,7 +83,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-            value={personalInfo.website || ''}
+                        value={personalInfo?.website || ''}
             onChange={(e) => handleChange('website', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://yourwebsite.com"
@@ -97,7 +97,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-            value={personalInfo.linkedin || ''}
+                        value={personalInfo?.linkedin || ''}
             onChange={(e) => handleChange('linkedin', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://linkedin.com/in/yourprofile"
@@ -111,7 +111,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-            value={personalInfo.github || ''}
+            value={personalInfo?.github || ''}
             onChange={(e) => handleChange('github', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://github.com/yourusername"
@@ -124,7 +124,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-            value={personalInfo.profileImage || ''}
+            value={personalInfo?.profileImage || ''}
             onChange={(e) => handleChange('profileImage', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://example.com/your-photo.jpg"

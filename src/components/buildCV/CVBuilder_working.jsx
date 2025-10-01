@@ -1,12 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { getCvById, createCvFromTemplate, updateCv, exportPdf as exportPdfApi } from '../../services/api';
 import { mapToFrontend, mapToBackend } from '../../utils/dataMapper';
 import { sampleCVData } from '../../data/sampleData';
 import CVPreview from '../CVPreview/CVPreview';
-import TemplateSelector from './TemplateSelector_new';
 import PersonalInfoForm from '../forms/PersonalInfoForm';
 import WorkExperienceForm from '../forms/WorkExperienceForm';
 import SkillsForm from '../forms/SkillsForm';
@@ -23,7 +21,6 @@ import {
   Download, 
   Menu,
   X,
-  Palette,
   GraduationCap,
   FolderOpen,
   AlignCenterVertical as Certificate
@@ -33,72 +30,72 @@ const CVBuilder = () => {
   const { cvId } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const [activeTab, setActiveTab] = useState('template');
-  const [selectedTemplate, setSelectedTemplate] = useState('modern-blue');
+  const [activeTab, setActiveTab] = useState('personal');
   const [showPreview, setShowPreview] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [scale, setScale] = useState(0.65); // A4 thu nhỏ cho preview
+  const [scale, setScale] = useState(1);
   const cvContentRef = useRef(null);
   const [cvData, setCVData] = useState(null);
   const [error, setError] = useState(null);
 
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { 
+        state: { from: window.location.pathname },
+        replace: true 
+      });
+      return;
+    }
+  }, [isAuthenticated, navigate]);
+
   // Load or create CV
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const fetchOrCreateCv = async () => {
       setIsLoading(true);
       try {
-        if (isAuthenticated && cvId && cvId !== 'new') {
+        if (cvId && cvId !== 'new') {
           // Load existing CV
           const dataFromApi = await getCvById(cvId);
           if (dataFromApi && dataFromApi.data) {
-            const mappedData = mapToFrontend(dataFromApi.data);
-            // Ensure personalInfo exists
-            if (!mappedData.personalInfo) {
-              mappedData.personalInfo = {};
-            }
-            setCVData(mappedData);
-            setSelectedTemplate(mappedData.template || 'modern-blue');
+            setCVData(mapToFrontend(dataFromApi.data));
           } else {
             navigate('/editor/new', { replace: true });
           }
         } else {
-          // Create new CV with sample data - Works for both authenticated and non-authenticated users
+          // Create new CV with sample data - ALWAYS ONLINE
           const basicCV = {
             ...sampleCVData,
             id: 'temp-' + Date.now(),
-            template: 'modern-blue',
+            template: 'modern-creative',
             personalInfo: {
               ...sampleCVData.personalInfo,
-              fullName: isAuthenticated 
-                ? 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
-                : 'CV Demo ' + new Date().toLocaleDateString('vi-VN')
+              fullName: 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
             }
           };
           setCVData(basicCV);
-          setSelectedTemplate(basicCV.template || 'modern-blue');
           console.log('✅ CV created with sample data - PDF export available');
         }
       } catch (error) {
         console.error("Error loading CV:", error);
         setError(error);
         
-        // Always fallback to sample data - Works for all users
+        // Always fallback to sample data
         const basicCV = {
           ...sampleCVData,
           id: 'temp-' + Date.now(),
-          template: 'modern-blue',
+          template: 'modern-creative',
           personalInfo: {
             ...sampleCVData.personalInfo,
-            fullName: isAuthenticated 
-              ? 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
-              : 'CV Demo ' + new Date().toLocaleDateString('vi-VN')
+            fullName: 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
           }
         };
         setCVData(basicCV);
-        setSelectedTemplate(basicCV.template || 'modern-blue');
         console.log('✅ Fallback to sample data - PDF export available');
       } finally {
         setIsLoading(false);
@@ -106,20 +103,9 @@ const CVBuilder = () => {
     };
 
     fetchOrCreateCv();
-  }, [cvId, navigate]);
+  }, [cvId, isAuthenticated, navigate]);
 
-  // Handle template selection
-  const handleTemplateSelect = (templateId) => {
-    setSelectedTemplate(templateId);
-    if (cvData) {
-      setCVData({
-        ...cvData,
-        template: templateId
-      });
-    }
-  };
-
-  // Export PDF function - Clone exact preview content
+  // Export PDF function that ALWAYS works
   const exportPDF = async () => {
     if (!cvData) {
       alert('Không có dữ liệu CV để export.');
@@ -128,194 +114,113 @@ const CVBuilder = () => {
     
     setIsExporting(true);
     
-    try {
-      // Get the preview content from the ref
-      const previewElement = cvContentRef.current;
+    // Always use browser print - reliable method
+    const printCV = () => {
+      const printWindow = window.open('', '_blank');
       
-      if (!previewElement) {
-        alert('Không tìm thấy preview content.');
-        setIsExporting(false);
-        return;
-      }
-
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      // Build HTML string using concatenation to avoid template literal issues
+      let htmlContent = '<!DOCTYPE html><html><head>';
+      htmlContent += '<title>CV - ' + (cvData.personalInfo?.fullName || 'CV') + '</title>';
+      htmlContent += '<meta charset="utf-8">';
+      htmlContent += '<style>';
+      htmlContent += 'body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: white; color: #333; line-height: 1.6; }';
+      htmlContent += '.cv-container { max-width: 800px; margin: 0 auto; }';
+      htmlContent += '.cv-header { text-align: center; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; }';
+      htmlContent += '.cv-header h1 { margin: 0 0 10px 0; color: #2563eb; font-size: 2em; }';
+      htmlContent += '.cv-header p { margin: 5px 0; color: #666; }';
+      htmlContent += '.cv-section { margin-bottom: 25px; padding: 15px; border-left: 4px solid #2563eb; background: #fafbfc; }';
+      htmlContent += '.cv-section h3 { color: #2563eb; margin: 0 0 15px 0; font-size: 1.3em; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }';
+      htmlContent += '.work-item, .edu-item, .project-item { margin-bottom: 15px; padding: 10px; background: white; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }';
+      htmlContent += '.work-item strong, .edu-item strong, .project-item strong { color: #1f2937; font-size: 1.1em; }';
+      htmlContent += '.work-item em, .edu-item em { color: #6b7280; }';
+      htmlContent += '.date-range { color: #9ca3af; font-size: 0.9em; margin: 5px 0; }';
+      htmlContent += '.skills-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }';
+      htmlContent += '.skill-tag { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 12px; font-size: 0.9em; }';
+      htmlContent += '@media print { body { margin: 0; padding: 15px; } .cv-section { break-inside: avoid; } }';
+      htmlContent += '</style></head><body>';
       
-      if (!printWindow) {
-        alert('Vui lòng cho phép popup để export PDF.');
-        setIsExporting(false);
-        return;
-      }
-
-      // Get the exact HTML content from preview (without copying computed styles to avoid conflicts)
-      const clonedElement = previewElement.cloneNode(true);
-
-      // Collect stylesheets and style tags
-      let styles = '';
-      let styleLinks = '';
+      htmlContent += '<div class="cv-container">';
+      htmlContent += '<div class="cv-header">';
+      htmlContent += '<h1>' + (cvData.personalInfo?.fullName || 'CV') + '</h1>';
+      htmlContent += '<p><strong>Email:</strong> ' + (cvData.personalInfo?.email || 'Chưa cập nhật') + '</p>';
+      htmlContent += '<p><strong>Điện thoại:</strong> ' + (cvData.personalInfo?.phone || 'Chưa cập nhật') + '</p>';
+      htmlContent += '<p><strong>Địa chỉ:</strong> ' + (cvData.personalInfo?.address || 'Chưa cập nhật') + '</p>';
+      htmlContent += '</div>';
       
-      // Get all style tags
-      document.querySelectorAll('style').forEach(styleTag => {
-        styles += styleTag.innerHTML + '\n';
-      });
-      
-      // Get all stylesheet links
-      document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-        styleLinks += `<link rel="stylesheet" href="${link.href}">\n`;
-      });
-      
-      // Get CSS rules from stylesheets (for inline styles)
-      Array.from(document.styleSheets).forEach(styleSheet => {
-        try {
-          if (styleSheet.cssRules) {
-            Array.from(styleSheet.cssRules).forEach(rule => {
-              styles += rule.cssText + '\n';
-            });
-          }
-        } catch (e) {
-          // CORS - already handled by styleLinks above
-          console.log('Skipping stylesheet due to CORS:', styleSheet.href);
-        }
-      });
-
-      // Build complete HTML document with A4 full size
-      const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV - ${cvData.personalInfo?.fullName || 'CV'}</title>
-  
-  <!-- Include stylesheet links -->
-  ${styleLinks}
-  
-  <style>
-    /* Include all existing styles */
-    ${styles}
-    
-    /* Reset problematic properties and force full A4 size */
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow-x: hidden;
-    }
-    
-    /* CV container at full A4 size */
-    #cv-preview,
-    .cv-preview {
-      width: 210mm !important;
-      min-height: 297mm !important;
-      box-sizing: border-box !important;
-    }
-    
-    /* Ensure text doesn't overflow or overlap */
-    #cv-preview *,
-    .cv-preview * {
-      box-sizing: border-box !important;
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
-    }
-    
-    @page {
-      size: A4;
-      margin: 0;
-    }
-    
-    @media print {
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 210mm;
-        height: 297mm;
+      if (cvData.professionalSummary) {
+        htmlContent += '<div class="cv-section">';
+        htmlContent += '<h3>🎯 Tóm tắt nghề nghiệp</h3>';
+        htmlContent += '<p>' + cvData.professionalSummary + '</p>';
+        htmlContent += '</div>';
       }
       
-      /* Prevent page breaks inside important elements */
-      .cv-preview, .cv-section {
-        page-break-inside: avoid;
+      if (cvData.workExperience?.length) {
+        htmlContent += '<div class="cv-section">';
+        htmlContent += '<h3>💼 Kinh nghiệm làm việc</h3>';
+        cvData.workExperience.forEach(exp => {
+          htmlContent += '<div class="work-item">';
+          htmlContent += '<strong>' + (exp.position || 'Vị trí') + '</strong> tại <em>' + (exp.company || 'Công ty') + '</em>';
+          htmlContent += '<div class="date-range">' + (exp.startDate || '') + ' - ' + (exp.endDate || 'Hiện tại') + '</div>';
+          htmlContent += '<p>' + (exp.description || 'Mô tả công việc...') + '</p>';
+          htmlContent += '</div>';
+        });
+        htmlContent += '</div>';
       }
-    }
-    
-    @media screen {
-      body {
-        background: #525659;
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
+      
+      if (cvData.education?.length) {
+        htmlContent += '<div class="cv-section">';
+        htmlContent += '<h3>🎓 Học vấn</h3>';
+        cvData.education.forEach(edu => {
+          htmlContent += '<div class="edu-item">';
+          htmlContent += '<strong>' + (edu.degree || 'Bằng cấp') + '</strong> - <em>' + (edu.institution || 'Trường') + '</em>';
+          htmlContent += '<div class="date-range">' + (edu.startDate || '') + ' - ' + (edu.endDate || '') + '</div>';
+          if (edu.gpa) htmlContent += '<p>GPA: ' + edu.gpa + '</p>';
+          htmlContent += '</div>';
+        });
+        htmlContent += '</div>';
       }
-    }
-  </style>
-  
-  <script>
-    // Fix any potential layout issues after page load
-    window.addEventListener('load', function() {
-      // Force reflow to fix potential rendering issues
-      document.body.style.display = 'none';
-      document.body.offsetHeight; // Trigger reflow
-      document.body.style.display = '';
       
-      console.log('PDF preview loaded successfully');
-    });
-  </script>
-</head>
-<body>
-  ${clonedElement.outerHTML}
-</body>
-</html>`;
+      if (cvData.skills?.length) {
+        htmlContent += '<div class="cv-section">';
+        htmlContent += '<h3>🛠️ Kỹ năng</h3>';
+        htmlContent += '<div class="skills-list">';
+        cvData.skills.forEach(skill => {
+          htmlContent += '<span class="skill-tag">' + (skill.name || skill);
+          if (skill.level) htmlContent += ' (' + skill.level + ')';
+          htmlContent += '</span>';
+        });
+        htmlContent += '</div>';
+        htmlContent += '</div>';
+      }
       
-      printWindow.document.open();
+      if (cvData.projects?.length) {
+        htmlContent += '<div class="cv-section">';
+        htmlContent += '<h3>🚀 Dự án</h3>';
+        cvData.projects.forEach(project => {
+          htmlContent += '<div class="project-item">';
+          htmlContent += '<strong>' + (project.name || 'Tên dự án') + '</strong>';
+          htmlContent += '<div class="date-range">' + (project.startDate || '') + ' - ' + (project.endDate || '') + '</div>';
+          htmlContent += '<p>' + (project.description || 'Mô tả dự án...') + '</p>';
+          if (project.technologies) htmlContent += '<p><strong>Công nghệ:</strong> ' + project.technologies + '</p>';
+          htmlContent += '</div>';
+        });
+        htmlContent += '</div>';
+      }
+      
+      htmlContent += '</div></body></html>';
+      
       printWindow.document.write(htmlContent);
       printWindow.document.close();
       
-      // Wait for all resources (including fonts and styles) to load
-      const waitForLoad = async () => {
-        try {
-          // Wait for document to be ready
-          await printWindow.document.fonts.ready;
-          
-          // Additional wait to ensure all styles are applied
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          printWindow.focus();
-          printWindow.print();
-          setIsExporting(false);
-        } catch (e) {
-          // Fallback if fonts.ready is not supported
-          setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-            setIsExporting(false);
-          }, 1500);
-        }
-      };
-      
-      // Start the loading process
-      if (printWindow.document.readyState === 'complete') {
-        waitForLoad();
-      } else {
-        printWindow.onload = waitForLoad;
-        // Fallback timeout
-        setTimeout(() => {
-          if (isExporting) {
-            waitForLoad();
-          }
-        }, 3000);
-      }
-      
-    } catch (error) {
-      console.error('Export error:', error);
-      alert('Có lỗi khi export PDF: ' + error.message);
-      setIsExporting(false);
-    }
+      setTimeout(() => {
+        printWindow.print();
+        alert('✅ Cửa sổ in đã mở! Chọn "Save as PDF" để lưu file PDF.');
+      }, 1000);
+    };
+    
+    console.log('🟢 Using browser print as PDF export');
+    printCV();
+    setIsExporting(false);
   };
 
   // Save CV function
@@ -358,7 +263,6 @@ const CVBuilder = () => {
     <div className="min-h-screen bg-gray-50">
       
 
-      
       <div className="flex h-screen">
         {/* Sidebar */}
         <div className={`${isSidebarOpen ? 'w-80' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300`}>
@@ -410,7 +314,6 @@ const CVBuilder = () => {
             <div className="p-4">
               <div className="space-y-1">
                 {[
-                  { id: 'template', label: 'Mẫu CV', icon: Palette },
                   { id: 'personal', label: 'Thông tin cá nhân', icon: User },
                   { id: 'summary', label: 'Tóm tắt', icon: FileText },
                   { id: 'work', label: 'Kinh nghiệm', icon: Briefcase },
@@ -446,24 +349,9 @@ const CVBuilder = () => {
             <div className="p-6">
               {cvData && (
                 <div>
-                  {activeTab === 'template' && (
-                    <TemplateSelector
-                      selectedTemplate={selectedTemplate}
-                      onSelectTemplate={handleTemplateSelect}
-                    />
-                  )}
                   {activeTab === 'personal' && (
                     <PersonalInfoForm
-                      personalInfo={cvData.personalInfo || {
-                        fullName: '',
-                        email: '',
-                        phone: '',
-                        address: '',
-                        website: '',
-                        linkedin: '',
-                        github: '',
-                        profileImage: ''
-                      }}
+                      data={cvData.personalInfo}
                       onChange={(data) => setCVData({...cvData, personalInfo: data})}
                     />
                   )}
@@ -481,31 +369,31 @@ const CVBuilder = () => {
                   )}
                   {activeTab === 'work' && (
                     <WorkExperienceForm
-                      workExperience={cvData.workExperience || []}
+                      data={cvData.workExperience}
                       onChange={(data) => setCVData({...cvData, workExperience: data})}
                     />
                   )}
                   {activeTab === 'education' && (
                     <EducationForm
-                      education={cvData.education || []}
+                      data={cvData.education}
                       onChange={(data) => setCVData({...cvData, education: data})}
                     />
                   )}
                   {activeTab === 'skills' && (
                     <SkillsForm
-                      skills={cvData.skills || []}
+                      data={cvData.skills}
                       onChange={(data) => setCVData({...cvData, skills: data})}
                     />
                   )}
                   {activeTab === 'projects' && (
                     <ProjectsForm
-                      projects={cvData.projects || []}
+                      data={cvData.projects}
                       onChange={(data) => setCVData({...cvData, projects: data})}
                     />
                   )}
                   {activeTab === 'certificates' && (
                     <CertificatesForm
-                      certificates={cvData.certificates || []}
+                      data={cvData.certificates}
                       onChange={(data) => setCVData({...cvData, certificates: data})}
                     />
                   )}
@@ -528,19 +416,15 @@ const CVBuilder = () => {
                   </button>
                 </div>
               </div>
-              <div className="p-6 flex justify-center items-start min-h-screen">
-                <div 
-                  style={{
+              <div className="p-6 flex justify-center">
+                <div style={{
                     zoom: scale,
                     transformOrigin: 'top center',
-                    transition: 'zoom 0.1s ease-out',
-                  }}
-                  className="shadow-2xl"
-                >
+                    transition: 'zoom 0.1s ease-out'
+                  }}>
                   <CVPreview
                     ref={cvContentRef}
                     cvData={cvData}
-                    template={selectedTemplate}
                   />
                 </div>
               </div>
@@ -553,4 +437,3 @@ const CVBuilder = () => {
 };
 
 export default CVBuilder;
-  

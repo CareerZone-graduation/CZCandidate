@@ -10,7 +10,7 @@ import CompactDenseTemplate from './templates/CompactDenseTemplate';
 import CreativeSplitTemplate from './templates/CreativeSplitTemplate';
 import ExecutiveFormalTemplate from './templates/ExecutiveFormalTemplate';
 
-const CVPreview = React.forwardRef(({ cvData, className = '' }, ref) => {
+const CVPreview = React.forwardRef(({ cvData, template, className = '' }, ref) => {
   // Ensure sectionOrder exists for backward compatibility
   const sectionOrder = cvData.sectionOrder || ['summary', 'experience', 'education', 'skills', 'projects', 'certificates'];
   
@@ -20,8 +20,11 @@ const CVPreview = React.forwardRef(({ cvData, className = '' }, ref) => {
     sectionOrder
   };
 
+  // Use the template prop if provided, otherwise fall back to cvData.template
+  const selectedTemplate = template || cvData.template || 'modern-blue';
+
   const renderTemplate = () => {
-    switch (cvData.template) {
+    switch (selectedTemplate) {
       case 'modern-blue':
         return <ModernBlueTemplate cvData={orderedCVData} />;
       case 'classic-white':
@@ -48,7 +51,18 @@ const CVPreview = React.forwardRef(({ cvData, className = '' }, ref) => {
   };
 
   return (
-    <div ref={ref} className={`cv-preview ${className}`} id="cv-preview">
+    <div 
+      ref={ref} 
+      className={`cv-preview ${className}`} 
+      id="cv-preview"
+      style={{
+        width: '210mm',
+        minHeight: '297mm',
+        backgroundColor: 'white',
+        margin: '0 auto',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      }}
+    >
       {renderTemplate()}
     </div>
   );
