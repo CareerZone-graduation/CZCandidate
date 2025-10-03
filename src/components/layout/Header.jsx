@@ -59,7 +59,8 @@ const Header = () => {
   const navLinks = [
     { to: "/jobs/search", label: "Tìm việc làm", title: 'Việc làm', href: '/jobs/search', icon: <Briefcase className="h-5 w-5" /> },
     { to: "/companies", label: "Công ty", title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
-    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> }
+    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> },
+    { to: "/editor", label: "Tạo CV", title: 'Tạo CV', href: '/editor', icon: <FileText className="h-5 w-5" /> }
   ];
 
   // Logic lấy tên viết tắt cho Avatar
