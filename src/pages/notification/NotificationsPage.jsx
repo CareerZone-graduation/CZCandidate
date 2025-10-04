@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { BellRing, CheckCheck } from 'lucide-react';
+import { BellRing, CheckCheck, BellPlus } from 'lucide-react';
+import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
 
 const NotificationItem = ({ notification }) => (
   <div className={cn(
@@ -53,6 +54,7 @@ const NotificationsPage = () => {
   const limit = 10;
   const queryClient = useQueryClient();
 
+  const { requestPermission } = useFirebaseMessaging();
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['notifications', page, limit],
     queryFn: () => getNotifications({ page, limit }),
@@ -152,15 +154,25 @@ const NotificationsPage = () => {
         <Card className="max-w-4xl mx-auto">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-2xl">Thông báo của bạn</CardTitle>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleMarkAllRead}
-                    disabled={mutation.isLoading || (data && !data.data.some(n => !n.read))}
-                >
-                    <CheckCheck className="mr-2 h-4 w-4" />
-                    Đánh dấu tất cả đã đọc
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={requestPermission}
+                  >
+                      <BellPlus className="mr-2 h-4 w-4" />
+                      Bật thông báo đẩy
+                  </Button>
+                  <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleMarkAllRead}
+                      disabled={mutation.isLoading || (data && !data.data.some(n => !n.read))}
+                  >
+                      <CheckCheck className="mr-2 h-4 w-4" />
+                      Đánh dấu tất cả đã đọc
+                  </Button>
+                </div>
             </CardHeader>
             <CardContent className="p-0">
                 {renderContent()}
