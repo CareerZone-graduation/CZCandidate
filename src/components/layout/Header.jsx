@@ -304,12 +304,14 @@ const Header = () => {
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 w-full border-b backdrop-blur-lg transition-all duration-300",
+      "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500 shadow-sm",
       isHeaderWhite
-        ? "bg-transparent border-white/20"
-        : "bg-background/80 border-border"
+        ? "bg-white/10 border-white/20 shadow-white/10"
+        : "bg-background/95 border-border shadow-md"
     )}>
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between relative">
+        {/* Gradient accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-center gap-6">
           {/* Mobile Menu */}
           <div className="md:hidden">
@@ -355,29 +357,42 @@ const Header = () => {
 
           {/* Desktop Logo & Navigation */}
           <div className="hidden items-center gap-8 md:flex">
-            <Link to="/" className="flex items-center space-x-2">
-              <span className={cn(
-                "font-bold text-xl transition-colors",
-                "text-foreground"
-              )}>
-                Career<span className={cn(
-                  "transition-colors",
-                  "text-primary"
-                )}>Zone</span>
-              </span>
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="relative">
+                <span className={cn(
+                  "font-bold text-2xl transition-all duration-300 group-hover:scale-105",
+                  "bg-gradient-to-r from-foreground to-foreground bg-clip-text"
+                )}>
+                  Career<span className={cn(
+                    "transition-all duration-300",
+                    "bg-gradient-to-r from-primary via-primary to-blue-600 bg-clip-text text-transparent",
+                    "group-hover:from-blue-600 group-hover:via-primary group-hover:to-primary"
+                  )}>Zone</span>
+                </span>
+                {/* Animated underline effect */}
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-full transition-all duration-500" />
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center space-x-2">
               {navLinks.map((link) => (
-                <Link key={link.title} to={link.href} className={cn(
-                  "transition-colors duration-300",
-                  isHeaderWhite
-                    ? "black font-semibold hover:text-primary"
-                    : "text-muted-foreground font-semibold hover:text-primary"
-
-                )}>
-                  {link.title}
+                <Link 
+                  key={link.title} 
+                  to={link.href} 
+                  className={cn(
+                    "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group",
+                    "hover:bg-primary/5 hover:scale-105",
+                    isHeaderWhite
+                      ? "text-foreground hover:text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  )}
+                >
+                  <span className="relative z-10">{link.title}</span>
+                  {/* Hover effect background */}
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {/* Bottom border animation */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-3/4 transition-all duration-300" />
                 </Link>
               ))}
             </nav>
@@ -394,22 +409,36 @@ const Header = () => {
                   variant="ghost"
                   size="icon"
                   onClick={handleNotificationClick}
-                  className="h-10 w-10 rounded-full relative hover:bg-emerald-50 transition-all duration-300"
+                  className={cn(
+                    "h-10 w-10 rounded-full relative transition-all duration-300 group",
+                    "hover:bg-gradient-to-br hover:from-emerald-50 hover:to-emerald-100/50",
+                    "hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-110",
+                    hasNewNotifications && "animate-pulse"
+                  )}
                   disabled={isLoadingNotifications}
                 >
                   {isLoadingNotifications ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
                   ) : hasNewNotifications ? (
-                    <BellDot className="h-5 w-5 text-emerald-600" />
+                    <BellDot className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
                   ) : (
-                    <Bell className="h-5 w-5 text-muted-foreground hover:text-emerald-600" />
+                    <Bell className="h-5 w-5 text-muted-foreground group-hover:text-emerald-600 group-hover:scale-110 transition-all" />
+                  )}
+                  {/* Ring effect for new notifications */}
+                  {hasNewNotifications && (
+                    <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
                   )}
                 </Button>
 
                 {/* Notification Badge */}
                 {notificationCount > 0 && !isLoadingNotifications && (
                   <Badge
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs font-bold rounded-full border-2 border-background"
+                    className={cn(
+                      "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0",
+                      "bg-gradient-to-br from-red-500 to-red-600 text-white text-xs font-bold",
+                      "rounded-full border-2 border-background shadow-lg",
+                      "animate-bounce"
+                    )}
                   >
                     {notificationCount > 99 ? '99+' : notificationCount}
                   </Badge>
@@ -417,9 +446,20 @@ const Header = () => {
 
                 {/* Notification Dropdown */}
                 {showNotificationDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-xl z-50 max-h-96 overflow-hidden" data-dropdown>
+                  <div 
+                    className={cn(
+                      "absolute right-0 top-full mt-2 w-96 bg-background/95 backdrop-blur-xl",
+                      "border border-border/50 rounded-2xl shadow-2xl z-50 max-h-96 overflow-hidden",
+                      "animate-in slide-in-from-top-2 fade-in-0 duration-300"
+                    )} 
+                    data-dropdown
+                  >
                     {/* Header */}
-                    <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-muted/50 to-muted/30"
+                      style={{
+                        backgroundImage: 'linear-gradient(135deg, hsl(var(--muted)) 0%, transparent 100%)'
+                      }}
+                    >
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-foreground">
                           Thông báo việc làm
@@ -540,92 +580,156 @@ const Header = () => {
               <div className="relative" data-dropdown>
                 <button
                   onClick={handleUserDropdownClick}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                  className={cn(
+                    "flex items-center space-x-3 p-2 rounded-xl transition-all duration-300 group",
+                    "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                    "hover:shadow-lg hover:shadow-primary/10 hover:scale-105"
+                  )}
                 >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={user?.profile?.avatar} alt={user?.fullname} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                      {getUserInitials(user)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="w-8 h-8 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all duration-300">
+                      <AvatarImage src={user?.profile?.avatar} alt={user?.fullname} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-blue-600/20 text-primary text-sm font-semibold">
+                        {getUserInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Online indicator */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background shadow-lg" />
+                  </div>
                   <div className="text-left">
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
                       Xin chào, {user?.profile?.fullname?.split(' ').slice(-1)[0] || 'bạn'}!
                     </div>
-                    <div className="text-sm text-muted-foreground truncate max-w-32">
+                    <div className="text-xs text-muted-foreground truncate max-w-32 group-hover:text-primary transition-colors">
                       {user?.profile?.fullname || 'Người dùng'}
                     </div>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className={cn(
+                    "h-4 w-4 text-muted-foreground transition-all duration-300",
+                    "group-hover:text-primary",
+                    showUserDropdown && "rotate-180"
+                  )} />
                 </button>
 
                 {/* Professional Dropdown Menu */}
                 {showUserDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-background border border-border rounded-xl shadow-2xl z-50 overflow-hidden" data-dropdown>
+                  <div 
+                    className={cn(
+                      "absolute right-0 top-full mt-2 w-80 bg-background/95 backdrop-blur-xl",
+                      "border border-border/50 rounded-2xl shadow-2xl z-50 overflow-hidden",
+                      "animate-in slide-in-from-top-2 fade-in-0 duration-300"
+                    )} 
+                    data-dropdown
+                  >
                     {/* User Profile Header */}
-                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-4 border-b border-border">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-                          <AvatarImage src={user?.profile?.avatar} alt={user?.profile?.fullname} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                            {getUserInitials(user)}
-                          </AvatarFallback>
-                        </Avatar>
+                    <div 
+                      className="relative px-6 py-4 border-b border-border overflow-hidden"
+                      style={{
+                        backgroundImage: 'linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, hsl(var(--primary) / 0.05) 100%)'
+                      }}
+                    >
+                      {/* Animated background elements */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-600/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+                      
+                      <div className="flex items-center space-x-4 relative z-10">
+                        <div className="relative">
+                          <Avatar className="w-14 h-14 ring-2 ring-primary/30 shadow-lg">
+                            <AvatarImage src={user?.profile?.avatar} alt={user?.profile?.fullname} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary/30 to-blue-600/30 text-primary font-bold text-lg">
+                              {getUserInitials(user)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {/* Online status with glow */}
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background shadow-lg">
+                            <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75" />
+                          </div>
+                        </div>
                         <div className="flex-1">
-                          <div className="font-semibold text-foreground">{user?.profile?.fullname || 'Người dùng'}</div>
-                          <div className="text-sm text-muted-foreground">{user?.user.email || ''}</div>
+                          <div className="font-bold text-foreground text-base">{user?.profile?.fullname || 'Người dùng'}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{user?.user.email || ''}</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Navigation Menu */}
-                    <div className="p-2">
+                    <div className="p-3">
                       <div className="space-y-1">
                         <Link
                           to="/dashboard"
-                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          <Home className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <div className="mr-3 p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Home className="h-4 w-4 text-primary" />
+                          </div>
                           <span className="font-medium">Tổng quan</span>
                         </Link>
 
                         <Link
                           to="/profile"
-                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          <User className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <div className="mr-3 p-1.5 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                            <User className="h-4 w-4 text-blue-600" />
+                          </div>
                           <span className="font-medium">Hồ sơ của tôi</span>
                         </Link>
 
                         <Link
                           to="/dashboard/saved-jobs"
-                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          <Bookmark className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <div className="mr-3 p-1.5 rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                            <Bookmark className="h-4 w-4 text-amber-600" />
+                          </div>
                           <span className="font-medium">Việc làm đã lưu</span>
                         </Link>
 
                         <Link
                           to="/dashboard/applications"
-                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          <FileText className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <div className="mr-3 p-1.5 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+                            <FileText className="h-4 w-4 text-emerald-600" />
+                          </div>
                           <span className="font-medium">Đơn ứng tuyển</span>
                         </Link>
 
                         <Link
                           to="/notifications"
-                          className="flex items-center px-3 py-2.5 text-sm text-foreground hover:bg-muted rounded-lg transition-colors group"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          <Bell className="mr-3 h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                          <div className="mr-3 p-1.5 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                            <Bell className="h-4 w-4 text-purple-600" />
+                          </div>
                           <span className="font-medium">Quản lý thông báo</span>
                           {notificationCount > 0 && (
-                            <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                            <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs animate-pulse">
                               {notificationCount}
                             </Badge>
                           )}
@@ -640,12 +744,19 @@ const Header = () => {
                         className="block px-3 py-2 mb-2"
                         onClick={() => setShowUserDropdown(false)}
                       >
-                        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                        <div className={cn(
+                          "flex items-center justify-between p-3 rounded-xl transition-all duration-300 cursor-pointer group",
+                          "bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100",
+                          "border border-amber-200/50 hover:border-amber-300",
+                          "hover:shadow-lg hover:shadow-amber-500/20 hover:scale-105"
+                        )}>
                           <div className="flex items-center space-x-2">
-                            <Coins className="h-4 w-4 text-yellow-600" />
-                            <span className="text-sm text-muted-foreground">Quản lý số dư</span>
+                            <div className="p-1.5 rounded-lg bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-colors">
+                              <Coins className="h-4 w-4 text-yellow-600" />
+                            </div>
+                            <span className="text-sm font-medium text-amber-900">Quản lý số dư</span>
                           </div>
-                          <div className="text-sm font-semibold text-foreground">
+                          <div className="text-sm font-bold text-amber-900 bg-yellow-100 px-2 py-1 rounded-lg">
                             {user?.user?.coinBalance?.toLocaleString() || 0} xu
                           </div>
                         </div>
@@ -653,9 +764,15 @@ const Header = () => {
 
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors group"
+                        className={cn(
+                          "flex items-center w-full px-3 py-2.5 text-sm text-destructive rounded-xl transition-all duration-300 group",
+                          "hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5",
+                          "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                        )}
                       >
-                        <LogOut className="mr-3 h-4 w-4" />
+                        <div className="mr-3 p-1.5 rounded-lg bg-destructive/10 group-hover:bg-destructive/20 transition-colors">
+                          <LogOut className="h-4 w-4" />
+                        </div>
                         <span className="font-medium">Đăng xuất</span>
                       </button>
                     </div>
@@ -665,18 +782,33 @@ const Header = () => {
             </div>
           ) : (
             <>
-              <Button variant="ghost" asChild className={cn(
-                isHeaderWhite ? "" : ""
-              )}>
-                <Link to="/login">
-                  <LogIn className="mr-2 h-4 w-4" /> Đăng nhập
+              <Button 
+                variant="ghost" 
+                asChild 
+                className={cn(
+                  "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
+                  "hover:bg-muted hover:shadow-md",
+                  isHeaderWhite ? "text-foreground" : ""
+                )}
+              >
+                <Link to="/login" className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" /> 
+                  <span>Đăng nhập</span>
                 </Link>
               </Button>
-              <Button asChild className={cn(
-                isHeaderWhite ? "bg-white text-primary hover:bg-white/90" : ""
-              )}>
-                <Link to="/register">
-                  <UserPlus className="mr-2 h-4 w-4" /> Đăng ký
+              <Button 
+                asChild 
+                className={cn(
+                  "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
+                  "bg-gradient-to-r from-primary via-primary to-blue-600",
+                  "hover:from-blue-600 hover:via-primary hover:to-primary",
+                  "hover:shadow-lg hover:shadow-primary/30",
+                  isHeaderWhite ? "text-white" : ""
+                )}
+              >
+                <Link to="/register" className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" /> 
+                  <span>Đăng ký</span>
                 </Link>
               </Button>
             </>

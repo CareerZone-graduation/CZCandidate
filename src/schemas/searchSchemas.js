@@ -79,7 +79,11 @@ export const hybridSearchJobSchema = z.object({
   // Weight parameters for RRF
   textWeight: z.coerce.number().min(0).max(1).default(0.4),
   vectorWeight: z.coerce.number().min(0).max(1).default(0.6),
-  userLocation: z.string().optional(),
+  
+  // Location filter by distance (exact radius filtering)
+  latitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-90, 'Latitude phải trong khoảng -90 đến 90').max(90, 'Latitude phải trong khoảng -90 đến 90').optional()),
+  longitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-180, 'Longitude phải trong khoảng -180 đến 180').max(180, 'Longitude phải trong khoảng -180 đến 180').optional()),
+  distance: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(1, 'Khoảng cách phải lớn hơn 0 km').optional()), // Bán kính lọc (km)
 })
   .refine(data => !data.minSalary || !data.maxSalary || data.maxSalary >= data.minSalary, {
     message: 'Mức lương tối đa phải lớn hơn hoặc bằng mức lương tối thiểu',
@@ -88,6 +92,16 @@ export const hybridSearchJobSchema = z.object({
   .refine(data => Math.abs((data.textWeight + data.vectorWeight) - 1) < 0.001, {
     message: 'Tổng trọng số text và vector phải bằng 1',
     path: ['vectorWeight'],
+  })
+  .refine(data => {
+    // Nếu có distance, phải có cả latitude và longitude
+    if (data.distance && (!data.latitude || !data.longitude)) {
+      return false;
+    }
+    return true;
+  }, {
+    message: 'Để lọc theo khoảng cách, bạn phải cung cấp cả latitude và longitude',
+    path: ['distance'],
   })
   .refine(data => {
     // Nếu có district nhưng không có province, thì không hợp lệ
@@ -121,7 +135,9 @@ export const searchParamsSchema = z.object({
   district: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.string().optional()),
   minSalary: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(0).optional()),
   maxSalary: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(0).optional()),
-  userLocation: z.string().optional(),
+  latitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-90).max(90).optional()),
+  longitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-180).max(180).optional()),
+  distance: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(1).optional()),
 });
 
 // Validation helper functions

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Filter, ArrowLeft } from 'lucide-react';
+import { Filter, ArrowLeft, Map, List } from 'lucide-react';
 import { searchJobsHybrid } from '@/services/jobService';
 import { validateSearchParams, validateHybridSearchRequest } from '@/schemas/searchSchemas';
 import { toast } from 'sonner';
@@ -16,6 +16,8 @@ import SearchFilters from './components/SearchInterface/SearchFilters';
 import JobResultsList from './components/SearchResults/JobResultsList';
 import SearchResultsHeader from './components/SearchResults/SearchResultsHeader';
 import ResultsPagination from './components/SearchResults/ResultsPagination';
+import JobMapView from './components/MapView/JobMapView';
+import { cn } from '@/lib/utils';
 
 /**
  * Main JobSearch page component
@@ -25,14 +27,13 @@ const JobSearch = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-
-  const [isNearMe, setIsNearMe] = useState(searchParams.get('userLocation') ? true : false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
 
   // Extract and validate search parameters from URL
   const rawParams = {
     query: searchParams.get('query') || '',
     page: searchParams.get('page') || 1,
-    size: searchParams.get('size') || 10, // Show all jobs when no search query
+    size: searchParams.get('size') || 10,
     category: searchParams.get('category') || '',
     type: searchParams.get('type') || '',
     workType: searchParams.get('workType') || '',
@@ -41,7 +42,9 @@ const JobSearch = () => {
     district: searchParams.get('district') || '',
     minSalary: searchParams.get('minSalary') || '',
     maxSalary: searchParams.get('maxSalary') || '',
-    userLocation: searchParams.get('userLocation') || ''
+    latitude: searchParams.get('latitude') || '',
+    longitude: searchParams.get('longitude') || '',
+    distance: searchParams.get('distance') || ''
   };
 
   // Validate URL parameters
@@ -68,7 +71,9 @@ const JobSearch = () => {
   const district = validatedParams.district || '';
   const minSalary = validatedParams.minSalary || '';
   const maxSalary = validatedParams.maxSalary || '';
-  const userLocationParam = validatedParams.userLocation || '';
+  const latitude = validatedParams.latitude || '';
+  const longitude = validatedParams.longitude || '';
+  const distance = validatedParams.distance || '';
 
   // Search parameters object for API calls
   const searchParameters = {
@@ -85,7 +90,9 @@ const JobSearch = () => {
     ...(district && { district }),
     ...(minSalary && { minSalary: parseInt(minSalary) }),
     ...(maxSalary && { maxSalary: parseInt(maxSalary) }),
-    ...(userLocationParam && { userLocation: userLocationParam })
+    ...(latitude && { latitude: parseFloat(latitude) }),
+    ...(longitude && { longitude: parseFloat(longitude) }),
+    ...(distance && { distance: parseFloat(distance) })
   };
 
   // Debug: Log search parameters
@@ -150,36 +157,6 @@ const JobSearch = () => {
     setSearchParams(newParams);
   };
 
-  const handleNearMeChange = (checked) => {
-    setIsNearMe(checked);
-    const newParams = new URLSearchParams(searchParams);
-    if (checked) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { longitude, latitude } = position.coords;
-            const locationString = `[${longitude}, ${latitude}]`;
-            newParams.set('userLocation', locationString);
-            newParams.set('page', 1);
-            setSearchParams(newParams);
-          },
-          (error) => {
-            toast.error('Không thể lấy vị trí của bạn. Vui lòng cấp quyền truy cập vị trí.');
-            console.error('Geolocation error:', error);
-            setIsNearMe(false);
-          }
-        );
-      } else {
-        toast.error('Trình duyệt của bạn không hỗ trợ định vị.');
-        setIsNearMe(false);
-      }
-    } else {
-      newParams.delete('userLocation');
-      newParams.set('page', 1);
-      setSearchParams(newParams);
-    }
-  };
-
   /**
    * Handle pagination
    * @param {number} newPage - New page number
@@ -202,7 +179,6 @@ const JobSearch = () => {
     newParams.set('page', '1');
     newParams.set('size', size.toString());
     setSearchParams(newParams);
-    setIsNearMe(false);
   };
 
   /**
@@ -221,26 +197,43 @@ const JobSearch = () => {
     province,
     district,
     minSalary,
-    maxSalary
+    maxSalary,
+    latitude,
+    longitude,
+    distance
   };
 
   // Check if any filters are applied
   const hasActiveFilters = Object.values(currentFilters).some(value => value !== '');
+  
+  // User location for map view (if distance filter is active)
+  const userLocationForMap = (latitude && longitude) ? `[${longitude}, ${latitude}]` : null;
 
   return (
     <div className="min-h-screen bg-background/80 backdrop-blur-sm relative z-10">
       {/* Header with search bar */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-        <div className="container py-4">
+      <div className={cn(
+        "sticky top-0 z-40",
+        "bg-background/80 backdrop-blur-xl",
+        "border-b-2 border-border/50",
+        "shadow-lg shadow-primary/5",
+        "transition-all duration-300"
+      )}>
+        <div className="container py-5">
           <div className="flex items-center gap-4">
-            {/* Back Button */}
+            {/* Back Button with enhanced styling */}
             <Button
               variant="ghost"
               size="icon"
               onClick={handleBackNavigation}
-              className="flex-shrink-0"
+              className={cn(
+                "flex-shrink-0 rounded-xl",
+                "hover:bg-primary/10 hover:scale-105",
+                "transition-all duration-300",
+                "border-2 border-transparent hover:border-primary/30"
+              )}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors duration-300" />
             </Button>
 
             {/* Search Bar */}
@@ -258,9 +251,18 @@ const JobSearch = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="lg:hidden flex-shrink-0"
+                  className={cn(
+                    "lg:hidden flex-shrink-0 rounded-xl",
+                    "border-2 border-primary/40 hover:border-primary",
+                    "hover:bg-primary/10 hover:scale-105",
+                    "transition-all duration-300",
+                    hasActiveFilters && "bg-primary/10 border-primary animate-pulse"
+                  )}
                 >
-                  <Filter className="h-5 w-5" />
+                  <Filter className={cn(
+                    "h-5 w-5 transition-colors duration-300",
+                    hasActiveFilters ? "text-primary" : "text-muted-foreground"
+                  )} />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0">
@@ -269,10 +271,6 @@ const JobSearch = () => {
                   <SearchFilters
                     filters={currentFilters}
                     onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearFilters}
-                    hasActiveFilters={hasActiveFilters}
-                    onNearMeChange={handleNearMeChange}
-                    isNearMe={isNearMe}
                   />
                 </div>
               </SheetContent>
@@ -283,79 +281,160 @@ const JobSearch = () => {
 
       {/* Main Content */}
       <div className="container py-6">
-        <div className="flex gap-6">
-          {/* Desktop Filters Sidebar */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-24">
-              <Card className="enhanced-card-with-background">
-                <CardContent className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+          {/* Desktop Filters Sidebar - Fixed Width */}
+          <aside className="hidden lg:block w-[320px]">
+            <div className="sticky top-28">
+              <Card className={cn(
+                "border-2 border-border/50 shadow-xl shadow-primary/5",
+                "bg-card/95 backdrop-blur-sm",
+                "hover:shadow-2xl hover:shadow-primary/10",
+                "transition-shadow duration-500",
+                "overflow-hidden relative"
+              )}>
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+                
+                <CardContent className="p-6 relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Bộ lọc tìm kiếm</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30">
+                        <Filter className="h-4 w-4 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        Bộ lọc
+                      </h3>
+                    </div>
                     {hasActiveFilters && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleClearFilters}
-                        className="text-primary hover:text-primary/80"
+                        className={cn(
+                          "text-xs font-semibold rounded-lg",
+                          "text-red-600 hover:text-red-700",
+                          "hover:bg-red-50/20 border border-transparent",
+                          "hover:border-red-500/30",
+                          "transition-all duration-300 hover:scale-105"
+                        )}
                       >
                         Xóa bộ lọc
                       </Button>
                     )}
                   </div>
-                  <Separator className="mb-4" />
+                  <Separator className="mb-4 bg-gradient-to-r from-transparent via-border to-transparent" />
                   <SearchFilters
                     filters={currentFilters}
                     onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearFilters}
-                    hasActiveFilters={hasActiveFilters}
-                    onNearMeChange={handleNearMeChange}
-                    isNearMe={isNearMe}
                   />
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </aside>
 
-          {/* Search Results */}
-          <div className="flex-1 min-w-0">
-            {/* Results Header - Fixed height to prevent layout shift */}
-            <div className="mb-6">
-              <SearchResultsHeader
-                query={query}
-                currentPage={page}
-                totalPages={searchResults?.meta?.totalPages || 0}
-                hasActiveFilters={hasActiveFilters}
-                onClearFilters={handleClearFilters}
-              />
+          {/* Search Results - Main Content Area */}
+          <main className="min-w-0">
+            {/* Results Header with View Mode Toggle */}
+            <div className="mb-8">
+              <Card className={cn(
+                "border-2 border-border/30 shadow-lg shadow-primary/5",
+                "bg-card/90 backdrop-blur-sm",
+                "transition-all duration-300"
+              )}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-4">
+                    {/* Search Results Header */}
+                    <div className="flex-1">
+                      <SearchResultsHeader
+                        query={query}
+                        currentPage={page}
+                        totalPages={searchResults?.meta?.totalPages || 0}
+                        hasActiveFilters={hasActiveFilters}
+                        onClearFilters={handleClearFilters}
+                      />
+                    </div>
+                    
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center justify-center sm:justify-end gap-2">
+                      <span className="text-sm text-muted-foreground font-medium mr-2">
+                        Hiển thị:
+                      </span>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className={cn(
+                          "transition-all duration-300",
+                          viewMode === 'list' && "btn-gradient text-white shadow-lg shadow-primary/20"
+                        )}
+                      >
+                        <List className="h-4 w-4 mr-2" />
+                        Danh sách
+                      </Button>
+                      <Button
+                        variant={viewMode === 'map' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setViewMode('map')}
+                        className={cn(
+                          "transition-all duration-300",
+                          viewMode === 'map' && "btn-gradient text-white shadow-lg shadow-primary/20"
+                        )}
+                      >
+                        <Map className="h-4 w-4 mr-2" />
+                        Bản đồ
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Results List - Min height to prevent layout shift */}
-            <div className="min-h-[600px]">
-              <JobResultsList
-                jobs={searchResults?.data || []}
-                isLoading={isLoading}
-                isError={isError}
-                error={error}
-                onRetry={refetch}
-                query={query}
-                userLocation={userLocationParam}
-                searchParameters={apiValidation.data || searchParameters}
-              />
-            </div>
-
-            {/* Pagination - Fixed position */}
-            <div className="mt-8 flex justify-center">
-              {searchResults?.data?.length > 0 && (
-                <ResultsPagination
-                  currentPage={page}
-                  totalPages={searchResults?.meta?.totalPages || 0}
-                  totalResults={searchResults?.meta?.total || 0}
-                  pageSize={size}
-                  onPageChange={handlePageChange}
+            {/* Conditional View - List or Map */}
+            {viewMode === 'list' ? (
+              /* Results List - Enhanced spacing */
+              <div className="min-h-[600px] space-y-4">
+                <JobResultsList
+                  jobs={searchResults?.data || []}
+                  isLoading={isLoading}
+                  isError={isError}
+                  error={error}
+                  onRetry={refetch}
+                  query={query}
+                  userLocation={userLocationForMap}
+                  searchParameters={apiValidation.data || searchParameters}
                 />
-              )}
-            </div>
-          </div>
+              </div>
+            ) : (
+              /* Map View */
+              <div className="min-h-[600px]">
+                <JobMapView
+                  jobs={searchResults?.data || []}
+                  isLoading={isLoading}
+                  userLocation={userLocationForMap}
+                />
+              </div>
+            )}
+
+            {/* Pagination - Enhanced with card background */}
+            {searchResults?.data?.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <Card className={cn(
+                  "border-2 border-border/30 shadow-lg shadow-primary/5",
+                  "bg-card/90 backdrop-blur-sm"
+                )}>
+                  <CardContent className="p-4">
+                    <ResultsPagination
+                      currentPage={page}
+                      totalPages={searchResults?.meta?.totalPages || 0}
+                      totalResults={searchResults?.meta?.total || 0}
+                      pageSize={size}
+                      onPageChange={handlePageChange}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </div>

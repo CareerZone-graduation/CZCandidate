@@ -139,7 +139,11 @@ export const searchJobsHybrid = async (params = {}) => {
     if (params.district) queryParams.append('district', params.district);
     if (params.minSalary) queryParams.append('minSalary', params.minSalary);
     if (params.maxSalary) queryParams.append('maxSalary', params.maxSalary);
-    if (params.userLocation) queryParams.append('userLocation', params.userLocation);
+    
+    // Location distance filter parameters
+    if (params.latitude !== undefined && params.latitude !== null) queryParams.append('latitude', params.latitude);
+    if (params.longitude !== undefined && params.longitude !== null) queryParams.append('longitude', params.longitude);
+    if (params.distance) queryParams.append('distance', params.distance);
     
     const url = `/jobs/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     console.log('Final URL:', url);

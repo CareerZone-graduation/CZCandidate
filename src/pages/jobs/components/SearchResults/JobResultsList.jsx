@@ -26,45 +26,65 @@ const JobResultsList = ({
    */
   const renderLoadingSkeleton = () => {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <Card key={index} className="border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
-            <CardContent className="p-6">
+          <Card 
+            key={index} 
+            className={cn(
+              "border-2 border-border/50 shadow-lg shadow-primary/5",
+              "bg-card/95 backdrop-blur-sm",
+              "overflow-hidden relative animate-pulse"
+            )}
+          >
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+            
+            <CardContent className="p-6 relative z-10">
               <div className="flex gap-4">
                 {/* Company Logo Skeleton */}
-                <Skeleton className="h-28 w-28 rounded-lg flex-shrink-0 bg-gradient-to-br from-primary/10 to-info/10" />
+                <Skeleton className={cn(
+                  "h-32 w-32 rounded-2xl flex-shrink-0",
+                  "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent"
+                )} />
                 
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-4">
                   {/* Job Title and Company */}
                   <div className="space-y-2">
-                    <Skeleton className="h-6 w-3/4 bg-gradient-to-r from-primary/10 to-info/10" />
-                    <Skeleton className="h-4 w-1/2 bg-gradient-to-r from-primary/10 to-info/10" />
+                    <Skeleton className="h-8 w-3/4 rounded-lg bg-gradient-to-r from-primary/15 to-primary/5" />
+                    <Skeleton className="h-5 w-1/2 rounded-lg bg-gradient-to-r from-primary/10 to-transparent" />
                   </div>
                   
                   {/* Badges */}
                   <div className="flex flex-wrap gap-2">
-                    <Skeleton className="h-6 w-20 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10" />
-                    <Skeleton className="h-6 w-24 rounded-md bg-gradient-to-r from-amber-500/10 to-orange-500/10" />
-                    <Skeleton className="h-6 w-28 rounded-md bg-gradient-to-r from-emerald-500/10 to-green-500/10" />
-                    <Skeleton className="h-6 w-22 rounded-md bg-gradient-to-r from-purple-500/10 to-violet-500/10" />
-                    <Skeleton className="h-6 w-24 rounded-md bg-gradient-to-r from-red-500/10 to-rose-500/10" />
+                    <Skeleton className="h-7 w-24 rounded-lg bg-gradient-to-r from-blue-500/15 to-cyan-500/10" />
+                    <Skeleton className="h-7 w-28 rounded-lg bg-gradient-to-r from-amber-500/15 to-orange-500/10" />
+                    <Skeleton className="h-7 w-32 rounded-lg bg-gradient-to-r from-emerald-500/15 to-green-500/10" />
+                    <Skeleton className="h-7 w-28 rounded-lg bg-gradient-to-r from-purple-500/15 to-violet-500/10" />
                   </div>
                   
                   {/* Description */}
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-full bg-gradient-to-r from-primary/10 to-info/10" />
-                    <Skeleton className="h-4 w-2/3 bg-gradient-to-r from-primary/10 to-info/10" />
+                    <Skeleton className="h-4 w-full rounded bg-gradient-to-r from-primary/10 to-transparent" />
+                    <Skeleton className="h-4 w-5/6 rounded bg-gradient-to-r from-primary/10 to-transparent" />
+                  </div>
+                  
+                  {/* Skills badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20 rounded-full bg-gradient-to-r from-primary/15 to-primary/5" />
+                    <Skeleton className="h-6 w-24 rounded-full bg-gradient-to-r from-primary/15 to-primary/5" />
+                    <Skeleton className="h-6 w-18 rounded-full bg-gradient-to-r from-primary/15 to-primary/5" />
+                    <Skeleton className="h-6 w-16 rounded-full bg-gradient-to-r from-primary/15 to-primary/5" />
                   </div>
                   
                   {/* Footer */}
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center pt-2">
                     <div className="flex gap-4">
-                      <Skeleton className="h-4 w-16 bg-gradient-to-r from-primary/10 to-info/10" />
-                      <Skeleton className="h-4 w-20 bg-gradient-to-r from-primary/10 to-info/10" />
+                      <Skeleton className="h-4 w-20 rounded bg-gradient-to-r from-primary/10 to-transparent" />
+                      <Skeleton className="h-4 w-24 rounded bg-gradient-to-r from-primary/10 to-transparent" />
                     </div>
-                    <div className="flex gap-2">
-                      <Skeleton className="h-8 w-20 rounded-md bg-gradient-to-r from-primary/10 to-info/10" />
-                      <Skeleton className="h-8 w-16 rounded-md bg-gradient-to-r from-primary/10 to-info/10" />
+                    <div className="flex gap-3">
+                      <Skeleton className="h-9 w-28 rounded-lg bg-gradient-to-r from-primary/15 to-primary/10" />
+                      <Skeleton className="h-9 w-24 rounded-lg bg-gradient-to-r from-primary/20 to-primary/15" />
                     </div>
                   </div>
                 </div>
@@ -131,7 +151,7 @@ const JobResultsList = ({
    */
   const renderJobResults = () => {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {jobs.map((job, index) => (
           <JobResultCard
             key={job.id || job._id || index}

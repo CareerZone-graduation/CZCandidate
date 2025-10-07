@@ -1,6 +1,4 @@
 import React from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
   jobCategoryEnum,
@@ -9,8 +7,9 @@ import {
   experienceEnum
 } from '@/schemas/searchSchemas';
 import FilterGroup from './FilterGroup';
-import SalaryRangeFilter from './SalaryRangeFilter';
+import SalaryRangeSlider from './SalaryRangeSlider';
 import LocationFilter from './LocationFilter';
+import DistanceFilter from './DistanceFilter';
 
 /**
  * Main SearchFilters component that combines all filter types
@@ -18,9 +17,7 @@ import LocationFilter from './LocationFilter';
  */
 const SearchFilters = ({
   filters = {},
-  onFilterChange,
-  onNearMeChange,
-  isNearMe
+  onFilterChange
 }) => {
   // Filter configurations aligned with searchSchemas.js
   const categoryOptions = [
@@ -135,18 +132,29 @@ const SearchFilters = ({
     });
   };
 
+  /**
+   * Handle distance filter changes
+   * @param {Object} distanceData - Object with distance, latitude, longitude
+   */
+  const handleDistanceChange = (distanceData) => {
+    onFilterChange({
+      ...filters,
+      distance: distanceData.distance,
+      latitude: distanceData.latitude,
+      longitude: distanceData.longitude
+    });
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="nearMe"
-          checked={isNearMe}
-          onCheckedChange={onNearMeChange}
-        />
-        <Label htmlFor="nearMe" className="font-medium">
-          Ưu tiên gần tôi
-        </Label>
-      </div>
+      {/* Distance Filter - New */}
+      <DistanceFilter
+        distance={filters.distance || ''}
+        latitude={filters.latitude || ''}
+        longitude={filters.longitude || ''}
+        onChange={handleDistanceChange}
+      />
+      
       <Separator />
       {/* Job Category Filter */}
       <FilterGroup
@@ -209,8 +217,8 @@ const SearchFilters = ({
 
       <Separator />
 
-      {/* Salary Range Filter */}
-      <SalaryRangeFilter
+      {/* Salary Range Slider - New Interactive Component */}
+      <SalaryRangeSlider
         minSalary={filters.minSalary || ''}
         maxSalary={filters.maxSalary || ''}
         onChange={handleSalaryChange}

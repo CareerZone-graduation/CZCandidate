@@ -134,38 +134,48 @@ const JobSearchBar = forwardRef(({
 
   return (
     <div className={cn("relative w-full", className)}>
-      <form onSubmit={handleSubmit} className="relative flex gap-2">
+      <form onSubmit={handleSubmit} className="relative flex gap-3">
         <div className="relative flex-1">
-          {/* Search Icon */}
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
+          {/* Search Icon with animation */}
+          <Search className={cn(
+            "absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 z-10",
+            "transition-all duration-300",
+            isActive ? "text-primary scale-110" : "text-muted-foreground"
+          )} />
           
-          {/* Input Field */}
-          <Input
-            ref={inputRef}
-            type="text"
-            placeholder={placeholder}
-            value={query}
-            onChange={(e) => handleInputChange(e.target.value)}  
-            onKeyDown={handleInputKeyDown}
-            onFocus={() => setIsActive(true)}
-            className={cn(
-              "pl-12 pr-4 h-12 text-base w-full",
-              "border-2 border-border focus:border-primary",
-              "focus:ring-4 focus:ring-primary/20",
-              "bg-background rounded-xl font-medium",
-              "placeholder:text-muted-foreground text-foreground",
-              "transition-all duration-200",
-              (showDropdown && isActive) && "rounded-b-none border-b-0"
-            )}
-            autoComplete="off"
-            role="combobox"
-            aria-expanded={showDropdown}
-            aria-haspopup="listbox"
-            aria-activedescendant={
-              selectedIndex >= 0 ? `suggestion-${selectedIndex}` : undefined
-            }
-            {...inputProps}
-          />
+          {/* Input Field with enhanced styling */}
+          <div className={cn(
+            "relative rounded-xl transition-all duration-300",
+            isActive && "shadow-lg shadow-primary/20"
+          )}>
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder={placeholder}
+              value={query}
+              onChange={(e) => handleInputChange(e.target.value)}  
+              onKeyDown={handleInputKeyDown}
+              onFocus={() => setIsActive(true)}
+              className={cn(
+                "pl-12 pr-4 h-14 text-base w-full",
+                "border-2 transition-all duration-300",
+                "bg-background rounded-xl font-medium",
+                "placeholder:text-muted-foreground text-foreground",
+                isActive 
+                  ? "border-primary focus:ring-4 focus:ring-primary/20 shadow-lg shadow-primary/10" 
+                  : "border-border hover:border-primary/50",
+                (showDropdown && isActive) && "rounded-b-none border-b-0"
+              )}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={showDropdown}
+              aria-haspopup="listbox"
+              aria-activedescendant={
+                selectedIndex >= 0 ? `suggestion-${selectedIndex}` : undefined
+              }
+              {...inputProps}
+            />
+          </div>
 
           {/* Autocomplete Dropdown - positioned relative to input container */}
           <AutocompleteDropdown
@@ -183,19 +193,25 @@ const JobSearchBar = forwardRef(({
               // Match input width and positioning
               "absolute top-full left-0 right-0 z-50",
               "border-t-0 rounded-t-none rounded-b-xl",
-              "border-2 border-primary focus-within:border-primary"
+              "border-2 border-primary focus-within:border-primary",
+              "shadow-lg shadow-primary/20"
             )}
           />
         </div>
 
-        {/* Search Button */}
+        {/* Enhanced Search Button with gradient */}
         <Button
           type="button"
           size="lg"
-          className="h-12 px-6 rounded-xl font-medium flex-shrink-0"
+          className={cn(
+            "h-14 px-8 rounded-xl font-semibold flex-shrink-0",
+            "btn-gradient text-primary-foreground",
+            "transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/30",
+            "group"
+          )}
           onClick={handleSearchButtonClick}
         >
-          <Search className="h-5 w-5 mr-2" />
+          <Search className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:scale-110" />
           Tìm kiếm
         </Button>
       </form>
