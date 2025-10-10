@@ -405,18 +405,19 @@ const JobSearch = () => {
                 />
               </div>
             ) : (
-              /* Map View */
+              /* Map View - No Pagination Needed */
               <div className="min-h-[600px]">
                 <JobMapView
-                  jobs={searchResults?.data || []}
+                  initialJobs={searchResults?.data || []}
                   isLoading={isLoading}
                   userLocation={userLocationForMap}
+                  searchFilters={searchParameters}
                 />
               </div>
             )}
 
-            {/* Pagination - Enhanced with card background */}
-            {searchResults?.data?.length > 0 && (
+            {/* Pagination - Only for List View */}
+            {viewMode === 'list' && searchResults?.data?.length > 0 && (
               <div className="mt-8 flex justify-center">
                 <Card className={cn(
                   "border-2 border-border/30 shadow-lg shadow-primary/5",

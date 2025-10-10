@@ -297,3 +297,93 @@ export const parseSearchParams = (searchString) => {
   
   return result;
 };
+
+// Tìm kiếm công việc theo bounding box trên bản đồ (dùng khi zoom >= 12)
+export const searchJobsOnMap = async (bounds) => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('sw_lat', bounds.sw_lat);
+    queryParams.append('sw_lng', bounds.sw_lng);
+    queryParams.append('ne_lat', bounds.ne_lat);
+    queryParams.append('ne_lng', bounds.ne_lng);
+    
+    // Luôn tuân thủ giới hạn của backend (max 50)
+    if (bounds.limit && bounds.limit <= 50) {
+      queryParams.append('limit', bounds.limit);
+    } else {
+      queryParams.append('limit', '50'); // Default safe limit
+    }
+    
+    // Thêm các filters bổ sung
+    if (bounds.category) queryParams.append('category', bounds.category);
+    if (bounds.experience) queryParams.append('experience', bounds.experience);
+    if (bounds.jobType) queryParams.append('jobType', bounds.jobType);
+    if (bounds.workType) queryParams.append('workType', bounds.workType);
+    if (bounds.province) queryParams.append('province', bounds.province);
+    if (bounds.district) queryParams.append('district', bounds.district);
+    
+    const url = `/jobs/map-search?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    
+    // Response structure: { success: true, data: [...], meta: {...} }
+    return response.data;
+  } catch (error) {
+    console.error('Error searching jobs on map:', error);
+    throw error;
+  }
+};
+
+// Lấy cụm công việc cho bản đồ (clustering) - dùng khi zoom < 12
+// Backend trả về mảng phẳng: [{ type: 'cluster', ... }, { type: 'single', ... }]
+export const getJobClusters = async (bounds, zoom) => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('sw_lat', bounds.sw_lat);
+    queryParams.append('sw_lng', bounds.sw_lng);
+    queryParams.append('ne_lat', bounds.ne_lat);
+    queryParams.append('ne_lng', bounds.ne_lng);
+    queryParams.append('zoom', zoom);
+    
+    // Thêm các filters bổ sung
+    if (bounds.category) queryParams.append('category', bounds.category);
+    if (bounds.experience) queryParams.append('experience', bounds.experience);
+    if (bounds.jobType) queryParams.append('jobType', bounds.jobType);
+    if (bounds.workType) queryParams.append('workType', bounds.workType);
+    if (bounds.province) queryParams.append('province', bounds.province);
+    if (bounds.district) queryParams.append('district', bounds.district);
+    
+    const url = `/jobs/map-clusters?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    
+    // Response structure: { success: true, data: [...] }
+    // data là mảng phẳng chứa cả clusters và single jobs
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching job clusters:', error);
+    throw error;
+  }
+};
+
+
+// Lấy các cụm công việc trên bản đồ
+export const getMapClusters = async (bounds) => {
+  const { sw_lat, sw_lng, ne_lat, ne_lng, zoom, ...filters } = bounds;
+  const queryParams = new URLSearchParams({
+    sw_lat: sw_lat.toString(),
+    sw_lng: sw_lng.toString(),
+    ne_lat: ne_lat.toString(),
+    ne_lng: ne_lng.toString(),
+    zoom: zoom.toString(),
+  });
+
+  // Thêm các filters bổ sung nếu có
+  if (filters.category) queryParams.append('category', filters.category);
+  if (filters.type) queryParams.append('type', filters.type);
+  if (filters.workType) queryParams.append('workType', filters.workType);
+  if (filters.experience) queryParams.append('experience', filters.experience);
+  if (filters.province) queryParams.append('province', filters.province);
+  if (filters.district) queryParams.append('district', filters.district);
+
+  const response = await apiClient.get(`/jobs/map-clusters?${queryParams.toString()}`);
+  return response.data;
+};
