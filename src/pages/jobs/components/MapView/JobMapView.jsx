@@ -14,7 +14,7 @@ import { searchJobsOnMap, getJobClusters } from '@/services/jobService';
 import { toast } from 'sonner';
 
 // Ngưỡng zoom để chuyển từ cluster sang marker chi tiết
-const ZOOM_THRESHOLD = 12;
+const ZOOM_THRESHOLD = 13;
 
 // Fix Leaflet default icon issue with Vite/Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -200,58 +200,40 @@ const JobMapView = ({
       let response;
       let processedJobs = [];
 
-      // Quyết định gọi API nào dựa trên zoom level
+      // ✅ ĐỀ XUẤT 2: Tách riêng 2 endpoints - logic đơn giản hơn
       if (zoom < ZOOM_THRESHOLD) {
-        // ZOOM XA: Gọi API clustering để nhận cụm từ server
-        console.log(`🗺️ Zoom ${zoom} < ${ZOOM_THRESHOLD}: Fetching clusters...`);
+        // ZOOM XA: Gọi API CHỈ LẤY CLUSTERS (không có singles)
+        console.log(`🗺️ Zoom ${zoom} < ${ZOOM_THRESHOLD}: Fetching ONLY clusters...`);
         response = await getJobClusters(boundsParams, zoom);
         
-        // ✅ DEBUG: Log response từ backend
-        console.log(`📦 [DEBUG] Cluster Response:`, response);
-        console.log(`📦 [DEBUG] Response length: ${response?.length || 0}`);
+        console.log(`📦 [Clusters API] Response:`, response);
         
-        // Response là mảng phẳng: [{ type: 'cluster', ... }, { type: 'single', ... }]
+        // Response CHỈ chứa clusters: [{ type: 'cluster', count, coordinates, jobIds }]
         if (response && Array.isArray(response)) {
-          // Tách ra clusters và single jobs để xử lý riêng
-          const clusterItems = response.filter(item => item.type === 'cluster');
-          const singles = response.filter(item => item.type === 'single');
-          
-          console.log(`📊 [DEBUG] Found ${clusterItems.length} clusters, ${singles.length} single jobs`);
-          
-          // Convert singles thành format job chuẩn để render
-          // ⚠️ CRITICAL: Phải map coordinates từ single item vào job object
-          const singleJobs = singles.map(item => ({
-            ...item.job,
-            coordinates: item.coordinates // ✅ Thêm coordinates từ item vào job
-          }));
-          
-          console.log(`🔍 [DEBUG] First single job:`, singleJobs[0]);
-          console.log(`🔍 [DEBUG] Has coordinates?`, singleJobs[0]?.coordinates);
-          
-          // ✅ Lưu cả clusters VÀ single jobs
-          setClusters(clusterItems); // Lưu clusters để render riêng
-          setJobs(singleJobs); // Lưu single jobs
-          setTotalJobsInView(clusterItems.length + singleJobs.length);
+          setClusters(response); // Backend CHỈ trả clusters
+          setJobs([]); // KHÔNG có single jobs ở zoom xa
+          setTotalJobsInView(response.reduce((sum, c) => sum + c.count, 0));
+          console.log(`✅ Loaded ${response.length} clusters with ${response.reduce((sum, c) => sum + c.count, 0)} total jobs`);
         } else {
-          console.warn('⚠️ [DEBUG] Invalid cluster response format');
+          console.warn('⚠️ Invalid cluster response format');
           setClusters([]);
           setJobs([]);
           setTotalJobsInView(0);
         }
       } else {
-        // ZOOM GẦN: Gọi API lấy jobs chi tiết với giới hạn hợp lệ
-        console.log(`📍 Zoom ${zoom} >= ${ZOOM_THRESHOLD}: Fetching individual jobs...`);
-        boundsParams.limit = 50; // Tuân thủ giới hạn của backend
+        // ZOOM GẦN: Gọi API CHỈ LẤY JOBS (không có clusters)
+        console.log(`📍 Zoom ${zoom} >= ${ZOOM_THRESHOLD}: Fetching ONLY individual jobs...`);
+        boundsParams.limit = 50; // Giới hạn 50 jobs
         response = await searchJobsOnMap(boundsParams);
         
-        // ✅ DEBUG: Log response
-        console.log(`📦 [DEBUG] Individual Jobs Response:`, response);
+        console.log(`📦 [Jobs API] Response:`, response);
         
-        // Response structure: { data: [...], meta: {...} }
+        // Response CHỈ chứa jobs: { data: [...], meta: {...} }
         if (response && response.data) {
-          setClusters([]); // Clear clusters khi zoom gần
-          setJobs(response.data);
+          setClusters([]); // KHÔNG có clusters ở zoom gần
+          setJobs(response.data); // Backend CHỈ trả jobs
           setTotalJobsInView(response.meta?.totalItems || response.data.length);
+          console.log(`✅ Loaded ${response.data.length} individual jobs`);
         }
       }
     } catch (error) {
