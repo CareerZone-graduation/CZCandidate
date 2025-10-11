@@ -18,7 +18,7 @@ export const updateProfile = async (profileData) => {
 
 // Upload avatar
 export const uploadAvatar = async (formData) => {
-  const response = await apiClient.post('/candidate/upload-avatar', formData, {
+  const response = await apiClient.patch('/candidate/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -50,12 +50,14 @@ export const deleteCV = async (cvId) => {
 
 // Set CV mặc định
 export const setDefaultCV = async (cvId) => {
-  const response = await apiClient.put(`/candidate/cvs/${cvId}/set-default`);
+  const response = await apiClient.patch(`/candidate/cvs/${cvId}/set-default`);
   return response.data;
 };
 
-// Download CV
+// Download CV - Note: Backend doesn't have download endpoint, CV path is direct URL
 export const downloadCV = async (cvId) => {
+  // Since backend returns direct Cloudinary URLs, we can just fetch them
+  // This is a placeholder - actual implementation would fetch from cv.path
   const response = await apiClient.get(`/candidate/cvs/${cvId}/download`, {
     responseType: 'blob',
   });

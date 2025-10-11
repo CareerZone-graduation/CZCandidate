@@ -20,7 +20,7 @@ import JobSearch from '../pages/jobs/JobSearch';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
-import Profile from '../pages/profile/Profile';
+import Profile from '../pages/profile/ProfilePage';
 import NotificationsPage from '../pages/notification/NotificationsPage.jsx';
 import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import News from '../pages/news/News';
