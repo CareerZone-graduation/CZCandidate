@@ -973,3 +973,178 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   background: rgba(31, 41, 55, 1);
   border-color: rgb(34, 197, 94);
 }
+
+/* ===== CV Preview & Export Styles ===== */
+/* Đảm bảo preview và export giống nhau 100% */
+
+/* Base CV container styles */
+.cv-preview {
+  width: 210mm;
+  min-height: 297mm;
+  height: auto;
+  background-color: white;
+  box-sizing: border-box;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Page break visualization in preview mode */
+.cv-preview::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 297mm;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e5e7eb 0px,
+    #e5e7eb 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Additional page break lines for multi-page CVs */
+.cv-preview-page-break {
+  position: relative;
+  margin-top: 297mm;
+}
+
+.cv-preview-page-break::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e5e7eb 0px,
+    #e5e7eb 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Ensure consistent rendering across preview and print */
+.cv-preview * {
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Reset page margins */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    height: auto;
+  }
+  
+  /* Ensure CV takes full width */
+  .cv-preview {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+  }
+  
+  /* Prevent page breaks inside individual items */
+  .cv-preview section > div,
+  .cv-preview .space-y-6 > div,
+  .cv-preview .space-y-4 > div,
+  .cv-preview .space-y-3 > div,
+  .cv-preview .grid > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Prevent orphaned headers */
+  .cv-preview h1,
+  .cv-preview h2,
+  .cv-preview h3,
+  .cv-preview h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  
+  /* Allow sections to break between items */
+  .cv-preview section {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+  
+  /* Ensure colors and backgrounds print correctly */
+  .cv-preview,
+  .cv-preview * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Force consistent grid layout in print - ignore responsive breakpoints */
+  .cv-preview .grid {
+    display: grid !important;
+  }
+  
+  /* Skills section: always 3 columns in print */
+  .cv-preview section .grid.grid-cols-1.md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  /* Other common grid patterns */
+  .cv-preview .grid.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* Hide non-printable elements */
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Screen preview styles - match print appearance */
+@media screen {
+  .cv-preview {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* When zoomed for preview, maintain aspect ratio */
+  .cv-preview[style*="zoom"] {
+    transform-origin: top center;
+  }
+  
+  /* Force consistent layout in preview - ignore responsive breakpoints */
+  /* This ensures preview matches export exactly */
+  
+  /* 3-column grids (Skills, etc.) */
+  .cv-preview .grid.grid-cols-1.md\:grid-cols-3,
+  .cv-preview .grid.md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  /* 2-column grids (Projects, Certificates, etc.) */
+  .cv-preview .grid.grid-cols-1.md\:grid-cols-2,
+  .cv-preview .grid.md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* Ensure grid display is maintained */
+  .cv-preview .grid {
+    display: grid !important;
+  }
+}

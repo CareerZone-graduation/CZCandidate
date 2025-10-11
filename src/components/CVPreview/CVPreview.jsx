@@ -55,13 +55,6 @@ const CVPreview = React.forwardRef(({ cvData, template, className = '' }, ref) =
       ref={ref} 
       className={`cv-preview ${className}`} 
       id="cv-preview"
-      style={{
-        width: '210mm',
-        minHeight: '297mm',
-        backgroundColor: 'white',
-        margin: '0 auto',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}
     >
       {renderTemplate()}
     </div>

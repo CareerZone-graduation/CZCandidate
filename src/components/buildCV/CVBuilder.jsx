@@ -178,7 +178,7 @@ const CVBuilder = () => {
         }
       });
 
-      // Build complete HTML document with A4 full size
+      // Build complete HTML document with A4 full size and multi-page support
       const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -205,15 +205,16 @@ const CVBuilder = () => {
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
+      height: auto;
       overflow-x: hidden;
     }
     
-    /* CV container at full A4 size */
+    /* CV container - allow auto height for multiple pages */
     #cv-preview,
     .cv-preview {
       width: 210mm !important;
       min-height: 297mm !important;
+      height: auto !important;
       box-sizing: border-box !important;
     }
     
@@ -235,12 +236,31 @@ const CVBuilder = () => {
         margin: 0;
         padding: 0;
         width: 210mm;
-        height: 297mm;
+        height: auto;
       }
       
-      /* Prevent page breaks inside important elements */
-      .cv-preview, .cv-section {
+      /* Allow page breaks but prevent breaking inside small items */
+      .cv-preview {
+        page-break-inside: auto !important;
+      }
+      
+      /* Prevent page breaks inside individual items */
+      .cv-preview section > div,
+      .cv-preview .space-y-6 > div,
+      .cv-preview .space-y-4 > div,
+      .cv-preview .space-y-3 > div {
         page-break-inside: avoid;
+      }
+      
+      /* Prevent orphaned section headers */
+      .cv-preview h2,
+      .cv-preview h3 {
+        page-break-after: avoid;
+      }
+      
+      /* Ensure sections can break between items */
+      .cv-preview section {
+        page-break-inside: auto;
       }
     }
     
@@ -263,7 +283,7 @@ const CVBuilder = () => {
       document.body.offsetHeight; // Trigger reflow
       document.body.style.display = '';
       
-      console.log('PDF preview loaded successfully');
+      console.log('PDF preview loaded successfully - Multi-page support enabled');
     });
   </script>
 </head>
