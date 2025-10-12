@@ -15,12 +15,13 @@ export const mapToBackend = (frontendCv) => {
     projects,
     certificates,
     sectionOrder,
+    hiddenSections, // Thêm hiddenSections
     template // Thêm template
   } = frontendCv;
 
   return {
     // Backend mong muốn một 'title', 'templateId' và một object 'cvData'
-    title: personalInfo.fullName || 'Untitled CV',
+    title: personalInfo?.fullName || 'Untitled CV',
     templateId: template,
     cvData: {
       personalInfo,
@@ -31,7 +32,8 @@ export const mapToBackend = (frontendCv) => {
       projects,
       certificates,
       sectionOrder,
-      template, // <-- THÊM DÒNG NÀY
+      hiddenSections: hiddenSections || [], // Đảm bảo luôn có array
+      template,
     },
   };
 };
@@ -54,6 +56,7 @@ export const mapToFrontend = (backendCv) => {
     projects: [],
     certificates: [],
     sectionOrder: ['summary', 'experience', 'education', 'skills', 'projects', 'certificates'],
+    hiddenSections: [], // Thêm hiddenSections mặc định
   };
   
   return {
@@ -63,6 +66,8 @@ export const mapToFrontend = (backendCv) => {
     // Ưu tiên template từ cvData, nếu không có thì dùng templateId ở cấp cao nhất
     // để đảm bảo tương thích ngược và xử lý đúng khi tạo CV mới.
     template: cvData.template || templateId,
+    // Đảm bảo hiddenSections luôn là array
+    hiddenSections: cvData.hiddenSections || [],
     createdAt,
     updatedAt,
   };
