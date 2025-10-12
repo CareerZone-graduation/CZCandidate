@@ -3,6 +3,8 @@ import { Toaster } from 'sonner';
 import SimpleAnimatedBackground from '@/components/background/SimpleAnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
+import { Route } from 'lucide-react';
+import CVRenderOnlyPage from './pages/cv/CVRenderOnlyPage';
 
 function App() {
   useFirebaseMessaging();
@@ -10,11 +12,15 @@ function App() {
   // to better handle the initialization state and prevent race conditions with routing.
   // This keeps the App component clean and focused on rendering the router.
   return (
+    <>
     <BackgroundProvider>
       <SimpleAnimatedBackground />
       <AppRouter />
       <Toaster position="top-center" richColors />
     </BackgroundProvider>
+
+      <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
+    </>
   );
 }
 

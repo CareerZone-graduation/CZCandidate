@@ -3,70 +3,70 @@ export const cvTemplates = [
     id: 'modern-blue',
     name: 'Modern Blue',
     description: 'Clean and professional with blue accents',
-    preview: 'modern-blue-preview',
+    thumbnail: '/assets/modern-blue-preview.png',
     category: 'Modern'
   },
   {
     id: 'classic-white',
     name: 'Classic White',
     description: 'Traditional layout with clean typography',
-    preview: 'classic-white-preview',
+    thumbnail: '/assets/classic-white-preview.png',
     category: 'Classic'
   },
   {
     id: 'creative-gradient',
     name: 'Creative Gradient',
     description: 'Eye-catching design with gradient elements',
-    preview: 'creative-gradient-preview',
+    thumbnail: '/assets/creative-gradient-preview.png',
     category: 'Creative'
   },
   {
     id: 'minimal-gray',
     name: 'Minimal Gray',
     description: 'Simple and elegant minimalist design',
-    preview: 'minimal-gray-preview',
+    thumbnail: '/assets/minimal-gray-preview.png',
     category: 'Minimal'
   },
   {
     id: 'two-column-sidebar',
     name: 'Two Column Sidebar',
     description: 'Professional 2-column layout with sidebar',
-    preview: 'two-column-sidebar-preview',
+    thumbnail: '/assets/two-column-sidebar-preview.png',
     category: 'Two Column'
   },
   {
     id: 'elegant-serif',
     name: 'Elegant Serif',
     description: 'Sophisticated serif typography with classic feel',
-    preview: 'elegant-serif-preview',
+    thumbnail: '/assets/elegant-serif-preview.png',
     category: 'Classic'
   },
   {
     id: 'modern-sans',
     name: 'Modern Sans',
     description: 'Clean sans-serif with modern spacing',
-    preview: 'modern-sans-preview',
+    thumbnail: '/assets/modern-sans-preview.png',
     category: 'Modern'
   },
   {
     id: 'compact-dense',
     name: 'Compact Dense',
     description: 'Space-efficient layout for extensive content',
-    preview: 'compact-dense-preview',
+    thumbnail: '/assets/compact-dense-preview.png',
     category: 'Compact'
   },
   {
     id: 'creative-split',
     name: 'Creative Split',
     description: 'Bold split-screen design with color blocks',
-    preview: 'creative-split-preview',
+    thumbnail: '/assets/creative-split-preview.png',
     category: 'Creative'
   },
   {
     id: 'executive-formal',
     name: 'Executive Formal',
     description: 'Premium formal design for senior positions',
-    preview: 'executive-formal-preview',
+    thumbnail: '/assets/executive-formal-preview.png',
     category: 'Executive'
   }
 ];

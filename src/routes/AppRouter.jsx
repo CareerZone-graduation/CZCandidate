@@ -33,6 +33,7 @@ import AnimatedBackgroundDemo from '../pages/demo/AnimatedBackgroundDemo';
 import CompanyDetail from '../pages/company/CompanyDetail';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVRenderOnlyPage from '../pages/cv/CVRenderOnlyPage';
+import CVListPage from '../pages/cv/CVListPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -79,7 +80,15 @@ const AppRouter = () => {
           <Route path="/demo/background" element={<AnimatedBackgroundDemo />} />
           <Route path="/editor" element={<CVBuilder />} />
           <Route path="/editor/:cvId" element={<CVBuilder />} />
-          <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
+        </Route>
+
+        {/* CV Render Page is now handled by render.html, this route is deprecated */}
+
+        {/* Protected CV Management routes */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/my-cvs" element={<MainLayout />}>
+            <Route index element={<CVListPage />} />
+          </Route>
         </Route>
 
         {/* Auth routes */}

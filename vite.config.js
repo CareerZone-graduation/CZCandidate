@@ -15,6 +15,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        render: path.resolve(__dirname, 'render.html'),
+      },
+    },
+  },
   server: {
     // https: true,       // bật https
     https: false,       // bật https

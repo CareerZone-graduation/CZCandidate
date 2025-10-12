@@ -50,7 +50,8 @@ const PaginatedCVPreview = React.forwardRef(({ cvData, className = '' }, ref) =>
   useEffect(() => {
     const measureAndPaginate = async () => {
       if (!measureRef.current) return;
-
+// Xóa tín hiệu cũ đi trước khi bắt đầu tính toán lại
+      document.body.removeAttribute('data-cv-ready');
       const tempContainer = measureRef.current;
       const sectionsData = [];
 
@@ -114,6 +115,12 @@ const PaginatedCVPreview = React.forwardRef(({ cvData, className = '' }, ref) =>
       }
 
       setPages(paginatedPages);
+      // ✅ BƯỚC QUAN TRỌNG: BÁO HIỆU CHO PUPPETEER RẰNG ĐÃ XONG!
+      // Dùng setTimeout nhỏ để đảm bảo React đã render xong sau khi setPages
+      setTimeout(() => {
+        document.body.setAttribute('data-cv-ready', 'true');
+        console.log('✅ CV is ready for PDF export!');
+      }, 0);
     };
 
     // Delay measurement to ensure DOM is ready
