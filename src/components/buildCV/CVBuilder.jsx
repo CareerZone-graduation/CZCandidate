@@ -6,6 +6,7 @@ import { getCvById, createCvFromTemplate, updateCv, exportPdf as exportPdfApi } 
 import { mapToFrontend, mapToBackend } from '../../utils/dataMapper';
 import { sampleCVData } from '../../data/sampleData';
 import CVPreview from '../CVPreview/CVPreview';
+import CVPaginatedPreview from '../CVPreview/CVPaginatedPreview';
 import TemplateSelector from './TemplateSelector_new';
 import PersonalInfoForm from '../forms/PersonalInfoForm';
 import WorkExperienceForm from '../forms/WorkExperienceForm';
@@ -41,7 +42,8 @@ const CVBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [scale, setScale] = useState(0.65); // A4 thu nhỏ cho preview
-  const cvContentRef = useRef(null);
+  const cvContentRef = useRef(null); // For paginated preview
+  const cvExportRef = useRef(null); // For export (no pagination)
   const [cvData, setCVData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -129,11 +131,11 @@ const CVBuilder = () => {
     setIsExporting(true);
     
     try {
-      // Get the preview content from the ref
-      const previewElement = cvContentRef.current;
+      // Get the export content (non-paginated) from the ref
+      const previewElement = cvExportRef.current;
       
       if (!previewElement) {
-        alert('Không tìm thấy preview content.');
+        alert('Không tìm thấy export content.');
         setIsExporting(false);
         return;
       }
@@ -186,9 +188,7 @@ const CVBuilder = () => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV - ${cvData.personalInfo?.fullName || 'CV'}</title>
-  
-  <!-- Include stylesheet links -->
-  ${styleLinks}
+    ${styleLinks}
   
   <style>
     /* Include all existing styles */
@@ -551,22 +551,33 @@ const CVBuilder = () => {
               <div className="p-6 flex justify-center items-start min-h-screen">
                 <div 
                   style={{
-                    zoom: scale,
+                    transform: `scale(${scale})`,
                     transformOrigin: 'top center',
-                    transition: 'zoom 0.1s ease-out',
+                    transition: 'transform 0.1s ease-out',
                   }}
                   className="shadow-2xl"
                 >
-                  <CVPreview
-                    ref={cvContentRef}
-                    cvData={cvData}
-                    template={selectedTemplate}
-                  />
+                  {/* <CVPaginatedPreview ref={cvContentRef}> */}
+                    <CVPreview
+                      ref={cvContentRef}
+                      cvData={cvData}
+                      template={selectedTemplate}
+                    />
+                  {/* </CVPaginatedPreview> */}
                 </div>
               </div>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Hidden CV for export (no pagination) */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
+        <CVPreview
+          ref={cvExportRef}
+          cvData={cvData}
+          template={selectedTemplate}
+        />
       </div>
     </div>
   );
