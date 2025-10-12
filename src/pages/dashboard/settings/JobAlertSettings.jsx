@@ -1,408 +1,473 @@
-import React, { useState } from 'react';
-import { 
-  Bell, BellOff, Plus, Edit3, Trash2, Search, Filter, 
-  Clock, MapPin, DollarSign, Briefcase, Tag, Eye, EyeOff,
-  AlertCircle, CheckCircle2, Calendar
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Bell,
+  BellOff,
+  MapPin,
+  Briefcase,
+  Clock,
+  DollarSign,
+  Laptop,
+  GraduationCap,
+  Mail,
+  Smartphone,
+  MoreVertical
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Skeleton } from '../../../components/ui/skeleton';
-import { useJobAlerts } from '../../notification/useJobAlerts';
-import { CreateJobAlertDialog } from '../../notification/components/CreateJobAlertDialog';
-import { EditJobAlertDialog } from '../../notification/components/EditJobAlertDialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/common/ErrorState';
+import { EmptyState } from '@/components/common/EmptyState';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { getMyJobAlerts, deleteJobAlert, updateJobAlert } from '@/services/jobAlertService';
+import {
+  getFrequencyLabel,
+  getSalaryRangeLabel,
+  getWorkTypeLabel,
+  getExperienceLabel,
+  getCategoryLabel,
+  getNotificationMethodLabel,
+} from '@/constants/jobAlertEnums';
+import JobAlertDialog from '@/components/jobs/JobAlertDialog';
+import { cn } from '@/lib/utils';
 
 const JobAlertSettings = () => {
-  const {
-    alerts,
-    isLoading,
-    isSaving,
-    isDeleting,
-    error,
-    totalItems,
-    currentPage,
-    totalPages,
-    createAlert,
-    updateAlert,
-    deleteAlert,
-    toggleAlertStatus,
-    handlePageChange,
-    activeAlerts,
-    hasAlerts,
-    canCreateMore
-  } = useJobAlerts();
+  const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Local state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingAlert, setEditingAlert] = useState(null);
-
-  // Filter alerts
-  const filteredAlerts = alerts.filter(alert => {
-    const matchesSearch = !searchTerm || 
-      (alert.name && alert.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (alert.keyword && alert.keyword.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = filterStatus === 'all' || 
-      (filterStatus === 'active' && alert.active) ||
-      (filterStatus === 'inactive' && !alert.active);
-    
-    return matchesSearch && matchesStatus;
+  // Fetch job alerts
+  const { data: alerts, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['jobAlerts'],
+    queryFn: getMyJobAlerts,
   });
 
-  // Handlers
-  const handleCreateAlert = async (alertData) => {
-    const success = await createAlert(alertData);
-    if (success) {
-      setShowCreateDialog(false);
-    }
-    return success;
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteJobAlert(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobAlerts'] });
+      toast.success('Đã xóa thông báo việc làm');
+      setDeleteDialogOpen(false);
+      setSelectedAlert(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Không thể xóa thông báo');
+    },
+  });
+
+  // Toggle active mutation
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, alertData }) => updateJobAlert(id, alertData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['jobAlerts'] });
+      toast.success(variables.alertData.active ? 'Đã bật thông báo' : 'Đã tắt thông báo');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Không thể cập nhật thông báo');
+    },
+  });
+
+  const handleDelete = (alert) => {
+    setSelectedAlert(alert);
+    setDeleteDialogOpen(true);
   };
 
-  const handleUpdateAlert = async (updateData) => {
-    if (!editingAlert) return false;
-    
-    const success = await updateAlert(editingAlert._id, updateData);
-    if (success) {
-      setEditingAlert(null);
-    }
-    return success;
+  const handleEdit = (alert) => {
+    setSelectedAlert(alert);
+    setEditDialogOpen(true);
   };
 
-  const handleDeleteAlert = async (id, name) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa đăng ký "${name}"?`)) {
-      await deleteAlert(id);
-    }
-  };
-
-  const handleToggleAlert = async (id, isActive) => {
-    await toggleAlertStatus(id, isActive);
-  };
-
-  // Format functions
-  const formatFrequency = (frequency) => {
-    const frequencyMap = {
-      daily: 'Hàng ngày',
-      weekly: 'Hàng tuần',
-      immediate: 'Ngay lập tức'
+  const handleToggleActive = (alert) => {
+    // Send full alert data with only active field changed
+    const alertData = {
+      keyword: alert.keyword,
+      location: alert.location,
+      frequency: alert.frequency,
+      salaryRange: alert.salaryRange,
+      type: alert.type,
+      workType: alert.workType,
+      experience: alert.experience,
+      category: alert.category,
+      notificationMethod: alert.notificationMethod,
+      active: !alert.active,
     };
-    return frequencyMap[frequency] || frequency;
+    toggleActiveMutation.mutate({ id: alert._id, alertData });
   };
 
-  // Loading skeleton
-  if (isLoading && !hasAlerts) {
+  const confirmDelete = () => {
+    if (selectedAlert) {
+      deleteMutation.mutate(selectedAlert._id);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="space-y-6">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="p-6"><div className="space-y-4"><div className="flex justify-between"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-8 w-20" /></div><Skeleton className="h-4 w-full" /><div className="flex gap-2"><Skeleton className="h-6 w-16" /><Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-24" /></div></div></Card>
-              ))}
-            </div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-80" />
+            <Skeleton className="h-5 w-96" />
           </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+
+        {/* Cards Skeleton */}
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-2 shadow-sm">
+              <CardHeader className="pb-4 pl-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <Skeleton className="h-6 w-40" />
+                    </div>
+                    <div className="flex items-center gap-2 pl-0.5">
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pl-5">
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+                <Skeleton className="h-11 w-full rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
+  if (isError) {
+    const errorMessage = error.response?.data?.message || error.message;
+    return <ErrorState onRetry={refetch} message={errorMessage} />;
+  }
+
+  const canAddMore = !alerts || alerts.length < 3;
+
+  const getNotificationIcon = (method) => {
+    switch (method) {
+      case 'EMAIL':
+        return <Mail className="h-3.5 w-3.5" />;
+      case 'APPLICATION':
+        return <Smartphone className="h-3.5 w-3.5" />;
+      case 'BOTH':
+        return <Mail className="h-3.5 w-3.5" />;
+      default:
+        return <Bell className="h-3.5 w-3.5" />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-green-50 to-teal-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-4xl font-bold bg-linear-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent mb-2">
-                  Đăng ký nhận thông báo
-                </h1>
-                <p className="text-lg text-gray-600">
-                  Quản lý các tiêu chí để nhận thông báo việc làm phù hợp
-                </p>
-              </div>
-              
-              {canCreateMore && (
-                <Button
-                  onClick={() => setShowCreateDialog(true)}
-                  className="bg-linear-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Tạo đăng ký mới
-                </Button>
-              )}
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tổng số đăng ký</p>
-                      <p className="text-3xl font-bold text-gray-900">{totalItems}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <Bell className="h-6 w-6 text-emerald-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-                      <p className="text-3xl font-bold text-green-600">{activeAlerts.length}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="h-6 w-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tạm dừng</p>
-                      <p className="text-3xl font-bold text-orange-600">{totalItems - activeAlerts.length}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                      <BellOff className="h-6 w-6 text-orange-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Search and Filter */}
-          <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    placeholder="Tìm kiếm theo tên hoặc từ khóa..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-12 bg-white/90 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400 rounded-xl"
-                  />
-                </div>
-                
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-full md:w-48 h-12 bg-white/90 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400 rounded-xl">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-emerald-200">
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="active">Đang hoạt động</SelectItem>
-                    <SelectItem value="inactive">Tạm dừng</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Error State */}
-          {error && (
-            <Card className="mb-8 border-red-200 bg-red-50"><CardContent className="p-6"><div className="flex items-center text-red-700"><AlertCircle className="h-5 w-5 mr-2" /><span>{error}</span></div></CardContent></Card>
-          )}
-
-          {/* Empty State */}
-          {!hasAlerts && !isLoading && (
-            <div className="text-center py-20">
-              <div className="w-32 h-32 bg-linear-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
-                <Bell className="h-16 w-16 text-emerald-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Chưa có đăng ký nhận thông báo nào
-              </h3>
-              <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Hãy tạo đăng ký đầu tiên để không bỏ lỡ cơ hội việc làm phù hợp.
-              </p>
-              {canCreateMore && (
-                <Button
-                  onClick={() => setShowCreateDialog(true)}
-                  className="bg-linear-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Tạo đăng ký đầu tiên
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Alerts List */}
-          {filteredAlerts.length > 0 && (
-            <div className="space-y-6">
-              {filteredAlerts.map((alert) => (
-                <Card 
-                  key={alert._id}
-                  className={`group hover:shadow-xl transition-all duration-300 bg-white border-0 overflow-hidden ${
-                    alert.active ? 'hover:-translate-y-1' : 'opacity-75'
-                  }`}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
-                            {alert.name}
-                          </h3>
-                          <Badge 
-                            variant={alert.active ? "default" : "secondary"}
-                            className={`text-xs px-3 py-1 rounded-full ${
-                              alert.active 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            {alert.active ? 'Hoạt động' : 'Tạm dừng'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center text-gray-600 mb-3">
-                          <Tag className="h-4 w-4 mr-2 text-emerald-500" />
-                          <span className="font-medium">Từ khóa:</span>
-                          <span className="ml-2">{alert.keyword}</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                          {alert.location && (
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{alert.location}</span>
-                            </div>
-                          )}
-                          
-                          {alert.category && (
-                            <div className="flex items-center">
-                              <Briefcase className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{alert.category}</span>
-                            </div>
-                          )}
-                          
-                          {alert.salaryRange && (
-                            <div className="flex items-center">
-                              <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
-                              <span>{alert.salaryRange}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-emerald-500" />
-                            <span>{formatFrequency(alert.frequency)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleToggleAlert(alert._id, alert.active)}
-                          className={`h-10 w-10 rounded-full transition-all duration-300 ${
-                            alert.active 
-                              ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                              : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                          }`}
-                        >
-                          {alert.active ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingAlert(alert)}
-                          className="h-10 w-10 rounded-full text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all duration-300"
-                        >
-                          <Edit3 className="h-5 w-5" />
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteAlert(alert._id, alert.name)}
-                          disabled={isDeleting.has(alert._id)}
-                          className="h-10 w-10 rounded-full text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-300"
-                        >
-                          {isDeleting.has(alert._id) ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="text-sm text-gray-500">
-                        <Calendar className="h-4 w-4 inline mr-1" />
-                        Tạo: {new Date(alert.createdAt).toLocaleDateString('vi-VN')}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-4 mt-12">
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-6 h-12 border-emerald-200 bg-white/80 hover:bg-emerald-50 rounded-xl font-semibold"
-              >
-                Trước
-              </Button>
-              
-              <div className="flex space-x-2">
-                <span className="px-6 py-3 text-sm text-emerald-700 bg-emerald-100 border-2 border-emerald-200 rounded-xl font-bold">
-                  {currentPage} / {totalPages}
-                </span>
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-6 h-12 border-emerald-200 bg-white/80 hover:bg-emerald-50 rounded-xl font-semibold"
-              >
-                Sau
-              </Button>
-            </div>
-          )}
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            Quản lý thông báo việc làm
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Nhận thông báo khi có việc làm phù hợp với tiêu chí của bạn. Tối đa 3 thông báo.
+          </p>
         </div>
+        <JobAlertDialog
+          trigger={
+            <Button disabled={!canAddMore} className="btn-gradient">
+              <Plus className="h-4 w-4 mr-2" />
+              Thêm thông báo
+            </Button>
+          }
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['jobAlerts'] });
+          }} message="Bạn chưa có thông báo việc làm nào. Tạo thông báo để nhận cơ hội việc làm phù hợp!"
+        />
       </div>
 
-      {/* Create Dialog */}
-      {showCreateDialog && (
-        <CreateJobAlertDialog
-          open={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          onSubmit={handleCreateAlert}
-          isLoading={isSaving}
-        />
+      {/* Limit Warning */}
+      {!canAddMore && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <Bell className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-900">
+              Đã đạt giới hạn thông báo
+            </p>
+            <p className="text-sm text-amber-700 mt-1">
+              Bạn đã tạo tối đa 3 thông báo. Xóa thông báo cũ để thêm mới.
+            </p>
+          </div>
+        </div>
       )}
 
+      {/* Alerts Grid */}
+      {!alerts || alerts.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <EmptyState
+              message="Bạn chưa có thông báo việc làm nào. Tạo thông báo để nhận cơ hội việc làm phù hợp!"
+              actionText="Tạo thông báo đầu tiên"
+              onAction={() => setEditDialogOpen(true)}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {alerts.map((alert) => (
+            <Card
+              key={alert._id}
+              className={cn(
+                "relative overflow-hidden transition-all duration-300 group",
+                "bg-card border-2 shadow-sm hover:shadow-xl",
+                alert.active
+                  ? "border-emerald-200 hover:border-emerald-300"
+                  : "border-border opacity-80 hover:opacity-100"
+              )}
+            >
+              {/* Status Indicator - Left Border */}
+              <div
+                className={cn(
+                  "absolute top-0 left-0 bottom-0 w-1.5",
+                  alert.active
+                    ? "bg-gradient-to-b from-emerald-500 via-green-500 to-emerald-600"
+                    : "bg-gray-300"
+                )}
+              />
+
+              <CardHeader className="pb-4 pl-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Keyword with Icon */}
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <div className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        alert.active 
+                          ? "bg-emerald-100 text-emerald-700" 
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        <Briefcase className="h-4 w-4" />
+                      </div>
+                      <h3 className="font-bold text-lg truncate text-foreground">
+                        {alert.keyword || 'Tất cả công việc'}
+                      </h3>
+                    </div>
+                    
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground pl-0.5">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate font-medium">
+                        {alert.location?.province || 'Toàn quốc'}
+                        {alert.location?.district && alert.location.district !== 'ALL' && (
+                          <span className="text-xs font-normal"> • {alert.location.district}</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-9 w-9 p-0 hover:bg-muted"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={() => handleToggleActive(alert)}>
+                        {alert.active ? (
+                          <>
+                            <BellOff className="h-4 w-4 mr-2" />
+                            Tạm dừng
+                          </>
+                        ) : (
+                          <>
+                            <Bell className="h-4 w-4 mr-2" />
+                            Kích hoạt
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(alert)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Chỉnh sửa
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(alert)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Xóa
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-4 pl-5">
+                {/* Filters Section */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Bộ lọc
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {alert.category !== 'ALL' && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs font-medium border-primary/30 bg-primary/5 text-primary"
+                      >
+                        {getCategoryLabel(alert.category)}
+                      </Badge>
+                    )}
+                    {alert.experience !== 'ALL' && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs font-medium border-blue-300 bg-blue-50 text-blue-700 flex items-center gap-1"
+                      >
+                        <GraduationCap className="h-3 w-3" />
+                        {getExperienceLabel(alert.experience)}
+                      </Badge>
+                    )}
+                    {alert.salaryRange !== 'ALL' && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs font-medium border-amber-300 bg-amber-50 text-amber-700 flex items-center gap-1"
+                      >
+                        <DollarSign className="h-3 w-3" />
+                        {getSalaryRangeLabel(alert.salaryRange)}
+                      </Badge>
+                    )}
+                    {alert.workType !== 'ALL' && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs font-medium border-purple-300 bg-purple-50 text-purple-700 flex items-center gap-1"
+                      >
+                        <Laptop className="h-3 w-3" />
+                        {getWorkTypeLabel(alert.workType)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info Section */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="p-1.5 rounded-md bg-muted">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tần suất</p>
+                      <p className="font-medium text-foreground">{getFrequencyLabel(alert.frequency)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="p-1.5 rounded-md bg-muted">
+                      {getNotificationIcon(alert.notificationMethod)}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phương thức</p>
+                      <p className="font-medium text-foreground truncate">
+                        {getNotificationMethodLabel(alert.notificationMethod)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Badge */}
+                <div className="pt-3">
+                  {alert.active ? (
+                    <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-emerald-50 border border-emerald-200">
+                      <Bell className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-semibold text-emerald-700">
+                        Đang hoạt động
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-gray-50 border border-gray-200">
+                      <BellOff className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-semibold text-gray-600">
+                        Tạm dừng
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa thông báo việc làm "{selectedAlert?.keyword || 'này'}"?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Edit Dialog */}
-      {editingAlert && (
-        <EditJobAlertDialog
-          alert={editingAlert}
-          onClose={() => setEditingAlert(null)}
-          onSubmit={handleUpdateAlert}
-          isLoading={isSaving}
+      {editDialogOpen && (
+        <JobAlertDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          alert={selectedAlert}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['jobAlerts'] });
+            setEditDialogOpen(false);
+            setSelectedAlert(null);
+          }}
         />
       )}
     </div>

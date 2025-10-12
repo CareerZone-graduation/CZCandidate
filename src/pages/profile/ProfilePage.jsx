@@ -80,7 +80,7 @@ const ProfilePage = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto space-y-6">
             <Skeleton className="h-48 w-full" />
@@ -128,11 +128,11 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Basic Info Section */}
-          <BasicInfoSection 
+          <BasicInfoSection
             profile={profile}
             onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
             onAvatarUpdate={(formData) => uploadAvatarMutation.mutateAsync(formData)}
@@ -141,12 +141,12 @@ const ProfilePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Experience & Education */}
             <div className="lg:col-span-2 space-y-6">
-              <ExperienceSection 
+              <ExperienceSection
                 experiences={profile?.experiences || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
-              
-              <EducationSection 
+
+              <EducationSection
                 educations={profile?.educations || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
@@ -154,12 +154,12 @@ const ProfilePage = () => {
 
             {/* Right Column - Skills & CVs */}
             <div className="space-y-6">
-              <SkillsSection 
+              <SkillsSection
                 skills={profile?.skills || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
-              
-              <CVSection 
+
+              <CVSection
                 cvs={profile?.cvs || []}
                 onUpload={(formData) => uploadCVMutation.mutateAsync(formData)}
                 onDelete={(cvId) => deleteCVMutation.mutateAsync(cvId)}
