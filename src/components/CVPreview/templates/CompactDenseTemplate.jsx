@@ -1,15 +1,15 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github } from 'lucide-react';
 
-const CompactDenseTemplate = ({ cvData }) => {
+const CompactDenseTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Section rendering functions
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Summary</h2>
+      <section data-section="summary" className="mb-4 break-inside-avoid">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Summary</h2>
         <p className="text-xs text-gray-700 leading-tight">{professionalSummary}</p>
       </section>
     );
@@ -18,11 +18,11 @@ const CompactDenseTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Experience</h2>
+      <section data-section="experience" className="mb-4">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Experience</h2>
         <div className="space-y-3">
           {workExperience.map((job) => (
-            <div key={job.id}>
+            <div key={job.id} className="break-inside-avoid mb-4">
               <div className="flex justify-between items-baseline mb-1">
                 <h3 className="text-sm font-semibold text-gray-800">{job.position}</h3>
                 <span className="text-xs text-gray-500">
@@ -51,11 +51,11 @@ const CompactDenseTemplate = ({ cvData }) => {
   const renderEducation = () => {
     if (!education || education.length === 0) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Education</h2>
+      <section data-section="education" className="mb-4">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Education</h2>
         <div className="space-y-2">
           {education.map((edu) => (
-            <div key={edu.id}>
+            <div key={edu.id} className="break-inside-avoid mb-4">
               <div className="flex justify-between items-baseline">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-800">{edu.degree}</h3>
@@ -76,8 +76,8 @@ const CompactDenseTemplate = ({ cvData }) => {
   const renderSkills = () => {
     if (!skills || skills.length === 0) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Skills</h2>
+      <section data-section="skills" className="mb-4 break-inside-avoid">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Skills</h2>
         <div className="grid grid-cols-3 gap-3">
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
@@ -104,11 +104,11 @@ const CompactDenseTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Projects</h2>
+      <section data-section="projects" className="mb-4">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Projects</h2>
         <div className="space-y-2">
           {projects.slice(0, 3).map((project) => (
-            <div key={project.id}>
+            <div key={project.id} className="break-inside-avoid mb-4">
               <div className="flex justify-between items-baseline mb-1">
                 <h3 className="text-sm font-semibold text-gray-800">{project.name}</h3>
                 <span className="text-xs text-gray-500">
@@ -133,11 +133,11 @@ const CompactDenseTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase">Certifications</h2>
+      <section data-section="certificates" className="mb-4">
+        <h2 className="text-sm font-bold text-gray-800 mb-2 uppercase break-after-avoid">Certifications</h2>
         <div className="space-y-1">
           {certificates.slice(0, 4).map((cert) => (
-            <div key={cert.id} className="flex justify-between items-baseline">
+            <div key={cert.id} className="flex justify-between items-baseline break-inside-avoid mb-4">
               <div>
                 <h3 className="text-xs font-semibold text-gray-800">{cert.name}</h3>
                 <p className="text-xs text-gray-600">{cert.issuer}</p>
@@ -161,60 +161,62 @@ const CompactDenseTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none text-xs leading-tight">
-      {/* Compact Header */}
-      <div className="border-b-2 border-gray-800 p-4">
-        <div className="flex items-center space-x-4">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-16 h-16 rounded object-cover border border-gray-300"
-            />
-          )}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">{personalInfo.fullName}</h1>
-            <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
-              {personalInfo.email && (
-                <div className="flex items-center">
-                  <Mail className="w-3 h-3 mr-1" />
-                  {personalInfo.email}
-                </div>
-              )}
-              {personalInfo.phone && (
-                <div className="flex items-center">
-                  <Phone className="w-3 h-3 mr-1" />
-                  {personalInfo.phone}
-                </div>
-              )}
-              {personalInfo.address && (
-                <div className="flex items-center">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  {personalInfo.address}
-                </div>
-              )}
-              {personalInfo.website && (
-                <div className="flex items-center">
-                  <Globe className="w-3 h-3 mr-1" />
-                  Website
-                </div>
-              )}
-              {personalInfo.linkedin && (
-                <div className="flex items-center">
-                  <Linkedin className="w-3 h-3 mr-1" />
-                  LinkedIn
-                </div>
-              )}
-              {personalInfo.github && (
-                <div className="flex items-center">
-                  <Github className="w-3 h-3 mr-1" />
-                  GitHub
-                </div>
-              )}
+    <div className="w-full bg-white text-xs leading-tight">
+      {/* Compact Header - only show when showHeader is true */}
+      {showHeader && (
+        <div className="border-b-2 border-gray-800 p-4">
+          <div className="flex items-center space-x-4">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-16 h-16 rounded object-cover border border-gray-300"
+              />
+            )}
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">{personalInfo.fullName}</h1>
+              <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                {personalInfo.email && (
+                  <div className="flex items-center">
+                    <Mail className="w-3 h-3 mr-1" />
+                    {personalInfo.email}
+                  </div>
+                )}
+                {personalInfo.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-3 h-3 mr-1" />
+                    {personalInfo.phone}
+                  </div>
+                )}
+                {personalInfo.address && (
+                  <div className="flex items-center">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {personalInfo.address}
+                  </div>
+                )}
+                {personalInfo.website && (
+                  <div className="flex items-center">
+                    <Globe className="w-3 h-3 mr-1" />
+                    Website
+                  </div>
+                )}
+                {personalInfo.linkedin && (
+                  <div className="flex items-center">
+                    <Linkedin className="w-3 h-3 mr-1" />
+                    LinkedIn
+                  </div>
+                )}
+                {personalInfo.github && (
+                  <div className="flex items-center">
+                    <Github className="w-3 h-3 mr-1" />
+                    GitHub
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Compact Content */}
       <div className="p-4 space-y-4">

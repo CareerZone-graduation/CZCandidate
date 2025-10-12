@@ -1,16 +1,16 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github, Calendar } from 'lucide-react';
 
-const CreativeGradientTemplate = ({ cvData }) => {
+const CreativeGradientTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Section rendering functions
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-8">
+      <section data-section="summary" className="mb-8 break-inside-avoid">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Professional Summary
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
@@ -23,16 +23,16 @@ const CreativeGradientTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="experience" className="mb-8">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Work Experience
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
         </div>
         <div className="space-y-8 mt-6">
           {workExperience.map((job, index) => (
-            <div key={job.id} className="relative">
+            <div key={job.id} className="relative break-inside-avoid mb-6">
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border-l-4 border-gradient-to-b from-purple-500 to-pink-500">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -63,16 +63,16 @@ const CreativeGradientTemplate = ({ cvData }) => {
   const renderEducation = () => {
     if (!education || education.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="education" className="mb-8">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Education
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
         </div>
         <div className="space-y-4 mt-6">
           {education.map((edu) => (
-            <div key={edu.id} className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <div key={edu.id} className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border-l-4 border-orange-400 break-inside-avoid mb-6">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">{edu.degree}</h3>
@@ -96,9 +96,9 @@ const CreativeGradientTemplate = ({ cvData }) => {
   const renderSkills = () => {
     if (!skills || skills.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="skills" className="mb-8 break-inside-avoid">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Skills
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
@@ -142,16 +142,16 @@ const CreativeGradientTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="projects" className="mb-8">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Projects
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
         </div>
         <div className="space-y-4 mt-6">
           {projects.map((project) => (
-            <div key={project.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-400">
+            <div key={project.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-400 break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-bold text-gray-800">{project.name}</h3>
                 <div className="text-sm text-gray-500 flex items-center bg-white px-2 py-1 rounded">
@@ -177,16 +177,16 @@ const CreativeGradientTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="certificates" className="mb-8">
         <div className="relative">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4 break-after-avoid">
             Certifications
           </h2>
           <div className="absolute left-0 top-8 w-12 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></div>
         </div>
         <div className="space-y-3 mt-6">
           {certificates.map((cert) => (
-            <div key={cert.id} className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-4 border-l-4 border-green-400">
+            <div key={cert.id} className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-4 border-l-4 border-green-400 break-inside-avoid mb-6">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-gray-800 text-lg">{cert.name}</h3>
@@ -218,63 +218,65 @@ const CreativeGradientTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none overflow-hidden">
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white p-8 relative">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative z-10">
-          <div className="flex items-center space-x-6">
-            {personalInfo.profileImage && (
-              <img
-                src={personalInfo.profileImage}
-                alt={personalInfo.fullName}
-                className="w-28 h-28 rounded-full border-4 border-white/50 object-cover shadow-lg"
-              />
-            )}
-            <div className="flex-1">
-              <h1 className="text-5xl font-bold mb-3 drop-shadow-lg">{personalInfo.fullName}</h1>
-              <div className="grid grid-cols-2 gap-3 text-sm opacity-95">
-                {personalInfo.email && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <Mail className="w-4 h-4 mr-2" />
-                    {personalInfo.email}
-                  </div>
-                )}
-                {personalInfo.phone && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {personalInfo.phone}
-                  </div>
-                )}
-                {personalInfo.address && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {personalInfo.address}
-                  </div>
-                )}
-                {personalInfo.website && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <Globe className="w-4 h-4 mr-2" />
-                    {personalInfo.website}
-                  </div>
-                )}
-                {personalInfo.linkedin && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <Linkedin className="w-4 h-4 mr-2" />
-                    LinkedIn
-                  </div>
-                )}
-                {personalInfo.github && (
-                  <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
-                    <Github className="w-4 h-4 mr-2" />
-                    GitHub
-                  </div>
-                )}
+    <div className="w-full bg-white overflow-hidden">
+      {/* Header with gradient - only show when showHeader is true */}
+      {showHeader && (
+        <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white p-8 relative">
+          <div className="absolute inset-0 bg-black opacity-10"></div>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-6">
+              {personalInfo.profileImage && (
+                <img
+                  src={personalInfo.profileImage}
+                  alt={personalInfo.fullName}
+                  className="w-28 h-28 rounded-full border-4 border-white/50 object-cover shadow-lg"
+                />
+              )}
+              <div className="flex-1">
+                <h1 className="text-5xl font-bold mb-3 drop-shadow-lg">{personalInfo.fullName}</h1>
+                <div className="grid grid-cols-2 gap-3 text-sm opacity-95">
+                  {personalInfo.email && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <Mail className="w-4 h-4 mr-2" />
+                      {personalInfo.email}
+                    </div>
+                  )}
+                  {personalInfo.phone && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <Phone className="w-4 h-4 mr-2" />
+                      {personalInfo.phone}
+                    </div>
+                  )}
+                  {personalInfo.address && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {personalInfo.address}
+                    </div>
+                  )}
+                  {personalInfo.website && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <Globe className="w-4 h-4 mr-2" />
+                      {personalInfo.website}
+                    </div>
+                  )}
+                  {personalInfo.linkedin && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <Linkedin className="w-4 h-4 mr-2" />
+                      LinkedIn
+                    </div>
+                  )}
+                  {personalInfo.github && (
+                    <div className="flex items-center bg-white/20 rounded-full px-3 py-1">
+                      <Github className="w-4 h-4 mr-2" />
+                      GitHub
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Content based on sectionOrder */}
       <div className="p-8">

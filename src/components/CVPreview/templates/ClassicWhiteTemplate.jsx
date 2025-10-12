@@ -1,15 +1,15 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github } from 'lucide-react';
 
-const ClassicWhiteTemplate = ({ cvData }) => {
+const ClassicWhiteTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Section rendering functions
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
+      <section data-section="summary" className="mb-8 break-inside-avoid">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide break-after-avoid">
           Professional Summary
         </h2>
         <hr className="border-gray-300 mb-4" />
@@ -21,14 +21,14 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
+      <section data-section="experience" className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide break-after-avoid">
           Work Experience
         </h2>
         <hr className="border-gray-300 mb-4" />
         <div className="space-y-6">
           {workExperience.map((job) => (
-            <div key={job.id}>
+            <div key={job.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">{job.position}</h3>
@@ -56,14 +56,14 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   const renderEducation = () => {
     if (!education || education.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
+      <section data-section="education" className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide break-after-avoid">
           Education
         </h2>
         <hr className="border-gray-300 mb-4" />
         <div className="space-y-4">
           {education.map((edu) => (
-            <div key={edu.id} className="flex justify-between items-start">
+            <div key={edu.id} className="flex justify-between items-start break-inside-avoid mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-800">{edu.degree}</h3>
                 <p className="text-gray-600">{edu.institution}</p>
@@ -84,7 +84,7 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   const renderSkills = () => {
     if (!skills || skills.length === 0) return null;
     return (
-      <section className="mb-8">
+      <section data-section="skills" className="mb-8 break-inside-avoid">
         <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
           Skills
         </h2>
@@ -116,14 +116,14 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
+      <section data-section="projects" className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide break-after-avoid">
           Projects
         </h2>
         <hr className="border-gray-300 mb-4" />
         <div className="space-y-4">
           {projects.map((project) => (
-            <div key={project.id}>
+            <div key={project.id} className="break-inside-avoid mb-4">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-bold text-gray-800">{project.name}</h3>
                 <div className="text-sm text-gray-500">
@@ -148,14 +148,14 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide">
+      <section data-section="certificates" className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 uppercase tracking-wide break-after-avoid">
           Certifications
         </h2>
         <hr className="border-gray-300 mb-4" />
         <div className="space-y-3">
           {certificates.map((cert) => (
-            <div key={cert.id} className="flex justify-between items-start">
+            <div key={cert.id} className="flex justify-between items-start break-inside-avoid mb-3">
               <div>
                 <h3 className="font-bold text-gray-800">{cert.name}</h3>
                 <p className="text-gray-600">{cert.issuer}</p>
@@ -185,58 +185,60 @@ const ClassicWhiteTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none">
-      {/* Header */}
-      <div className="border-b-4 border-gray-800 p-8">
-        <div className="text-center">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-gray-300"
-            />
-          )}
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">{personalInfo.fullName}</h1>
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
-            {personalInfo.email && (
-              <div className="flex items-center">
-                <Mail className="w-4 h-4 mr-1" />
-                {personalInfo.email}
-              </div>
+    <div className="w-full bg-white">
+      {/* Header - only show when showHeader is true */}
+      {showHeader && (
+        <div className="border-b-4 border-gray-800 p-8">
+          <div className="text-center">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-gray-300"
+              />
             )}
-            {personalInfo.phone && (
-              <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-1" />
-                {personalInfo.phone}
-              </div>
-            )}
-            {personalInfo.address && (
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-1" />
-                {personalInfo.address}
-              </div>
-            )}
-            {personalInfo.website && (
-              <div className="flex items-center">
-                <Globe className="w-4 h-4 mr-1" />
-                {personalInfo.website}
-              </div>
-            )}
-            {personalInfo.linkedin && (
-              <div className="flex items-center">
-                <Linkedin className="w-4 h-4 mr-1" />
-                LinkedIn
-              </div>
-            )}
-            {personalInfo.github && (
-              <div className="flex items-center">
-                <Github className="w-4 h-4 mr-1" />
-                GitHub
-              </div>
-            )}
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">{personalInfo.fullName}</h1>
+            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
+              {personalInfo.email && (
+                <div className="flex items-center">
+                  <Mail className="w-4 h-4 mr-1" />
+                  {personalInfo.email}
+                </div>
+              )}
+              {personalInfo.phone && (
+                <div className="flex items-center">
+                  <Phone className="w-4 h-4 mr-1" />
+                  {personalInfo.phone}
+                </div>
+              )}
+              {personalInfo.address && (
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  {personalInfo.address}
+                </div>
+              )}
+              {personalInfo.website && (
+                <div className="flex items-center">
+                  <Globe className="w-4 h-4 mr-1" />
+                  {personalInfo.website}
+                </div>
+              )}
+              {personalInfo.linkedin && (
+                <div className="flex items-center">
+                  <Linkedin className="w-4 h-4 mr-1" />
+                  LinkedIn
+                </div>
+              )}
+              {personalInfo.github && (
+                <div className="flex items-center">
+                  <Github className="w-4 h-4 mr-1" />
+                  GitHub
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Content based on sectionOrder */}
       <div className="p-8">

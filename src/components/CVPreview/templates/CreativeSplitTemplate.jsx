@@ -1,7 +1,7 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github, Calendar } from 'lucide-react';
 
-const CreativeSplitTemplate = ({ cvData }) => {
+const CreativeSplitTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Left side sections (colored background)
@@ -87,8 +87,8 @@ const CreativeSplitTemplate = ({ cvData }) => {
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">About Me</h2>
+      <section data-section="summary" className="mb-8 break-inside-avoid">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 break-after-avoid">About Me</h2>
         <p className="text-gray-700 leading-relaxed text-lg">{professionalSummary}</p>
       </section>
     );
@@ -97,11 +97,11 @@ const CreativeSplitTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Experience</h2>
+      <section data-section="experience" className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 break-after-avoid">Experience</h2>
         <div className="space-y-6">
           {workExperience.map((job) => (
-            <div key={job.id} className="border-l-4 border-pink-500 pl-6">
+            <div key={job.id} className="border-l-4 border-pink-500 pl-6 break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-xl font-bold text-gray-800">{job.position}</h3>
@@ -133,11 +133,11 @@ const CreativeSplitTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Projects</h2>
+      <section data-section="projects" className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 break-after-avoid">Projects</h2>
         <div className="space-y-4">
           {projects.map((project) => (
-            <div key={project.id} className="bg-gradient-to-r from-pink-50 to-yellow-50 rounded-lg p-4 border border-pink-200">
+            <div key={project.id} className="bg-gradient-to-r from-pink-50 to-yellow-50 rounded-lg p-4 border border-pink-200 break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-bold text-gray-800">{project.name}</h3>
                 <div className="text-sm text-gray-500">
@@ -167,72 +167,74 @@ const CreativeSplitTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-6xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none flex">
-      {/* Left Side - Colored Background */}
-      <div className="w-2/5 bg-gradient-to-br from-purple-600 via-pink-600 to-red-500 p-8 text-white">
-        {/* Profile Section */}
-        <div className="text-center mb-8">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white/30 object-cover shadow-lg"
-            />
-          )}
-          <h1 className="text-3xl font-bold mb-2">{personalInfo.fullName}</h1>
-        </div>
-
-        {/* Contact Info */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Contact</h2>
-          <div className="space-y-3 text-sm">
-            {personalInfo.email && (
-              <div className="flex items-center">
-                <Mail className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span className="break-all">{personalInfo.email}</span>
-              </div>
+    <div className="w-full bg-white flex">
+      {/* Left Side - Colored Background - only show when showHeader is true */}
+      {showHeader && (
+        <div className="w-2/5 bg-gradient-to-br from-purple-600 via-pink-600 to-red-500 p-8 text-white">
+          {/* Profile Section */}
+          <div className="text-center mb-8">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white/30 object-cover shadow-lg"
+              />
             )}
-            {personalInfo.phone && (
-              <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span>{personalInfo.phone}</span>
-              </div>
-            )}
-            {personalInfo.address && (
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span>{personalInfo.address}</span>
-              </div>
-            )}
-            {personalInfo.website && (
-              <div className="flex items-center">
-                <Globe className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span className="break-all">{personalInfo.website}</span>
-              </div>
-            )}
-            {personalInfo.linkedin && (
-              <div className="flex items-center">
-                <Linkedin className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span>LinkedIn</span>
-              </div>
-            )}
-            {personalInfo.github && (
-              <div className="flex items-center">
-                <Github className="w-4 h-4 mr-3 flex-shrink-0" />
-                <span>GitHub</span>
-              </div>
-            )}
+            <h1 className="text-3xl font-bold mb-2">{personalInfo.fullName}</h1>
           </div>
-        </div>
 
-        {/* Left Side Content */}
-        {renderLeftSideSkills()}
-        {renderLeftSideEducation()}
-        {renderLeftSideCertificates()}
-      </div>
+          {/* Contact Info */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-white mb-4">Contact</h2>
+            <div className="space-y-3 text-sm">
+              {personalInfo.email && (
+                <div className="flex items-center">
+                  <Mail className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span className="break-all">{personalInfo.email}</span>
+                </div>
+              )}
+              {personalInfo.phone && (
+                <div className="flex items-center">
+                  <Phone className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>{personalInfo.phone}</span>
+                </div>
+              )}
+              {personalInfo.address && (
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>{personalInfo.address}</span>
+                </div>
+              )}
+              {personalInfo.website && (
+                <div className="flex items-center">
+                  <Globe className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span className="break-all">{personalInfo.website}</span>
+                </div>
+              )}
+              {personalInfo.linkedin && (
+                <div className="flex items-center">
+                  <Linkedin className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>LinkedIn</span>
+                </div>
+              )}
+              {personalInfo.github && (
+                <div className="flex items-center">
+                  <Github className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>GitHub</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Left Side Content */}
+          {renderLeftSideSkills()}
+          {renderLeftSideEducation()}
+          {renderLeftSideCertificates()}
+        </div>
+      )}
 
       {/* Right Side - White Background */}
-      <div className="w-3/5 p-8">
+      <div className={showHeader ? "w-3/5 p-8" : "w-full p-8"}>
         {sectionOrder && sectionOrder.map((sectionId) => {
           const renderFunction = rightSectionComponents[sectionId];
           return renderFunction ? renderFunction() : null;

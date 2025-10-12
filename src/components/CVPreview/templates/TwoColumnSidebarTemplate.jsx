@@ -1,7 +1,7 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github, Calendar } from 'lucide-react';
 
-const TwoColumnSidebarTemplate = ({ cvData }) => {
+const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Left sidebar sections
@@ -113,8 +113,8 @@ const TwoColumnSidebarTemplate = ({ cvData }) => {
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1">
+      <section data-section="summary" className="mb-6 break-inside-avoid">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1 break-after-avoid">
           Professional Summary
         </h2>
         <p className="text-gray-700 leading-relaxed">{professionalSummary}</p>
@@ -125,13 +125,13 @@ const TwoColumnSidebarTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1">
+      <section data-section="experience" className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1 break-after-avoid">
           Work Experience
         </h2>
         <div className="space-y-5">
           {workExperience.map((job) => (
-            <div key={job.id}>
+            <div key={job.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">{job.position}</h3>
@@ -160,13 +160,13 @@ const TwoColumnSidebarTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1">
+      <section data-section="projects" className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1 break-after-avoid">
           Projects
         </h2>
         <div className="space-y-4">
           {projects.map((project) => (
-            <div key={project.id}>
+            <div key={project.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-1">
                 <h3 className="text-lg font-semibold text-gray-800">{project.name}</h3>
                 <div className="text-sm text-gray-500">
@@ -191,13 +191,13 @@ const TwoColumnSidebarTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1">
+      <section data-section="certificates" className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-blue-600 pb-1 break-after-avoid">
           Certifications
         </h2>
         <div className="space-y-3">
           {certificates.map((cert) => (
-            <div key={cert.id}>
+            <div key={cert.id} className="break-inside-avoid mb-6">
               <h3 className="font-semibold text-gray-800">{cert.name}</h3>
               <p className="text-blue-600 text-sm">{cert.issuer}</p>
               <p className="text-xs text-gray-500">{cert.issueDate}</p>
@@ -217,33 +217,35 @@ const TwoColumnSidebarTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none flex">
-      {/* Left Sidebar */}
-      <div className="w-1/3 bg-gray-800 p-6">
-        {/* Profile Image */}
-        {personalInfo.profileImage && (
-          <div className="text-center mb-6">
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-24 h-24 rounded-full mx-auto border-4 border-gray-600 object-cover"
-            />
+    <div className="w-full bg-white flex">
+      {/* Left Sidebar - only show when showHeader is true */}
+      {showHeader && (
+        <div className="w-1/3 bg-gray-800 p-6">
+          {/* Profile Image */}
+          {personalInfo.profileImage && (
+            <div className="text-center mb-6">
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-24 h-24 rounded-full mx-auto border-4 border-gray-600 object-cover"
+              />
+            </div>
+          )}
+          
+          {/* Name */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white mb-2">{personalInfo.fullName}</h1>
           </div>
-        )}
-        
-        {/* Name */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">{personalInfo.fullName}</h1>
-        </div>
 
-        {/* Sidebar Content */}
-        {renderPersonalInfo()}
-        {renderSidebarSkills()}
-        {renderSidebarEducation()}
-      </div>
+          {/* Sidebar Content */}
+          {renderPersonalInfo()}
+          {renderSidebarSkills()}
+          {renderSidebarEducation()}
+        </div>
+      )}
 
       {/* Main Content */}
-      <div className="w-2/3 p-6">
+      <div className={showHeader ? "w-2/3 p-6" : "w-full p-6"}>
         {sectionOrder && sectionOrder.map((sectionId) => {
           const renderFunction = mainSectionComponents[sectionId];
           return renderFunction ? renderFunction() : null;

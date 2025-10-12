@@ -1,15 +1,15 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github, Calendar } from 'lucide-react';
 
-const ModernSansTemplate = ({ cvData }) => {
+const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Section rendering functions
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="summary" className="mb-8 break-inside-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           About
         </h2>
         <p className="text-gray-600 leading-relaxed text-base">{professionalSummary}</p>
@@ -20,13 +20,13 @@ const ModernSansTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="experience" className="mb-8">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           Experience
         </h2>
         <div className="space-y-6">
           {workExperience.map((job) => (
-            <div key={job.id} className="border-l-4 border-blue-500 pl-6">
+            <div key={job.id} className="border-l-4 border-blue-500 pl-6 break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{job.position}</h3>
@@ -58,13 +58,13 @@ const ModernSansTemplate = ({ cvData }) => {
   const renderEducation = () => {
     if (!education || education.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="education" className="mb-8">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           Education
         </h2>
         <div className="space-y-4">
           {education.map((edu) => (
-            <div key={edu.id} className="bg-gray-50 rounded-lg p-4">
+            <div key={edu.id} className="bg-gray-50 rounded-lg p-4 break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{edu.degree}</h3>
@@ -87,8 +87,8 @@ const ModernSansTemplate = ({ cvData }) => {
   const renderSkills = () => {
     if (!skills || skills.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="skills" className="mb-8 break-inside-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           Skills
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -130,13 +130,13 @@ const ModernSansTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="projects" className="mb-8">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           Projects
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((project) => (
-            <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow break-inside-avoid mb-6">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
                 <div className="text-xs text-gray-500">
@@ -161,13 +161,13 @@ const ModernSansTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider">
+      <section data-section="certificates" className="mb-8">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
           Certifications
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {certificates.map((cert) => (
-            <div key={cert.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+            <div key={cert.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100 break-inside-avoid mb-6">
               <h3 className="font-bold text-gray-900 mb-1">{cert.name}</h3>
               <p className="text-blue-600 font-semibold text-sm">{cert.issuer}</p>
               <p className="text-xs text-gray-500 mt-1">{cert.issueDate}</p>
@@ -192,60 +192,62 @@ const ModernSansTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-8">
-        <div className="flex items-center space-x-6">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-24 h-24 rounded-full border-4 border-white/20 object-cover"
-            />
-          )}
-          <div className="flex-1">
-            <h1 className="text-4xl font-black mb-3 tracking-tight">{personalInfo.fullName}</h1>
-            <div className="grid grid-cols-2 gap-3 text-sm text-gray-300">
-              {personalInfo.email && (
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2" />
-                  {personalInfo.email}
-                </div>
-              )}
-              {personalInfo.phone && (
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2" />
-                  {personalInfo.phone}
-                </div>
-              )}
-              {personalInfo.address && (
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {personalInfo.address}
-                </div>
-              )}
-              {personalInfo.website && (
-                <div className="flex items-center">
-                  <Globe className="w-4 h-4 mr-2" />
-                  {personalInfo.website}
-                </div>
-              )}
-              {personalInfo.linkedin && (
-                <div className="flex items-center">
-                  <Linkedin className="w-4 h-4 mr-2" />
-                  LinkedIn
-                </div>
-              )}
-              {personalInfo.github && (
-                <div className="flex items-center">
-                  <Github className="w-4 h-4 mr-2" />
-                  GitHub
-                </div>
-              )}
+    <div className="w-full bg-white" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {/* Header - only show when showHeader is true */}
+      {showHeader && (
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-8">
+          <div className="flex items-center space-x-6">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-24 h-24 rounded-full border-4 border-white/20 object-cover"
+              />
+            )}
+            <div className="flex-1">
+              <h1 className="text-4xl font-black mb-3 tracking-tight">{personalInfo.fullName}</h1>
+              <div className="grid grid-cols-2 gap-3 text-sm text-gray-300">
+                {personalInfo.email && (
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    {personalInfo.email}
+                  </div>
+                )}
+                {personalInfo.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-2" />
+                    {personalInfo.phone}
+                  </div>
+                )}
+                {personalInfo.address && (
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    {personalInfo.address}
+                  </div>
+                )}
+                {personalInfo.website && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-2" />
+                    {personalInfo.website}
+                  </div>
+                )}
+                {personalInfo.linkedin && (
+                  <div className="flex items-center">
+                    <Linkedin className="w-4 h-4 mr-2" />
+                    LinkedIn
+                  </div>
+                )}
+                {personalInfo.github && (
+                  <div className="flex items-center">
+                    <Github className="w-4 h-4 mr-2" />
+                    GitHub
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Content based on sectionOrder */}
       <div className="p-8">

@@ -1,15 +1,15 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github } from 'lucide-react';
 
-const MinimalGrayTemplate = ({ cvData }) => {
+const MinimalGrayTemplate = ({ cvData, showHeader = true, measureMode = false, pageNumber = 1 }) => {
   const { personalInfo, professionalSummary, workExperience, education, skills, projects, certificates, sectionOrder } = cvData;
 
   // Section rendering functions
   const renderSummary = () => {
     if (!professionalSummary) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="summary" className="mb-8 break-inside-avoid">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           About
         </h2>
         <p className="text-gray-700 leading-relaxed">{professionalSummary}</p>
@@ -20,13 +20,13 @@ const MinimalGrayTemplate = ({ cvData }) => {
   const renderExperience = () => {
     if (!workExperience || workExperience.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="experience" className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           Experience
         </h2>
         <div className="space-y-6">
           {workExperience.map((job) => (
-            <div key={job.id}>
+            <div key={job.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-baseline mb-1">
                 <h3 className="text-lg font-medium text-gray-900">{job.position}</h3>
                 <span className="text-sm text-gray-500">
@@ -55,13 +55,13 @@ const MinimalGrayTemplate = ({ cvData }) => {
   const renderEducation = () => {
     if (!education || education.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="education" className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           Education
         </h2>
         <div className="space-y-4">
           {education.map((edu) => (
-            <div key={edu.id}>
+            <div key={edu.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-baseline mb-1">
                 <h3 className="text-lg font-medium text-gray-900">{edu.degree}</h3>
                 <span className="text-sm text-gray-500">
@@ -82,8 +82,8 @@ const MinimalGrayTemplate = ({ cvData }) => {
   const renderSkills = () => {
     if (!skills || skills.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="skills" className="mb-8 break-inside-avoid">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           Skills
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -113,13 +113,13 @@ const MinimalGrayTemplate = ({ cvData }) => {
   const renderProjects = () => {
     if (!projects || projects.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="projects" className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           Projects
         </h2>
         <div className="space-y-4">
           {projects.map((project) => (
-            <div key={project.id}>
+            <div key={project.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-baseline mb-1">
                 <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
                 <span className="text-sm text-gray-500">
@@ -144,13 +144,13 @@ const MinimalGrayTemplate = ({ cvData }) => {
   const renderCertificates = () => {
     if (!certificates || certificates.length === 0) return null;
     return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+      <section data-section="certificates" className="mb-8">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 break-after-avoid">
           Certifications
         </h2>
         <div className="space-y-3">
           {certificates.map((cert) => (
-            <div key={cert.id}>
+            <div key={cert.id} className="break-inside-avoid mb-6">
               <div className="flex justify-between items-baseline">
                 <div>
                   <h3 className="font-medium text-gray-900">{cert.name}</h3>
@@ -182,60 +182,62 @@ const MinimalGrayTemplate = ({ cvData }) => {
   };
 
   return (
-    <div className="a4-size w-full max-w-4xl mx-auto bg-white shadow-lg print:shadow-none print:max-w-none">
-      {/* Header */}
-      <div className="p-8 pb-6">
-        <div className="flex items-start space-x-8">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-24 h-24 rounded object-cover grayscale"
-            />
-          )}
-          <div className="flex-1">
-            <h1 className="text-5xl font-light text-gray-900 mb-4">{personalInfo.fullName}</h1>
-            <div className="space-y-1 text-sm text-gray-600">
-              {personalInfo.email && (
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-3 text-gray-400" />
-                  {personalInfo.email}
-                </div>
-              )}
-              {personalInfo.phone && (
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-3 text-gray-400" />
-                  {personalInfo.phone}
-                </div>
-              )}
-              {personalInfo.address && (
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-3 text-gray-400" />
-                  {personalInfo.address}
-                </div>
-              )}
-              {personalInfo.website && (
-                <div className="flex items-center">
-                  <Globe className="w-4 h-4 mr-3 text-gray-400" />
-                  {personalInfo.website}
-                </div>
-              )}
-              {personalInfo.linkedin && (
-                <div className="flex items-center">
-                  <Linkedin className="w-4 h-4 mr-3 text-gray-400" />
-                  LinkedIn Profile
-                </div>
-              )}
-              {personalInfo.github && (
-                <div className="flex items-center">
-                  <Github className="w-4 h-4 mr-3 text-gray-400" />
-                  GitHub Profile
-                </div>
-              )}
+    <div className="w-full bg-white">
+      {/* Header - only show when showHeader is true */}
+      {showHeader && (
+        <div className="p-8 pb-6">
+          <div className="flex items-start space-x-8">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-24 h-24 rounded object-cover grayscale"
+              />
+            )}
+            <div className="flex-1">
+              <h1 className="text-5xl font-light text-gray-900 mb-4">{personalInfo.fullName}</h1>
+              <div className="space-y-1 text-sm text-gray-600">
+                {personalInfo.email && (
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-3 text-gray-400" />
+                    {personalInfo.email}
+                  </div>
+                )}
+                {personalInfo.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-3 text-gray-400" />
+                    {personalInfo.phone}
+                  </div>
+                )}
+                {personalInfo.address && (
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-3 text-gray-400" />
+                    {personalInfo.address}
+                  </div>
+                )}
+                {personalInfo.website && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-3 text-gray-400" />
+                    {personalInfo.website}
+                  </div>
+                )}
+                {personalInfo.linkedin && (
+                  <div className="flex items-center">
+                    <Linkedin className="w-4 h-4 mr-3 text-gray-400" />
+                    LinkedIn Profile
+                  </div>
+                )}
+                {personalInfo.github && (
+                  <div className="flex items-center">
+                    <Github className="w-4 h-4 mr-3 text-gray-400" />
+                    GitHub Profile
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Content based on sectionOrder */}
       <div className="px-8 pb-8">
