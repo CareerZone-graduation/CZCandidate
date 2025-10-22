@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { GoogleMap, Marker, MarkerClusterer, InfoWindow } from '@react-google-maps/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
-import { EnhancedCard, CardContent } from '@/components/ui/enhanced-card';
+import { Card as EnhancedCard, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Briefcase, DollarSign } from 'lucide-react';
 import { searchJobsOnMap, getJobClusters } from '@/services/jobService';

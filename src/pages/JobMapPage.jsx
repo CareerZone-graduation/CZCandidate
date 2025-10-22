@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { JobMapLeaflet } from '@/components/jobs/JobMapLeaflet';
-import { EnhancedCard, CardContent, CardHeader, CardTitle } from '@/components/ui/enhanced-card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
@@ -26,7 +26,7 @@ export default function JobMapPage() {
       </div>
 
       {/* Filters */}
-      <EnhancedCard variant="glass">
+      <Card variant="glass">
         <CardHeader>
           <CardTitle>Bộ lọc</CardTitle>
         </CardHeader>
@@ -80,10 +80,10 @@ export default function JobMapPage() {
             </div>
           </div>
         </CardContent>
-      </EnhancedCard>
+      </Card>
 
       {/* Map */}
-      <EnhancedCard variant="glass" className="overflow-hidden">
+      <Card variant="glass" className="overflow-hidden">
         <div className="h-[600px]">
           <JobMapLeaflet 
             filters={filters}
@@ -91,10 +91,10 @@ export default function JobMapPage() {
             initialZoom={12}
           />
         </div>
-      </EnhancedCard>
+      </Card>
 
       {/* Instructions */}
-      <EnhancedCard variant="glass">
+      <Card variant="glass">
         <CardContent className="pt-6">
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>💡 <strong>Hướng dẫn sử dụng:</strong></p>
@@ -106,7 +106,7 @@ export default function JobMapPage() {
             </ul>
           </div>
         </CardContent>
-      </EnhancedCard>
+      </Card>
     </div>
   );
 }

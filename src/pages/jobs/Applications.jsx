@@ -159,14 +159,16 @@ const Applications = () => {
   // Render loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-32" />
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <ApplicationSkeleton key={index} />
+          ))}
         </div>
-        {Array.from({ length: 5 }).map((_, index) => (
-          <ApplicationSkeleton key={index} />
-        ))}
       </div>
     );
   }
@@ -175,8 +177,10 @@ const Applications = () => {
   if (isError) {
     const errorMessage = error.response?.data?.message || error.message;
     return (
-      <div className="container mx-auto px-4 py-6">
-        <ErrorState onRetry={refetch} message={errorMessage} />
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6">
+          <ErrorState onRetry={refetch} message={errorMessage} />
+        </div>
       </div>
     );
   }
@@ -184,34 +188,37 @@ const Applications = () => {
   // Render empty state
   if (!applications.length) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="text-center py-12">
-          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Chưa có đơn ứng tuyển nào
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp!
-          </p>
-          <Button onClick={() => navigate('/jobs')} className="bg-green-600 hover:bg-green-700">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Tìm việc làm
-          </Button>
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center py-12">
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Chưa có đơn ứng tuyển nào
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp!
+            </p>
+            <Button onClick={() => navigate('/jobs')} className="bg-green-600 hover:bg-green-700">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Tìm việc làm
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Đơn ứng tuyển của tôi</h1>
-          <p className="text-gray-600">
-            Theo dõi trạng thái {totalItems} đơn ứng tuyển của bạn
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Đơn ứng tuyển của tôi</h1>
+            <p className="text-gray-600">
+              Theo dõi trạng thái {totalItems} đơn ứng tuyển của bạn
+            </p>
+          </div>
         
         <Button 
           variant="outline" 
@@ -456,6 +463,7 @@ const Applications = () => {
         </div>
       )}
 
+      </div>
     </div>
   );
 };

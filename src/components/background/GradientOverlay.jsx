@@ -10,9 +10,9 @@ const GradientOverlay = ({
   theme = 'light'
 }) => {
   const intensityValues = {
-    subtle: 0.02,
-    medium: 0.04,
-    strong: 0.08          // Updated to match enhanced config
+    subtle: 0.01,
+    medium: 0.02,
+    strong: 0.04
   };
 
   const currentIntensity = intensityValues[intensity] || intensityValues.subtle;
@@ -20,18 +20,18 @@ const GradientOverlay = ({
   // Theme-aware gradient colors with enhanced visibility
   const gradientColors = theme === 'dark' 
     ? {
-        primary: `rgba(107, 114, 128, ${currentIntensity})`,     // gray-500
-        secondary: `rgba(75, 85, 99, ${currentIntensity})`,       // gray-600
-        tertiary: `rgba(55, 65, 81, ${currentIntensity * 0.8})`,  // gray-700
-        accent1: `rgba(96, 165, 250, ${currentIntensity * 0.6})`, // blue-400
-        accent2: `rgba(52, 211, 153, ${currentIntensity * 0.5})`  // emerald-400
+        primary: `rgba(156, 163, 175, ${currentIntensity})`,      // gray-400 (lighter)
+        secondary: `rgba(107, 114, 128, ${currentIntensity})`,    // gray-500
+        tertiary: `rgba(75, 85, 99, ${currentIntensity * 0.7})`,  // gray-600
+        accent1: `rgba(147, 197, 253, ${currentIntensity * 0.5})`, // blue-300 (lighter)
+        accent2: `rgba(110, 231, 183, ${currentIntensity * 0.4})`  // emerald-300 (lighter)
       }
     : {
-        primary: `rgba(156, 163, 175, ${currentIntensity})`,      // gray-400
-        secondary: `rgba(107, 114, 128, ${currentIntensity})`,     // gray-500
-        tertiary: `rgba(75, 85, 99, ${currentIntensity * 0.8})`,  // gray-600
-        accent1: `rgba(59, 130, 246, ${currentIntensity * 0.6})`, // blue-500
-        accent2: `rgba(16, 185, 129, ${currentIntensity * 0.5})`  // emerald-500
+        primary: `rgba(209, 213, 219, ${currentIntensity})`,      // gray-300 (lighter)
+        secondary: `rgba(156, 163, 175, ${currentIntensity})`,    // gray-400 (lighter)
+        tertiary: `rgba(107, 114, 128, ${currentIntensity * 0.7})`, // gray-500
+        accent1: `rgba(96, 165, 250, ${currentIntensity * 0.5})`, // blue-400
+        accent2: `rgba(52, 211, 153, ${currentIntensity * 0.4})`  // emerald-400
       };
 
   const gradientStyle = {

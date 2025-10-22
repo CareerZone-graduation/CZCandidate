@@ -1,5 +1,5 @@
 import { Users, Briefcase, Star, ArrowRight } from 'lucide-react';
-import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardFooter, EnhancedCardHeader, EnhancedCardTitle } from '../ui/enhanced-card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { SectionHeader } from '../common/SectionHeader';
@@ -81,8 +81,8 @@ const TopCompanies = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {companies.map((company) => (
-            <EnhancedCard key={company.id} variant="interactive" className="flex flex-col text-center relative">
-            <EnhancedCardHeader>
+            <Card key={company.id} variant="interactive" className="flex flex-col text-center relative">
+            <CardHeader>
   <div className="mb-3 mx-auto">
     <img
       src={company.logo}
@@ -90,8 +90,8 @@ const TopCompanies = () => {
       className="h-34 w-34 mx-auto object-contain rounded-full"
     />
   </div>
-  <EnhancedCardTitle className="text-xl font-bold text-foreground">{company.name}</EnhancedCardTitle>
-  <EnhancedCardDescription className="text-muted-foreground">{company.industry}</EnhancedCardDescription>
+  <CardTitle className="text-xl font-bold text-foreground">{company.name}</CardTitle>
+  <CardDescription className="text-muted-foreground">{company.industry}</CardDescription>
 
                 <div className="flex items-center justify-center gap-1 mt-2">
                   <Star className="h-5 w-5 text-warning fill-warning" />
@@ -100,8 +100,8 @@ const TopCompanies = () => {
                 {company.featured && (
                   <Badge className="absolute top-4 right-4 bg-gradient-primary text-white">Top</Badge>
                 )}
-              </EnhancedCardHeader>
-              <EnhancedCardContent className="grow">
+              </CardHeader>
+              <CardContent className="grow">
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
                     <Users className="h-4 w-4 text-primary" /> 
@@ -112,13 +112,13 @@ const TopCompanies = () => {
                     <span className="font-medium">{company.jobs}</span>
                   </div>
                 </div>
-              </EnhancedCardContent>
-              <EnhancedCardFooter>
+              </CardContent>
+              <CardFooter>
                 <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">
                   Xem công ty <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-              </EnhancedCardFooter>
-            </EnhancedCard>
+              </CardFooter>
+            </Card>
           ))}
         </div>
 

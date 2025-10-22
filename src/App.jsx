@@ -1,6 +1,6 @@
 import AppRouter from './routes/AppRouter';
 import { Toaster } from 'sonner';
-import SimpleAnimatedBackground from '@/components/background/SimpleAnimatedBackground';
+import AnimatedBackground from '@/components/background/AnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
 import { Route } from 'lucide-react';
@@ -14,7 +14,7 @@ function App() {
   return (
     <>
     <BackgroundProvider>
-      <SimpleAnimatedBackground />
+      <AnimatedBackground />
       <AppRouter />
       <Toaster position="top-center" richColors />
     </BackgroundProvider>

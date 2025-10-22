@@ -220,7 +220,7 @@ const JobDetail = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-md mx-auto bg-card">
+        <Card className="w-full max-w-md mx-auto bg-card ">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
               <Coins className="w-6 h-6 text-orange-600" />
@@ -321,7 +321,7 @@ const JobDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
+    <div className="min-h-screen">
       <div className="container mx-auto py-6 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Back Button */}

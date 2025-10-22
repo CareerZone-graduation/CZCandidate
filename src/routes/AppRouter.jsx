@@ -29,10 +29,8 @@ import BillingPage from '../pages/billing/Billing';
 import Billing from '../pages/billing/Billing'; // Import trang nạp xu
 import PaymentSuccess from '../pages/payment/PaymentSuccess';
 import PaymentFailure from '../pages/payment/PaymentFailure';
-import AnimatedBackgroundDemo from '../pages/demo/AnimatedBackgroundDemo';
 import CompanyDetail from '../pages/company/CompanyDetail';
 import CVBuilder from '../components/buildCV/CVBuilder';
-import CVRenderOnlyPage from '../pages/cv/CVRenderOnlyPage';
 import CVListPage from '../pages/cv/CVListPage';
 
 // Protected Route Component
@@ -77,7 +75,6 @@ const AppRouter = () => {
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
-          <Route path="/demo/background" element={<AnimatedBackgroundDemo />} />
           <Route path="/editor" element={<CVBuilder />} />
           <Route path="/editor/:cvId" element={<CVBuilder />} />
         </Route>

@@ -469,8 +469,8 @@ const Header = () => {
                 {showNotificationDropdown && (
                   <div 
                     className={cn(
-                      "absolute right-0 top-full mt-2 w-96 bg-background/95 backdrop-blur-xl",
-                      "border border-border/50 rounded-2xl shadow-2xl z-50 max-h-96 overflow-hidden",
+                      "absolute right-0 top-full mt-2 w-96 bg-background",
+                      "border border-border rounded-2xl shadow-2xl z-50 max-h-96 overflow-hidden",
                       "animate-in slide-in-from-top-2 fade-in-0 duration-300"
                     )} 
                     data-dropdown
@@ -636,8 +636,8 @@ const Header = () => {
                 {showUserDropdown && (
                   <div 
                     className={cn(
-                      "absolute right-0 top-full mt-2 w-80 bg-background/95 backdrop-blur-xl",
-                      "border border-border/50 rounded-2xl shadow-2xl z-50 overflow-hidden",
+                      "absolute right-0 top-full mt-2 w-80 bg-background",
+                      "border border-border rounded-2xl shadow-2xl z-50 overflow-hidden",
                       "animate-in slide-in-from-top-2 fade-in-0 duration-300"
                     )} 
                     data-dropdown

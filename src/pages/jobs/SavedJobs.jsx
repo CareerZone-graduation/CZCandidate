@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Bookmark, Search, ArrowUpDown } from 'lucide-react';
-import { EnhancedCard } from '@/components/ui/enhanced-card';
+import { Card } from '@/components/ui/card';
 import JobResultCard from './components/SearchResults/JobResultCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -84,7 +84,7 @@ const SavedJobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background/80 backdrop-blur-sm relative z-10">
+    <div className="min-h-screen backdrop-blur-sm relative z-10">
       <div className="container py-8">
         <div className="flex items-center mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mr-4">
@@ -97,7 +97,7 @@ const SavedJobs = () => {
           </Badge>
         </div>
 
-        <EnhancedCard className="mb-8 p-6 shadow-sm">
+        <Card className="mb-8 p-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <form
@@ -136,7 +136,7 @@ const SavedJobs = () => {
               </Select>
             </div>
           </div>
-        </EnhancedCard>
+        </Card>
 
         {savedJobs.length > 0 ? (
           <>
