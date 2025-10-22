@@ -40,6 +40,7 @@ import { logout as logoutService } from '@/services/authService';
 import apiClient from '@/services/apiClient';
 import { useHeaderTheme } from '@/hooks/useHeaderTheme';
 import { cn } from '@/lib/utils';
+import JobsDropdownMenu from './JobsDropdownMenu';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -55,9 +56,8 @@ const Header = () => {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-  // Navigation links
+  // Navigation links (excluding Jobs - handled by JobsDropdownMenu)
   const navLinks = [
-    { to: "/jobs/search", label: "Tìm việc làm", title: 'Việc làm', href: '/jobs/search', icon: <Briefcase className="h-5 w-5" /> },
     { to: "/companies", label: "Công ty", title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
     { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> },
     { to: "/my-cvs", label: "Quản lý CV", title: 'Quản lý CV', href: '/my-cvs', icon: <FileText className="h-5 w-5" /> }
@@ -329,11 +329,31 @@ const Header = () => {
                   <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
                 </Link>
                 <nav className="grid gap-3 text-lg font-medium">
+                  {/* Jobs Section */}
+                  <Link to="/jobs/search" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
+                    <Briefcase className="h-4 w-4" /> Tìm việc làm
+                  </Link>
+                  {isAuthenticated && (
+                    <>
+                      <Link to="/dashboard/saved-jobs" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <Bookmark className="h-4 w-4" /> Việc làm đã lưu
+                      </Link>
+                      <Link to="/dashboard/applications" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <FileText className="h-4 w-4" /> Việc làm đã ứng tuyển
+                      </Link>
+                      <Link to="/dashboard/settings/job-alerts" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <Bell className="h-4 w-4" /> Quản lý thông báo
+                      </Link>
+                    </>
+                  )}
+                  
+                  {/* Other Links */}
                   {navLinks.map((link) => (
                     <Link key={link.to} to={link.to} className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                      {link.label}
+                      {link.icon} {link.label}
                     </Link>
                   ))}
+                  
                   {isAuthenticated && (
                     <div className="border-t pt-4 mt-4">
                       <Link to="/dashboard" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
@@ -341,9 +361,6 @@ const Header = () => {
                       </Link>
                       <Link to="/profile" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
                         <Settings className="h-4 w-4" /> Hồ sơ của tôi
-                      </Link>
-                      <Link to="/dashboard/applications" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                        <FileText className="h-4 w-4" /> Việc làm đã ứng tuyển
                       </Link>
                       <button onClick={handleLogout} className="flex items-center gap-4 px-3 py-2 rounded-lg text-destructive w-full text-left">
                         <LogOut className="h-4 w-4" /> Đăng xuất
@@ -376,6 +393,10 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-2">
+              {/* Jobs Dropdown Menu */}
+              <JobsDropdownMenu isHeaderWhite={isHeaderWhite} />
+              
+              {/* Other Navigation Links */}
               {navLinks.map((link) => (
                 <Link 
                   key={link.title} 

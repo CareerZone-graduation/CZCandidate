@@ -147,7 +147,7 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-6">
@@ -179,7 +179,7 @@ const Profile = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
+      <div className="min-h-screen bg-gray-200">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="text-center py-8 bg-white">
@@ -444,7 +444,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary/5 via-background to-primary/10">
+    <div className="min-h-screen bg-gray-200">
       <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto space-y-6">
             <input
