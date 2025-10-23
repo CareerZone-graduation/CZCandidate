@@ -1,0 +1,113 @@
+/* TikTok-style Preloader Styles */
+
+/* Prevent body scroll during loading */
+body.preloader-active {
+  overflow: hidden;
+}
+
+/* TikTok brand colors */
+:root {
+  --tiktok-cyan: #00F7EF;
+  --tiktok-pink: #FE2C55;
+  --tiktok-white: #FFFFFF;
+  --tiktok-black: #000000;
+}
+
+/* Smooth animations for circles */
+@keyframes tiktok-slide-left {
+  0%, 100% {
+    transform: translateX(-60px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes tiktok-slide-right {
+  0%, 100% {
+    transform: translateX(60px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes tiktok-pulse-center {
+  0%, 100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced glow effects for TikTok style */
+.tiktok-circle-cyan {
+  background: var(--tiktok-cyan);
+  box-shadow: 
+    0 0 60px rgba(0, 247, 239, 0.8),
+    0 0 100px rgba(0, 247, 239, 0.4),
+    0 0 140px rgba(0, 247, 239, 0.2);
+}
+
+.tiktok-circle-pink {
+  background: var(--tiktok-pink);
+  mix-blend-mode: lighten;
+  box-shadow: 
+    0 0 60px rgba(254, 44, 85, 0.8),
+    0 0 100px rgba(254, 44, 85, 0.4),
+    0 0 140px rgba(254, 44, 85, 0.2);
+}
+
+.tiktok-circle-white {
+  background: var(--tiktok-white);
+  mix-blend-mode: lighten;
+  box-shadow: 
+    0 0 40px rgba(255, 255, 255, 0.6),
+    0 0 80px rgba(255, 255, 255, 0.3);
+}
+
+/* Text glow effect */
+.tiktok-text-glow {
+  color: var(--tiktok-white);
+  text-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.5),
+    0 0 40px rgba(255, 255, 255, 0.3),
+    0 0 60px rgba(255, 255, 255, 0.1);
+}
+
+/* Loading dots */
+@keyframes tiktok-dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+}
+
+.tiktok-loading-dot {
+  animation: tiktok-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.tiktok-loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.tiktok-loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Smooth fade out */
+@keyframes tiktok-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

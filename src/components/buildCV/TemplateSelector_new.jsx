@@ -213,15 +213,15 @@ const TemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-800">Choose Template</h3>
+      <h3 className="text-lg font-semibold text-gray-800">Chọn Mẫu CV</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {cvTemplates.map((template) => (
           <div key={template.id} className="space-y-3">
             {getTemplatePreview(template)}
-            <div className="text-center">
+            <div className="text-center space-y-1">
               <h4 className="font-medium text-gray-800">{template.name}</h4>
-              <p className="text-sm text-gray-600">{template.description}</p>
+              <p className="text-xs text-gray-600 line-clamp-2">{template.shortDesc}</p>
               <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full mt-1">
                 {template.category}
               </span>

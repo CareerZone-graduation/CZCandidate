@@ -71,7 +71,7 @@ const CVListPage = () => {
 
   const handleOpenCreateDialog = (template) => {
     setSelectedTemplate(template);
-    setNewCvName(`CV mới dựa trên ${template.name}`);
+    setNewCvName(`CV ${template.name}`);
     setIsCreateDialogOpen(true);
   };
   
@@ -167,24 +167,56 @@ const CVListPage = () => {
 
       {/* Create CV Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Tạo CV mới</DialogTitle>
+            <DialogTitle className="text-xl">Tạo CV mới</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cv-name" className="text-right">Tên CV</Label>
-              <Input
-                id="cv-name"
-                value={newCvName}
-                onChange={(e) => setNewCvName(e.target.value)}
-                className="col-span-3"
-                placeholder="Ví dụ: CV ứng tuyển Fresher"
-              />
+          
+          {selectedTemplate && (
+            <div className="space-y-4 py-2">
+              {/* Template Info */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">{selectedTemplate.name}</h3>
+                  <Badge variant="secondary">{selectedTemplate.category}</Badge>
+                </div>
+                <p className="text-sm text-gray-600">{selectedTemplate.description}</p>
+                {selectedTemplate.bestFor && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    <span className="text-xs text-gray-500">Phù hợp:</span>
+                    {selectedTemplate.bestFor.map((tag, idx) => (
+                      <span 
+                        key={idx}
+                        className="text-xs bg-white text-blue-700 px-2 py-1 rounded shadow-sm"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* CV Name Input */}
+              <div className="space-y-2">
+                <Label htmlFor="cv-name">Tên CV của bạn</Label>
+                <Input
+                  id="cv-name"
+                  value={newCvName}
+                  onChange={(e) => setNewCvName(e.target.value)}
+                  placeholder="Ví dụ: CV ứng tuyển Frontend Developer"
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Đặt tên giúp bạn dễ dàng quản lý khi có nhiều CV
+                </p>
+              </div>
             </div>
-          </div>
+          )}
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Hủy
+            </Button>
             <Button onClick={handleCreateCv} disabled={createMutation.isPending}>
               {createMutation.isPending ? 'Đang tạo...' : 'Tạo và Chỉnh sửa'}
             </Button>
