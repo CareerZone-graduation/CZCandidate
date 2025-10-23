@@ -175,23 +175,23 @@ const Header = () => {
   const fetchJobAlerts = async () => {
     try {
       setIsLoadingNotifications(true);
-      const response = await apiClient.get('/job-alerts');
+      // const response = await apiClient.get('/job-alerts');
 
-      if (response.data.success) {
-        const jobAlerts = response.data.data || [];
-        const transformedNotifications = jobAlerts.map(transformJobAlertToNotification);
+      // if (response.data.success) {
+      //   const jobAlerts = response.data.data || [];
+      //   const transformedNotifications = jobAlerts.map(transformJobAlertToNotification);
 
-        setNotifications(transformedNotifications);
+      //   setNotifications(transformedNotifications);
 
-        // Chỉ tính thông báo active là chưa đọc
-        const activeAlerts = transformedNotifications.filter(n => n.isActive);
-        setNotificationCount(activeAlerts.length);
-        setHasNewNotifications(activeAlerts.length > 0);
+      //   // Chỉ tính thông báo active là chưa đọc
+      //   const activeAlerts = transformedNotifications.filter(n => n.isActive);
+      //   setNotificationCount(activeAlerts.length);
+      //   setHasNewNotifications(activeAlerts.length > 0);
 
-        console.log('✅ Job alerts loaded:', transformedNotifications);
-      } else {
-        console.error('❌ Failed to fetch job alerts:', response.data.message);
-      }
+      //   console.log('✅ Job alerts loaded:', transformedNotifications);
+      // } else {
+      //   console.error('❌ Failed to fetch job alerts:', response.data.message);
+      // }
     } catch (error) {
       console.error('❌ Error fetching job alerts:', error);
       // Fallback to empty state
@@ -350,14 +350,14 @@ const Header = () => {
                       </Link>
                     </>
                   )}
-                  
+
                   {/* Other Links */}
                   {navLinks.map((link) => (
                     <Link key={link.to} to={link.to} className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
                       {link.icon} {link.label}
                     </Link>
                   ))}
-                  
+
                   {isAuthenticated && (
                     <div className="border-t pt-4 mt-4">
                       <Link to="/dashboard" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
@@ -399,12 +399,12 @@ const Header = () => {
             <nav className="hidden md:flex items-center space-x-2">
               {/* Jobs Dropdown Menu */}
               <JobsDropdownMenu isHeaderWhite={isHeaderWhite} />
-              
+
               {/* Other Navigation Links */}
               {navLinks.map((link) => (
-                <Link 
-                  key={link.title} 
-                  to={link.href} 
+                <Link
+                  key={link.title}
+                  to={link.href}
                   className={cn(
                     "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group",
                     "hover:bg-primary/5 hover:scale-105",
@@ -430,7 +430,7 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <ThemeToggle />
-              
+
               {/* Notification Bell */}
               <div className="relative" data-dropdown>
                 <Button
@@ -474,12 +474,12 @@ const Header = () => {
 
                 {/* Notification Dropdown */}
                 {showNotificationDropdown && (
-                  <div 
+                  <div
                     className={cn(
                       "absolute right-0 top-full mt-2 w-96 bg-background",
                       "border border-border rounded-2xl shadow-2xl z-50 max-h-96 overflow-hidden",
                       "animate-in slide-in-from-top-2 fade-in-0 duration-300"
-                    )} 
+                    )}
                     data-dropdown
                   >
                     {/* Header */}
@@ -641,16 +641,16 @@ const Header = () => {
 
                 {/* Professional Dropdown Menu */}
                 {showUserDropdown && (
-                  <div 
+                  <div
                     className={cn(
                       "absolute right-0 top-full mt-2 w-80 bg-background",
                       "border border-border rounded-2xl shadow-2xl z-50 overflow-hidden",
                       "animate-in slide-in-from-top-2 fade-in-0 duration-300"
-                    )} 
+                    )}
                     data-dropdown
                   >
                     {/* User Profile Header */}
-                    <div 
+                    <div
                       className="relative px-6 py-4 border-b border-border overflow-hidden"
                       style={{
                         backgroundImage: 'linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, hsl(var(--primary) / 0.05) 100%)'
@@ -659,7 +659,7 @@ const Header = () => {
                       {/* Animated background elements */}
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                       <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-600/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
-                      
+
                       <div className="flex items-center space-x-4 relative z-10">
                         <div className="relative">
                           <Avatar className="w-14 h-14 ring-2 ring-primary/30 shadow-lg">
@@ -812,10 +812,10 @@ const Header = () => {
             <>
               {/* Theme Toggle for non-authenticated users */}
               <ThemeToggle />
-              
-              <Button 
-                variant="ghost" 
-                asChild 
+
+              <Button
+                variant="ghost"
+                asChild
                 className={cn(
                   "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
                   "hover:bg-muted hover:shadow-md",
@@ -823,12 +823,12 @@ const Header = () => {
                 )}
               >
                 <Link to="/login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" /> 
+                  <LogIn className="h-4 w-4" />
                   <span>Đăng nhập</span>
                 </Link>
               </Button>
-              <Button 
-                asChild 
+              <Button
+                asChild
                 className={cn(
                   "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
                   "bg-gradient-to-r from-primary via-primary to-blue-600",
@@ -838,7 +838,7 @@ const Header = () => {
                 )}
               >
                 <Link to="/register" className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4" /> 
+                  <UserPlus className="h-4 w-4" />
                   <span>Đăng ký</span>
                 </Link>
               </Button>

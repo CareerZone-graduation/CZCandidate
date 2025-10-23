@@ -47,11 +47,18 @@ export const createCv = async (templateId) => {
 
 /**
  * Tạo một CV mới từ một template có sẵn, gửi kèm dữ liệu ban đầu.
+ * 
+ * NAMING CONVENTION:
+ * - Backend uses 'title' field in database
+ * - Frontend uses 'name' for display (mapped via virtual field)
+ * - When sending to backend, use 'title' in request body
+ * - When receiving from backend, use 'name' from response (virtual field)
+ * 
  * @param {Object} data - Dữ liệu để tạo CV.
  * @param {string} data.templateId - ID của template.
  * @param {Object} data.cvData - Dữ liệu CV ban đầu.
- * @param {string} data.title - Tiêu đề của CV.
- * @returns {Promise<Object>} Dữ liệu CV vừa được tạo.
+ * @param {string} data.title - Tên/tiêu đề của CV (backend field).
+ * @returns {Promise<Object>} Dữ liệu CV vừa được tạo (includes 'name' virtual field).
  */
 export const createCvFromTemplate = async (data) => {
   try {
@@ -116,9 +123,15 @@ export const deleteCv = async (cvId) => {
 
 /**
  * Duplicates a CV.
+ * 
+ * NAMING CONVENTION:
+ * - Sends 'name' to backend
+ * - Backend controller saves it as 'title' field
+ * - Response includes 'name' virtual field for frontend use
+ * 
  * @param {string} cvId - The ID of the CV to duplicate.
- * @param {string} name - The name for the new duplicated CV.
- * @returns {Promise<Object>} The data of the newly created CV.
+ * @param {string} name - The name for the new duplicated CV (will be saved as 'title' in DB).
+ * @returns {Promise<Object>} The data of the newly created CV (includes 'name' virtual field).
  */
 export const duplicateCv = async (cvId, name) => {
   try {
@@ -126,6 +139,28 @@ export const duplicateCv = async (cvId, name) => {
     return response.data;
   } catch (error) {
     console.error(`Error duplicating CV with ID ${cvId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Renames a CV.
+ * 
+ * NAMING CONVENTION:
+ * - Sends 'name' to backend PATCH endpoint
+ * - Backend controller maps 'name' to 'title' field
+ * - Response includes 'name' virtual field for frontend use
+ * 
+ * @param {string} cvId - The ID of the CV to rename.
+ * @param {string} name - The new name for the CV (will be saved as 'title' in DB).
+ * @returns {Promise<Object>} The updated CV data (includes 'name' virtual field).
+ */
+export const renameCv = async (cvId, name) => {
+  try {
+    const response = await apiClient.patch(`/cvs/${cvId}`, { name });
+    return response.data;
+  } catch (error) {
+    console.error(`Error renaming CV with ID ${cvId}:`, error);
     throw error;
   }
 };

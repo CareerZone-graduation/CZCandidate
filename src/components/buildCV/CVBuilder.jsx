@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { getCvById, createCvFromTemplate, updateCv, exportPdf as exportPdfApi } from '../../services/api';
 import { mapToFrontend, mapToBackend } from '../../utils/dataMapper';
@@ -15,6 +15,7 @@ import EducationForm from '../forms/EducationForm';
 import ProjectsForm from '../forms/ProjectsForm';
 import CertificatesForm from '../forms/CertificatesForm';
 import SimpleSectionOrderManager from './SimpleSectionOrderManager';
+import SampleDataSpotlight from './SampleDataSpotlight';
 import { 
   User, 
   Briefcase, 
@@ -39,6 +40,7 @@ import { toast } from 'sonner';
 const CVBuilder = () => {
   const { cvId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('template');
   const [selectedTemplate, setSelectedTemplate] = useState('modern-blue');
@@ -52,6 +54,7 @@ const CVBuilder = () => {
   const cvExportRef = useRef(null); // For export (no pagination)
   const [cvData, setCVData] = useState(null);
   const [error, setError] = useState(null);
+  const [showSampleSuggestion, setShowSampleSuggestion] = useState(false);
 
   // Load or create CV
   useEffect(() => {
@@ -69,25 +72,38 @@ const CVBuilder = () => {
             }
             setCVData(mappedData);
             setSelectedTemplate(mappedData.template || 'modern-blue');
+            
+            // Check if we should show suggestion for newly created CV
+            if (searchParams.get('showSuggestion') === 'true') {
+              setShowSampleSuggestion(true);
+            }
           } else {
             navigate('/editor/new', { replace: true });
           }
         } else {
-          // Create new CV with sample data - Works for both authenticated and non-authenticated users
+          // Create new CV - Show suggestion dialog first
           const basicCV = {
-            ...sampleCVData,
             id: 'temp-' + Date.now(),
             template: 'modern-blue',
             personalInfo: {
-              ...sampleCVData.personalInfo,
               fullName: isAuthenticated 
                 ? 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
                 : 'CV Demo ' + new Date().toLocaleDateString('vi-VN')
-            }
+            },
+            professionalSummary: '',
+            workExperience: [],
+            education: [],
+            skills: [],
+            projects: [],
+            certificates: [],
+            sectionOrder: ['summary', 'experience', 'education', 'skills', 'projects', 'certificates'],
+            hiddenSections: []
           };
           setCVData(basicCV);
           setSelectedTemplate(basicCV.template || 'modern-blue');
-          console.log('✅ CV created with sample data - PDF export available');
+          // Show sample data suggestion for new CVs
+          setShowSampleSuggestion(true);
+          console.log('✅ New CV created - showing sample data suggestion');
         }
       } catch (error) {
         console.error("Error loading CV:", error);
@@ -149,7 +165,17 @@ const CVBuilder = () => {
       template: sample.template || prevData.template,
     }));
     
+    // Close suggestion dialog and switch to personal info tab
+    setShowSampleSuggestion(false);
+    setActiveTab('personal');
+    
     toast.success(`Đã tải dữ liệu mẫu cho "${sample.personalInfo.fullName}"!`);
+  };
+
+  const handleDismissSuggestion = () => {
+    setShowSampleSuggestion(false);
+    setActiveTab('personal');
+    toast.info('Bạn có thể tải dữ liệu mẫu bất cứ lúc nào từ sidebar!');
   };
 
   const exportPDF = async () => {
@@ -230,7 +256,16 @@ const CVBuilder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      {/* Sample Data Spotlight - Highlights the sample data section */}
+      {showSampleSuggestion && (
+        <SampleDataSpotlight
+          onSelectSample={loadSampleData}
+          onDismiss={handleDismissSuggestion}
+        />
+      )}
+
+      <div className="min-h-screen bg-gray-50">
       
 
       
@@ -482,6 +517,7 @@ const CVBuilder = () => {
         />
       </div>
     </div>
+    </>
   );
 };
 

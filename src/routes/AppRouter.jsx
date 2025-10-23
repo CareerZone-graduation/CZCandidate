@@ -34,6 +34,7 @@ import CompanyDetail from '../pages/company/CompanyDetail';
 import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVListPage from '../pages/cv/CVListPage';
+import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -68,6 +69,7 @@ const AppRouter = () => {
         v7_relativeSplatPath: true,
       }}
     >
+      <ScrollToTopOnRouteChange />
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>

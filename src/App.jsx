@@ -21,7 +21,7 @@ function App() {
         <BackgroundProvider>
           <AnimatedBackground />
           <AppRouter />
-          <Toaster position="top-center" richColors />
+          <Toaster position="bottom-right" richColors />
           <ScrollToTop />
         </BackgroundProvider>
       </ThemeProvider>
