@@ -91,7 +91,7 @@ const FeaturedJobs = () => {
   };
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-background">
       <div className="container">
         <SectionHeader
           badgeText="⭐ Việc làm nổi bật"
@@ -126,7 +126,7 @@ const FeaturedJobs = () => {
             jobs.slice(0, 6).map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border border-gray-100 shadow-lg hover:shadow-2xl bg-white cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
+                className="group relative overflow-hidden border shadow-lg hover:shadow-2xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                <CardHeader>

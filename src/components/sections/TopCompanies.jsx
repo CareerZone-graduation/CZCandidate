@@ -70,7 +70,7 @@ const companies = [
 
 const TopCompanies = () => {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-background">
       <div className="container">
         <SectionHeader
           badgeText="🏢 Đối tác uy tín"
@@ -81,7 +81,7 @@ const TopCompanies = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {companies.map((company) => (
-            <Card key={company.id} className="group flex flex-col text-center relative border border-gray-100 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-2xl bg-white">
+            <Card key={company.id} className="group flex flex-col text-center relative border shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-2xl bg-card">
             <CardHeader>
   <div className="mb-3 mx-auto">
     <img

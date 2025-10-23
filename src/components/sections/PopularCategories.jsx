@@ -17,7 +17,7 @@ const categories = [
 
 const PopularCategories = () => {
   return (
-    <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
       <div className="container">
         <SectionHeader
           badgeText="🎯 Lĩnh vực hot"
@@ -28,19 +28,19 @@ const PopularCategories = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {categories.map((category, index) => (
-            <Card key={index} className="group bg-white hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50 shadow-md hover:shadow-xl rounded-2xl p-6 cursor-pointer transition-all duration-300 border border-gray-100 hover:border-emerald-200">
+            <Card key={index} className="group bg-card hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50 dark:hover:from-emerald-950/30 dark:hover:to-teal-950/30 shadow-md hover:shadow-xl rounded-2xl p-6 cursor-pointer transition-all duration-300 border hover:border-emerald-200 dark:hover:border-emerald-800">
               <CardHeader>
-                <div className="mx-auto bg-emerald-50 group-hover:bg-gradient-to-br group-hover:from-emerald-500 group-hover:to-teal-500 w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-lg">
-                  <div className="text-emerald-600 group-hover:text-white transform group-hover:scale-110 transition-all duration-300">
+                <div className="mx-auto bg-emerald-50 dark:bg-emerald-950/30 group-hover:bg-gradient-to-br group-hover:from-emerald-500 group-hover:to-teal-500 w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-lg">
+                  <div className="text-emerald-600 dark:text-emerald-400 group-hover:text-white transform group-hover:scale-110 transition-all duration-300">
                     {category.icon}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className="text-lg font-bold text-gray-800 mb-2 group-hover:text-emerald-700 transition-colors text-center">
+                <CardTitle className="text-lg font-bold text-foreground mb-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors text-center">
                   {category.name}
                 </CardTitle>
-                <p className="text-gray-600 font-medium text-center text-sm">
+                <p className="text-muted-foreground font-medium text-center text-sm">
                   {category.jobs}
                 </p>
               </CardContent>

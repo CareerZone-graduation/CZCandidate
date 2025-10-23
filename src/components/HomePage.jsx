@@ -10,7 +10,7 @@ import HowItWorks from './sections/HowItWorks';
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col min-h-full bg-white">
+    <div className="flex flex-col min-h-full bg-background">
       <HeroSection />
       <StatsSection />
       <FeaturedJobs />

@@ -2,6 +2,7 @@ import AppRouter from './routes/AppRouter';
 import { Toaster } from 'sonner';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
 import { Route } from 'lucide-react';
 import CVRenderOnlyPage from './pages/cv/CVRenderOnlyPage';
@@ -14,12 +15,14 @@ function App() {
   // This keeps the App component clean and focused on rendering the router.
   return (
     <>
-    <BackgroundProvider>
-      <AnimatedBackground />
-      <AppRouter />
-      <Toaster position="top-center" richColors />
-      <ScrollToTop />
-    </BackgroundProvider>
+    <ThemeProvider>
+      <BackgroundProvider>
+        <AnimatedBackground />
+        <AppRouter />
+        <Toaster position="top-center" richColors />
+        <ScrollToTop />
+      </BackgroundProvider>
+    </ThemeProvider>
 
       <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
     </>

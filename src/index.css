@@ -84,33 +84,50 @@
 }
 
 .dark {
-  --background: oklch(20.33% 0.088 261.2);
-  --foreground: oklch(98.13% 0.006 257);
-  --card: oklch(20.33% 0.088 261.2);
-  --card-foreground: oklch(98.13% 0.006 257);
-  --popover: oklch(20.33% 0.088 261.2);
-  --popover-foreground: oklch(98.13% 0.006 257);
-  --primary: oklch(53.94% 0.142 151.2);
-  --brand-accent: oklch(53.94% 0.142 151.2);
-  --primary-foreground: oklch(27.44% 0.063 152.8);
-  --primary-light: oklch(20.93% 0.054 151.2);
-  --secondary: oklch(29.56% 0.038 260.1);
-  --secondary-foreground: oklch(98.13% 0.006 257);
-  --muted: oklch(29.56% 0.038 260.1);
-  --muted-foreground: oklch(67.92% 0.024 259);
-  --accent: oklch(29.56% 0.038 260.1);
-  --accent-foreground: oklch(98.13% 0.006 257);
-  --destructive: oklch(45.14% 0.158 24.9);
-  --destructive-foreground: oklch(98.13% 0.006 257);
-  --border: oklch(29.56% 0.038 260.1);
-  --input: oklch(29.56% 0.038 260.1);
-  --ring: oklch(53.94% 0.142 151.2);
-  --info: oklch(67.43% 0.174 259.6);
-  --warning: oklch(76.24% 0.16 77.2);
-  --success: oklch(53.94% 0.142 151.2);
-  --footer: oklch(40.17% 0.026 259.3);
-  --footer-foreground: oklch(30% 0.023 259.4);
-  --footer-muted: oklch(39.73% 0.02 259.5);
+  /* Nền sáng hơn - từ 20% lên 15-18% */
+  --background: oklch(15% 0.02 261.2);
+  --foreground: oklch(98% 0.005 257);
+
+  /* Card sáng hơn nền một chút để tạo depth */
+  --card: oklch(20% 0.025 261.2);
+  --card-foreground: oklch(98% 0.005 257);
+
+  /* Popover sáng hơn để nổi bật */
+  --popover: oklch(20% 0.03 261.2);
+  --popover-foreground: oklch(98% 0.005 257);
+
+  /* Primary sáng và rõ ràng hơn */
+  --primary: oklch(65% 0.18 151.2);
+  --brand-accent: oklch(65% 0.18 151.2);
+  --primary-foreground: oklch(15% 0.02 152.8);
+  --primary-light: oklch(25% 0.08 151.2);
+
+  /* Secondary và muted sáng hơn */
+  --secondary: oklch(25% 0.04 260.1);
+  --secondary-foreground: oklch(98% 0.005 257);
+  --muted: oklch(22% 0.03 260.1);
+  --muted-foreground: oklch(70% 0.02 259);
+
+  /* Accent */
+  --accent: oklch(25% 0.04 260.1);
+  --accent-foreground: oklch(98% 0.005 257);
+
+  /* Status colors - sáng và rõ ràng hơn */
+  --destructive: oklch(55% 0.2 24.9);
+  --destructive-foreground: oklch(98% 0.005 257);
+  --info: oklch(70% 0.18 259.6);
+  --warning: oklch(78% 0.17 77.2);
+  --success: oklch(65% 0.18 151.2);
+
+  /* Border và input sáng hơn để dễ nhìn */
+  --border: oklch(28% 0.04 260.1);
+  --input: oklch(25% 0.04 260.1);
+  --ring: oklch(65% 0.18 151.2);
+
+  /* Footer */
+  --footer: oklch(18% 0.025 259.3);
+  --footer-foreground: oklch(85% 0.015 259.4);
+  --footer-muted: oklch(50% 0.015 259.5);
 }
 
 /* Base styles */
@@ -122,6 +139,21 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth theme transitions */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Exclude animations and transforms from theme transition */
+* {
+  transition-property: background-color, border-color, color, fill, stroke !important;
 }
 
 /* Container utility */
@@ -191,68 +223,88 @@ body {
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.1) 25%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0.1) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.1) 25%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.1) 75%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
 
 /* Micro-interactions: subtle entrance and hover animations */
 @keyframes enter-up {
-  from { opacity: 0; transform: translateY(6px) scale(0.995); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .enter-up {
-  animation: enter-up 360ms cubic-bezier(.2,.9,.2,1) both;
+  animation: enter-up 360ms cubic-bezier(.2, .9, .2, 1) both;
 }
 
 .hover-lift {
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
+
 .hover-lift:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 30px -8px rgba(2,6,23,0.2), 0 6px 12px -6px rgba(2,6,23,0.08);
+  box-shadow: 0 12px 30px -8px rgba(2, 6, 23, 0.2), 0 6px 12px -6px rgba(2, 6, 23, 0.08);
 }
 
 /* Prefer reduced motion: disable non-essential animations */
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-shimmer { animation: none; }
-  .enter-up { animation: none; }
-  .hover-lift, .btn-gradient { transition: none; transform: none !important; }
+  .skeleton-shimmer {
+    animation: none;
+  }
+
+  .enter-up {
+    animation: none;
+  }
+
+  .hover-lift,
+  .btn-gradient {
+    transition: none;
+    transform: none !important;
+  }
 }
 
 /* Subtle background patterns */
 .grainy-background {
-  background: 
+  background:
     radial-gradient(circle at 25% 25%, rgba(34, 197, 94, 0.05) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
     var(--background);
 }
 
 .subtle-gradient-bg {
-  background: linear-gradient(135deg, 
-    var(--background) 0%, 
-    rgba(248, 250, 252, 0.5) 50%, 
-    var(--background) 100%);
+  background: linear-gradient(135deg,
+      var(--background) 0%,
+      rgba(248, 250, 252, 0.5) 50%,
+      var(--background) 100%);
 }
 
 
 /* Animations */
 @keyframes gradient-shift {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -288,17 +340,33 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(35% 0.05 260.1);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(45% 0.06 260.1);
+}
+
 /* Loading animations */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -319,6 +387,10 @@ body {
   transform: translateY(-4px);
 }
 
+.dark .card-hover:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
 .card-interactive {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -328,6 +400,10 @@ body {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-4px);
   border-color: color-mix(in oklch, transparent, var(--primary) 20%);
+}
+
+.dark .card-interactive:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -340,11 +416,9 @@ body {
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(
-    to right,
-    color-mix(in oklch, black 10%, var(--primary)),
-    color-mix(in oklch, black 10%, var(--info))
-  );
+  background: linear-gradient(to right,
+      color-mix(in oklch, black 10%, var(--primary)),
+      color-mix(in oklch, black 10%, var(--info)));
 }
 
 .btn-gradient:focus-visible {
@@ -386,6 +460,16 @@ body {
 
 ::-moz-selection {
   background: color-mix(in oklch, transparent, var(--primary) 15%);
+  color: var(--foreground);
+}
+
+.dark ::selection {
+  background: color-mix(in oklch, transparent, var(--primary) 30%);
+  color: var(--foreground);
+}
+
+.dark ::-moz-selection {
+  background: color-mix(in oklch, transparent, var(--primary) 30%);
   color: var(--foreground);
 }
 
@@ -447,10 +531,12 @@ body {
   z-index: 999999 !important;
   position: fixed !important;
 }
+
 [data-radix-dropdown-menu-content] {
   z-index: 999999 !important;
   position: fixed !important;
 }
+
 [data-radix-select-content],
 [data-radix-dropdown-menu-content] {
   background-color: white !important;
@@ -458,47 +544,79 @@ body {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   backdrop-filter: blur(8px) !important;
 }
+
 .dark [data-radix-select-content],
 .dark [data-radix-dropdown-menu-content] {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
+  background-color: var(--popover) !important;
+  color: var(--popover-foreground) !important;
   border-color: var(--border) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
 }
+
 body:has([data-radix-dialog-content]) [data-radix-select-content] {
   z-index: 999999 !important;
 }
+
 [data-radix-select-viewport] {
   max-height: 200px !important;
   overflow-y: auto !important;
 }
+
 [data-radix-select-content],
 [data-radix-dropdown-menu-content] {
   opacity: 1 !important;
 }
+
 [data-radix-dialog-content] input,
 [data-radix-dialog-content] textarea,
 [data-radix-dialog-content] [data-radix-select-trigger] {
   border-color: rgb(209 213 219) !important;
   background-color: white !important;
 }
+
+.dark [data-radix-dialog-content] input,
+.dark [data-radix-dialog-content] textarea,
+.dark [data-radix-dialog-content] [data-radix-select-trigger] {
+  border-color: var(--border) !important;
+  background-color: var(--input) !important;
+  color: var(--foreground) !important;
+}
+
 [data-radix-dialog-content] input:focus,
 [data-radix-dialog-content] textarea:focus,
 [data-radix-dialog-content] [data-radix-select-trigger]:focus {
   border-color: rgb(34 197 94) !important;
   box-shadow: 0 0 0 1px rgb(34 197 94) !important;
 }
+
 [data-radix-dialog-content] [data-radix-select-content] {
   background-color: white !important;
   border: 1px solid rgb(209 213 219) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   z-index: 999999 !important;
 }
+
+.dark [data-radix-dialog-content] [data-radix-select-content] {
+  background-color: var(--popover) !important;
+  border-color: var(--border) !important;
+}
+
 [data-radix-dialog-content] [data-radix-select-item] {
   color: rgb(17 24 39) !important;
 }
+
+.dark [data-radix-dialog-content] [data-radix-select-item] {
+  color: var(--foreground) !important;
+}
+
 [data-radix-dialog-content] [data-radix-select-item]:hover,
 [data-radix-dialog-content] [data-radix-select-item][data-highlighted] {
   background-color: rgb(249 250 251) !important;
+}
+
+.dark [data-radix-dialog-content] [data-radix-select-item]:hover,
+.dark [data-radix-dialog-content] [data-radix-select-item][data-highlighted] {
+  background-color: var(--accent) !important;
 }
 
 /* Animated background specific styles */
@@ -537,7 +655,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   .animated-background {
     display: none;
   }
-  
+
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -549,6 +667,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -559,25 +678,28 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   .leaflet-container {
     @apply rounded-lg;
   }
-  
+
   .leaflet-popup-content-wrapper {
     @apply rounded-lg shadow-xl;
   }
-  
+
   .leaflet-popup-tip {
     @apply shadow-lg;
   }
-  
+
   /* Custom marker animations */
   @keyframes marker-bounce {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-10px);
     }
   }
-  
+
   .custom-marker:hover,
   .user-marker:hover {
     animation: marker-bounce 0.5s ease-in-out;
@@ -586,12 +708,14 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 
 /* Enhanced Header Animations */
 @layer components {
+
   /* Smooth fade and slide in animations */
   @keyframes fadeInDown {
     from {
       opacity: 0;
       transform: translateY(-10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -603,6 +727,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -614,6 +739,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -622,9 +748,12 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 
   /* Glow effect for notifications */
   @keyframes glow-pulse {
-    0%, 100% {
+
+    0%,
+    100% {
       box-shadow: 0 0 5px rgba(34, 197, 94, 0.5), 0 0 10px rgba(34, 197, 94, 0.3);
     }
+
     50% {
       box-shadow: 0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.5);
     }
@@ -635,6 +764,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
     0% {
       background-position: -200% center;
     }
+
     100% {
       background-position: 200% center;
     }
@@ -642,9 +772,12 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 
   /* Smooth gradient animation */
   @keyframes gradient-x {
-    0%, 100% {
+
+    0%,
+    100% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
@@ -656,6 +789,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
       transform: scale(0);
       opacity: 1;
     }
+
     100% {
       transform: scale(2);
       opacity: 0;
@@ -664,15 +798,20 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 
   /* Notification badge bounce */
   @keyframes badge-bounce {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: scale(1);
     }
+
     25% {
       transform: scale(1.2);
     }
+
     50% {
       transform: scale(0.9);
     }
+
     75% {
       transform: scale(1.1);
     }
@@ -696,12 +835,10 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   }
 
   .animate-shimmer-gold {
-    background-image: linear-gradient(
-      90deg,
-      rgba(250, 204, 21, 0) 0%,
-      rgba(250, 204, 21, 0.4) 50%,
-      rgba(250, 204, 21, 0) 100%
-    );
+    background-image: linear-gradient(90deg,
+        rgba(250, 204, 21, 0) 0%,
+        rgba(250, 204, 21, 0.4) 50%,
+        rgba(250, 204, 21, 0) 100%);
     background-size: 200% auto;
     animation: shimmer-gold 3s linear infinite;
   }
@@ -840,19 +977,21 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 }
 
 .a4-size {
-    width: 210mm;
-    min-height: 297mm;
-    box-sizing: border-box;
-  }
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+}
 
-  .a4-page {
-    width: 210mm;
-    min-height: 297mm;
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
-  }
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
 @media print {
+
   /* Các thiết lập cơ bản cho body */
   body {
     margin: 0 !important;
@@ -864,16 +1003,18 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
    * phải nằm trọn vẹn trên MỘT trang in.
    */
   .a4-page {
-    page-break-after: always !important; /* Luôn sang trang mới sau khi hết div này */
-    
+    page-break-after: always !important;
+    /* Luôn sang trang mới sau khi hết div này */
+
     /* Ép kích thước vừa khít 1 trang A4 khi in */
     width: 210mm !important;
     height: 297mm !important;
-    min-height: 297mm !important; /* Ghi đè style inline của React */
-    
+    min-height: 297mm !important;
+    /* Ghi đè style inline của React */
+
     /* Ẩn bất cứ nội dung nào bị tràn 1-2px do lỗi làm tròn */
-    overflow: hidden !important; 
-    
+    overflow: hidden !important;
+
     /* Xóa shadow và margin khi in */
     margin: 0 !important;
     box-shadow: none !important;
@@ -887,10 +1028,15 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   /* * VÔ HIỆU HÓA tất cả logic ngắt trang thông minh khác.
    * Chúng ta không cần chúng nữa vì JavaScript đã xử lý rồi.
    */
-  .break-inside-avoid, 
-  .break-after-avoid, 
-  section, 
-  h1, h2, h3, h4, h5, h6 {
+  .break-inside-avoid,
+  .break-after-avoid,
+  section,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     page-break-inside: auto !important;
     break-inside: auto !important;
     page-break-after: auto !important;
@@ -903,6 +1049,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -913,6 +1060,7 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -920,9 +1068,12 @@ body:has([data-radix-dialog-content]) [data-radix-select-content] {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-20px);
   }

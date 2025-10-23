@@ -41,6 +41,7 @@ import apiClient from '@/services/apiClient';
 import { useHeaderTheme } from '@/hooks/useHeaderTheme';
 import { cn } from '@/lib/utils';
 import JobsDropdownMenu from './JobsDropdownMenu';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -324,10 +325,13 @@ const Header = () => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-full max-w-xs bg-white">
-                <Link to="/" className="flex items-center space-x-2 mb-8">
-                  <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
-                </Link>
+              <SheetContent side="left" className="w-full max-w-xs bg-white dark:bg-card">
+                <div className="flex items-center justify-between mb-8">
+                  <Link to="/" className="flex items-center space-x-2">
+                    <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
+                  </Link>
+                  <ThemeToggle variant="ghost" size="icon" />
+                </div>
                 <nav className="grid gap-3 text-lg font-medium">
                   {/* Jobs Section */}
                   <Link to="/jobs/search" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
@@ -424,6 +428,9 @@ const Header = () => {
         <div className="hidden md:flex items-center space-x-2">
           {isAuthenticated ? (
             <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+              
               {/* Notification Bell */}
               <div className="relative" data-dropdown>
                 <Button
@@ -541,7 +548,7 @@ const Header = () => {
                                         Hoạt động
                                       </Badge>
                                     ) : (
-                                      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5">
+                                      <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground px-2 py-0.5">
                                         Tạm dừng
                                       </Badge>
                                     )}
@@ -803,6 +810,9 @@ const Header = () => {
             </div>
           ) : (
             <>
+              {/* Theme Toggle for non-authenticated users */}
+              <ThemeToggle />
+              
               <Button 
                 variant="ghost" 
                 asChild 

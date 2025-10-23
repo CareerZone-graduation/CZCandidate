@@ -39,13 +39,13 @@ const HeroSection = () => {
   };
   return (
     // Professional Hero với nền gradient sáng như hình
-    <section className="relative bg-linear-to-r from-green-100 via-green-200 to-blue-200 h-[67vh] flex items-center justify-center -mt-16">
+    <section className="relative bg-gradient-to-r from-green-100 via-green-200 to-blue-200 dark:from-green-900/30 dark:via-green-800/30 dark:to-blue-900/30 h-[67vh] flex items-center justify-center -mt-16">
       {/* Background pattern overlay */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 dark:opacity-5">
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
             backgroundSize: "30px 30px",
           }}
         ></div>
@@ -56,7 +56,7 @@ const HeroSection = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
   <Button
     size="lg"
-    className="bg-white hover:bg-gray-50 text-green-600 font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
+    className="bg-card hover:bg-muted text-primary font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
     onClick={() => window.open('http://localhost:4000/', '_blank')}
   >
     <Briefcase className="mr-3 h-6 w-6" />
@@ -66,7 +66,7 @@ const HeroSection = () => {
   <Button
     variant="outline"
     size="lg"
-    className="bg-gradient-to-r from-green-300 via-green-400 to-blue-500 hover:bg-white/20 text-white font-bold text-lg px-10 py-5 rounded-full border-2 border-white/40 shadow-2xl transform hover:scale-105 transition-all duration-300 min-w-[180px] backdrop-blur-sm"
+    className="bg-gradient-to-r from-green-300 via-green-400 to-blue-500 dark:from-green-600 dark:via-green-500 dark:to-blue-600 hover:opacity-90 text-white font-bold text-lg px-10 py-5 rounded-full border-2 border-white/40 dark:border-white/20 shadow-2xl transform hover:scale-105 transition-all duration-300 min-w-[180px] backdrop-blur-sm"
   >
     <User className="mr-3 h-6 w-6" />
     Ứng tuyển
@@ -79,7 +79,7 @@ const HeroSection = () => {
               <span className="text-foreground">định hình tương lai của bạn</span>
             </h1>
 
-          <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-gray-200 bg-white/80">
+          <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-border bg-card/80">
             <form onSubmit={handleFormSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Job Title Input with Autocomplete - Dài hơn */}
               <div className="relative lg:col-span-6">
@@ -89,20 +89,20 @@ const HeroSection = () => {
                   className="w-full"
                   onSearch={handleHeroSearch}
                   inputProps={{
-                    className: "h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
+                    className: "h-12 pl-12 text-base border-2 border-input focus:border-primary focus:ring-4 focus:ring-primary/20 bg-background rounded-xl font-medium placeholder:text-muted-foreground text-foreground"
                   }}
                 />
               </div>
 
               {/* Location Input - Ngắn hơn */}
               <div className="relative lg:col-span-3">
-                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                 <Input
                   type="text"
                   placeholder="Địa điểm"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="h-12 pl-12 text-base border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 bg-white rounded-xl font-medium placeholder:text-gray-400 text-gray-900"
+                  className="h-12 pl-12 text-base border-2 border-input focus:border-primary focus:ring-4 focus:ring-primary/20 bg-background rounded-xl font-medium placeholder:text-muted-foreground text-foreground"
                 />
               </div>
 

@@ -35,9 +35,9 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-5">
+      <div className="absolute top-0 left-0 w-full h-full opacity-5 dark:opacity-10">
         <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
       </div>
@@ -56,10 +56,10 @@ const HowItWorks = () => {
 
           {steps.map((step, index) => (
             <div key={index} className="relative">
-              <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white">
+              <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-card">
                 <CardContent className="p-8 text-center">
                   {/* Step number */}
-                  <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 shadow-md">
+                  <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-br from-muted to-muted/80 rounded-full flex items-center justify-center font-bold text-muted-foreground shadow-md">
                     {step.step}
                   </div>
 
@@ -69,10 +69,10 @@ const HowItWorks = () => {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">
+                  <h3 className="text-xl font-bold text-foreground mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     {step.description}
                   </p>
                 </CardContent>
