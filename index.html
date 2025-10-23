@@ -10,6 +10,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="fb-root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId: '787212570783616',
+      autoLogAppEvents: true,
+      xfbml: true,
+      version: 'v18.0'
+    });
+  };
+</script>
+<script async defer crossorigin="anonymous" 
+  src="https://connect.facebook.net/vi_VN/sdk.js"></script>
   </body>
 </html>

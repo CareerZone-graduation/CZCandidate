@@ -134,7 +134,7 @@ const SearchBar = forwardRef(({
    */
   const handleSearch = useCallback(async (searchQuery = query) => {
     const trimmedQuery = searchQuery.trim();
-    
+
     setShowDropdown(false);
 
     // Blur the input to remove focus after search
@@ -179,21 +179,23 @@ const SearchBar = forwardRef(({
   }, [handleSearch]);
 
   /**
-   * Handle delete history entry
+   * Handle delete history entry with optimistic update
    */
   const handleDeleteHistory = useCallback(async (e, entryId) => {
     e.stopPropagation();
-    try {
-      await dispatch(deleteSearchHistory(entryId)).unwrap();
-      toast.success('Đã xóa lịch sử tìm kiếm');
 
-      // Update suggestions to remove deleted entry
-      setSuggestions(prev => ({
-        ...prev,
-        history: prev.history.filter(h => h._id !== entryId)
-      }));
+    // Optimistic update: Xóa ngay trên UI
+    setSuggestions(prev => ({
+      ...prev,
+      history: prev.history.filter(h => h._id !== entryId)
+    }));
+
+    try {
+      // Gọi API ở background (không cần await)
+      dispatch(deleteSearchHistory(entryId));
     } catch (error) {
-      toast.error('Không thể xóa lịch sử tìm kiếm');
+      // Nếu có lỗi, không cần làm gì vì đã xóa trên UI
+      console.error('Error deleting history:', error);
     }
   }, [dispatch]);
 
@@ -348,7 +350,7 @@ const SearchBar = forwardRef(({
             onSuggestionHover={(index) => setSelectedIndex(index)}
             onDeleteHistory={handleDeleteHistory}
             onClose={closeDropdown}
-            onRetry={() => {}}
+            onRetry={() => { }}
             className={cn(
               // Match input width and positioning
               "absolute top-full left-0 right-0 z-50",
