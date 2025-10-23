@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
-import { CreditCard, History } from 'lucide-react';
+import { CreditCard, History, Receipt } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import RechargeHistory from '../../components/billing/RechargeHistory';
 
@@ -51,8 +52,18 @@ const BillingPage = () => {
     <div className="w-full min-h-[calc(100vh-80px)] flex items-center justify-center p-4 md:p-8 bg-muted/30">
       <Card className="w-full max-w-6xl shadow-lg">
         <CardHeader>
-          <CardTitle>Quản lý Xu</CardTitle>
-          <CardDescription>Nạp xu và xem lịch sử giao dịch để sử dụng các tính năng cao cấp.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Quản lý Xu</CardTitle>
+              <CardDescription>Nạp xu và xem lịch sử giao dịch để sử dụng các tính năng cao cấp.</CardDescription>
+            </div>
+            <Link to="/dashboard/credit-history">
+              <Button variant="outline" className="gap-2">
+                <Receipt className="h-4 w-4" />
+                Lịch sử chi tiết
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
           <Tabs defaultValue="recharge" className="w-full">

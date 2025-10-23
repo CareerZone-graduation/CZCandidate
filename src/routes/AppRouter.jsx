@@ -27,6 +27,7 @@ import News from '../pages/news/News';
 import NotFound from '../pages/NotFound';
 import BillingPage from '../pages/billing/Billing';
 import Billing from '../pages/billing/Billing'; // Import trang nạp xu
+import CreditHistory from '../pages/billing/CreditHistory';
 import PaymentSuccess from '../pages/payment/PaymentSuccess';
 import PaymentFailure from '../pages/payment/PaymentFailure';
 import CompanyDetail from '../pages/company/CompanyDetail';
@@ -108,6 +109,7 @@ const AppRouter = () => {
             {/* Thêm route cho trang nạp xu */}
             <Route path="billing" element={<BillingPage />} />
             <Route path="top-up" element={<Billing />} />
+            <Route path="credit-history" element={<CreditHistory />} />
           </Route>
         </Route>
         {/* Protected profile routes */}
