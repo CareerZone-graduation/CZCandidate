@@ -93,17 +93,26 @@ export const updateCv = async (cvId, cvData) => {
  */
 export const exportPdf = async (cvId) => {
   try {
-    const response = await apiClient.get(`/cvs/${cvId}/export-pdf`, {}, {
+    const response = await apiClient.get(`/cvs/${cvId}/export-pdf`, {
       responseType: 'blob', // Quan trọng: nhận về dữ liệu dạng file
       timeout: 30000, // 30 seconds timeout for PDF generation
     });
-    // console.log(response.data)
     return response.data;
   } catch (error) {
     console.error('Error exporting PDF:', error);
     console.log('Error details:', error.response ? error.response.data : error.message);
     throw error;
   }
+};
+
+/**
+ * Lấy URL để xem CV dạng PDF
+ * @param {string} cvId - ID của CV
+ * @returns {string} URL để xem PDF
+ */
+export const getCvPdfUrl = (cvId) => {
+  const token = localStorage.getItem('token');
+  return `${import.meta.env.VITE_API_URL}/cvs/${cvId}/export-pdf?token=${token}`;
 };
 
 /**

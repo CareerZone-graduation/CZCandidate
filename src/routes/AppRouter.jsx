@@ -33,7 +33,8 @@ import PaymentFailure from '../pages/payment/PaymentFailure';
 import CompanyDetail from '../pages/company/CompanyDetail';
 import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
-import CVListPage from '../pages/cv/CVListPage';
+import CVBuilderPage from '../pages/cv/CVBuilderPage';
+import UploadedCVPage from '../pages/cv/UploadedCVPage';
 import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
 // Protected Route Component
@@ -89,7 +90,9 @@ const AppRouter = () => {
         {/* Protected CV Management routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/my-cvs" element={<MainLayout />}>
-            <Route index element={<CVListPage />} />
+            <Route index element={<Navigate to="/my-cvs/builder" replace />} />
+            <Route path="builder" element={<CVBuilderPage />} />
+            <Route path="uploaded" element={<UploadedCVPage />} />
           </Route>
         </Route>
 
