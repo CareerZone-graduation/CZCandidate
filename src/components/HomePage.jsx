@@ -5,18 +5,20 @@ import TopCompanies from './sections/TopCompanies';
 import Testimonials from './sections/Testimonials';
 import CareerGuideSection from './sections/CareerGuideSection';
 import NewsletterSection from './sections/NewsletterSection';
-import NewsletterBanner from './sections/NewsletterBanner';
+import StatsSection from './sections/StatsSection';
+import HowItWorks from './sections/HowItWorks';
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full bg-white">
       <HeroSection />
+      <StatsSection />
       <FeaturedJobs />
+      <HowItWorks />
       <PopularCategories />
       <TopCompanies />
-      <NewsletterBanner />
-      <CareerGuideSection />
       <Testimonials />
+      <CareerGuideSection />
       <NewsletterSection />
     </div>
   );

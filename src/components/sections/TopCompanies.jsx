@@ -70,18 +70,18 @@ const companies = [
 
 const TopCompanies = () => {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-white">
       <div className="container">
         <SectionHeader
           badgeText="🏢 Đối tác uy tín"
-          title={<>Top công ty <span className="text-gradient-primary">hàng đầu</span></>}
+          title={<>Top công ty <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span></>}
           description="Khám phá và ứng tuyển vào các công ty uy tín, môi trường làm việc tốt nhất."
           className="mb-12"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {companies.map((company) => (
-            <Card key={company.id} variant="interactive" className="flex flex-col text-center relative">
+            <Card key={company.id} className="group flex flex-col text-center relative border border-gray-100 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-2xl bg-white">
             <CardHeader>
   <div className="mb-3 mx-auto">
     <img
@@ -98,7 +98,7 @@ const TopCompanies = () => {
                   <span className="font-semibold text-foreground">{company.rating}</span>
                 </div>
                 {company.featured && (
-                  <Badge className="absolute top-4 right-4 bg-gradient-primary text-white">Top</Badge>
+                  <Badge className="absolute top-4 right-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 shadow-md">Top</Badge>
                 )}
               </CardHeader>
               <CardContent className="grow">
@@ -114,7 +114,7 @@ const TopCompanies = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">
+                <Button variant="outline" className="w-full border-2 border-emerald-200 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 rounded-xl font-semibold">
                   Xem công ty <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -123,8 +123,9 @@ const TopCompanies = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button size="lg">
+          <Button size="lg" className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
             Xem tất cả công ty
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>

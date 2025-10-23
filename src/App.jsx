@@ -5,6 +5,7 @@ import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
 import { Route } from 'lucide-react';
 import CVRenderOnlyPage from './pages/cv/CVRenderOnlyPage';
+import ScrollToTop from '@/components/common/ScrollToTop';
 
 function App() {
   useFirebaseMessaging();
@@ -17,6 +18,7 @@ function App() {
       <AnimatedBackground />
       <AppRouter />
       <Toaster position="top-center" richColors />
+      <ScrollToTop />
     </BackgroundProvider>
 
       <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />

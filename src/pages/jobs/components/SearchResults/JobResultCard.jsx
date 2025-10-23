@@ -290,13 +290,21 @@ const JobResultCard = ({
                 )}>
                   {job.title}
                 </h3>
-                <div className={cn(
-                  "flex items-center gap-2 text-muted-foreground",
-                  "group-hover:text-primary/80 transition-all duration-300",
-                  "group-hover:translate-x-1"
-                )}>
+                <div
+                  className={cn(
+                    "flex items-center gap-2 text-muted-foreground",
+                    "group-hover:text-primary/80 transition-all duration-300",
+                    "group-hover:translate-x-1 cursor-pointer"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (job.company?._id) {
+                      navigate(`/company/${job.company._id}`);
+                    }
+                  }}
+                >
                   <Building className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
-                  <span className="font-semibold truncate">{job.company?.name}</span>
+                  <span className="font-semibold truncate hover:underline">{job.company?.name}</span>
                 </div>
               </div>
               

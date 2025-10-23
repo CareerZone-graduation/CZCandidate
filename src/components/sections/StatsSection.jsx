@@ -1,61 +1,52 @@
-import { Briefcase, Building, Users, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { TrendingUp, Users, Building2, Briefcase } from 'lucide-react';
 
 const stats = [
   {
-    number: '10,000+',
-    label: 'Việc làm',
-    icon: <Briefcase className="h-8 w-8 text-primary" />,
+    icon: <Briefcase className="h-8 w-8" />,
+    value: '10,000+',
+    label: 'Việc làm đang tuyển',
+    color: 'from-emerald-500 to-teal-500'
   },
   {
-    number: '5,000+',
-    label: 'Công ty',
-    icon: <Building className="h-8 w-8 text-primary" />,
+    icon: <Building2 className="h-8 w-8" />,
+    value: '5,000+',
+    label: 'Công ty uy tín',
+    color: 'from-blue-500 to-cyan-500'
   },
   {
-    number: '50,000+',
-    label: 'Ứng viên',
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <Users className="h-8 w-8" />,
+    value: '50,000+',
+    label: 'Ứng viên đã tìm việc',
+    color: 'from-purple-500 to-pink-500'
   },
   {
-    number: '95%',
-    label: 'Tỷ lệ thành công',
-    icon: <CheckCircle className="h-8 w-8 text-primary" />,
-  },
+    icon: <TrendingUp className="h-8 w-8" />,
+    value: '95%',
+    label: 'Tỷ lệ hài lòng',
+    color: 'from-orange-500 to-red-500'
+  }
 ];
 
 const StatsSection = () => {
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-16 bg-gradient-to-b from-white to-gray-50">
       <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Những con số <span className="text-gradient-primary">ấn tượng</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            CareerZone đã kết nối thành công hàng ngàn ứng viên với các cơ hội việc làm tuyệt vời.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <Card key={index} className="text-center shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-background group hover:-translate-y-1">
-              <CardHeader>
-                <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:bg-gradient-primary transition-all duration-300">
-                  <div className="group-hover:text-primary-foreground transition-colors duration-300">
-                    {stat.icon}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardTitle className="text-3xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                  {stat.number}
-                </CardTitle>
-                <p className="text-muted-foreground font-medium">
-                  {stat.label}
-                </p>
-              </CardContent>
-            </Card>
+            <div 
+              key={index} 
+              className="text-center group cursor-pointer"
+            >
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${stat.color} text-white mb-4 transform group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                {stat.icon}
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                {stat.value}
+              </div>
+              <div className="text-sm md:text-base text-gray-600 font-medium">
+                {stat.label}
+              </div>
+            </div>
           ))}
         </div>
       </div>

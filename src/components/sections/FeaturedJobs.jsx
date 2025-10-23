@@ -91,11 +91,11 @@ const FeaturedJobs = () => {
   };
 
   return (
-    <section className="py-20 bg-green-50/50">
+    <section className="py-20 bg-white">
       <div className="container">
         <SectionHeader
           badgeText="⭐ Việc làm nổi bật"
-          title={<>Cơ hội nghề nghiệp <span className="bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">hàng đầu</span></>}
+          title={<>Cơ hội nghề nghiệp <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span></>}
           description="Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp."
         />
 
@@ -126,7 +126,7 @@ const FeaturedJobs = () => {
             jobs.slice(0, 6).map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border-0 shadow-md bg-background cursor-pointer"
+                className="group relative overflow-hidden border border-gray-100 shadow-lg hover:shadow-2xl bg-white cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                <CardHeader>
@@ -193,8 +193,7 @@ const FeaturedJobs = () => {
         <div className="text-center">
           <Button
             size="lg"
-            variant="outline"
-            className="px-8 py-3 border-green-700 text-green-700 hover:bg-green-700 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg"
+            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-semibold"
             onClick={handleViewAll}
           >
             Xem tất cả việc làm

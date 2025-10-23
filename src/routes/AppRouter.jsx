@@ -30,6 +30,7 @@ import Billing from '../pages/billing/Billing'; // Import trang nạp xu
 import PaymentSuccess from '../pages/payment/PaymentSuccess';
 import PaymentFailure from '../pages/payment/PaymentFailure';
 import CompanyDetail from '../pages/company/CompanyDetail';
+import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVListPage from '../pages/cv/CVListPage';
 
@@ -73,6 +74,7 @@ const AppRouter = () => {
           <Route path="/jobs" element={<Navigate to="/jobs/search" replace />} />
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
           <Route path="/editor" element={<CVBuilder />} />
