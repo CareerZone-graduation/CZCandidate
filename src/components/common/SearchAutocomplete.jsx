@@ -1,14 +1,22 @@
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle, useEffect, useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAutocomplete } from '@/hooks/useAutocomplete';
-import AutocompleteDropdown from './AutocompleteDropdown';
+import SearchHistoryDropdown from '@/components/jobs/SearchHistoryDropdown';
+import {
+  fetchSearchHistory,
+  saveSearchHistory,
+  deleteSearchHistory,
+  selectSearchHistory
+} from '@/redux/searchHistorySlice';
+import { getJobTitleSuggestions } from '@/services/jobService';
+import { toast } from 'sonner';
 
 /**
  * Component tìm kiếm với autocomplete cho job titles
- * Tích hợp với navigation để chuyển đến trang kết quả tìm kiếm
+ * Tích hợp search history và autocomplete, filter ở frontend
  * 
  * @param {Object} props
  * @param {string} props.placeholder - Placeholder text cho input
@@ -16,107 +24,269 @@ import AutocompleteDropdown from './AutocompleteDropdown';
  * @param {function} props.onSearch - Callback khi search (optional, mặc định là navigate)
  * @param {string} props.className - Additional CSS classes
  * @param {Object} props.inputProps - Additional props cho Input component
- * @param {Object} props.autocompleteOptions - Options cho useAutocomplete hook
  */
 const SearchAutocomplete = forwardRef(({
   placeholder = "Vị trí công việc, kỹ năng, công ty...",
   initialValue = "",
   onSearch,
   className,
-  inputProps = {},
-  autocompleteOptions = {}
+  inputProps = {}
 }, ref) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const searchHistory = useSelector(selectSearchHistory);
 
-  // Initialize autocomplete hook
-  const {
-    query,
-    suggestions,
-    isLoading,
-    error,
-    selectedIndex,
-    showDropdown,
-    handleInputChange,
-    handleKeyDown,
-    handleSuggestionClick,
-    handleSuggestionHover,
-    closeDropdown,
-    clear,
-    retry
-  } = useAutocomplete({
-    delay: 0,
-    minLength: 1,
-    maxSuggestions: 10,
-    ...autocompleteOptions
+  // State management
+  const [query, setQuery] = useState(initialValue || '');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [suggestions, setSuggestions] = useState({
+    history: [],
+    autocomplete: []
   });
+  const [isLoadingAutocomplete, setIsLoadingAutocomplete] = useState(false);
+
+  // Load search history on mount
+  useEffect(() => {
+    dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
+  }, [dispatch]);
 
   // Set initial value if provided
-  React.useEffect(() => {
-    if (initialValue && !query) {
-      handleInputChange(initialValue);
+  useEffect(() => {
+    if (initialValue && initialValue !== query) {
+      setQuery(initialValue);
     }
-  }, [initialValue, query, handleInputChange]);
+  }, [initialValue]);
+
+  // Effect for history suggestions (no debounce) - Filter on frontend
+  useEffect(() => {
+    if (query.trim().length > 0) {
+      const filteredHistory = Array.isArray(searchHistory)
+        ? searchHistory.filter(item => item.query.toLowerCase().includes(query.toLowerCase()))
+        : [];
+      setSuggestions(prev => ({
+        ...prev,
+        history: filteredHistory.slice(0, 5)
+      }));
+    } else {
+      // When query is empty, show recent history
+      setSuggestions(prev => ({
+        ...prev,
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : []
+      }));
+    }
+  }, [query, searchHistory]);
+
+  // Effect for autocomplete suggestions (with debounce)
+  useEffect(() => {
+    // Clear autocomplete if query is too short
+    if (!query || query.trim().length < 2) {
+      setSuggestions(prev => ({ ...prev, autocomplete: [] }));
+      setIsLoadingAutocomplete(false);
+      return;
+    }
+
+    // Set loading state immediately
+    setIsLoadingAutocomplete(true);
+
+    // Debounce API call
+    const timeoutId = setTimeout(async () => {
+      try {
+        const autocompleteResults = await getJobTitleSuggestions(query, 5).catch(() => ({ data: [] }));
+        setSuggestions(prev => ({
+          ...prev,
+          autocomplete: Array.isArray(autocompleteResults.data) ? autocompleteResults.data : []
+        }));
+      } catch (error) {
+        console.error('Error fetching autocomplete suggestions:', error);
+        setSuggestions(prev => ({ ...prev, autocomplete: [] }));
+      } finally {
+        setIsLoadingAutocomplete(false);
+      }
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  /**
+   * Handle focus - show history when input is empty
+   */
+  const handleFocus = useCallback(() => {
+    setShowDropdown(true);
+    if (!query.trim()) {
+      setSuggestions({
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [],
+        autocomplete: []
+      });
+    }
+  }, [query, searchHistory]);
+
+  /**
+   * Handle input change
+   */
+  const handleInputChange = useCallback((value) => {
+    setQuery(value);
+    setShowDropdown(true);
+    if (!value || value.trim().length === 0) {
+      setSuggestions({
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [],
+        autocomplete: []
+      });
+    }
+  }, [searchHistory]);
 
   /**
    * Xử lý search action - navigate đến trang JobList với query params
    */
-  const handleSearch = (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = useCallback(async (searchQuery = query) => {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
 
-    closeDropdown();
+    setShowDropdown(false);
+
+    // Save to history
+    try {
+      await dispatch(saveSearchHistory({
+        query: trimmedQuery
+      })).unwrap();
+    } catch (error) {
+      console.error('Failed to save search history:', error);
+    }
 
     if (onSearch) {
       // Nếu có custom onSearch handler
-      onSearch(searchQuery.trim(), {
+      onSearch(trimmedQuery, {
         page: 1,
         size: 10,
-        query: searchQuery.trim()
+        query: trimmedQuery
       });
     } else {
-      // Mặc định navigate đến /jobs/search với query parameters
+      // Mặc định navigate đến /jobs với query parameters
       const searchParams = new URLSearchParams();
-      searchParams.set('query', searchQuery.trim());
+      searchParams.set('query', trimmedQuery);
       searchParams.set('page', '1');
       searchParams.set('size', '10');
-      
-      navigate(`/jobs/search?${searchParams.toString()}`);
+
+      navigate(`/jobs?${searchParams.toString()}`);
     }
-  };
+  }, [query, dispatch, onSearch, navigate]);
 
   /**
-   * Xử lý sự kiện key down
+   * Handle suggestion click
    */
-  const handleInputKeyDown = (event) => {
-    const result = handleKeyDown(event);
-    
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const searchTerm = result || query;
-      if (searchTerm) {
-        handleSearch(searchTerm);
+  const handleSuggestionClick = useCallback((suggestion, isHistory) => {
+    if (isHistory) {
+      // Apply search from history
+      setQuery(suggestion.query || '');
+      setShowDropdown(false);
+      setSelectedIndex(-1);
+      handleSearch(suggestion.query || '');
+    } else {
+      // Just set query for autocomplete
+      setQuery(suggestion.title);
+      setShowDropdown(false);
+      setSelectedIndex(-1);
+      handleSearch(suggestion.title);
+    }
+  }, [handleSearch]);
+
+  /**
+   * Handle delete history entry
+   */
+  const handleDeleteHistory = useCallback(async (e, entryId) => {
+    e.stopPropagation();
+    try {
+      await dispatch(deleteSearchHistory(entryId)).unwrap();
+      toast.success('Đã xóa lịch sử tìm kiếm');
+
+      // Update suggestions to remove deleted entry
+      setSuggestions(prev => ({
+        ...prev,
+        history: prev.history.filter(h => h._id !== entryId)
+      }));
+    } catch (error) {
+      toast.error('Không thể xóa lịch sử tìm kiếm');
+    }
+  }, [dispatch]);
+
+  /**
+   * Handle keyboard navigation
+   */
+  const handleKeyDown = useCallback((event) => {
+    const totalSuggestions = suggestions.history.length + suggestions.autocomplete.length;
+
+    if (!showDropdown || totalSuggestions === 0) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleSearch();
       }
+      return;
     }
-  };
 
-  /**
-   * Xử lý click trên suggestion
-   */
-  const handleSuggestionSelect = (suggestion) => {
-    const selectedTitle = handleSuggestionClick(suggestion);
-    if (selectedTitle) {
-      handleSearch(selectedTitle);
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setSelectedIndex(prev =>
+          prev < totalSuggestions - 1 ? prev + 1 : 0
+        );
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        setSelectedIndex(prev =>
+          prev > 0 ? prev - 1 : totalSuggestions - 1
+        );
+        break;
+
+      case 'Enter':
+        event.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < totalSuggestions) {
+          // Determine if it's history or autocomplete
+          if (selectedIndex < suggestions.history.length) {
+            const selectedSuggestion = suggestions.history[selectedIndex];
+            handleSuggestionClick(selectedSuggestion, true);
+          } else {
+            const autocompleteIndex = selectedIndex - suggestions.history.length;
+            const selectedSuggestion = suggestions.autocomplete[autocompleteIndex];
+            handleSuggestionClick(selectedSuggestion, false);
+          }
+        } else {
+          handleSearch();
+        }
+        break;
+
+      case 'Escape':
+        event.preventDefault();
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+        break;
+
+      case 'Tab':
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+        break;
+
+      default:
+        break;
     }
-  };
+  }, [showDropdown, suggestions, selectedIndex, handleSuggestionClick, handleSearch]);
 
-  /**
-   * Xử lý submit form (khi click search button hoặc submit)
-   */
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    handleSearch();
-  };
+  const closeDropdown = useCallback(() => {
+    setShowDropdown(false);
+    setSelectedIndex(-1);
+  }, []);
+
+  const clear = useCallback(() => {
+    setQuery('');
+    setSuggestions({
+      history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [],
+      autocomplete: []
+    });
+    setShowDropdown(false);
+    setSelectedIndex(-1);
+  }, [searchHistory]);
 
   /**
    * Focus vào input
@@ -137,25 +307,19 @@ const SearchAutocomplete = forwardRef(({
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
-      <form onSubmit={handleSubmit} className="relative">
+      <div className="relative">
         {/* Search Icon */}
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 z-10" />
-        
+
         {/* Input Field */}
         <Input
           ref={inputRef}
           type="text"
           placeholder={placeholder}
           value={query}
-          onChange={(e) => handleInputChange(e.target.value)}  
-          onKeyDown={handleInputKeyDown}
-          onFocus={() => {
-            // Hiển thị dropdown nếu có suggestions và query đủ dài
-            if (suggestions.length > 0 && query.length >= 1) {
-              // Trigger dropdown bằng cách "fake" một input change
-              handleInputChange(query);
-            }
-          }}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           className={cn(
             "pl-12 pr-4 h-12 text-base",
             "border-2 border-border focus:border-primary",
@@ -175,25 +339,28 @@ const SearchAutocomplete = forwardRef(({
           {...inputProps}
         />
 
-        {/* Autocomplete Dropdown */}
-        <AutocompleteDropdown
-          suggestions={suggestions}
+        {/* Search History Dropdown */}
+        <SearchHistoryDropdown
+          historySuggestions={suggestions.history}
+          autocompleteSuggestions={suggestions.autocomplete}
           query={query}
-          isLoading={isLoading}
-          error={error}
+          isLoading={isLoadingAutocomplete}
+          error={null}
           selectedIndex={selectedIndex}
           isVisible={showDropdown}
-          onSuggestionClick={handleSuggestionSelect}
-          onSuggestionHover={handleSuggestionHover}
+          onSuggestionClick={handleSuggestionClick}
+          onSuggestionHover={(index) => setSelectedIndex(index)}
+          onDeleteHistory={handleDeleteHistory}
           onClose={closeDropdown}
-          onRetry={retry}
+          onRetry={() => {}}
           className={cn(
-            // Match input styling
+            "absolute top-full left-0 z-50 w-full",
             "border-t-0 rounded-t-none rounded-b-xl",
-            "border-2 border-primary focus-within:border-primary"
+            "border-2 border-primary focus-within:border-primary",
+            "shadow-lg shadow-primary/20"
           )}
         />
-      </form>
+      </div>
     </div>
   );
 });

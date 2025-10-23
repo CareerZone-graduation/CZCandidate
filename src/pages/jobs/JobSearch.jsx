@@ -240,7 +240,9 @@ const JobSearch = () => {
             <div className="flex-1">
               <JobSearchBar
                 initialQuery={query}
+                currentFilters={currentFilters}
                 onSearch={handleSearch}
+                onFiltersApply={handleFilterChange}
                 placeholder="Tìm kiếm công việc, kỹ năng, công ty..."
               />
             </div>

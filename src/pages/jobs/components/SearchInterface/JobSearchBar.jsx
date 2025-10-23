@@ -1,46 +1,47 @@
-import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import AutocompleteDropdown from '@/components/common/AutocompleteDropdown';
-import { useAutocomplete } from '@/hooks/useAutocomplete';
+import { useDispatch, useSelector } from 'react-redux';
 import { cn } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
 // --- THAY ĐỔI 1: Import hook mới ---
 import { useSonioxSearch } from '@/hooks/useSonioxSearch';
 import VoiceSearchButton from '@/components/common/VoiceSearchButton';
+// Search history imports
+import SearchHistoryDropdown from '@/components/jobs/SearchHistoryDropdown';
+import { 
+  fetchSearchHistory, 
+  saveSearchHistory, 
+  deleteSearchHistory,
+  selectSearchHistory 
+} from '@/redux/searchHistorySlice';
+import { getJobTitleSuggestions } from '@/services/jobService';
+import { toast } from 'sonner';
 
 const JobSearchBar = forwardRef(({
   placeholder = "Tìm kiếm công việc, kỹ năng, công ty...",
   initialQuery = "",
   onSearch,
-  className,
-  inputProps = {},
-  autocompleteOptions = {}
+  inputProps = {}
 }, ref) => {
   const inputRef = useRef(null);
   const [isActive, setIsActive] = useState(false);
+  const dispatch = useDispatch();
+  const searchHistory = useSelector(selectSearchHistory);
 
-  // --- THAY ĐỔI 2: Sử dụng useAutocomplete và giữ nguyên ---
-  const {
-    query,
-    suggestions,
-    isLoading,
-    error,
-    selectedIndex,
-    showDropdown,
-    handleInputChange,
-    handleKeyDown,
-    handleSuggestionClick,
-    handleSuggestionHover,
-    closeDropdown,
-    clear,
-    retry
-  } = useAutocomplete({
-    delay: 10,
-    minLength: 1,
-    maxSuggestions: 10,
-    ...autocompleteOptions
+  // --- THAY ĐỔI 2: State management cho search history ---
+  const [query, setQuery] = useState(initialQuery || '');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [suggestions, setSuggestions] = useState({
+    history: [],
+    autocomplete: []
   });
+  const [isLoadingAutocomplete, setIsLoadingAutocomplete] = useState(false);
+  
+  // Debounce query để tối ưu hóa API calls
+  const debouncedQuery = useDebounce(query, 300);
 
   // --- THAY ĐỔI 3: Khởi tạo hook Soniox ---
   const {
@@ -51,49 +52,242 @@ const JobSearchBar = forwardRef(({
     toggleSearch: toggleVoiceSearch
   } = useSonioxSearch({
     onResult: (text) => {
-      handleInputChange(text); // Cập nhật query trong autocomplete hook
-      handleSearch(text);     // Thực hiện tìm kiếm
+      setQuery(text);
+      handleSearch(text);
     }
   });
 
   // Cập nhật input với transcript real-time từ Soniox
   useEffect(() => {
     if (isListening) {
-      handleInputChange(fullTranscript);
+      setQuery(fullTranscript);
     }
-  }, [fullTranscript, isListening, handleInputChange]);
+  }, [fullTranscript, isListening]);
 
+  // Load search history on mount
+  useEffect(() => {
+    dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
+  }, [dispatch]);
+
+  // Sync with initialQuery
   useEffect(() => {
     if (initialQuery && initialQuery !== query) {
-      handleInputChange(initialQuery);
+      setQuery(initialQuery);
     }
   }, [initialQuery]);
 
-  const handleSearch = (searchQuery = query) => {
+  // Effect for history suggestions (no debounce) - Filter on frontend
+  useEffect(() => {
+    if (query.trim().length > 0) {
+      const filteredHistory = Array.isArray(searchHistory)
+        ? searchHistory.filter(item => item.query.toLowerCase().includes(query.toLowerCase()))
+        : [];
+      setSuggestions(prev => ({
+        ...prev,
+        history: filteredHistory.slice(0, 5)
+      }));
+    } else {
+      // When query is empty, show recent history
+      setSuggestions(prev => ({
+        ...prev,
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : []
+      }));
+    }
+  }, [query, searchHistory]);
+
+  // Effect for autocomplete suggestions (with debounce)
+  useEffect(() => {
+    // Clear autocomplete if query is too short
+    if (!debouncedQuery || debouncedQuery.trim().length < 2) {
+      setSuggestions(prev => ({ ...prev, autocomplete: [] }));
+      setIsLoadingAutocomplete(false);
+      return;
+    }
+
+    // Set loading state immediately
+    setIsLoadingAutocomplete(true);
+
+    // Debounce API call for autocomplete only
+    const fetchAutocomplete = async () => {
+      try {
+        const autocompleteResults = await getJobTitleSuggestions(debouncedQuery, 5).catch(() => ({ data: [] }));
+        setSuggestions(prev => ({
+          ...prev,
+          autocomplete: Array.isArray(autocompleteResults.data) ? autocompleteResults.data : []
+        }));
+      } catch (error) {
+        console.error('Error fetching autocomplete suggestions:', error);
+        setSuggestions(prev => ({ ...prev, autocomplete: [] }));
+      } finally {
+        setIsLoadingAutocomplete(false);
+      }
+    };
+
+    fetchAutocomplete();
+  }, [debouncedQuery]);
+
+  /**
+   * Handle focus - show history when input is empty
+   */
+  const handleFocus = useCallback(() => {
+    setIsActive(true);
+    // Always show dropdown on focus
+    setShowDropdown(true);
+    // Load history immediately if query is empty (even if empty array to show empty state)
+    if (!query.trim()) {
+      setSuggestions({
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [],
+        autocomplete: []
+      });
+    }
+  }, [query, searchHistory]);
+
+  /**
+   * Handle input change
+   */
+  const handleInputChange = useCallback((value) => {
+    setQuery(value);
+    setShowDropdown(true);
+    if (!value || value.trim().length === 0) {
+      setSuggestions({
+        history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [],
+        autocomplete: []
+      });
+    }
+  }, [searchHistory]);
+
+  /**
+   * Handle search submission
+   */
+  const handleSearch = useCallback(async (searchQuery = query) => {
+    const trimmedQuery = searchQuery.trim();
+    
     setIsActive(false);
-    closeDropdown();
+    setShowDropdown(false);
+    
     if (inputRef.current) {
       inputRef.current.blur();
     }
+
+    // Save to history (only query, no filters)
+    try {
+      await dispatch(saveSearchHistory({
+        query: trimmedQuery
+      })).unwrap();
+      // Show success toast for save operation
+    } catch (error) {
+      // Show error toast but don't interrupt search flow
+      toast.error('Không thể lưu lịch sử tìm kiếm');
+      console.error('Failed to save search history:', error);
+    }
+
+    // Perform search
     if (onSearch) {
-      onSearch(searchQuery.trim());
+      onSearch(trimmedQuery);
     }
-  };
+  }, [query, dispatch, onSearch]);
 
-  const handleInputKeyDown = (event) => {
-    setIsActive(true);
-    const result = handleKeyDown(event);
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const searchTerm = result || query;
-      handleSearch(searchTerm);
+  /**
+   * Handle suggestion click
+   */
+  const handleSuggestionClick = useCallback((suggestion, isHistory) => {
+    if (isHistory) {
+      // Apply search from history (only query)
+      setQuery(suggestion.query || '');
+      setShowDropdown(false);
+      setSelectedIndex(-1);
+      
+      // Perform search
+      handleSearch(suggestion.query || '');
+    } else {
+      // Just set query for autocomplete
+      setQuery(suggestion.title);
+      setShowDropdown(false);
+      setSelectedIndex(-1);
+      handleSearch(suggestion.title);
     }
-  };
+  }, [handleSearch]);
 
-  const handleSuggestionSelect = (suggestion) => {
-    const selectedTitle = handleSuggestionClick(suggestion);
-    handleSearch(selectedTitle || '');
-  };
+  /**
+   * Handle delete history entry
+   */
+  const handleDeleteHistory = useCallback(async (e, entryId) => {
+    e.stopPropagation();
+    try {
+      await dispatch(deleteSearchHistory(entryId)).unwrap();
+      toast.success('Đã xóa lịch sử tìm kiếm');
+      
+      // Update suggestions to remove deleted entry
+      setSuggestions(prev => ({
+        ...prev,
+        history: prev.history.filter(h => h._id !== entryId)
+      }));
+    } catch (error) {
+      toast.error('Không thể xóa lịch sử tìm kiếm');
+    }
+  }, [dispatch]);
+
+  /**
+   * Handle keyboard navigation
+   */
+  const handleKeyDown = useCallback((event) => {
+    const totalSuggestions = suggestions.history.length + suggestions.autocomplete.length;
+    
+    if (!showDropdown || totalSuggestions === 0) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleSearch();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setSelectedIndex(prev => 
+          prev < totalSuggestions - 1 ? prev + 1 : 0
+        );
+        break;
+      
+      case 'ArrowUp':
+        event.preventDefault();
+        setSelectedIndex(prev => 
+          prev > 0 ? prev - 1 : totalSuggestions - 1
+        );
+        break;
+      
+      case 'Enter':
+        event.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < totalSuggestions) {
+          // Determine if it's history or autocomplete
+          if (selectedIndex < suggestions.history.length) {
+            const selectedSuggestion = suggestions.history[selectedIndex];
+            handleSuggestionClick(selectedSuggestion, true);
+          } else {
+            const autocompleteIndex = selectedIndex - suggestions.history.length;
+            const selectedSuggestion = suggestions.autocomplete[autocompleteIndex];
+            handleSuggestionClick(selectedSuggestion, false);
+          }
+        } else {
+          handleSearch();
+        }
+        break;
+      
+      case 'Escape':
+        event.preventDefault();
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+        break;
+      
+      case 'Tab':
+        setShowDropdown(false);
+        setSelectedIndex(-1);
+        break;
+      
+      default:
+        break;
+    }
+  }, [showDropdown, suggestions, selectedIndex, handleSuggestionClick, handleSearch]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -106,6 +300,21 @@ const JobSearchBar = forwardRef(({
     }
     handleSearch();
   };
+
+  const closeDropdown = useCallback(() => {
+    setShowDropdown(false);
+    setSelectedIndex(-1);
+  }, []);
+
+  const clear = useCallback(() => {
+    setQuery('');
+    setSuggestions({ 
+      history: Array.isArray(searchHistory) ? searchHistory.slice(0, 10) : [], 
+      autocomplete: [] 
+    });
+    setShowDropdown(false);
+    setSelectedIndex(-1);
+  }, [searchHistory]);
 
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current?.focus(),
@@ -138,8 +347,8 @@ const JobSearchBar = forwardRef(({
               placeholder={isListening ? "🎤 Đang nghe..." : placeholder}
               value={query}
               onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-              onFocus={() => setIsActive(true)}
+              onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
               disabled={isListening} // Vô hiệu hóa input khi đang nghe
               className={cn(
                 "pl-12 pr-16 h-14 text-base w-full", // Tăng padding-right cho nút voice
@@ -173,17 +382,19 @@ const JobSearchBar = forwardRef(({
             </div>
           </div>
 
-          <AutocompleteDropdown
-            suggestions={suggestions}
+          <SearchHistoryDropdown
+            historySuggestions={suggestions.history}
+            autocompleteSuggestions={suggestions.autocomplete}
             query={query}
-            isLoading={isLoading}
-            error={error}
+            isLoading={isLoadingAutocomplete}
+            error={null}
             selectedIndex={selectedIndex}
             isVisible={showDropdown && isActive}
-            onSuggestionClick={handleSuggestionSelect}
-            onSuggestionHover={handleSuggestionHover}
+            onSuggestionClick={handleSuggestionClick}
+            onSuggestionHover={(index) => setSelectedIndex(index)}
+            onDeleteHistory={handleDeleteHistory}
             onClose={closeDropdown}
-            onRetry={retry}
+            onRetry={() => {}}
             className={cn(
               "absolute top-full left-0 right-0 z-50",
               "border-t-0 rounded-t-none rounded-b-xl",

@@ -454,23 +454,23 @@ body {
 
 /* Text selection */
 ::selection {
-  background: color-mix(in oklch, transparent, var(--primary) 15%);
-  color: var(--foreground);
+  background: oklch(85% 0.08 151.2);
+  color: oklch(20% 0.088 261.2);
 }
 
 ::-moz-selection {
-  background: color-mix(in oklch, transparent, var(--primary) 15%);
-  color: var(--foreground);
+  background: oklch(85% 0.08 151.2);
+  color: oklch(20% 0.088 261.2);
 }
 
 .dark ::selection {
-  background: color-mix(in oklch, transparent, var(--primary) 30%);
-  color: var(--foreground);
+  background: oklch(40% 0.12 151.2);
+  color: oklch(98% 0.005 257);
 }
 
 .dark ::-moz-selection {
-  background: color-mix(in oklch, transparent, var(--primary) 30%);
-  color: var(--foreground);
+  background: oklch(40% 0.12 151.2);
+  color: oklch(98% 0.005 257);
 }
 
 
