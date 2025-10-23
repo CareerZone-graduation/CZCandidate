@@ -107,7 +107,7 @@ const CVListPage = () => {
 
   const handleOpenDuplicateDialog = (cv) => {
     setCvToDuplicate(cv);
-    setNewCvName(`Bản sao của ${cv.name}`);
+    setNewCvName(`Bản sao của ${cv.title}`);
     setIsDuplicateDialogOpen(true);
   };
 
