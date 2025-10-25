@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { getJobApplicantCount, getJobById, getAllJobs } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
+import { saveViewHistory } from '../../services/viewHistoryService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -67,6 +68,17 @@ const JobDetail = () => {
     enabled: !!job?.company?._id,
     select: (data) => data.data.data?.filter(j => j._id !== id) || [],
   });
+
+  // Tự động lưu lịch sử xem khi vào trang chi tiết job
+  useEffect(() => {
+    if (job && id && isAuthenticated) {
+      // Lưu lịch sử xem (silent - không hiển thị thông báo)
+      saveViewHistory(id).catch((error) => {
+        // Silent error - không làm gián đoạn trải nghiệm người dùng
+        console.error('Failed to save view history:', error);
+      });
+    }
+  }, [job, id, isAuthenticated]);
 
   const formatWorkType = (type) => {
     const typeMap = {

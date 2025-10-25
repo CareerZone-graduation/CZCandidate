@@ -106,7 +106,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
   };
 
   const statusBadge = getStatusBadge(percentage);
-  const completedCount = COMPLETENESS_ITEMS.filter(item => profileCompleteness[item.key]).length;
+  const completedCount = COMPLETENESS_ITEMS.filter(item => data[item.key]).length;
   const totalCount = COMPLETENESS_ITEMS.length;
 
   return (
@@ -173,7 +173,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
         <div className="space-y-3 pt-2">
           <p className="text-sm font-semibold text-foreground">Chi tiết:</p>
           {COMPLETENESS_ITEMS.map((item) => {
-            const isCompleted = profileCompleteness[item.key];
+            const isCompleted = data[item.key];
             return (
               <div
                 key={item.key}
@@ -225,13 +225,13 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
                   💡 Mẹo tăng % hoàn thiện
                 </p>
                 <ul className="text-xs text-blue-800 dark:text-blue-200 mt-2 space-y-1">
-                  {!profileCompleteness.hasBasicInfo && (
+                  {!data.hasBasicInfo && (
                     <li>• Cập nhật số điện thoại và giới thiệu bản thân</li>
                   )}
-                  {!profileCompleteness.hasSkills && (
+                  {!data.hasSkills && (
                     <li>• Thêm ít nhất 3 kỹ năng của bạn</li>
                   )}
-                  {!profileCompleteness.hasCV && (
+                  {!data.hasCV && (
                     <li>• Upload CV để tăng cơ hội được tuyển dụng</li>
                   )}
                   {percentage >= 40 && percentage < 100 && (

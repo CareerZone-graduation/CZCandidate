@@ -10,17 +10,20 @@ import {
   TrendingUp, 
   Users, 
   Eye,
+  Clock,
   ArrowRight,
   Home 
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { getSavedJobs } from '../../services/savedJobService';
+import { getViewHistoryStats } from '../../services/viewHistoryService';
 
 const Dashboard = () => {
   const { profile } = useSelector((state) => state.auth);
   const [stats, setStats] = useState({
     appliedJobs: 12,
     savedJobs: 0, // Sẽ được cập nhật từ API
+    viewHistory: 0, // Lịch sử xem
     profileViews: 156,
     suggestedJobs: 24
   });
@@ -41,6 +44,20 @@ const Dashboard = () => {
             ...prev,
             savedJobs: totalSavedJobs
           }));
+        }
+
+        // Lấy thống kê lịch sử xem
+        try {
+          const viewHistoryResponse = await getViewHistoryStats();
+          if (viewHistoryResponse.data) {
+            setStats(prev => ({
+              ...prev,
+              viewHistory: viewHistoryResponse.data.totalViews || 0
+            }));
+          }
+        } catch (err) {
+          console.error('Lỗi khi lấy thống kê lịch sử xem:', err);
+          // Không quan trọng nếu API này fail
         }
       } catch (err) {
         console.error('Lỗi khi lấy thống kê:', err);
@@ -69,6 +86,14 @@ const Dashboard = () => {
       icon: <Heart className="h-6 w-6" />,
       color: 'bg-red-500',
       count: stats.savedJobs
+    },
+    {
+      title: 'Lịch sử xem',
+      description: 'Tin tuyển dụng bạn đã xem gần đây',
+      href: '/dashboard/view-history',
+      icon: <Clock className="h-6 w-6" />,
+      color: 'bg-purple-500',
+      count: stats.viewHistory
     },
     {
       title: 'Đơn ứng tuyển',
@@ -150,7 +175,7 @@ const Dashboard = () => {
       {/* Quick Actions */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Hành động nhanh</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
             <Link key={index} to={action.href}>
               <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/50">
@@ -168,7 +193,7 @@ const Dashboard = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-primary">
-                      {action.title === 'Việc làm đã lưu' && isLoadingStats ? (
+                      {(action.title === 'Việc làm đã lưu' || action.title === 'Lịch sử xem') && isLoadingStats ? (
                         <div className="animate-pulse bg-gray-200 h-6 w-6 rounded"></div>
                       ) : (
                         action.count

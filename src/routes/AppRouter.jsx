@@ -18,6 +18,7 @@ import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobDetail from '../pages/jobs/JobDetail';
 import JobSearch from '../pages/jobs/JobSearch';
 import SavedJobs from '../pages/jobs/SavedJobs';
+import ViewHistory from '../pages/jobs/ViewHistory';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
 import Profile from '../pages/profile/ProfilePage';
@@ -110,6 +111,7 @@ const AppRouter = () => {
             <Route path="applications" element={<Applications />} />
             <Route path="applications/:id" element={<ApplicationDetailPage />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
+            <Route path="view-history" element={<ViewHistory />} />
             <Route path="settings/job-alerts" element={<JobAlertSettings />} />
             {/* Thêm route cho trang nạp xu */}
             <Route path="billing" element={<BillingPage />} />

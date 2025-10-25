@@ -90,9 +90,9 @@ export const ProfileCompletionBanner = ({ profileCompleteness, profile }) => {
   };
 
   const missingItems = [];
-  if (!profileCompleteness.hasBasicInfo) missingItems.push('thông tin cơ bản');
-  if (!profileCompleteness.hasSkills) missingItems.push('kỹ năng');
-  if (!profileCompleteness.hasCV) missingItems.push('CV');
+  if (!data.hasBasicInfo) missingItems.push('thông tin cơ bản');
+  if (!data.hasSkills) missingItems.push('kỹ năng');
+  if (!data.hasCV) missingItems.push('CV');
 
   return (
     <div className={cn(
