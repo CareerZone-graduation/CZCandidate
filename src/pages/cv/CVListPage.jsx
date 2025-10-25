@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -41,6 +41,8 @@ const CVListPage = () => {
   const [cvToView, setCvToView] = useState(null);
   const [pdfBlob, setPdfBlob] = useState(null);
   const [newCvName, setNewCvName] = useState('');
+  const [highlightedCvId, setHighlightedCvId] = useState(null);
+  const highlightTimeoutRef = useRef(null);
 
   const { data: cvsData, isLoading: isLoadingCvs, isError: isCvsError, refetch: refetchCvs } = useQuery({
     queryKey: ['my-cvs'],
@@ -79,10 +81,30 @@ const CVListPage = () => {
     mutationFn: ({ cvId, name }) => duplicateCvApi(cvId, name),
     onSuccess: (data) => {
       toast.success('CV đã được nhân bản thành công!');
+      const newCvId = data.data._id;
+      
+      // Highlight the newly cloned CV
+      setHighlightedCvId(newCvId);
+      
+      // Clear highlight after 5 seconds
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedCvId(null);
+      }, 5000);
+      
       queryClient.invalidateQueries({ queryKey: ['my-cvs'] });
       setIsDuplicateDialogOpen(false);
       setNewCvName('');
-      navigate(`/editor/${data.data._id}`);
+      
+      // Scroll to the new CV after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const cvElement = document.getElementById(`cv-card-${newCvId}`);
+        if (cvElement) {
+          cvElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Không thể nhân bản CV.');
@@ -250,7 +272,25 @@ const CVListPage = () => {
         {cvsData?.data?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {cvsData.data.map((cv) => (
-              <Card key={cv._id} className="flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border-0 shadow-md">
+              <div
+                key={cv._id}
+                id={`cv-card-${cv._id}`}
+                className="relative"
+              >
+                {/* Highlight animation for cloned CV */}
+                {highlightedCvId === cv._id && (
+                  <>
+                    {/* Pulsing rings */}
+                    <div className="absolute inset-0 -m-2 pointer-events-none z-10">
+                      <div className="absolute inset-0 rounded-lg border-4 border-blue-500 animate-ping opacity-75"></div>
+                      <div className="absolute inset-0 rounded-lg border-4 border-blue-400 animate-pulse"></div>
+                    </div>
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 -m-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 rounded-lg blur-sm opacity-60 animate-pulse pointer-events-none z-0"></div>
+                  </>
+                )}
+                
+                <Card className={`flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border-0 shadow-md relative ${highlightedCvId === cv._id ? 'ring-4 ring-blue-500 ring-offset-2' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="truncate text-lg flex-1">{cv.title || 'CV chưa có tên'}</CardTitle>
@@ -270,12 +310,10 @@ const CVListPage = () => {
 
                 <CardContent className="flex-grow space-y-4">
                   {/* CV Preview */}
-                  <div className="w-full cursor-pointer" onClick={() => handleViewCV(cv)}>
-                    <CVPreview
-                      cv={cv}
-                      className="w-full"
-                    />
-                  </div>
+                  <CVPreview
+                    cv={cv}
+                    className="w-full"
+                  />
 
                   {/* CV Info */}
                   <div className="space-y-2">
@@ -319,28 +357,23 @@ const CVListPage = () => {
                         Chỉnh sửa
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleViewCV(cv)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Xem
-                    </Button>
                   </div>
 
                   {/* Secondary Actions */}
                   <div className="flex w-full gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadCV(cv)}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Tải xuống
-                    </Button>
+        
                     <Button variant="outline" size="sm" onClick={() => handleOpenDuplicateDialog(cv)}>
                       <Copy className="h-4 w-4 mr-2" />
                       Nhân bản
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => handleOpenDeleteDialog(cv)}>
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa
                     </Button>
                   </div>
                 </CardFooter>
               </Card>
+              </div>
             ))}
           </div>
         ) : (
