@@ -180,27 +180,6 @@ const CVListPage = () => {
     }
   };
 
-  const handleDownloadCV = async (cv) => {
-    try {
-      toast.loading('Đang tải xuống...', { id: 'download-loading' });
-      const blob = await exportPdf(cv._id);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${cv.title || 'CV'}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.dismiss('download-loading');
-      toast.success('Tải xuống thành công!');
-    } catch (error) {
-      toast.dismiss('download-loading');
-      toast.error('Không thể tải xuống CV. Vui lòng thử lại.');
-      console.error('Error downloading CV:', error);
-    }
-  };
-
   const handleDownloadFromViewer = () => {
     if (cvToView && pdfBlob) {
       const link = document.createElement('a');
