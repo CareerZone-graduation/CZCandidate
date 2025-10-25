@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getCvs, deleteCv, createCvFromTemplate, duplicateCv as duplicateCvApi, renameCv } from '../../services/api';
+import { getCvs, deleteCv, createCvFromTemplate, duplicateCv as duplicateCvApi, renameCv, exportPdf } from '../../services/api';
 import { cvTemplates } from '@/data/templates';
 
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ErrorState } from '@/components/common/ErrorState';
-import { PlusCircle, Edit, Trash2, Copy, AlertTriangle, ExternalLink, Pencil } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Copy, AlertTriangle, ExternalLink, Pencil, Download, Eye } from 'lucide-react';
 import TemplateGallery from '@/components/buildCV/TemplateGallery';
 import CVPreview from '@/components/cv/CVPreview';
+import PDFViewer from '@/components/cv/PDFViewer';
 
 /**
  * CV List Page - Manages user's CV collection
@@ -32,11 +33,16 @@ const CVListPage = () => {
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [cvToDuplicate, setCvToDuplicate] = useState(null);
   const [cvToDelete, setCvToDelete] = useState(null);
   const [cvToRename, setCvToRename] = useState(null);
+  const [cvToView, setCvToView] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [newCvName, setNewCvName] = useState('');
+  const [highlightedCvId, setHighlightedCvId] = useState(null);
+  const highlightTimeoutRef = useRef(null);
 
   const { data: cvsData, isLoading: isLoadingCvs, isError: isCvsError, refetch: refetchCvs } = useQuery({
     queryKey: ['my-cvs'],
@@ -75,10 +81,30 @@ const CVListPage = () => {
     mutationFn: ({ cvId, name }) => duplicateCvApi(cvId, name),
     onSuccess: (data) => {
       toast.success('CV đã được nhân bản thành công!');
+      const newCvId = data.data._id;
+      
+      // Highlight the newly cloned CV
+      setHighlightedCvId(newCvId);
+      
+      // Clear highlight after 5 seconds
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedCvId(null);
+      }, 5000);
+      
       queryClient.invalidateQueries({ queryKey: ['my-cvs'] });
       setIsDuplicateDialogOpen(false);
       setNewCvName('');
-      navigate(`/editor/${data.data._id}`);
+      
+      // Scroll to the new CV after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const cvElement = document.getElementById(`cv-card-${newCvId}`);
+        if (cvElement) {
+          cvElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Không thể nhân bản CV.');
@@ -138,9 +164,41 @@ const CVListPage = () => {
     }
   };
 
-  const handleViewCV = (cvId) => {
-    // Mở trang render.html trong tab mới
-    window.open(`/render.html?cvId=${cvId}`, '_blank');
+  const handleViewCV = async (cv) => {
+    try {
+      toast.loading('Đang tải PDF...', { id: 'pdf-loading' });
+      const blob = await exportPdf(cv._id);
+      const url = URL.createObjectURL(blob);
+      setPdfBlob(url);
+      setCvToView(cv);
+      setIsPdfViewerOpen(true);
+      toast.dismiss('pdf-loading');
+    } catch (error) {
+      toast.dismiss('pdf-loading');
+      toast.error('Không thể tải PDF. Vui lòng thử lại.');
+      console.error('Error loading PDF:', error);
+    }
+  };
+
+  const handleDownloadFromViewer = () => {
+    if (cvToView && pdfBlob) {
+      const link = document.createElement('a');
+      link.href = pdfBlob;
+      link.download = `${cvToView.title || 'CV'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Tải xuống thành công!');
+    }
+  };
+
+  const handleClosePdfViewer = () => {
+    setIsPdfViewerOpen(false);
+    if (pdfBlob) {
+      URL.revokeObjectURL(pdfBlob);
+      setPdfBlob(null);
+    }
+    setCvToView(null);
   };
 
   const handleCreateCv = () => {
@@ -180,10 +238,10 @@ const CVListPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
+    <div className="space-y-8">
       <section id="my-cvs">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Quản lý CV</h1>
+          <h2 className="text-xl font-semibold text-gray-900">CV của tôi</h2>
           <Button onClick={() => document.getElementById('templates')?.scrollIntoView({ behavior: 'smooth' })}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Tạo CV mới
@@ -193,7 +251,25 @@ const CVListPage = () => {
         {cvsData?.data?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {cvsData.data.map((cv) => (
-              <Card key={cv._id} className="flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border-0 shadow-md">
+              <div
+                key={cv._id}
+                id={`cv-card-${cv._id}`}
+                className="relative"
+              >
+                {/* Highlight animation for cloned CV */}
+                {highlightedCvId === cv._id && (
+                  <>
+                    {/* Pulsing rings */}
+                    <div className="absolute inset-0 -m-2 pointer-events-none z-10">
+                      <div className="absolute inset-0 rounded-lg border-4 border-blue-500 animate-ping opacity-75"></div>
+                      <div className="absolute inset-0 rounded-lg border-4 border-blue-400 animate-pulse"></div>
+                    </div>
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 -m-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 rounded-lg blur-sm opacity-60 animate-pulse pointer-events-none z-0"></div>
+                  </>
+                )}
+                
+                <Card className={`flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border-0 shadow-md relative ${highlightedCvId === cv._id ? 'ring-4 ring-blue-500 ring-offset-2' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="truncate text-lg flex-1">{cv.title || 'CV chưa có tên'}</CardTitle>
@@ -213,13 +289,10 @@ const CVListPage = () => {
 
                 <CardContent className="flex-grow space-y-4">
                   {/* CV Preview */}
-                  <div className="w-full">
-                    <CVPreview
-                      cv={cv}
-                      className="w-full"
-                      onClick={() => handleViewCV(cv._id)}
-                    />
-                  </div>
+                  <CVPreview
+                    cv={cv}
+                    className="w-full"
+                  />
 
                   {/* CV Info */}
                   <div className="space-y-2">
@@ -263,24 +336,23 @@ const CVListPage = () => {
                         Chỉnh sửa
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleViewCV(cv._id)}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Xem
-                    </Button>
                   </div>
 
                   {/* Secondary Actions */}
                   <div className="flex w-full gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDuplicateDialog(cv)}>
+        
+                    <Button variant="outline" size="sm" onClick={() => handleOpenDuplicateDialog(cv)}>
                       <Copy className="h-4 w-4 mr-2" />
                       Nhân bản
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => handleOpenDeleteDialog(cv)}>
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa
                     </Button>
                   </div>
                 </CardFooter>
               </Card>
+              </div>
             ))}
           </div>
         ) : (
@@ -300,7 +372,8 @@ const CVListPage = () => {
         )}
       </section>
 
-      <section id="templates" className="mt-12 pt-4">
+      <section id="templates" className="mt-12">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Chọn mẫu CV</h2>
         <TemplateGallery selectedTemplate={null} onSelectTemplate={(id) => {
           const template = cvTemplates.find(t => t.id === id);
           if (template) handleOpenCreateDialog(template);
@@ -483,6 +556,26 @@ const CVListPage = () => {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Viewer Dialog */}
+      <Dialog open={isPdfViewerOpen} onOpenChange={handleClosePdfViewer}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] h-[90vh] p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-xl">
+              {cvToView?.title || 'Xem CV'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {pdfBlob && (
+              <PDFViewer
+                pdfUrl={pdfBlob}
+                onDownload={handleDownloadFromViewer}
+                fileName={`${cvToView?.title || 'CV'}.pdf`}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

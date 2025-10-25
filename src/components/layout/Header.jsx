@@ -33,7 +33,9 @@ import {
   Coins,
   CreditCard,
   History,
-  Plus
+  Plus,
+  FileEdit,
+  Upload
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { logout as logoutService } from '@/services/authService';
@@ -41,6 +43,7 @@ import apiClient from '@/services/apiClient';
 import { useHeaderTheme } from '@/hooks/useHeaderTheme';
 import { cn } from '@/lib/utils';
 import JobsDropdownMenu from './JobsDropdownMenu';
+import CVDropdownMenu from './CVDropdownMenu';
 import ThemeToggle from '@/components/common/ThemeToggle';
 
 const Header = () => {
@@ -57,11 +60,10 @@ const Header = () => {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-  // Navigation links (excluding Jobs - handled by JobsDropdownMenu)
+  // Navigation links (excluding Jobs and CV - handled by dropdown menus)
   const navLinks = [
     { to: "/companies", label: "Công ty", title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
-    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> },
-    { to: "/my-cvs", label: "Quản lý CV", title: 'Quản lý CV', href: '/my-cvs', icon: <FileText className="h-5 w-5" /> }
+    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> }
   ];
 
   // Logic lấy tên viết tắt cho Avatar
@@ -358,6 +360,18 @@ const Header = () => {
                     </Link>
                   ))}
 
+                  {/* CV Management Section */}
+                  {isAuthenticated && (
+                    <>
+                      <Link to="/my-cvs/builder" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
+                        <FileEdit className="h-4 w-4" /> CV Builder
+                      </Link>
+                      <Link to="/my-cvs/uploaded" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <Upload className="h-4 w-4" /> CV đã tải lên
+                      </Link>
+                    </>
+                  )}
+
                   {isAuthenticated && (
                     <div className="border-t pt-4 mt-4">
                       <Link to="/dashboard" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
@@ -420,6 +434,9 @@ const Header = () => {
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-3/4 transition-all duration-300" />
                 </Link>
               ))}
+
+              {/* CV Dropdown Menu - Only show when authenticated */}
+              {isAuthenticated && <CVDropdownMenu isHeaderWhite={isHeaderWhite} />}
             </nav>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import AppRouter from './routes/AppRouter';
-import { Toaster } from 'sonner';
+// import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -21,7 +22,7 @@ function App() {
         <BackgroundProvider>
           <AnimatedBackground />
           <AppRouter />
-          <Toaster position="bottom-right" richColors />
+          <Toaster position="top-center" richColors />
           <ScrollToTop />
         </BackgroundProvider>
       </ThemeProvider>

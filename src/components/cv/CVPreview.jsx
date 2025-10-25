@@ -17,9 +17,12 @@ const CVPreview = ({ cv, className = "", onClick }) => {
         setHasError(true);
     };
 
-    const handleClick = () => {
+    const handleClick = (e) => {
+        // Ngăn sự kiện lan truyền lên parent
+        e.stopPropagation();
+        
         if (onClick) {
-            onClick();
+            onClick(e);
         } else {
             // Mặc định mở trong tab mới
             window.open(renderUrl, '_blank');
