@@ -9,6 +9,9 @@ import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { SkillsSection } from '@/components/profile/SkillsSection';
 import { CVSection } from '@/components/profile/CVSection';
+import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenessCard';
+import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
+import { ProfileCompletenessTest } from '@/components/profile/ProfileCompletenessTest';
 import * as profileService from '@/services/profileService';
 
 const ProfilePage = () => {
@@ -21,6 +24,8 @@ const ProfilePage = () => {
     queryKey: ['myProfile'],
     queryFn: async () => {
       const response = await profileService.getMyProfile();
+      console.log('Profile data:', response.data);
+      console.log('Profile completeness:', response.data?.profileCompleteness);
       return response.data;
     },
     enabled: isAuthenticated
@@ -131,6 +136,12 @@ const ProfilePage = () => {
     <div className="min-h-screen">
       <div className="container mx-auto py-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Profile Completion Banner */}
+          <ProfileCompletionBanner 
+            profileCompleteness={profile?.profileCompleteness}
+            profile={profile}
+          />
+
           {/* Basic Info Section */}
           <BasicInfoSection
             profile={profile}
@@ -152,8 +163,17 @@ const ProfilePage = () => {
               />
             </div>
 
-            {/* Right Column - Skills & CVs */}
+            {/* Right Column - Completeness, Skills & CVs */}
             <div className="space-y-6">
+              {/* TEST Component - Remove after debugging */}
+              <ProfileCompletenessTest profile={profile} />
+              
+              {/* Profile Completeness Card */}
+              <ProfileCompletenessCard 
+                profileCompleteness={profile?.profileCompleteness}
+                profile={profile}
+              />
+
               <SkillsSection
                 skills={profile?.skills || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}

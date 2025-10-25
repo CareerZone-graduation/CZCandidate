@@ -3,3 +3,6 @@ export { ExperienceSection } from './ExperienceSection';
 export { EducationSection } from './EducationSection';
 export { SkillsSection } from './SkillsSection';
 export { CVSection } from './CVSection';
+export { ProfileCompletenessCard } from './ProfileCompletenessCard';
+export { ProfileCompletionBanner } from './ProfileCompletionBanner';
+export { ProfileCompletionBadge } from './ProfileCompletionBadge';
