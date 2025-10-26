@@ -8,6 +8,75 @@ import { Badge } from '@/components/ui/badge';
 import { Briefcase, Calendar, Building, Plus, Edit3, Trash2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => (
+  <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="position">Vị trí <span className="text-destructive">*</span></Label>
+        <Input
+          id="position"
+          value={formData.position}
+          onChange={(e) => onFormChange('position', e.target.value)}
+          placeholder="VD: Senior Developer"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="company">Công ty <span className="text-destructive">*</span></Label>
+        <Input
+          id="company"
+          value={formData.company}
+          onChange={(e) => onFormChange('company', e.target.value)}
+          placeholder="VD: ABC Company"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="startDate">Ngày bắt đầu <span className="text-destructive">*</span></Label>
+        <Input
+          id="startDate"
+          type="date"
+          value={formData.startDate}
+          onChange={(e) => onFormChange('startDate', e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="endDate">Ngày kết thúc</Label>
+        <Input
+          id="endDate"
+          type="date"
+          value={formData.endDate}
+          onChange={(e) => onFormChange('endDate', e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">Để trống nếu đang làm việc</p>
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="description">Mô tả công việc</Label>
+      <Textarea
+        id="description"
+        value={formData.description}
+        onChange={(e) => onFormChange('description', e.target.value)}
+        placeholder="Mô tả về công việc và trách nhiệm..."
+        rows={4}
+      />
+    </div>
+
+    <div className="flex gap-2 justify-end">
+      <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
+        <X className="w-4 h-4 mr-2" />
+        Hủy
+      </Button>
+      <Button onClick={onSave} disabled={isUpdating}>
+        <Save className="w-4 h-4 mr-2" />
+        {isUpdating ? 'Đang lưu...' : 'Lưu'}
+      </Button>
+    </div>
+  </div>
+);
+
 export const ExperienceSection = ({ experiences = [], onUpdate }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -119,75 +188,6 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
     }
   };
 
-  const ExperienceForm = () => (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="position">Vị trí <span className="text-destructive">*</span></Label>
-          <Input
-            id="position"
-            value={formData.position}
-            onChange={(e) => handleFormChange('position', e.target.value)}
-            placeholder="VD: Senior Developer"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="company">Công ty <span className="text-destructive">*</span></Label>
-          <Input
-            id="company"
-            value={formData.company}
-            onChange={(e) => handleFormChange('company', e.target.value)}
-            placeholder="VD: ABC Company"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="startDate">Ngày bắt đầu <span className="text-destructive">*</span></Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => handleFormChange('startDate', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="endDate">Ngày kết thúc</Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => handleFormChange('endDate', e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">Để trống nếu đang làm việc</p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Mô tả công việc</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleFormChange('description', e.target.value)}
-          placeholder="Mô tả về công việc và trách nhiệm..."
-          rows={4}
-        />
-      </div>
-
-      <div className="flex gap-2 justify-end">
-        <Button variant="outline" onClick={handleCancel} disabled={isUpdating}>
-          <X className="w-4 h-4 mr-2" />
-          Hủy
-        </Button>
-        <Button onClick={handleSave} disabled={isUpdating}>
-          <Save className="w-4 h-4 mr-2" />
-          {isUpdating ? 'Đang lưu...' : 'Lưu'}
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
     <Card>
       <CardHeader>
@@ -208,7 +208,13 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isAdding && <ExperienceForm />}
+        {isAdding && <ExperienceForm 
+          formData={formData}
+          onFormChange={handleFormChange}
+          onCancel={handleCancel}
+          onSave={handleSave}
+          isUpdating={isUpdating}
+        />}
 
         {experiences.length === 0 && !isAdding ? (
           <p className="text-muted-foreground text-center py-8">
@@ -218,7 +224,13 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
           experiences.map((exp) => (
             <div key={exp._id} className="space-y-2">
               {editingId === exp._id ? (
-                <ExperienceForm />
+                <ExperienceForm 
+                  formData={formData}
+                  onFormChange={handleFormChange}
+                  onCancel={handleCancel}
+                  onSave={handleSave}
+                  isUpdating={isUpdating}
+                />
               ) : (
                 <div className="border-l-2 border-primary/20 pl-4 pb-4">
                   <div className="flex items-start justify-between">
