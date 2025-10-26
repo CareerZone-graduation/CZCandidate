@@ -59,6 +59,9 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
         // Remove all spaces, dashes, parentheses
         updateData.phone = updateData.phone.replace(/[\s\-\(\)]/g, '');
       }
+      
+      // Remove avatar from updateData (avatar is updated separately)
+      delete updateData.avatar;
 
       await onUpdate(updateData);
       setIsEditing(false);

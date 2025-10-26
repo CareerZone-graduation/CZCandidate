@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from '@/components/profile/BasicInfoSection';
+import { PreferencesSection } from '@/components/profile/PreferencesSection';
 import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { SkillsSection } from '@/components/profile/SkillsSection';
@@ -41,6 +42,14 @@ const ProfilePage = () => {
   // Upload avatar mutation
   const uploadAvatarMutation = useMutation({
     mutationFn: (formData) => profileService.uploadAvatar(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+    }
+  });
+
+  // Update preferences mutation
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (preferences) => profileService.updateProfilePreferences(preferences),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
     }
@@ -119,6 +128,12 @@ const ProfilePage = () => {
             profile={profile}
             onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
             onAvatarUpdate={(formData) => uploadAvatarMutation.mutateAsync(formData)}
+          />
+
+          {/* Preferences Section */}
+          <PreferencesSection
+            profile={profile}
+            onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
