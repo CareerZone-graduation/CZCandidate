@@ -4,7 +4,6 @@ import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { loginSuccess, fetchUser } from '@/redux/authSlice';
 import * as authService from '@/services/authService';
-import { getMyProfile } from '@/services/profileService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -33,23 +32,6 @@ const Login = () => {
       if (loginData && loginData.data.accessToken) {
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
         await dispatch(fetchUser());
-
-        // Kiểm tra xem user có CV chưa
-        try {
-          const profileResponse = await getMyProfile();
-          if (profileResponse.success && (!profileResponse.data.cvs || profileResponse.data.cvs.length === 0)) {
-            // Nếu chưa có CV, chuyển hướng đến trang profile để upload CV
-            navigate('/profile', { replace: true });
-            toast.info('Vui lòng tải lên CV của bạn để hoàn thiện hồ sơ!');
-          } else {
-            // Nếu đã có CV, chuyển hướng về trang chủ
-            navigate('/', { replace: true });
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-          // Nếu không thể lấy profile, vẫn cho phép đăng nhập
-          navigate('/', { replace: true });
-        }
       } else {
         throw new Error('Phản hồi đăng nhập không hợp lệ.');
       }
@@ -80,24 +62,7 @@ const Login = () => {
         await dispatch(fetchUser());
 
         console.log("✅ Google login completed, user data saved to Redux");
-        toast.success('Đăng nhập Google thành công!');
 
-        // Kiểm tra xem user có CV chưa
-        try {
-          const profileResponse = await getMyProfile();
-          if (profileResponse.success && (!profileResponse.data.cvs || profileResponse.data.cvs.length === 0)) {
-            // Nếu chưa có CV, chuyển hướng đến trang profile để upload CV
-            navigate('/profile', { replace: true });
-            toast.info('Vui lòng tải lên CV của bạn để hoàn thiện hồ sơ!');
-          } else {
-            // Nếu đã có CV, chuyển hướng về trang chủ
-            navigate('/', { replace: true });
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-          // Nếu không thể lấy profile, vẫn cho phép đăng nhập
-          navigate('/', { replace: true });
-        }
       } else {
         throw new Error('Phản hồi đăng nhập không hợp lệ từ máy chủ.');
       }

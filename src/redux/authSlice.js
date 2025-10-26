@@ -21,7 +21,7 @@ export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWi
 const initialState = {
   user: null,
   isAuthenticated: !!getAccessToken(),
-  isInitializing: true,
+  isInitializing: !!getAccessToken(), // Only initialize if a token exists
   error: null,
 };
 
@@ -29,17 +29,22 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    setInitialized: (state) => {
+      state.isInitializing = false;
+    },
     loginSuccess: (state, action) => {
       const { accessToken } = action.payload;
       saveAccessToken(accessToken);
       state.isAuthenticated = true;
       state.error = null;
+      state.isInitializing = false; // On login, initialization is also complete
     },
     logoutSuccess: (state) => {
       clearAccessToken();
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.isInitializing = false; // On logout, we are also in a stable state
     },
     // Thêm reducer này để cập nhật số dư xu
     updateCoinBalance: (state, action) => {
@@ -68,6 +73,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { loginSuccess, logoutSuccess, updateCoinBalance } = authSlice.actions;
+export const { setInitialized, loginSuccess, logoutSuccess, updateCoinBalance } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUser } from '../redux/authSlice';
 
@@ -36,6 +36,7 @@ import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVBuilderPage from '../pages/cv/CVBuilderPage';
 import UploadedCVPage from '../pages/cv/UploadedCVPage';
+import OnboardingPage from '../pages/onboarding/OnboardingPage';
 import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
 // Protected Route Component
@@ -46,20 +47,58 @@ const ProtectedRoute = ({ isAuthenticated }) => {
   return <Outlet />;
 };
 
+
+
+import { getOnboardingStatus } from '../services/onboardingService';
+import { getAccessToken } from '../utils/token';
+
+// This component will perform the onboarding check globally
+const GlobalOnboardingChecker = () => {
+  const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      // Check only when authentication is resolved and user is logged in
+      if (isAuthenticated && !isInitializing) {
+        // Avoid redirect loops or redirecting away from the onboarding process itself
+        if (location.pathname.startsWith('/onboarding')) return;
+
+        try {
+          console.log('GlobalOnboardingChecker: Checking status...');
+          const response = await getOnboardingStatus();
+          if (response.data?.needsOnboarding) {
+            console.log('GlobalOnboardingChecker: Redirecting to /onboarding');
+            navigate('/onboarding', { replace: true });
+          }
+        } catch (error) {
+          console.error('GlobalOnboardingChecker: Error checking onboarding status', error);
+        }
+      }
+    };
+
+    checkOnboarding();
+  }, [isAuthenticated, isInitializing, navigate, location.pathname]);
+
+  return null; // This component does not render anything
+};
+
 const AppRouter = () => {
   const dispatch = useDispatch();
   const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Run once on app startup to check for existing token
+    if (getAccessToken()) {
       dispatch(fetchUser());
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch]);
 
-  if (isInitializing && isAuthenticated) {
+  if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -72,6 +111,7 @@ const AppRouter = () => {
       }}
     >
       <ScrollToTopOnRouteChange />
+      <GlobalOnboardingChecker />
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
@@ -103,7 +143,12 @@ const AppRouter = () => {
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPassword />} />
         <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/" /> : <ResetPassword />} />
 
-        {/* Protected dashboard routes */}
+        {/* Protected onboarding route - no onboarding check needed */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+        </Route>
+
+        {/* Protected dashboard routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
@@ -119,14 +164,14 @@ const AppRouter = () => {
             <Route path="credit-history" element={<CreditHistory />} />
           </Route>
         </Route>
-        {/* Protected profile routes */}
+        {/* Protected profile routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/profile" element={<MainLayout />}>
             <Route index element={<Profile />} />
           </Route>
         </Route>
 
-        {/* Protected notifications routes */}
+        {/* Protected notifications routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/notifications" element={<MainLayout />}>
             <Route index element={<NotificationsPage />} />

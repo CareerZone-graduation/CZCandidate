@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,15 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
     setAvatarFile(null);
   };
 
+  // Memoized handler to prevent re-render
+  const handleFormChange = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
   const handleSave = async () => {
     try {
       setIsUpdating(true);
-      
+
       if (avatarFile) {
         setIsUploadingAvatar(true);
         toast.loading('Đang tải ảnh lên...', { id: 'avatar-upload' });
@@ -47,8 +52,15 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
         toast.success('Tải ảnh lên thành công', { id: 'avatar-upload' });
         setIsUploadingAvatar(false);
       }
-      
-      await onUpdate(formData);
+
+      // Normalize phone number to match backend format
+      const updateData = { ...formData };
+      if (updateData.phone) {
+        // Remove all spaces, dashes, parentheses
+        updateData.phone = updateData.phone.replace(/[\s\-\(\)]/g, '');
+      }
+
+      await onUpdate(updateData);
       setIsEditing(false);
       setAvatarFile(null);
       toast.success('Cập nhật thông tin thành công');
@@ -91,16 +103,16 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="relative">
             <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
-              <AvatarImage 
-                src={avatarFile ? URL.createObjectURL(avatarFile) : profile?.avatar} 
-                alt={profile?.fullname}                        referrerPolicy="no-referrer"
-  crossOrigin="anonymous"
+              <AvatarImage
+                src={avatarFile ? URL.createObjectURL(avatarFile) : profile?.avatar}
+                alt={profile?.fullname} referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
               />
               <AvatarFallback className="bg-primary-foreground text-primary text-2xl font-bold">
                 {profile?.fullname?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            
+
             {/* Loading overlay khi đang upload avatar */}
             {isUploadingAvatar && (
               <div className="absolute inset-0 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center border-4 border-primary-foreground">
@@ -115,14 +127,14 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                 </div>
               </div>
             )}
-            
+
             {/* Preview badge khi đã chọn ảnh mới */}
             {avatarFile && !isUploadingAvatar && isEditing && (
               <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full shadow-lg border-2 border-primary-foreground font-medium">
                 Ảnh mới
               </div>
             )}
-            
+
             {isEditing && !isUploadingAvatar && (
               <label className="absolute bottom-0 right-0 bg-background text-foreground p-2 rounded-full cursor-pointer hover:bg-card transition-colors shadow-lg border border-border">
                 <Upload className="w-4 h-4" />
@@ -136,7 +148,7 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
               </label>
             )}
           </div>
-          
+
           <div className="flex-1">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex-1">
@@ -144,13 +156,13 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                   <div className="space-y-3">
                     <Input
                       value={formData.fullname}
-                      onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
+                      onChange={(e) => handleFormChange('fullname', e.target.value)}
                       placeholder="Họ và tên"
                       className="bg-primary-foreground text-primary"
                     />
                     <Input
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => handleFormChange('phone', e.target.value)}
                       placeholder="Số điện thoại"
                       className="bg-primary-foreground text-primary"
                     />
@@ -169,7 +181,7 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                   </>
                 )}
               </div>
-              
+
               {!isEditing && (
                 <div className="text-right">
                   <div className="text-primary-foreground/80 text-sm mb-1">Thành viên từ</div>
@@ -178,12 +190,12 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
               )}
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                   onClick={handleSave}
                   disabled={isUpdating || isUploadingAvatar}
@@ -200,8 +212,8 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                     </>
                   )}
                 </Button>
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                   onClick={handleCancel}
                   disabled={isUpdating || isUploadingAvatar}
@@ -211,8 +223,8 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                 </Button>
               </>
             ) : (
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 onClick={handleEdit}
               >
@@ -236,7 +248,7 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
           {isEditing ? (
             <Textarea
               value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              onChange={(e) => handleFormChange('bio', e.target.value)}
               placeholder="Viết về bản thân..."
               rows={4}
               className="resize-none"

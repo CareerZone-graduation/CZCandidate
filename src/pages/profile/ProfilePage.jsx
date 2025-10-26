@@ -8,7 +8,6 @@ import { BasicInfoSection } from '@/components/profile/BasicInfoSection';
 import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { SkillsSection } from '@/components/profile/SkillsSection';
-import { CVSection } from '@/components/profile/CVSection';
 import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenessCard';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
 import { ProfileCompletenessTest } from '@/components/profile/ProfileCompletenessTest';
@@ -47,34 +46,7 @@ const ProfilePage = () => {
     }
   });
 
-  // Upload CV mutation
-  const uploadCVMutation = useMutation({
-    mutationFn: (formData) => profileService.uploadCV(formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-    }
-  });
 
-  // Delete CV mutation
-  const deleteCVMutation = useMutation({
-    mutationFn: (cvId) => profileService.deleteCV(cvId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-    }
-  });
-
-  // Download CV handler
-  const handleDownloadCV = async (cvId, cvName) => {
-    const blob = await profileService.downloadCV(cvId);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = cvName || `cv-${cvId}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -163,7 +135,7 @@ const ProfilePage = () => {
               />
             </div>
 
-            {/* Right Column - Completeness, Skills & CVs */}
+            {/* Right Column - Completeness & Skills */}
             <div className="space-y-6">
               {/* TEST Component - Remove after debugging */}
               <ProfileCompletenessTest profile={profile} />
@@ -177,13 +149,6 @@ const ProfilePage = () => {
               <SkillsSection
                 skills={profile?.skills || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-
-              <CVSection
-                cvs={profile?.cvs || []}
-                onUpload={(formData) => uploadCVMutation.mutateAsync(formData)}
-                onDelete={(cvId) => deleteCVMutation.mutateAsync(cvId)}
-                onDownload={handleDownloadCV}
               />
             </div>
           </div>

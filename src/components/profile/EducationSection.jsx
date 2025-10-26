@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,11 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
     type: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Memoized handler to prevent re-render
+  const handleFormChange = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -106,7 +111,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
           <Input
             id="school"
             value={formData.school}
-            onChange={(e) => setFormData({ ...formData, school: e.target.value })}
+            onChange={(e) => handleFormChange('school', e.target.value)}
             placeholder="VD: Đại học Bách Khoa"
           />
         </div>
@@ -115,7 +120,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
           <Input
             id="major"
             value={formData.major}
-            onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+            onChange={(e) => handleFormChange('major', e.target.value)}
             placeholder="VD: Công nghệ thông tin"
           />
         </div>
@@ -127,7 +132,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
           <Input
             id="degree"
             value={formData.degree}
-            onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+            onChange={(e) => handleFormChange('degree', e.target.value)}
             placeholder="VD: Cử nhân"
           />
         </div>
@@ -136,7 +141,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
           <Input
             id="gpa"
             value={formData.gpa}
-            onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
+            onChange={(e) => handleFormChange('gpa', e.target.value)}
             placeholder="VD: 3.5/4.0"
           />
         </div>
@@ -149,7 +154,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
             id="startDate"
             type="date"
             value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            onChange={(e) => handleFormChange('startDate', e.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -158,7 +163,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
             id="endDate"
             type="date"
             value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            onChange={(e) => handleFormChange('endDate', e.target.value)}
           />
         </div>
       </div>
@@ -168,7 +173,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={(e) => handleFormChange('description', e.target.value)}
           placeholder="Mô tả về quá trình học tập..."
           rows={3}
         />

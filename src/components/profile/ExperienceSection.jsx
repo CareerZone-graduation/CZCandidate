@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,11 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
     responsibilities: []
   });
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Memoized handler to prevent re-render
+  const handleFormChange = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   const calculateExperience = (experiences) => {
     if (!experiences || experiences.length === 0) return '0 năm';
@@ -122,7 +127,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
           <Input
             id="position"
             value={formData.position}
-            onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+            onChange={(e) => handleFormChange('position', e.target.value)}
             placeholder="VD: Senior Developer"
           />
         </div>
@@ -131,7 +136,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
           <Input
             id="company"
             value={formData.company}
-            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            onChange={(e) => handleFormChange('company', e.target.value)}
             placeholder="VD: ABC Company"
           />
         </div>
@@ -144,7 +149,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
             id="startDate"
             type="date"
             value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            onChange={(e) => handleFormChange('startDate', e.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -153,7 +158,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
             id="endDate"
             type="date"
             value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            onChange={(e) => handleFormChange('endDate', e.target.value)}
           />
           <p className="text-xs text-muted-foreground">Để trống nếu đang làm việc</p>
         </div>
@@ -164,7 +169,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={(e) => handleFormChange('description', e.target.value)}
           placeholder="Mô tả về công việc và trách nhiệm..."
           rows={4}
         />

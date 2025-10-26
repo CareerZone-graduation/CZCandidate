@@ -67,7 +67,7 @@ const onboardingSlice = createSlice({
       }
       // Remove from skipped if it was there
       state.skippedSteps = state.skippedSteps.filter(s => s !== step);
-      
+
       // Calculate completion percentage
       const totalSteps = 5;
       state.completionPercentage = Math.round((state.completedSteps.length / totalSteps) * 100);

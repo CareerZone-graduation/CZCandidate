@@ -110,7 +110,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
   const totalCount = COMPLETENESS_ITEMS.length;
 
   return (
-    <Card className="sticky top-4">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Độ hoàn thiện hồ sơ</CardTitle>
