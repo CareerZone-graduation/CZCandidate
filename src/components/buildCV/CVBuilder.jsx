@@ -168,8 +168,6 @@ const CVBuilder = () => {
     // Close suggestion dialog and switch to personal info tab
     setShowSampleSuggestion(false);
     setActiveTab('personal');
-    
-    toast.success(`Đã tải dữ liệu mẫu cho "${sample.personalInfo.fullName}"!`);
   };
 
   const handleDismissSuggestion = () => {

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { register as registerService } from "@/services/authService";
+import { loginSuccess } from '@/redux/authSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -20,6 +22,7 @@ const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,21 +53,45 @@ const Register = () => {
     try {
       const resp = await registerService(formData);
       console.log(resp);
-      setSuccess(resp.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
-      toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
+      
+      // Check if registration returns access token (auto-login)
+      if (resp.accessToken) {
+        // Auto-login after registration
+        dispatch(loginSuccess({ accessToken: resp.accessToken }));
+        
+        setSuccess("Đăng ký thành công! Đang chuyển đến hoàn thiện hồ sơ...");
+        toast.success("Đăng ký thành công!");
 
-      // Reset form
-      setFormData({
-        fullname: "",
-        email: "",
-        password: "",
-        role: "candidate"
-      });
+        // Reset form
+        setFormData({
+          fullname: "",
+          email: "",
+          password: "",
+          role: "candidate"
+        });
 
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+        // Redirect to onboarding for new users
+        setTimeout(() => {
+          navigate('/onboarding');
+        }, 1500);
+      } else {
+        // Email verification required
+        setSuccess(resp.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
+        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
+
+        // Reset form
+        setFormData({
+          fullname: "",
+          email: "",
+          password: "",
+          role: "candidate"
+        });
+
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      }
 
     } catch (err) {
       console.log(err);

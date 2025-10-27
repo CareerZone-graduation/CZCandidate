@@ -8,33 +8,47 @@ const COMPLETENESS_ITEMS = [
   {
     key: 'hasBasicInfo',
     label: 'Thông tin cơ bản',
-    description: 'Số điện thoại, giới thiệu, ảnh đại diện',
-    weight: 40
+    description: 'Họ tên, số điện thoại, địa điểm làm việc',
+    weight: 30
   },
   {
     key: 'hasSkills',
     label: 'Kỹ năng',
     description: 'Ít nhất 3 kỹ năng',
-    weight: 15
+    weight: 30
   },
   {
-    key: 'hasCV',
-    label: 'CV',
-    description: 'Upload CV của bạn',
-    weight: 15
+    key: 'hasPreferences',
+    label: 'Điều kiện làm việc',
+    description: 'Mức lương và hình thức làm việc',
+    weight: 20
+  },
+  {
+    key: 'hasBio',
+    label: 'Giới thiệu bản thân',
+    description: 'Viết về bản thân',
+    weight: 5,
+    optional: true
+  },
+  {
+    key: 'hasAvatar',
+    label: 'Ảnh đại diện',
+    description: 'Tải lên ảnh đại diện',
+    weight: 5,
+    optional: true
   },
   {
     key: 'hasExperience',
     label: 'Kinh nghiệm làm việc',
     description: 'Tùy chọn - phù hợp cho người có kinh nghiệm',
-    weight: 15,
+    weight: 5,
     optional: true
   },
   {
     key: 'hasEducation',
     label: 'Học vấn',
     description: 'Tùy chọn - thêm thông tin học vấn',
-    weight: 15,
+    weight: 5,
     optional: true
   }
 ];
@@ -48,28 +62,47 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
   
   if (!data && profile) {
     console.log('Calculating profileCompleteness on frontend (backend not ready)');
+    
+    // Match backend logic
+    const hasBasicInfo = !!(profile.fullname && profile.phone && profile.preferredLocations?.length > 0);
+    const hasSkills = (profile.skills || []).length >= 3;
+    const hasPreferences = !!(
+      profile.expectedSalary?.min > 0 &&
+      profile.workPreferences?.workTypes?.length > 0
+    );
+    const hasBio = !!profile.bio;
+    const hasAvatar = !!profile.avatar;
+    const hasExperience = (profile.experiences || []).length > 0;
+    const hasEducation = (profile.educations || []).length > 0;
+    
     data = {
-      hasBasicInfo: !!(profile.phone && profile.bio && profile.avatar),
-      hasExperience: (profile.experiences || []).length > 0,
-      hasEducation: (profile.educations || []).length > 0,
-      hasSkills: (profile.skills || []).length >= 3,
-      hasCV: (profile.cvs || []).length > 0,
+      hasBasicInfo,
+      hasSkills,
+      hasPreferences,
+      hasBio,
+      hasAvatar,
+      hasExperience,
+      hasEducation,
       percentage: 0
     };
     
-    // Calculate percentage
+    // Calculate percentage matching backend weights
     const weights = {
-      hasBasicInfo: 40,
-      hasSkills: 15,
-      hasCV: 15,
-      hasExperience: 15,
-      hasEducation: 15
+      hasBasicInfo: 30,
+      hasSkills: 30,
+      hasPreferences: 20,
+      hasBio: 5,
+      hasAvatar: 5,
+      hasExperience: 5,
+      hasEducation: 5
     };
     
     data.percentage = Math.round(
       (data.hasBasicInfo ? weights.hasBasicInfo : 0) +
       (data.hasSkills ? weights.hasSkills : 0) +
-      (data.hasCV ? weights.hasCV : 0) +
+      (data.hasPreferences ? weights.hasPreferences : 0) +
+      (data.hasBio ? weights.hasBio : 0) +
+      (data.hasAvatar ? weights.hasAvatar : 0) +
       (data.hasExperience ? weights.hasExperience : 0) +
       (data.hasEducation ? weights.hasEducation : 0)
     );
@@ -110,7 +143,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
   const totalCount = COMPLETENESS_ITEMS.length;
 
   return (
-    <Card className="sticky top-4">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Độ hoàn thiện hồ sơ</CardTitle>
@@ -226,15 +259,21 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
                 </p>
                 <ul className="text-xs text-blue-800 dark:text-blue-200 mt-2 space-y-1">
                   {!data.hasBasicInfo && (
-                    <li>• Cập nhật số điện thoại và giới thiệu bản thân</li>
+                    <li>• Cập nhật họ tên, số điện thoại và địa điểm làm việc</li>
                   )}
                   {!data.hasSkills && (
                     <li>• Thêm ít nhất 3 kỹ năng của bạn</li>
                   )}
-                  {!data.hasCV && (
-                    <li>• Upload CV để tăng cơ hội được tuyển dụng</li>
+                  {!data.hasPreferences && (
+                    <li>• Thiết lập mức lương và hình thức làm việc mong muốn</li>
                   )}
-                  {percentage >= 40 && percentage < 100 && (
+                  {!data.hasBio && (
+                    <li>• Viết giới thiệu ngắn về bản thân</li>
+                  )}
+                  {!data.hasAvatar && (
+                    <li>• Tải lên ảnh đại diện</li>
+                  )}
+                  {percentage >= 80 && percentage < 100 && (
                     <li>• Thêm kinh nghiệm & học vấn để nổi bật hơn</li>
                   )}
                 </ul>

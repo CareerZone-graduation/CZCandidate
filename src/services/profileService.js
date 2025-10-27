@@ -74,3 +74,23 @@ export const getCurrentUserProfile = async () => {
   const response = await apiClient.get('/users/me');
   return response.data;
 };
+
+// Lấy thông tin độ hoàn thiện hồ sơ
+export const getProfileCompleteness = async (recalculate = false) => {
+  const response = await apiClient.get('/candidate/profile/completeness', {
+    params: { recalculate }
+  });
+  return response.data;
+};
+
+// Lấy gợi ý cải thiện hồ sơ
+export const getProfileRecommendations = async () => {
+  const response = await apiClient.get('/candidate/profile/recommendations');
+  return response.data;
+};
+
+// Cập nhật thông tin ưu tiên (lương, địa điểm, điều kiện làm việc)
+export const updateProfilePreferences = async (preferences) => {
+  const response = await apiClient.put('/candidate/profile/preferences', preferences);
+  return response.data;
+};

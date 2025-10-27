@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
@@ -10,10 +10,10 @@ import { Separator } from '../../components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../../components/ui/dialog';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
-import { 
-  User, 
-  Mail, 
-  Phone, 
+import {
+  User,
+  Mail,
+  Phone,
   Calendar,
   MapPin,
   Building,
@@ -36,6 +36,8 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import { getMyProfile, uploadCV, downloadCV, deleteCV, updateProfile, uploadAvatar } from '../../services/profileService';
+import ExperienceFormItem from '../../components/profile/ExperienceFormItem';
+import EducationFormItem from '../../components/profile/EducationFormItem';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -102,9 +104,9 @@ const Profile = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await getMyProfile();
-      
+
       if (response.success) {
         setProfile(response.data);
       } else {
@@ -124,7 +126,7 @@ const Profile = () => {
 
   const calculateExperience = (experiences) => {
     if (!experiences || experiences.length === 0) return '0 năm';
-    
+
     let totalMonths = 0;
     experiences.forEach(exp => {
       const start = new Date(exp.startDate);
@@ -132,10 +134,10 @@ const Profile = () => {
       const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
       totalMonths += months;
     });
-    
+
     const years = Math.floor(totalMonths / 12);
     const months = totalMonths % 12;
-    
+
     if (years === 0) return `${months} tháng`;
     if (months === 0) return `${years} năm`;
     return `${years} năm ${months} tháng`;
@@ -283,6 +285,43 @@ const Profile = () => {
     setIsEditDialogOpen(true);
   };
 
+  // Memoized handlers to prevent re-render
+  const handleEditFormChange = useCallback((field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleExperienceChange = useCallback((index, field, value) => {
+    setEditExperiences(prev => {
+      const newExps = [...prev];
+      newExps[index] = { ...newExps[index], [field]: value };
+      return newExps;
+    });
+  }, []);
+
+  const handleEducationChange = useCallback((index, field, value) => {
+    setEditEducations(prev => {
+      const newEdus = [...prev];
+      newEdus[index] = { ...newEdus[index], [field]: value };
+      return newEdus;
+    });
+  }, []);
+
+  const handleNewExperienceChange = useCallback((field, value) => {
+    setNewExperience(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleNewEducationChange = useCallback((field, value) => {
+    setNewEducation(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleDeleteExperience = useCallback((index) => {
+    setEditExperiences(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleDeleteEducation = useCallback((index) => {
+    setEditEducations(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSaveProfile = async () => {
     try {
       if (editForm.avatarFile) {
@@ -292,7 +331,7 @@ const Profile = () => {
       }
       const updateData = {
         fullname: editForm.fullname,
-        phone: editForm.phone,
+        phone: editForm.phone ? editForm.phone.replace(/[\s\-\(\)]/g, '') : editForm.phone,
         bio: editForm.bio,
       };
       await updateProfile(updateData);
@@ -446,15 +485,15 @@ const Profile = () => {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto py-8">
-          <div className="max-w-6xl mx-auto space-y-6">
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx"
-              style={{ display: 'none' }}
-            />
-          
+        <div className="max-w-6xl mx-auto space-y-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileSelect}
+            accept=".pdf,.doc,.docx"
+            style={{ display: 'none' }}
+          />
+
           {/* Profile Header */}
           <Card className="overflow-hidden bg-white">
             <div className="bg-gradient-primary p-6 text-primary-foreground">
@@ -465,28 +504,24 @@ const Profile = () => {
                     {profile.fullname?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold mb-2">{profile.fullname}</h1>
-                      <div className="flex items-center text-primary-foreground/80 mb-2">
-                        <Mail className="w-4 h-4 mr-2" />
-                        <span>{profile.email}</span>
-                      </div>
                       <div className="flex items-center text-primary-foreground/80">
                         <Phone className="w-4 h-4 mr-2" />
                         <span>{profile.phone || 'Chưa cập nhật số điện thoại'}</span>
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
                       <div className="text-primary-foreground/80 text-sm mb-1">Thành viên từ</div>
                       <div className="font-semibold">{formatDate(profile.createdAt)}</div>
                     </div>
                   </div>
                 </div>
-                
+
                 <Button variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90" onClick={handleOpenEditDialog}>
                   <Edit3 className="w-4 h-4 mr-2" />
                   Chỉnh sửa
@@ -496,10 +531,10 @@ const Profile = () => {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* About */}
               {profile.bio && (
                 <Card className="bg-white">
@@ -612,7 +647,7 @@ const Profile = () => {
 
             {/* Right Column */}
             <div className="space-y-6">
-              
+
               {/* Skills */}
               {profile.skills && profile.skills.length > 0 && (
                 <Card className="bg-white">
@@ -653,8 +688,8 @@ const Profile = () => {
                         <FileText className="w-5 h-5 mr-2 text-primary" />
                         CV của tôi
                       </div>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
@@ -686,16 +721,16 @@ const Profile = () => {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="ghost"
                               onClick={() => handleDownloadCV(cv._id, cv.name)}
                             >
                               <Download className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               className="text-red-600 hover:text-red-700"
                               onClick={() => handleDeleteCV(cv._id)}
                               disabled={deletingCvId === cv._id}
@@ -720,8 +755,8 @@ const Profile = () => {
                     <Edit3 className="w-4 h-4 mr-2" />
                     Chỉnh sửa hồ sơ
                   </Button>
-                  <Button 
-                    className="w-full justify-start" 
+                  <Button
+                    className="w-full justify-start"
                     variant="outline"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
@@ -754,7 +789,7 @@ const Profile = () => {
                   <Input
                     id="fullname"
                     value={editForm.fullname}
-                    onChange={(e) => setEditForm({ ...editForm, fullname: e.target.value })}
+                    onChange={(e) => handleEditFormChange('fullname', e.target.value)}
                     placeholder="Nhập họ và tên"
                   />
                 </div>
@@ -764,7 +799,7 @@ const Profile = () => {
                     id="phone"
                     type="tel"
                     value={editForm.phone}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    onChange={(e) => handleEditFormChange('phone', e.target.value)}
                     placeholder="Nhập số điện thoại"
                   />
                 </div>
@@ -773,7 +808,7 @@ const Profile = () => {
                   <Textarea
                     id="bio"
                     value={editForm.bio}
-                    onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                    onChange={(e) => handleEditFormChange('bio', e.target.value)}
                     placeholder="Viết về bản thân..."
                     rows={4}
                   />
@@ -784,7 +819,7 @@ const Profile = () => {
                     id="avatar"
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setEditForm({ ...editForm, avatarFile: e.target.files?.[0] || null })}
+                    onChange={(e) => handleEditFormChange('avatarFile', e.target.files?.[0] || null)}
                   />
                   {editForm.avatarFile && (
                     <div className="text-sm text-muted-foreground mt-1">
@@ -921,98 +956,13 @@ const Profile = () => {
               <div className="space-y-4 py-4">
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {editExperiences.map((exp, index) => (
-                    <div key={exp._id || index} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Kinh nghiệm {index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => {
-                            setEditExperiences(prev => prev.filter((_, i) => i !== index));
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label>Công ty</Label>
-                          <Input
-                            value={exp.company || ''}
-                            onChange={(e) => {
-                              const newExps = [...editExperiences];
-                              newExps[index].company = e.target.value;
-                              setEditExperiences(newExps);
-                            }}
-                            placeholder="Tên công ty"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Vị trí</Label>
-                          <Input
-                            value={exp.position || ''}
-                            onChange={(e) => {
-                              const newExps = [...editExperiences];
-                              newExps[index].position = e.target.value;
-                              setEditExperiences(newExps);
-                            }}
-                            placeholder="Vị trí công việc"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Ngày bắt đầu</Label>
-                          <Input
-                            type="date"
-                            value={exp.startDate ? exp.startDate.split('T')[0] : ''}
-                            onChange={(e) => {
-                              const newExps = [...editExperiences];
-                              newExps[index].startDate = e.target.value;
-                              setEditExperiences(newExps);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Ngày kết thúc</Label>
-                          <Input
-                            type="date"
-                            value={exp.endDate ? exp.endDate.split('T')[0] : ''}
-                            onChange={(e) => {
-                              const newExps = [...editExperiences];
-                              newExps[index].endDate = e.target.value;
-                              setEditExperiences(newExps);
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Mô tả công việc</Label>
-                        <Textarea
-                          value={exp.description || ''}
-                          onChange={(e) => {
-                            const newExps = [...editExperiences];
-                            newExps[index].description = e.target.value;
-                            setEditExperiences(newExps);
-                          }}
-                          placeholder="Mô tả về công việc..."
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Trách nhiệm (mỗi dòng một trách nhiệm)</Label>
-                        <Textarea
-                          value={exp.responsibilities ? exp.responsibilities.join('\n') : ''}
-                          onChange={(e) => {
-                            const newExps = [...editExperiences];
-                            newExps[index].responsibilities = e.target.value.split('\n').filter(r => r.trim());
-                            setEditExperiences(newExps);
-                          }}
-                          placeholder="Liệt kê các trách nhiệm..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
+                    <ExperienceFormItem
+                      key={`exp-${index}`}
+                      exp={exp}
+                      index={index}
+                      onChange={handleExperienceChange}
+                      onDelete={handleDeleteExperience}
+                    />
                   ))}
                 </div>
                 <Button
@@ -1053,121 +1003,13 @@ const Profile = () => {
               <div className="space-y-4 py-4">
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {editEducations.map((edu, index) => (
-                    <div key={edu._id || index} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Học vấn {index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => {
-                            setEditEducations(prev => prev.filter((_, i) => i !== index));
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label>Trường học</Label>
-                          <Input
-                            value={edu.school || ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].school = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                            placeholder="Tên trường học"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Chuyên ngành</Label>
-                          <Input
-                            value={edu.major || ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].major = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                            placeholder="Chuyên ngành học"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Bằng cấp</Label>
-                          <Input
-                            value={edu.degree || ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].degree = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                            placeholder="Ví dụ: Cử nhân, Thạc sĩ"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Loại hình</Label>
-                          <Input
-                            value={edu.type || ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].type = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                            placeholder="Ví dụ: Đại học, Cao đẳng"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Ngày bắt đầu</Label>
-                          <Input
-                            type="date"
-                            value={edu.startDate ? edu.startDate.split('T')[0] : ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].startDate = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Ngày kết thúc</Label>
-                          <Input
-                            type="date"
-                            value={edu.endDate ? edu.endDate.split('T')[0] : ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].endDate = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Điểm GPA</Label>
-                          <Input
-                            value={edu.gpa || ''}
-                            onChange={(e) => {
-                              const newEdus = [...editEducations];
-                              newEdus[index].gpa = e.target.value;
-                              setEditEducations(newEdus);
-                            }}
-                            placeholder="Ví dụ: 3.5"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Mô tả</Label>
-                        <Textarea
-                          value={edu.description || ''}
-                          onChange={(e) => {
-                            const newEdus = [...editEducations];
-                            newEdus[index].description = e.target.value;
-                            setEditEducations(newEdus);
-                          }}
-                          placeholder="Mô tả về quá trình học tập..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
+                    <EducationFormItem
+                      key={`edu-${index}`}
+                      edu={edu}
+                      index={index}
+                      onChange={handleEducationChange}
+                      onDelete={handleDeleteEducation}
+                    />
                   ))}
                 </div>
                 <Button
@@ -1213,7 +1055,7 @@ const Profile = () => {
                     <Label>Công ty</Label>
                     <Input
                       value={newExperience.company}
-                      onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                      onChange={(e) => handleNewExperienceChange('company', e.target.value)}
                       placeholder="Tên công ty"
                     />
                   </div>
@@ -1221,7 +1063,7 @@ const Profile = () => {
                     <Label>Vị trí</Label>
                     <Input
                       value={newExperience.position}
-                      onChange={(e) => setNewExperience({ ...newExperience, position: e.target.value })}
+                      onChange={(e) => handleNewExperienceChange('position', e.target.value)}
                       placeholder="Vị trí công việc"
                     />
                   </div>
@@ -1230,7 +1072,7 @@ const Profile = () => {
                     <Input
                       type="date"
                       value={newExperience.startDate}
-                      onChange={(e) => setNewExperience({ ...newExperience, startDate: e.target.value })}
+                      onChange={(e) => handleNewExperienceChange('startDate', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1238,7 +1080,7 @@ const Profile = () => {
                     <Input
                       type="date"
                       value={newExperience.endDate}
-                      onChange={(e) => setNewExperience({ ...newExperience, endDate: e.target.value })}
+                      onChange={(e) => handleNewExperienceChange('endDate', e.target.value)}
                     />
                   </div>
                 </div>
@@ -1246,7 +1088,7 @@ const Profile = () => {
                   <Label>Mô tả công việc</Label>
                   <Textarea
                     value={newExperience.description}
-                    onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                    onChange={(e) => handleNewExperienceChange('description', e.target.value)}
                     placeholder="Mô tả về công việc..."
                     rows={3}
                   />
@@ -1255,10 +1097,7 @@ const Profile = () => {
                   <Label>Trách nhiệm (mỗi dòng một trách nhiệm)</Label>
                   <Textarea
                     value={newExperience.responsibilities.join('\n')}
-                    onChange={(e) => setNewExperience({
-                      ...newExperience,
-                      responsibilities: e.target.value.split('\n').filter(r => r.trim())
-                    })}
+                    onChange={(e) => handleNewExperienceChange('responsibilities', e.target.value.split('\n').filter(r => r.trim()))}
                     placeholder="Liệt kê các trách nhiệm..."
                     rows={3}
                   />
@@ -1287,7 +1126,7 @@ const Profile = () => {
                     <Label>Trường học</Label>
                     <Input
                       value={newEducation.school}
-                      onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('school', e.target.value)}
                       placeholder="Tên trường học"
                     />
                   </div>
@@ -1295,7 +1134,7 @@ const Profile = () => {
                     <Label>Chuyên ngành</Label>
                     <Input
                       value={newEducation.major}
-                      onChange={(e) => setNewEducation({ ...newEducation, major: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('major', e.target.value)}
                       placeholder="Chuyên ngành học"
                     />
                   </div>
@@ -1303,7 +1142,7 @@ const Profile = () => {
                     <Label>Bằng cấp</Label>
                     <Input
                       value={newEducation.degree}
-                      onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('degree', e.target.value)}
                       placeholder="Ví dụ: Cử nhân, Thạc sĩ"
                     />
                   </div>
@@ -1311,7 +1150,7 @@ const Profile = () => {
                     <Label>Loại hình</Label>
                     <Input
                       value={newEducation.type}
-                      onChange={(e) => setNewEducation({ ...newEducation, type: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('type', e.target.value)}
                       placeholder="Ví dụ: Đại học, Cao đẳng"
                     />
                   </div>
@@ -1320,7 +1159,7 @@ const Profile = () => {
                     <Input
                       type="date"
                       value={newEducation.startDate}
-                      onChange={(e) => setNewEducation({ ...newEducation, startDate: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('startDate', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1328,14 +1167,14 @@ const Profile = () => {
                     <Input
                       type="date"
                       value={newEducation.endDate}
-                      onChange={(e) => setNewEducation({ ...newEducation, endDate: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('endDate', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Điểm GPA</Label>
                     <Input
                       value={newEducation.gpa}
-                      onChange={(e) => setNewEducation({ ...newEducation, gpa: e.target.value })}
+                      onChange={(e) => handleNewEducationChange('gpa', e.target.value)}
                       placeholder="Ví dụ: 3.5"
                     />
                   </div>
@@ -1344,7 +1183,7 @@ const Profile = () => {
                   <Label>Mô tả</Label>
                   <Textarea
                     value={newEducation.description}
-                    onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
+                    onChange={(e) => handleNewEducationChange('description', e.target.value)}
                     placeholder="Mô tả về quá trình học tập..."
                     rows={3}
                   />
