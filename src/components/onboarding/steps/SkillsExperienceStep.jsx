@@ -13,7 +13,7 @@ import { skillsExperienceSchema, experienceLevelEnum } from '@/schemas/onboardin
 import { InlineError } from '../ErrorState';
 import { popularSkills, jobFields } from '@/constants/skills';
 
-export const SkillsExperienceStep = ({ initialData = {}, onNext, isLoading }) => {
+export const SkillsExperienceStep = ({ initialData = {}, onNext, isLoading, onLoadingChange }) => {
   const [selectedSkills, setSelectedSkills] = useState(initialData.skills || []);
   const [customSkill, setCustomSkill] = useState('');
   const [selectedFields, setSelectedFields] = useState(initialData.jobFields || []);
@@ -177,7 +177,12 @@ export const SkillsExperienceStep = ({ initialData = {}, onNext, isLoading }) =>
                 {experienceLevelEnum.map((level) => (
                   <div
                     key={level}
-                    className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted cursor-pointer"
+                    className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      field.value === level 
+                        ? 'border-primary bg-primary/5' 
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => field.onChange(level)}
                   >
                     <RadioGroupItem value={level} id={level} />
                     <div className="flex-1">
@@ -193,7 +198,9 @@ export const SkillsExperienceStep = ({ initialData = {}, onNext, isLoading }) =>
               </RadioGroup>
             )}
           />
-          <InlineError message={errors.experienceLevel?.message} />
+          {errors.experienceLevel && (
+            <InlineError message={errors.experienceLevel.message} />
+          )}
         </CardContent>
       </Card>
 
@@ -245,11 +252,8 @@ export const SkillsExperienceStep = ({ initialData = {}, onNext, isLoading }) =>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} size="lg">
-          Tiếp tục
-        </Button>
-      </div>
+      {/* Hidden submit button - Form sẽ được submit từ footer của OnboardingWrapper */}
+      <button type="submit" className="hidden" />
     </form>
   );
 };

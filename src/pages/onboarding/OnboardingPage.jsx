@@ -55,7 +55,7 @@ const OnboardingPage = () => {
   }
 
   // Render the appropriate step based on current step
-  const renderStep = ({ currentStep, stepData, onNext, isLoading }) => {
+  const renderStep = ({ currentStep, stepData, onNext, isLoading, error, onLoadingChange }) => {
     switch (currentStep) {
       case 1:
         return (
@@ -63,6 +63,8 @@ const OnboardingPage = () => {
             initialData={stepData}
             onNext={onNext}
             isLoading={isLoading}
+            error={error}
+            onLoadingChange={onLoadingChange}
           />
         );
       case 2:
@@ -71,6 +73,7 @@ const OnboardingPage = () => {
             initialData={stepData}
             onNext={onNext}
             isLoading={isLoading}
+            onLoadingChange={onLoadingChange}
           />
         );
       case 3:
@@ -79,6 +82,7 @@ const OnboardingPage = () => {
             initialData={stepData}
             onNext={onNext}
             isLoading={isLoading}
+            onLoadingChange={onLoadingChange}
           />
         );
       default:

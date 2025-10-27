@@ -31,7 +31,7 @@ const processLocationData = () => {
 
 const { provinceNames, districtMap: locationMap } = processLocationData();
 
-export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: externalError }) => {
+export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: externalError, onLoadingChange }) => {
   const [avatarPreview, setAvatarPreview] = useState(initialData.avatar || null);
   const [selectedLocations, setSelectedLocations] = useState(initialData.preferredLocations || []);
   const [online, setOnline] = useState(isOnline());
@@ -139,6 +139,11 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
       return;
     }
 
+    // Prevent double submission
+    if (uploadingAvatar || isLoading) {
+      return;
+    }
+
     try {
       // Normalize phone number to match backend format (remove spaces, keep only digits and optional +)
       if (data.phone) {
@@ -150,11 +155,27 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
 
       // Upload avatar nếu có
       if (avatarFile) {
+        console.log('🔄 Starting avatar upload...');
         setUploadingAvatar(true);
-        const { uploadAvatar } = await import('@/services/onboardingService');
-        const uploadResult = await uploadAvatar(avatarFile);
-        // Avatar URL đã được lưu vào backend, không cần gửi trong data
-        data.avatar = uploadResult.data.avatarUrl;
+        onLoadingChange?.(true); // Notify parent about loading state
+        try {
+          const { uploadAvatar } = await import('@/services/onboardingService');
+          console.log('📤 Uploading avatar to server...');
+          const uploadResult = await uploadAvatar(avatarFile);
+          console.log('✅ Avatar uploaded successfully:', uploadResult.data.avatarUrl);
+          // Avatar URL đã được lưu vào backend, không cần gửi trong data
+          data.avatar = uploadResult.data.avatarUrl;
+        } catch (uploadError) {
+          console.error('❌ Avatar upload error:', uploadError);
+          setAvatarError('Không thể tải ảnh lên. Vui lòng thử lại.');
+          setUploadingAvatar(false);
+          onLoadingChange?.(false);
+          return; // Stop submission if avatar upload fails
+        } finally {
+          console.log('🏁 Avatar upload finished');
+          setUploadingAvatar(false);
+          onLoadingChange?.(false);
+        }
       }
 
       // Xóa avatar khỏi data nếu không có file mới
@@ -162,12 +183,10 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
         delete data.avatar;
       }
 
-      onNext(data);
+      // Call onNext which will trigger the parent's loading state
+      await onNext(data);
     } catch (error) {
-      setAvatarError('Không thể tải ảnh lên. Vui lòng thử lại.');
-      console.error('Avatar upload error:', error);
-    } finally {
-      setUploadingAvatar(false);
+      console.error('Form submission error:', error);
     }
   };
 
@@ -201,17 +220,24 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
         <CardContent className="space-y-6">
           {/* Avatar Upload */}
           <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src={avatarPreview} />
-              <AvatarFallback>
-                <User className="w-10 h-10" />
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={avatarPreview} />
+                <AvatarFallback>
+                  <User className="w-10 h-10" />
+                </AvatarFallback>
+              </Avatar>
+              {uploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
             <div className="flex-1">
               <Label htmlFor="avatar" className="cursor-pointer">
                 <div className="flex items-center gap-2 text-sm text-primary hover:underline">
                   <Upload className="w-4 h-4" />
-                  Tải ảnh đại diện (không bắt buộc)
+                  {uploadingAvatar ? 'Đang tải ảnh lên...' : 'Tải ảnh đại diện (không bắt buộc)'}
                 </div>
               </Label>
               <Input
@@ -220,11 +246,18 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
                 accept="image/jpeg,image/jpg,image/png,image/gif"
                 className="hidden"
                 onChange={handleAvatarChange}
+                disabled={uploadingAvatar || isLoading}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 JPG, PNG hoặc GIF. Tối đa 5MB
               </p>
               {avatarError && <InlineError message={avatarError} />}
+              {uploadingAvatar && (
+                <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                  <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  Đang tải ảnh lên...
+                </p>
+              )}
             </div>
           </div>
 
@@ -354,17 +387,8 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
         )}
       </div>
 
-      {/* Submit button - Sẽ hiển thị trong footer của OnboardingWrapper */}
-      <div className="flex justify-end pb-20">
-        <Button 
-          type="submit" 
-          disabled={isLoading || !online || isValidating || uploadingAvatar} 
-          size="lg"
-          className="min-w-[120px]"
-        >
-          {uploadingAvatar ? 'Đang tải ảnh...' : isLoading ? 'Đang lưu...' : 'Tiếp tục'}
-        </Button>
-      </div>
+      {/* Hidden submit button - Form sẽ được submit từ footer của OnboardingWrapper */}
+      <button type="submit" className="hidden" />
     </form>
   );
 };

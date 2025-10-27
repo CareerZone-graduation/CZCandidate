@@ -19,7 +19,7 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading }) => {
+export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onLoadingChange }) => {
   const [selectedWorkTypes, setSelectedWorkTypes] = useState(initialData.workTypes || []);
   const [selectedContractTypes, setSelectedContractTypes] = useState(initialData.contractTypes || []);
 
@@ -260,11 +260,8 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading }) =
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} size="lg">
-          Hoàn thành
-        </Button>
-      </div>
+      {/* Hidden submit button - Form sẽ được submit từ footer của OnboardingWrapper */}
+      <button type="submit" className="hidden" />
     </form>
   );
 };

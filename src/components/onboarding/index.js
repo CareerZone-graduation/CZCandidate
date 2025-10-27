@@ -1,4 +1,5 @@
 export { OnboardingWrapper } from './OnboardingWrapper';
+export { OnboardingBackground } from './OnboardingBackground';
 export { OnboardingErrorBoundary } from './OnboardingErrorBoundary';
 export { ProgressIndicator } from './ProgressIndicator';
 export { SkipConfirmationModal } from './SkipConfirmationModal';

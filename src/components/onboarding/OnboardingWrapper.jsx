@@ -9,6 +9,7 @@ import { getOnboardingStatus, updateProfileData, dismissOnboarding, completeOnbo
 import { useFormSubmitWithRetry } from '@/hooks/useFormSubmitWithRetry';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
 import { getErrorMessage, getErrorType, ErrorType } from '@/utils/errorHandling';
+import { OnboardingBackground } from './OnboardingBackground';
 
 const ONBOARDING_STORAGE_KEY = 'careerzone_onboarding_progress';
 
@@ -23,6 +24,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
+  const [isStepLoading, setIsStepLoading] = useState(false);
+  const [, forceUpdate] = useState({});
 
   // Load onboarding status from backend with error handling
   const {
@@ -67,7 +70,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     onSuccess: (response) => {
-      toast.success('Đã lưu tiến trình');
       setSubmitError(null);
       // Refetch status để cập nhật completeness
       refetchStatus();
@@ -142,8 +144,9 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         // Nếu là bước cuối, đánh dấu hoàn thành
         await completeOnboarding();
         localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+        toast.success('Hoàn thành! Bạn có thể cập nhật hồ sơ bất cứ lúc nào');
         onComplete?.();
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error in handleSkipStep:', error);
@@ -180,118 +183,205 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
 
   const progress = (currentStep / STEPS.length) * 100;
   const isFirstStep = currentStep === 1;
-  const isLoading = updateProfileMutation.isPending || dismissMutation.isPending;
+  const isLoading = updateProfileMutation.isPending || dismissMutation.isPending || isStepLoading;
 
   const currentStepInfo = STEPS[currentStep - 1];
 
+  const handleStepLoadingChange = (loading) => {
+    console.log('🔔 OnboardingWrapper: handleStepLoadingChange called with:', loading);
+    setIsStepLoading(loading);
+    // Force re-render to ensure button updates
+    forceUpdate({});
+    console.log('🔔 OnboardingWrapper: isStepLoading set to:', loading);
+  };
+
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('📊 State Update:', {
+      isStepLoading,
+      updateProfilePending: updateProfileMutation.isPending,
+      dismissPending: dismissMutation.isPending,
+      isLoading
+    });
+  }, [isStepLoading, updateProfileMutation.isPending, dismissMutation.isPending, isLoading]);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Global Error Display */}
-      {(submitError || statusError) && (
-        <div className="sticky top-0 z-50">
-          <InlineErrorAlert
-            message={submitError || getErrorMessage(statusError, 'Tải trạng thái onboarding')}
-            onRetry={handleRetryError}
-            onDismiss={() => setSubmitError(null)}
-          />
-        </div>
-      )}
-      {/* Header with progress */}
-      <div className="sticky top-0 z-50 bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">
-                Hoàn thiện hồ sơ ({currentStep}/{STEPS.length})
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {currentStepInfo.name}
-              </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+      {/* Animated Background */}
+      <OnboardingBackground />
+
+      {/* Backdrop - Blurred background */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+        onClick={handleSkipAll}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-card rounded-2xl shadow-2xl border border-border/50 animate-in zoom-in-95 duration-300">
+
+        {/* Global Error Display */}
+        {(submitError || statusError) && (
+          <div className="absolute top-0 left-0 right-0 z-10 rounded-t-2xl overflow-hidden">
+            <InlineErrorAlert
+              message={submitError || getErrorMessage(statusError, 'Tải trạng thái onboarding')}
+              onRetry={handleRetryError}
+              onDismiss={() => setSubmitError(null)}
+            />
+          </div>
+        )}
+
+        {/* Header with progress */}
+        <div className="flex-shrink-0 px-8 pt-8 pb-6 border-b border-border/50">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary">{currentStep}</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    {currentStepInfo.name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Bước {currentStep} / {STEPS.length}
+                  </p>
+                </div>
+              </div>
             </div>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleSkipAll}
               disabled={isLoading}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-full"
+              title="Đóng và bỏ qua"
             >
-              <X className="w-4 h-4 mr-1" />
-              Bỏ qua tất cả
+              <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Progress bar with step indicators */}
-          <div className="space-y-2">
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              {STEPS.map((step, index) => (
+                <div key={step.id} className="flex items-center flex-1">
+                  <div className="flex-1 relative">
+                    <div className={`h-2 rounded-full transition-all duration-500 ${step.id < currentStep
+                        ? 'bg-emerald-500'
+                        : step.id === currentStep
+                          ? 'bg-primary'
+                          : 'bg-muted'
+                      }`}>
+                      {step.id === currentStep && (
+                        <div className="absolute inset-0 bg-primary rounded-full animate-pulse" />
+                      )}
+                    </div>
+                  </div>
+                  {index < STEPS.length - 1 && (
+                    <div className="w-2" />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between">
               {STEPS.map((step) => (
                 <div
                   key={step.id}
-                  className={`flex-1 text-center ${step.id === currentStep ? 'text-primary font-semibold' : ''
-                    } ${step.id < currentStep ? 'text-emerald-600' : ''
+                  className={`flex-1 text-center text-xs font-medium transition-colors duration-300 ${step.id === currentStep
+                      ? 'text-primary'
+                      : step.id < currentStep
+                        ? 'text-emerald-600'
+                        : 'text-muted-foreground'
                     }`}
                 >
-                  {step.id}
+                  {step.name}
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8 pb-32">
-        <div className="max-w-3xl mx-auto">
-          {children({
-            currentStep,
-            stepData: stepData[currentStep] || {},
-            onNext: handleNext,
-            isLoading,
-            error: submitError
-          })}
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+          <div className="animate-in slide-in-from-right-5 duration-300">
+            {children({
+              currentStep,
+              stepData: stepData[currentStep] || {},
+              onNext: handleNext,
+              isLoading,
+              error: submitError,
+              onLoadingChange: handleStepLoadingChange
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Footer navigation - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t shadow-lg z-40">
-        <div className="container mx-auto max-w-3xl px-4 py-3">
+        {/* Footer navigation */}
+        <div className="flex-shrink-0 px-8 py-6 border-t border-border/50 bg-muted/30">
           <div className="flex items-center justify-between gap-4">
             {/* Left: Back button */}
-            <div className="flex-shrink-0">
-              {!isFirstStep ? (
-                <Button
-                  variant="ghost"
-                  onClick={handleBack}
-                  disabled={isLoading}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Quay lại
-                </Button>
-              ) : (
-                <div className="w-[100px]"></div>
-              )}
-            </div>
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={isLoading || isFirstStep}
+              className="min-w-[120px]"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Quay lại
+            </Button>
 
-            {/* Center: Step indicator */}
-            <div className="text-sm text-muted-foreground font-medium">
-              Bước {currentStep}/{STEPS.length}
-            </div>
-
-            {/* Right: Skip button */}
-            <div className="flex-shrink-0">
+            {/* Right: Skip and Continue buttons */}
+            <div className="flex gap-3">
               <Button
                 variant="ghost"
                 onClick={handleSkipStep}
                 disabled={isLoading}
                 className="text-muted-foreground hover:text-foreground"
               >
-                Bỏ qua
+                Bỏ qua bước này
+              </Button>
+              <Button
+                onClick={() => {
+                  // Trigger form submission in child component
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }}
+                disabled={isLoading}
+                className="min-w-[140px] bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {isStepLoading ? 'Đang tải ảnh...' : 'Đang xử lý...'}
+                  </span>
+                ) : currentStep === STEPS.length ? (
+                  'Hoàn thành'
+                ) : (
+                  'Tiếp tục'
+                )}
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Custom scrollbar styles */}
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: hsl(var(--muted-foreground) / 0.3);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: hsl(var(--muted-foreground) / 0.5);
+        }
+      `}</style>
     </div>
   );
 };

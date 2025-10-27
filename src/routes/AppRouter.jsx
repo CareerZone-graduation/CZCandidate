@@ -37,6 +37,7 @@ import CVBuilder from '../components/buildCV/CVBuilder';
 import CVBuilderPage from '../pages/cv/CVBuilderPage';
 import UploadedCVPage from '../pages/cv/UploadedCVPage';
 import OnboardingPage from '../pages/onboarding/OnboardingPage';
+import { OnboardingPreview } from '../components/onboarding/OnboardingPreview';
 import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
 // Protected Route Component
@@ -125,6 +126,9 @@ const AppRouter = () => {
           <Route path="/editor" element={<CVBuilder />} />
           <Route path="/editor/:cvId" element={<CVBuilder />} />
         </Route>
+
+        {/* Onboarding Preview - Public route without layout */}
+        <Route path="/onboarding-preview" element={<OnboardingPreview />} />
 
         {/* CV Render Page is now handled by render.html, this route is deprecated */}
 
