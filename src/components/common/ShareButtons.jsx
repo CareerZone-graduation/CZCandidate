@@ -10,14 +10,22 @@ import { toast } from 'sonner';
  * 
  * @param {Object} props
  * @param {string} props.shareUrl - URL để chia sẻ (mặc định là URL hiện tại)
+ * @param {string} props.jobId - ID của job để tạo share preview URL (cho Facebook OG)
  * @param {string} props.className - Class CSS tùy chỉnh
  */
-const ShareButtons = ({ shareUrl, className = '' }) => {
+const ShareButtons = ({ shareUrl, jobId, className = '' }) => {
   const [copied, setCopied] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
   // Lấy URL trang hiện tại nếu không được cung cấp
   const urlToShare = shareUrl || window.location.href;
+  
+  // URL cho Facebook share - sử dụng backend preview endpoint nếu có jobId
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const facebookShareUrl = jobId 
+    ? `${API_BASE_URL}/api/share-preview/jobs/${jobId}`
+    : urlToShare;
+    console.log("facebookShareUrl:", facebookShareUrl);
 
   /**
    * Xử lý sao chép liên kết vào clipboard
@@ -37,9 +45,10 @@ const ShareButtons = ({ shareUrl, className = '' }) => {
 
   /**
    * Xử lý chia sẻ lên Facebook
+   * Sử dụng backend preview endpoint để Facebook crawler có thể lấy được OG tags
    */
   const handleFacebookShare = () => {
-    const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`;
+    const shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}`;
 
     const width = 600;
     const height = 400;
@@ -47,7 +56,7 @@ const ShareButtons = ({ shareUrl, className = '' }) => {
     const top = (window.screen.height - height) / 2;
 
     window.open(
-      facebookShareUrl,
+      shareLink,
       'facebook-share-dialog',
       `width=${width},height=${height},left=${left},top=${top}`
     );

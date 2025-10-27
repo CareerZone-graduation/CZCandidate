@@ -141,8 +141,8 @@ const JobDetailHeader = ({
                                 {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
                             </Button>
 
-                            {/* Share Button with Dropdown */}
-                            <ShareButtons jobTitle={job?.title} />
+                            {/* Share Button with Dropdown - truyền jobId để tạo preview URL */}
+                            <ShareButtons jobId={job?._id} jobTitle={job?.title} />
                         </div>
                     </div>
 
