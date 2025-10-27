@@ -63,24 +63,26 @@ export const SkipConfirmationModal = ({
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             <AlertDialogTitle>{title}</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="space-y-3">
-            <p>{description}</p>
-            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-              <p className="font-medium text-amber-900 dark:text-amber-100 text-sm mb-2">
-                Tác động:
+          <AlertDialogDescription asChild>
+            <div className="space-y-3">
+              <p>{description}</p>
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <p className="font-medium text-amber-900 dark:text-amber-100 text-sm mb-2">
+                  Tác động:
+                </p>
+                <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
+                  {impacts.map((impact, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-0.5">•</span>
+                      <span>{impact}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Bạn có thể quay lại hoàn thiện hồ sơ bất cứ lúc nào từ trang cá nhân.
               </p>
-              <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200">
-                {impacts.map((impact, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-amber-500 mt-0.5">•</span>
-                    <span>{impact}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Bạn có thể quay lại hoàn thiện hồ sơ bất cứ lúc nào từ trang cá nhân.
-            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

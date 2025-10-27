@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, X } from 'lucide-react';
-import { SkipConfirmationModal } from './SkipConfirmationModal';
 import { getOnboardingStatus, updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
 import { useFormSubmitWithRetry } from '@/hooks/useFormSubmitWithRetry';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
@@ -23,8 +22,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState({});
-  const [showSkipModal, setShowSkipModal] = useState(false);
-  const [skipType, setSkipType] = useState(null); // 'step' or 'all'
   const [submitError, setSubmitError] = useState(null);
 
   // Load onboarding status from backend with error handling
@@ -134,45 +131,43 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     }
   };
 
-  const handleSkipStep = () => {
-    setSkipType('step');
-    setShowSkipModal(true);
-  };
-
-  const handleSkipAll = () => {
-    setSkipType('all');
-    setShowSkipModal(true);
-  };
-
-  const confirmSkip = async () => {
+  const handleSkipStep = async () => {
     try {
       setSubmitError(null);
 
-      if (skipType === 'all') {
-        // Bỏ qua tất cả → Đánh dấu hoàn thành onboarding
+      // Skip bước hiện tại, chuyển sang bước tiếp theo
+      if (currentStep < STEPS.length) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        // Nếu là bước cuối, đánh dấu hoàn thành
         await completeOnboarding();
         localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-        toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
         onComplete?.();
-        navigate('/dashboard');
-      } else {
-        // Skip bước hiện tại, chuyển sang bước tiếp theo
-        if (currentStep < STEPS.length) {
-          setCurrentStep(currentStep + 1);
-          toast.info('Đã bỏ qua bước này');
-        } else {
-          // Nếu là bước cuối, đánh dấu hoàn thành
-          await completeOnboarding();
-          localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-          toast.success('Hoàn thành onboarding! 🎉');
-          onComplete?.();
-          navigate('/dashboard');
-        }
+        navigate('/');
       }
-      setShowSkipModal(false);
     } catch (error) {
-      // Error is already handled by mutation onError
-      console.error('Error in confirmSkip:', error);
+      console.error('Error in handleSkipStep:', error);
+      const errorMsg = getErrorMessage(error, 'Bỏ qua bước');
+      setSubmitError(errorMsg);
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleSkipAll = async () => {
+    try {
+      setSubmitError(null);
+
+      // Bỏ qua tất cả → Đánh dấu hoàn thành onboarding
+      await completeOnboarding();
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
+      onComplete?.();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error in handleSkipAll:', error);
+      const errorMsg = getErrorMessage(error, 'Bỏ qua onboarding');
+      setSubmitError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -297,15 +292,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           </div>
         </div>
       </div>
-
-      {/* Skip Confirmation Modal */}
-      <SkipConfirmationModal
-        isOpen={showSkipModal}
-        onClose={() => setShowSkipModal(false)}
-        onConfirm={confirmSkip}
-        skipType={skipType}
-        currentStep={currentStepInfo?.name}
-      />
     </div>
   );
 };

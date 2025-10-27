@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +62,17 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
 
     const [newLocation, setNewLocation] = useState({ province: '', district: '' });
 
+    // Sync formData with profile when not editing
+    useEffect(() => {
+        if (!isEditing && profile) {
+            setFormData({
+                preferredLocations: profile?.preferredLocations || [],
+                expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
+                workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] }
+            });
+        }
+    }, [profile, isEditing]);
+
     const handleEdit = () => {
         setFormData({
             preferredLocations: profile?.preferredLocations || [],
@@ -79,10 +90,12 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
     const handleSave = async () => {
         try {
             setIsUpdating(true);
+            console.log('Saving preferences:', formData);
             await onUpdate(formData);
             setIsEditing(false);
             toast.success('Cập nhật thông tin thành công');
         } catch (error) {
+            console.error('Update error:', error);
             toast.error(error.response?.data?.message || 'Cập nhật thất bại');
         } finally {
             setIsUpdating(false);
@@ -95,8 +108,11 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             return;
         }
 
+        // Normalize district: empty string → null
+        const normalizedDistrict = newLocation.district || null;
+
         const exists = formData.preferredLocations.some(
-            loc => loc.province === newLocation.province && loc.district === newLocation.district
+            loc => loc.province === newLocation.province && (loc.district || null) === normalizedDistrict
         );
 
         if (exists) {
@@ -104,11 +120,24 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             return;
         }
 
-        setFormData(prev => ({
-            ...prev,
-            preferredLocations: [...prev.preferredLocations, { ...newLocation }]
-        }));
+        const newLocationData = { 
+            province: newLocation.province, 
+            district: normalizedDistrict 
+        };
+
+        console.log('Adding location:', newLocationData);
+        
+        setFormData(prev => {
+            const updated = {
+                ...prev,
+                preferredLocations: [...prev.preferredLocations, newLocationData]
+            };
+            console.log('Updated formData:', updated);
+            return updated;
+        });
+        
         setNewLocation({ province: '', district: '' });
+        toast.success('Đã thêm địa điểm');
     };
 
     const removeLocation = (index) => {
