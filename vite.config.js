@@ -34,6 +34,6 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-    allowedHosts: ['a8519f6f7a72.ngrok-free.app','7fb469cc720ec13a5d6ffcf5dc861b78.serveo.net','63d35e6bb293b3aeb20ee441a4a6d4bb.serveo.net'],
+    allowedHosts: true
   },
 })

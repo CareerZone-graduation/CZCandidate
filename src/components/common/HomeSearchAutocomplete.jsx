@@ -199,21 +199,26 @@ const HomeSearchAutocomplete = forwardRef(({
   }, [handleSearch]);
 
   /**
-   * Handle delete history entry
+   * Handle delete history entry with optimistic update
    */
   const handleDeleteHistory = useCallback(async (e, entryId) => {
     e.stopPropagation();
+    
+    // Optimistic update: Xóa ngay trên UI
+    setSuggestions(prev => ({
+      ...prev,
+      history: prev.history.filter(h => h._id !== entryId)
+    }));
+    
+    // Hiển thị toast ngay lập tức
+    toast.success('Đã xóa lịch sử tìm kiếm');
+    
     try {
-      await dispatch(deleteSearchHistory(entryId)).unwrap();
-      toast.success('Đã xóa lịch sử tìm kiếm');
-
-      // Update suggestions to remove deleted entry
-      setSuggestions(prev => ({
-        ...prev,
-        history: prev.history.filter(h => h._id !== entryId)
-      }));
+      // Gọi API ở background (không cần await)
+      dispatch(deleteSearchHistory(entryId));
     } catch (error) {
-      toast.error('Không thể xóa lịch sử tìm kiếm');
+      // Nếu có lỗi, không cần làm gì vì đã xóa trên UI
+      console.error('Error deleting history:', error);
     }
   }, [dispatch]);
 

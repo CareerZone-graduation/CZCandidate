@@ -1,15 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>CareerZone - Nền tảng tìm việc làm hàng đầu</title>
+    <meta name="title" content="CareerZone - Nền tảng tìm việc làm hàng đầu" />
+    <meta name="description" content="Tìm kiếm công việc mơ ước của bạn tại CareerZone. Kết nối với hàng ngàn nhà tuyển dụng uy tín và cơ hội nghề nghiệp hấp dẫn." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://careerzone.com/" />
+    <meta property="og:title" content="CareerZone - Nền tảng tìm việc làm hàng đầu" />
+    <meta property="og:description" content="Tìm kiếm công việc mơ ước của bạn tại CareerZone. Kết nối với hàng ngàn nhà tuyển dụng uy tín và cơ hội nghề nghiệp hấp dẫn." />
+    <meta property="og:image" content="https://careerzone.com/logo-share.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CareerZone Logo" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://careerzone.com/" />
+    <meta property="twitter:title" content="CareerZone - Nền tảng tìm việc làm hàng đầu" />
+    <meta property="twitter:description" content="Tìm kiếm công việc mơ ước của bạn tại CareerZone. Kết nối với hàng ngàn nhà tuyển dụng uy tín và cơ hội nghề nghiệp hấp dẫn." />
+    <meta property="twitter:image" content="https://careerzone.com/logo-share.png" />
+    
     <script src="https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
+    <div id="fb-root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId: '787212570783616',
+      autoLogAppEvents: true,
+      xfbml: true,
+      version: 'v18.0'
+    });
+  };
+</script>
+<script async defer crossorigin="anonymous" 
+  src="https://connect.facebook.net/vi_VN/sdk.js"></script>
   </body>
 </html>
