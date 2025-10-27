@@ -1,18 +1,20 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useQuery } from '@tanstack/react-query';
 import { OnboardingWrapper } from '@/components/onboarding/OnboardingWrapper';
 import { BasicInfoStep } from '@/components/onboarding/steps/BasicInfoStep';
 import { SkillsExperienceStep } from '@/components/onboarding/steps/SkillsExperienceStep';
 import { SalaryPreferencesStep } from '@/components/onboarding/steps/SalaryPreferencesStep';
 import { LoadingState } from '@/components/onboarding/LoadingState';
 import { ErrorState } from '@/components/onboarding/ErrorState';
-import { getOnboardingStatus } from '@/services/onboardingService';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  // Use Redux hook for onboarding status (cached)
+  const { needsOnboarding, isLoading, error } = useOnboardingStatus();
 
   // Check if user is authenticated
   useEffect(() => {
@@ -21,21 +23,12 @@ const OnboardingPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Check onboarding status
-  const { data: onboardingStatus, isLoading, error } = useQuery({
-    queryKey: ['onboardingStatus'],
-    queryFn: getOnboardingStatus,
-    enabled: isAuthenticated,
-    retry: 1
-  });
-
   // If onboarding is already completed, redirect to dashboard
   useEffect(() => {
-    // ✅ FIX: Check if onboarding is NOT needed (completed)
-    if (onboardingStatus?.data && !onboardingStatus.data.needsOnboarding) {
+    if (!isLoading && !needsOnboarding) {
       navigate('/dashboard', { replace: true });
     }
-  }, [onboardingStatus, navigate]);
+  }, [needsOnboarding, isLoading, navigate]);
 
   const handleComplete = () => {
     navigate('/dashboard', { replace: true });

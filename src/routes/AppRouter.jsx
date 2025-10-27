@@ -50,37 +50,30 @@ const ProtectedRoute = ({ isAuthenticated }) => {
 
 
 
-import { getOnboardingStatus } from '../services/onboardingService';
 import { getAccessToken } from '../utils/token';
+import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 
-// This component will perform the onboarding check globally
+// This component will perform the onboarding check globally using Redux
 const GlobalOnboardingChecker = () => {
   const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Use Redux hook to get onboarding status (auto-fetches if needed)
+  const { needsOnboarding, isLoading } = useOnboardingStatus(isAuthenticated && !isInitializing);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      // Check only when authentication is resolved and user is logged in
-      if (isAuthenticated && !isInitializing) {
-        // Avoid redirect loops or redirecting away from the onboarding process itself
-        if (location.pathname.startsWith('/onboarding')) return;
+    // Check only when authentication is resolved and user is logged in
+    if (isAuthenticated && !isInitializing && !isLoading) {
+      // Avoid redirect loops or redirecting away from the onboarding process itself
+      if (location.pathname.startsWith('/onboarding')) return;
 
-        try {
-          console.log('GlobalOnboardingChecker: Checking status...');
-          const response = await getOnboardingStatus();
-          if (response.data?.needsOnboarding) {
-            console.log('GlobalOnboardingChecker: Redirecting to /onboarding');
-            navigate('/onboarding', { replace: true });
-          }
-        } catch (error) {
-          console.error('GlobalOnboardingChecker: Error checking onboarding status', error);
-        }
+      if (needsOnboarding) {
+        console.log('GlobalOnboardingChecker: Redirecting to /onboarding (from Redux)');
+        navigate('/onboarding', { replace: true });
       }
-    };
-
-    checkOnboarding();
-  }, [isAuthenticated, isInitializing, navigate, location.pathname]);
+    }
+  }, [isAuthenticated, isInitializing, needsOnboarding, isLoading, navigate, location.pathname]);
 
   return null; // This component does not render anything
 };

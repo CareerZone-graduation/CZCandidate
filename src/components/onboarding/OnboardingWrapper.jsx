@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, X } from 'lucide-react';
-import { getOnboardingStatus, updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
+import { updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
 import { useFormSubmitWithRetry } from '@/hooks/useFormSubmitWithRetry';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
 import { getErrorMessage, getErrorType, ErrorType } from '@/utils/errorHandling';
 import { OnboardingBackground } from './OnboardingBackground';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { fetchOnboardingStatus } from '@/redux/slices/onboardingThunks';
 
 const ONBOARDING_STORAGE_KEY = 'careerzone_onboarding_progress';
 
@@ -21,24 +24,26 @@ const STEPS = [
 
 export const OnboardingWrapper = ({ children, onComplete }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
   const [, forceUpdate] = useState({});
 
-  // Load onboarding status from backend with error handling
-  const {
-    data: onboardingStatus,
-    error: statusError,
-    refetch: refetchStatus
-  } = useQuery({
-    queryKey: ['onboardingStatus'],
-    queryFn: getOnboardingStatus,
-    staleTime: 5 * 60 * 1000,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000)
-  });
+  // Use Redux hook for onboarding status (cached)
+  const { 
+    profileCompleteness, 
+    error: statusError, 
+    refresh: refetchStatus 
+  } = useOnboardingStatus();
+  
+  // Create a compatible onboardingStatus object for existing code
+  const onboardingStatus = {
+    data: {
+      profileCompleteness
+    }
+  };
 
   // Load saved progress from localStorage on mount
   useEffect(() => {
@@ -71,8 +76,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     onSuccess: (response) => {
       setSubmitError(null);
-      // Refetch status để cập nhật completeness
-      refetchStatus();
+      // Refresh Redux state để cập nhật completeness
+      dispatch(fetchOnboardingStatus());
     },
     onError: (error) => {
       const errorMsg = getErrorMessage(error, 'Lưu tiến trình');
@@ -90,6 +95,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
       setSubmitError(null);
+      // Refresh Redux state
+      dispatch(fetchOnboardingStatus());
       onComplete?.();
       navigate('/dashboard');
     },
@@ -117,6 +124,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         // Last step - Đánh dấu hoàn thành onboarding
         await completeOnboarding();
         localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+        // Refresh Redux state
+        dispatch(fetchOnboardingStatus());
         toast.success('Hoàn thành onboarding! 🎉');
         onComplete?.();
         navigate('/dashboard');
@@ -144,6 +153,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         // Nếu là bước cuối, đánh dấu hoàn thành
         await completeOnboarding();
         localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+        // Refresh Redux state
+        dispatch(fetchOnboardingStatus());
         toast.success('Hoàn thành! Bạn có thể cập nhật hồ sơ bất cứ lúc nào');
         onComplete?.();
         navigate('/dashboard');
@@ -163,6 +174,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       // Bỏ qua tất cả → Đánh dấu hoàn thành onboarding
       await completeOnboarding();
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      // Refresh Redux state
+      dispatch(fetchOnboardingStatus());
       toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
       onComplete?.();
       navigate('/dashboard');

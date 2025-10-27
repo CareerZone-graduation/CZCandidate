@@ -20,8 +20,8 @@ import { getSavedJobs } from '../../services/savedJobService';
 import { getViewHistoryStats } from '../../services/viewHistoryService';
 import { getProfileCompleteness } from '../../services/profileService';
 import { ProfileCompletionBanner } from '../../components/profile/ProfileCompletionBanner';
-import { getOnboardingStatus } from '../../services/onboardingService';
 import { getRecommendations } from '../../services/recommendationService';
+import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -36,10 +36,11 @@ const Dashboard = () => {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [profileCompleteness, setProfileCompleteness] = useState(null);
   const [isLoadingCompleteness, setIsLoadingCompleteness] = useState(true);
-  const [onboardingStatus, setOnboardingStatus] = useState(null);
-  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(true);
+  
+  // Use Redux hook for onboarding status (cached, no API call needed)
+  const { needsOnboarding, profileCompleteness: onboardingProfileCompleteness } = useOnboardingStatus();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -101,33 +102,8 @@ const Dashboard = () => {
     fetchProfileCompleteness();
   }, []);
 
-  // Check onboarding status on dashboard load
-  useEffect(() => {
-    const fetchOnboardingStatus = async () => {
-      try {
-        setIsLoadingOnboarding(true);
-        const response = await getOnboardingStatus();
-        if (response.success && response.data) {
-          setOnboardingStatus(response.data);
-          
-          // ✅ FIX: Check needsOnboarding field
-          const needsOnboarding = response.data.needsOnboarding;
-          
-          // If onboarding is not completed, redirect to onboarding page
-          if (needsOnboarding) {
-            navigate('/onboarding', { replace: true });
-          }
-        }
-      } catch (err) {
-        console.error('Lỗi khi lấy trạng thái onboarding:', err);
-        // Don't block dashboard if onboarding check fails
-      } finally {
-        setIsLoadingOnboarding(false);
-      }
-    };
-
-    fetchOnboardingStatus();
-  }, [navigate]);
+  // Redirect to onboarding if needed (handled by GlobalOnboardingChecker in AppRouter)
+  // No need to check here anymore, Redux already has the status
 
   // Fetch recommended jobs based on profile completeness
   useEffect(() => {

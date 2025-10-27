@@ -1,15 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getMe, getMyProfile } from '../services/profileService';
 import { saveAccessToken, clearAccessToken, getAccessToken } from '../utils/token';
+import { fetchOnboardingStatus } from './slices/onboardingThunks';
 
 // Async thunk to fetch user data
-export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWithValue }) => {
+export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWithValue, dispatch }) => {
   const token = getAccessToken();
   if (!token) {
     return rejectWithValue('No token found');
   }
   try {
     const response = await getMe();
+    // Fetch onboarding status after successful user fetch
+    dispatch(fetchOnboardingStatus());
     // Giả định response.data chứa { user: { ..., coinBalance: 100 }, profile: {...} }
     return response.data;
   } catch (error) {

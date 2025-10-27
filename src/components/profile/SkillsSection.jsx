@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Star, Plus, X, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -166,7 +167,7 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            
+
             {editSkills.length > 0 ? (
               <div className="space-y-3">
                 {editSkills.map((skill, index) => (
@@ -235,9 +236,9 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
             {skills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {skills.map((skill, index) => (
-                  <Badge 
-                    key={skill._id || index} 
-                    variant="secondary" 
+                  <Badge
+                    key={skill._id || index}
+                    variant="secondary"
                     className="bg-primary/10 text-primary"
                   >
                     {skill.name}

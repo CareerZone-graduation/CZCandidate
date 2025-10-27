@@ -22,7 +22,9 @@ const initialState = {
     step5: {}  // CV
   },
   isLoading: false,
-  error: null
+  error: null,
+  lastFetchTime: null, // Track when data was last fetched
+  needsOnboarding: false // Track if user needs onboarding
 };
 
 const onboardingSlice = createSlice({
@@ -33,11 +35,14 @@ const onboardingSlice = createSlice({
     setOnboardingStatus: (state, action) => {
       const { isCompleted, currentStep, completedSteps, skippedSteps, completionPercentage, profileCompleteness } = action.payload;
       state.isOnboardingComplete = isCompleted;
+      state.needsOnboarding = !isCompleted;
       state.currentStep = currentStep;
       state.completedSteps = completedSteps;
       state.skippedSteps = skippedSteps;
       state.completionPercentage = completionPercentage;
       state.profileCompleteness = profileCompleteness;
+      state.lastFetchTime = Date.now();
+      state.error = null;
     },
 
     // Set current step
