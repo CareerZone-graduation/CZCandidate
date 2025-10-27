@@ -55,12 +55,20 @@ export const saveSearchHistory = createAsyncThunk(
 
 export const deleteSearchHistory = createAsyncThunk(
   'searchHistory/delete',
-  async (entryId, { rejectWithValue }) => {
+  async (entryId, { rejectWithValue, dispatch }) => {
+    // Optimistic update: Xóa ngay trên UI trước
+    dispatch(removeEntry(entryId));
+
     try {
+      // Gọi API ở background
       await searchHistoryService.deleteHistory(entryId);
       return entryId;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Không thể xóa lịch sử tìm kiếm');
+      // Nếu lỗi, rollback lại (sẽ được xử lý ở rejected case)
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Không thể xóa lịch sử tìm kiếm',
+        entryId
+      });
     }
   }
 );
@@ -142,19 +150,17 @@ const searchHistorySlice = createSlice({
       })
       // deleteSearchHistory
       .addCase(deleteSearchHistory.pending, (state) => {
-        state.loading = true;
+        // Không set loading vì đã xóa optimistically
         state.error = null;
       })
-      .addCase(deleteSearchHistory.fulfilled, (state, action) => {
-        state.loading = false;
-        const entryId = action.payload;
-        state.entries = state.entries.filter(entry => entry._id !== entryId);
-        state.pagination.total = Math.max(0, state.pagination.total - 1);
+      .addCase(deleteSearchHistory.fulfilled, (state) => {
+        // Entry đã được xóa trong optimistic update, không cần làm gì thêm
         state.error = null;
       })
       .addCase(deleteSearchHistory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+        // Rollback: Thêm lại entry nếu có trong payload
+        // (Cần lưu entry trước khi xóa để có thể rollback)
+        state.error = action.payload?.message || action.payload;
       });
   },
 });

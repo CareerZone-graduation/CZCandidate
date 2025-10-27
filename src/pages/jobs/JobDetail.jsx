@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +16,6 @@ import {
   Building,
   Calendar,
   Bookmark,
-  Share2,
   ArrowLeft,
   CheckCircle,
   Briefcase,
@@ -212,18 +212,7 @@ const JobDetail = () => {
     toggleSaveJob();
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: job?.title,
-        text: `Xem công việc tuyệt vời này tại ${job?.company?.name}`,
-        url: window.location.href,
-      }).catch(() => toast.info("Chia sẻ đã bị hủy"));
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Đã sao chép liên kết vào clipboard');
-    }
-  };
+  // Hàm handleShare đã được thay thế bằng ShareButtons component
 
   
 
@@ -332,37 +321,61 @@ const JobDetail = () => {
     return <EmptyState message="Công việc bạn đang tìm có thể đã bị xóa hoặc không tồn tại." />;
   }
 
+  // Lấy URL hiện tại và thông tin cho Open Graph
+  const currentUrl = window.location.href;
+  const companyLogo = job?.company?.logo || job?.recruiterProfileId?.company?.logo || '/default-job-image.png';
+  const jobDescription = job?.description?.replace(/<[^>]*>/g, '').substring(0, 200) || `Cơ hội việc làm tại ${job?.company?.name || 'công ty'}`;
+
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto py-6 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-6 hover:bg-muted transition-all duration-200"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Quay lại
-          </Button>
+    <HelmetProvider>
+      <Helmet>
+        {/* Basic Meta Tags */}
+        <title>{job?.title} - {job?.company?.name || 'CareerZone'}</title>
+        <meta name="description" content={jobDescription} />
+        
+        {/* Open Graph Tags cho Facebook */}
+        <meta property="og:url" content={currentUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
+        <meta property="og:description" content={jobDescription} />
+        <meta property="og:image" content={companyLogo} />
+        
+        {/* Twitter Card Tags (bonus) */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
+        <meta name="twitter:description" content={jobDescription} />
+        <meta name="twitter:image" content={companyLogo} />
+      </Helmet>
 
-          <JobDetailHeader
-            job={job}
-            isAuthenticated={isAuthenticated}
-            handleApply={handleApply}
-            handleSave={handleSave}
-            handleShare={handleShare}
-            applicantCount={applicantCount}
-            hasViewedApplicants={hasViewedApplicants}
-            isLoadingApplicants={isLoadingApplicants}
-            handleViewApplicants={handleViewApplicants}
-          />
+      <div className="min-h-screen">
+        <div className="container mx-auto py-6 px-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Back Button */}
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="mb-6 hover:bg-muted transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Job Overview */}
-              <Card className="border-0 shadow-sm">
+            <JobDetailHeader
+              job={job}
+              isAuthenticated={isAuthenticated}
+              handleApply={handleApply}
+              handleSave={handleSave}
+              applicantCount={applicantCount}
+              hasViewedApplicants={hasViewedApplicants}
+              isLoadingApplicants={isLoadingApplicants}
+              handleViewApplicants={handleViewApplicants}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Job Overview */}
+                <Card className="border-0 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
                 </CardHeader>
@@ -398,101 +411,102 @@ const JobDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Job Description */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold">Mô tả công việc</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
-                </CardContent>
-              </Card>
-
-              {/* Requirements */}
-              {job.requirements && (
+                {/* Job Description */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg font-bold">Yêu cầu ứng viên</CardTitle>
+                    <CardTitle className="text-lg font-bold">Mô tả công việc</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Benefits */}
-              {job.benefits && (
+                {/* Requirements */}
+                {job.requirements && (
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold">Yêu cầu ứng viên</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Benefits */}
+                {job.benefits && (
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold">Quyền lợi</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Skills */}
+                {job.skills && job.skills.length > 0 && (
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold">Kỹ năng yêu cầu</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {job.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Location Map */}
                 <Card className="border-0 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg font-bold">Quyền lợi</CardTitle>
+                    <CardTitle className="text-lg font-bold">Địa điểm làm việc</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                    <JobLocationMap
+                      location={job.location}
+                      address={job.address}
+                      companyName={job.recruiterProfileId?.company?.name}
+                    />
                   </CardContent>
                 </Card>
-              )}
+              </div>
 
-              {/* Skills */}
-              {job.skills && job.skills.length > 0 && (
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Kỹ năng yêu cầu</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {job.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Location Map */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold">Địa điểm làm việc</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <JobLocationMap
-                    location={job.location}
-                    address={job.address}
-                    companyName={job.recruiterProfileId?.company?.name}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column (Sidebar) */}
-            <div className="lg:col-span-1">
-              <JobDetailSidebar
-                relatedJobs={relatedJobs}
-                isLoadingRelated={isLoadingRelated}
-                currentJobs={currentJobs}
-                totalPages={totalPages}
-                relatedJobsPage={relatedJobsPage}
-                handlePrevPage={handlePrevPage}
-                handleNextPage={handleNextPage}
-              />
+              {/* Right Column (Sidebar) */}
+              <div className="lg:col-span-1">
+                <JobDetailSidebar
+                  relatedJobs={relatedJobs}
+                  isLoadingRelated={isLoadingRelated}
+                  currentJobs={currentJobs}
+                  totalPages={totalPages}
+                  relatedJobsPage={relatedJobsPage}
+                  handlePrevPage={handlePrevPage}
+                  handleNextPage={handleNextPage}
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        <ConfirmDialog />
+
+        {job && (
+          <ApplyJobDialog
+            jobId={job._id}
+            jobTitle={job.title}
+            open={showApplyDialog}
+            onOpenChange={setShowApplyDialog}
+            onSuccess={handleApplySuccess}
+          />
+        )}
       </div>
-
-      <ConfirmDialog />
-
-      {job && (
-        <ApplyJobDialog
-          jobId={job._id}
-          jobTitle={job.title}
-          open={showApplyDialog}
-          onOpenChange={setShowApplyDialog}
-          onSuccess={handleApplySuccess}
-        />
-      )}
-    </div>
+    </HelmetProvider>
   );
 };
 

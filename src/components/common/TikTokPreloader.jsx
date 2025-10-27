@@ -34,7 +34,7 @@ const TikTokPreloader = ({ minLoadTime = 1500 }) => {
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black"
         >
           {/* Brand Name - Appears First with Letter Animation */}
-          <div className="mb-12 flex items-center justify-center">
+          <div className="mb-4 flex items-center justify-center">
             {['C', 'a', 'r', 'e', 'e', 'r', 'Z', 'o', 'n', 'e'].map((letter, i) => (
               <motion.span
                 key={i}
@@ -62,6 +62,20 @@ const TikTokPreloader = ({ minLoadTime = 1500 }) => {
               </motion.span>
             ))}
           </div>
+
+          {/* Tagline */}
+          <motion.p
+            className="mb-12 text-gray-400 text-sm md:text-base font-medium tracking-wide"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.6,
+              delay: 0.6,
+              ease: "easeOut",
+            }}
+          >
+            Nền tảng tuyển dụng và tìm việc số 1 Việt Nam
+          </motion.p>
 
           {/* 3 White Glowing Circles - Appears After Text */}
           <motion.div

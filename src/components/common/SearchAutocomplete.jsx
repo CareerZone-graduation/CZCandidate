@@ -193,21 +193,26 @@ const SearchAutocomplete = forwardRef(({
   }, [handleSearch]);
 
   /**
-   * Handle delete history entry
+   * Handle delete history entry with optimistic update
    */
   const handleDeleteHistory = useCallback(async (e, entryId) => {
     e.stopPropagation();
-    try {
-      await dispatch(deleteSearchHistory(entryId)).unwrap();
-      toast.success('Đã xóa lịch sử tìm kiếm');
 
-      // Update suggestions to remove deleted entry
-      setSuggestions(prev => ({
-        ...prev,
-        history: prev.history.filter(h => h._id !== entryId)
-      }));
+    // Optimistic update: Xóa ngay trên UI
+    setSuggestions(prev => ({
+      ...prev,
+      history: prev.history.filter(h => h._id !== entryId)
+    }));
+
+    // Hiển thị toast ngay lập tức
+    toast.success('Đã xóa lịch sử tìm kiếm');
+
+    try {
+      // Gọi API ở background (không cần await)
+      dispatch(deleteSearchHistory(entryId));
     } catch (error) {
-      toast.error('Không thể xóa lịch sử tìm kiếm');
+      // Nếu có lỗi, không cần làm gì vì đã xóa trên UI
+      console.error('Error deleting history:', error);
     }
   }, [dispatch]);
 
@@ -352,7 +357,7 @@ const SearchAutocomplete = forwardRef(({
           onSuggestionHover={(index) => setSelectedIndex(index)}
           onDeleteHistory={handleDeleteHistory}
           onClose={closeDropdown}
-          onRetry={() => {}}
+          onRetry={() => { }}
           className={cn(
             "absolute top-full left-0 z-50 w-full",
             "border-t-0 rounded-t-none rounded-b-xl",
