@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  currentStep: 0,
+  currentStep: 1, // Bắt đầu từ step 1 thay vì 0
   completedSteps: [],
   skippedSteps: [],
   isOnboardingComplete: false,
@@ -22,7 +22,9 @@ const initialState = {
     step5: {}  // CV
   },
   isLoading: false,
-  error: null
+  error: null,
+  lastFetchTime: null, // Track when data was last fetched
+  needsOnboarding: false // Track if user needs onboarding
 };
 
 const onboardingSlice = createSlice({
@@ -33,11 +35,14 @@ const onboardingSlice = createSlice({
     setOnboardingStatus: (state, action) => {
       const { isCompleted, currentStep, completedSteps, skippedSteps, completionPercentage, profileCompleteness } = action.payload;
       state.isOnboardingComplete = isCompleted;
+      state.needsOnboarding = !isCompleted;
       state.currentStep = currentStep;
       state.completedSteps = completedSteps;
       state.skippedSteps = skippedSteps;
       state.completionPercentage = completionPercentage;
       state.profileCompleteness = profileCompleteness;
+      state.lastFetchTime = Date.now();
+      state.error = null;
     },
 
     // Set current step
@@ -47,7 +52,8 @@ const onboardingSlice = createSlice({
 
     // Go to next step
     nextStep: (state) => {
-      if (state.currentStep < 5) {
+      // Cho phép tăng lên 6 để handle logic hoàn thành onboarding
+      if (state.currentStep <= 5) {
         state.currentStep += 1;
       }
     },
@@ -67,7 +73,7 @@ const onboardingSlice = createSlice({
       }
       // Remove from skipped if it was there
       state.skippedSteps = state.skippedSteps.filter(s => s !== step);
-      
+
       // Calculate completion percentage
       const totalSteps = 5;
       state.completionPercentage = Math.round((state.completedSteps.length / totalSteps) * 100);

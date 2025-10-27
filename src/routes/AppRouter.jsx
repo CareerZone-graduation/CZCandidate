@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUser } from '../redux/authSlice';
 
@@ -36,6 +36,8 @@ import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVBuilderPage from '../pages/cv/CVBuilderPage';
 import UploadedCVPage from '../pages/cv/UploadedCVPage';
+import OnboardingPage from '../pages/onboarding/OnboardingPage';
+import { OnboardingPreview } from '../components/onboarding/OnboardingPreview';
 import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
 // Protected Route Component
@@ -46,20 +48,51 @@ const ProtectedRoute = ({ isAuthenticated }) => {
   return <Outlet />;
 };
 
+
+
+import { getAccessToken } from '../utils/token';
+import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
+
+// This component will perform the onboarding check globally using Redux
+const GlobalOnboardingChecker = () => {
+  const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Use Redux hook to get onboarding status (auto-fetches if needed)
+  const { needsOnboarding, isLoading } = useOnboardingStatus(isAuthenticated && !isInitializing);
+
+  useEffect(() => {
+    // Check only when authentication is resolved and user is logged in
+    if (isAuthenticated && !isInitializing && !isLoading) {
+      // Avoid redirect loops or redirecting away from the onboarding process itself
+      if (location.pathname.startsWith('/onboarding')) return;
+
+      if (needsOnboarding) {
+        console.log('GlobalOnboardingChecker: Redirecting to /onboarding (from Redux)');
+        navigate('/onboarding', { replace: true });
+      }
+    }
+  }, [isAuthenticated, isInitializing, needsOnboarding, isLoading, navigate, location.pathname]);
+
+  return null; // This component does not render anything
+};
+
 const AppRouter = () => {
   const dispatch = useDispatch();
   const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Run once on app startup to check for existing token
+    if (getAccessToken()) {
       dispatch(fetchUser());
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch]);
 
-  if (isInitializing && isAuthenticated) {
+  if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -72,6 +105,7 @@ const AppRouter = () => {
       }}
     >
       <ScrollToTopOnRouteChange />
+      <GlobalOnboardingChecker />
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
@@ -85,6 +119,9 @@ const AppRouter = () => {
           <Route path="/editor" element={<CVBuilder />} />
           <Route path="/editor/:cvId" element={<CVBuilder />} />
         </Route>
+
+        {/* Onboarding Preview - Public route without layout */}
+        <Route path="/onboarding-preview" element={<OnboardingPreview />} />
 
         {/* CV Render Page is now handled by render.html, this route is deprecated */}
 
@@ -103,7 +140,12 @@ const AppRouter = () => {
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPassword />} />
         <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/" /> : <ResetPassword />} />
 
-        {/* Protected dashboard routes */}
+        {/* Protected onboarding route - no onboarding check needed */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+        </Route>
+
+        {/* Protected dashboard routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
@@ -119,14 +161,14 @@ const AppRouter = () => {
             <Route path="credit-history" element={<CreditHistory />} />
           </Route>
         </Route>
-        {/* Protected profile routes */}
+        {/* Protected profile routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/profile" element={<MainLayout />}>
             <Route index element={<Profile />} />
           </Route>
         </Route>
 
-        {/* Protected notifications routes */}
+        {/* Protected notifications routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/notifications" element={<MainLayout />}>
             <Route index element={<NotificationsPage />} />

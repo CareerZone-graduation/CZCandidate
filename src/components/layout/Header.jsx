@@ -633,7 +633,10 @@ const Header = () => {
                 >
                   <div className="relative">
                     <Avatar className="w-8 h-8 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all duration-300">
-                      <AvatarImage src={user?.profile?.avatar} alt={user?.fullname} />
+                      <AvatarImage src={user?.profile?.avatar} alt={user?.fullname}
+                      referrerPolicy="no-referrer"
+  crossOrigin="anonymous"
+   />
                       <AvatarFallback className="bg-gradient-to-br from-primary/20 to-blue-600/20 text-primary text-sm font-semibold">
                         {getUserInitials(user)}
                       </AvatarFallback>
@@ -680,7 +683,8 @@ const Header = () => {
                       <div className="flex items-center space-x-4 relative z-10">
                         <div className="relative">
                           <Avatar className="w-14 h-14 ring-2 ring-primary/30 shadow-lg">
-                            <AvatarImage src={user?.profile?.avatar} alt={user?.profile?.fullname} />
+                            <AvatarImage referrerPolicy="no-referrer"
+  crossOrigin="anonymous" src={user?.profile?.avatar} alt={user?.profile?.fullname} />
                             <AvatarFallback className="bg-gradient-to-br from-primary/30 to-blue-600/30 text-primary font-bold text-lg">
                               {getUserInitials(user)}
                             </AvatarFallback>

@@ -71,6 +71,23 @@ export const createCvFromTemplate = async (data) => {
 };
 
 /**
+ * Tạo CV mới từ dữ liệu profile của user.
+ * @param {Object} data - Dữ liệu để tạo CV.
+ * @param {string} data.templateId - ID của template.
+ * @param {string} data.title - Tên/tiêu đề của CV.
+ * @returns {Promise<Object>} Dữ liệu CV vừa được tạo với dữ liệu từ profile.
+ */
+export const createCvFromProfile = async (data) => {
+  try {
+    const response = await apiClient.post('/cvs/from-profile', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating CV from profile:', error);
+    throw error;
+  }
+};
+
+/**
  * Cập nhật một CV đã có.
  * @param {string} cvId - ID của CV cần cập nhật.
  * @param {Object} cvData - Dữ liệu CV cần cập nhật (chỉ bao gồm title và cvData).

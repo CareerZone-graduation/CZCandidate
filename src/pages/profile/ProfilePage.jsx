@@ -5,13 +5,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from '@/components/profile/BasicInfoSection';
+import { PreferencesSection } from '@/components/profile/PreferencesSection';
 import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { SkillsSection } from '@/components/profile/SkillsSection';
-import { CVSection } from '@/components/profile/CVSection';
+import { CertificatesSection } from '@/components/profile/CertificatesSection';
+import { ProjectsSection } from '@/components/profile/ProjectsSection';
 import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenessCard';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
-import { ProfileCompletenessTest } from '@/components/profile/ProfileCompletenessTest';
 import * as profileService from '@/services/profileService';
 
 const ProfilePage = () => {
@@ -47,34 +48,15 @@ const ProfilePage = () => {
     }
   });
 
-  // Upload CV mutation
-  const uploadCVMutation = useMutation({
-    mutationFn: (formData) => profileService.uploadCV(formData),
+  // Update preferences mutation
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (preferences) => profileService.updateProfilePreferences(preferences),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
     }
   });
 
-  // Delete CV mutation
-  const deleteCVMutation = useMutation({
-    mutationFn: (cvId) => profileService.deleteCV(cvId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-    }
-  });
 
-  // Download CV handler
-  const handleDownloadCV = async (cvId, cvName) => {
-    const blob = await profileService.downloadCV(cvId);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = cvName || `cv-${cvId}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -149,25 +131,15 @@ const ProfilePage = () => {
             onAvatarUpdate={(formData) => uploadAvatarMutation.mutateAsync(formData)}
           />
 
+          {/* Preferences Section */}
+          <PreferencesSection
+            profile={profile}
+            onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
+          />
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Experience & Education */}
-            <div className="lg:col-span-2 space-y-6">
-              <ExperienceSection
-                experiences={profile?.experiences || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-
-              <EducationSection
-                educations={profile?.educations || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-            </div>
-
-            {/* Right Column - Completeness, Skills & CVs */}
+            {/* Left Column - Skills, Completeness */}
             <div className="space-y-6">
-              {/* TEST Component - Remove after debugging */}
-              <ProfileCompletenessTest profile={profile} />
-              
               {/* Profile Completeness Card */}
               <ProfileCompletenessCard 
                 profileCompleteness={profile?.profileCompleteness}
@@ -178,12 +150,28 @@ const ProfilePage = () => {
                 skills={profile?.skills || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
+            </div>
 
-              <CVSection
-                cvs={profile?.cvs || []}
-                onUpload={(formData) => uploadCVMutation.mutateAsync(formData)}
-                onDelete={(cvId) => deleteCVMutation.mutateAsync(cvId)}
-                onDownload={handleDownloadCV}
+            {/* Right Column - Experience, Education, Projects, Certificates */}
+            <div className="lg:col-span-2 space-y-6">
+              <ExperienceSection
+                experiences={profile?.experiences || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
+
+              <EducationSection
+                educations={profile?.educations || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
+
+              <ProjectsSection
+                projects={profile?.projects || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
+
+              <CertificatesSection
+                certificates={profile?.certificates || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
             </div>
           </div>
