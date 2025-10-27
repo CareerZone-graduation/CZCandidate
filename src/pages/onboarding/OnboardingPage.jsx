@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, shallowEqual } from 'react-redux';
 import { OnboardingWrapper } from '@/components/onboarding/OnboardingWrapper';
 import { BasicInfoStep } from '@/components/onboarding/steps/BasicInfoStep';
 import { SkillsStep } from '@/components/onboarding/steps/SkillsStep';
@@ -9,48 +9,25 @@ import { ExperienceEducationStep } from '@/components/onboarding/steps/Experienc
 import { CertificatesProjectsStep } from '@/components/onboarding/steps/CertificatesProjectsStep';
 import { LoadingState } from '@/components/onboarding/LoadingState';
 import { ErrorState } from '@/components/onboarding/ErrorState';
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 
-const OnboardingPage = () => {
+const OnboardingPage = memo(() => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
   
-  // Use Redux hook for onboarding status (cached)
-  const { needsOnboarding, isLoading, error } = useOnboardingStatus();
+  // Chỉ select những giá trị cần thiết + shallowEqual để tránh re-render không cần thiết
+  const { needsOnboarding, isLoading, error } = useSelector((state) => ({
+    needsOnboarding: state.onboarding.needsOnboarding,
+    isLoading: state.onboarding.isLoading,
+    error: state.onboarding.error
+  }), shallowEqual);
 
-  // Check if user is authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  // If onboarding is already completed, redirect to dashboard
-  useEffect(() => {
-    if (!isLoading && !needsOnboarding) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [needsOnboarding, isLoading, navigate]);
-
-  const handleComplete = () => {
+  // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
+  const handleComplete = useCallback(() => {
     navigate('/dashboard', { replace: true });
-  };
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (error) {
-    return (
-      <ErrorState 
-        message="Không thể tải trạng thái onboarding"
-        onRetry={() => window.location.reload()}
-      />
-    );
-  }
+  }, [navigate]);
 
   // Render the appropriate step based on current step
-  const renderStep = ({ currentStep, stepData, onNext, isLoading, error, onLoadingChange }) => {
+  const renderStep = useCallback(({ currentStep, stepData, onNext, isLoading, error, onLoadingChange }) => {
     switch (currentStep) {
       case 1:
         return (
@@ -101,13 +78,43 @@ const OnboardingPage = () => {
       default:
         return null;
     }
-  };
+  }, []);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // If onboarding is already completed, redirect to dashboard
+  useEffect(() => {
+    if (!isLoading && !needsOnboarding) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [needsOnboarding, isLoading, navigate]);
+
+  // CONDITIONAL RETURNS MUST BE AFTER ALL HOOKS
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState 
+        message="Không thể tải trạng thái onboarding"
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   return (
     <OnboardingWrapper onComplete={handleComplete}>
       {renderStep}
     </OnboardingWrapper>
   );
-};
+});
+
+OnboardingPage.displayName = 'OnboardingPage';
 
 export default OnboardingPage;

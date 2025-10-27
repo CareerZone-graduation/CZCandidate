@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import { InlineError } from '../ErrorState';
 import locationData from '@/data/oldtree.json';
 import { isOnline } from '@/utils/errorHandling';
 
-// Process location data từ oldtree.json
+// Process location data từ oldtree.json - CHỈ 1 LẦN khi module load
 const processLocationData = () => {
   const provinceNames = [];
   const districtMap = new Map();
@@ -31,7 +31,8 @@ const processLocationData = () => {
 
 const { provinceNames, districtMap: locationMap } = processLocationData();
 
-export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: externalError, onLoadingChange }) => {
+// Memoize component để tránh re-render không cần thiết
+export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error: externalError, onLoadingChange }) => {
   const [avatarPreview, setAvatarPreview] = useState(initialData.avatar || null);
   const [selectedLocations, setSelectedLocations] = useState(initialData.preferredLocations || []);
   const [online, setOnline] = useState(isOnline());
@@ -106,7 +107,8 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
     }
   };
 
-  const addLocation = (province) => {
+  // Memoize handlers để tránh tái tạo
+  const addLocation = useCallback((province) => {
     if (selectedLocations.length >= 5) return;
     
     // Chỉ lưu province và district (null = tất cả quận/huyện)
@@ -116,24 +118,24 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
     setValue('preferredLocations', updated, { shouldValidate: true });
     // Trigger validation after adding location
     trigger('preferredLocations');
-  };
+  }, [selectedLocations, setValue, trigger]);
 
-  const removeLocation = (index) => {
+  const removeLocation = useCallback((index) => {
     const updated = selectedLocations.filter((_, i) => i !== index);
     setSelectedLocations(updated);
     setValue('preferredLocations', updated, { shouldValidate: true });
     // Trigger validation after removing location
     trigger('preferredLocations');
-  };
+  }, [selectedLocations, setValue, trigger]);
 
-  const updateLocationDistrict = (index, district) => {
+  const updateLocationDistrict = useCallback((index, district) => {
     const updated = [...selectedLocations];
     updated[index].district = district;
     setSelectedLocations(updated);
     setValue('preferredLocations', updated);
-  };
+  }, [selectedLocations, setValue]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = useCallback(async (data) => {
     // Final validation before submit
     if (!online) {
       return;
@@ -188,7 +190,12 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
     } catch (error) {
       console.error('Form submission error:', error);
     }
-  };
+  }, [online, uploadingAvatar, isLoading, avatarFile, onLoadingChange, onNext]);
+
+  // Memoize filtered provinces để tránh filter mỗi lần render
+  const availableProvinces = useMemo(() => {
+    return provinceNames.filter(p => !selectedLocations.some(loc => loc.province === p));
+  }, [selectedLocations]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
@@ -356,13 +363,11 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
                   <SelectValue placeholder="Thêm địa điểm" />
                 </SelectTrigger>
                 <SelectContent>
-                  {provinceNames
-                    .filter(p => !selectedLocations.some(loc => loc.province === p))
-                    .map((province) => (
-                      <SelectItem key={province} value={province}>
-                        {province}
-                      </SelectItem>
-                    ))}
+                  {availableProvinces.map((province) => (
+                    <SelectItem key={province} value={province}>
+                      {province}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
@@ -391,4 +396,4 @@ export const BasicInfoStep = ({ initialData = {}, onNext, isLoading, error: exte
       <button type="submit" className="hidden" />
     </form>
   );
-};
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
@@ -29,14 +29,20 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
-  const [, forceUpdate] = useState({});
   
-  // Use Redux hook for onboarding status (cached) - chỉ lấy data khác, không lấy currentStep
+  // Sử dụng ref để track lần cuối save localStorage (tránh save quá nhiều)
+  const lastSaveTimeRef = useRef(0);
+  const saveTimeoutRef = useRef(null);
+  
+  // Sử dụng ref để store stepData - tránh stale closure trong callback
+  const stepDataRef = useRef(stepData);
+  useEffect(() => {
+    stepDataRef.current = stepData;
+  }, [stepData]);
+  
+  // Use Redux hook for onboarding status (cached) - CHỈ lấy lần đầu để init
   const { 
     currentStep: reduxCurrentStep,
-    profileCompleteness, 
-    error: statusError, 
-    refresh: refetchStatus 
   } = useOnboardingStatus();
 
   // Khởi tạo localCurrentStep từ localStorage hoặc Redux hoặc default = 1
@@ -72,18 +78,34 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         console.error('Failed to load onboarding progress:', error);
       }
     }
-  }, []);
+  }, []); // CHỈ chạy 1 lần khi mount
 
-  // Save progress to localStorage whenever it changes
+  // Debounced save to localStorage - CHỈ save sau 500ms không có thay đổi
   useEffect(() => {
-    if (localCurrentStep > 0) {
-      const progress = {
-        step: localCurrentStep,
-        data: stepData,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+    // Clear timeout cũ nếu có
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    // Đặt timeout mới
+    saveTimeoutRef.current = setTimeout(() => {
+      if (localCurrentStep > 0) {
+        const progress = {
+          step: localCurrentStep,
+          data: stepData,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+        lastSaveTimeRef.current = Date.now();
+      }
+    }, 500); // Debounce 500ms
+
+    // Cleanup
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [localCurrentStep, stepData]);
 
   // Update profile mutation with enhanced error handling
@@ -93,8 +115,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     onSuccess: () => {
       setSubmitError(null);
-      // Tải lại trạng thái trong nền để cập nhật % hoàn thành
-      dispatch(fetchOnboardingStatus());
+      // KHÔNG fetch lại onboarding status ở đây để tránh re-render
+      // Chỉ fetch khi hoàn thành onboarding hoặc khi cần thiết
     },
     onError: (error) => {
       const errorMsg = getErrorMessage(error, 'Lưu tiến trình');
@@ -124,12 +146,16 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     }
   });
 
-  const handleNext = async (data) => {
+  // Memoize handlers để tránh tái tạo mỗi lần render
+  const handleNext = useCallback(async (data) => {
     try {
       setSubmitError(null);
 
-      const updatedStepData = { ...stepData, [localCurrentStep]: data };
-      setStepData(updatedStepData);
+      // Sử dụng functional update để tránh dependency vào stepData
+      setStepData(prevStepData => {
+        const updatedStepData = { ...prevStepData, [localCurrentStep]: data };
+        return updatedStepData;
+      });
 
       // Luôn chuyển step trước, bất kể API có thành công hay không
       if (localCurrentStep < STEPS.length) {
@@ -169,14 +195,14 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         toast.error('Có lỗi xảy ra nhưng bạn có thể tiếp tục. Vui lòng kiểm tra lại thông tin sau.');
       }
     }
-  };
+  }, [localCurrentStep, updateProfileMutation, dispatch, onComplete, navigate]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setLocalCurrentStep(prev => Math.max(1, prev - 1));
     dispatch(previousStep());
-  };
+  }, [dispatch]);
 
-  const handleSkipStep = async () => {
+  const handleSkipStep = useCallback(async () => {
     try {
       setSubmitError(null);
       const currentStepInfo = STEPS.find(s => s.id === localCurrentStep);
@@ -209,9 +235,9 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       setSubmitError(errorMsg);
       toast.error(errorMsg);
     }
-  };
+  }, [localCurrentStep, dispatch, onComplete, navigate]);
 
-  const handleSkipAll = async () => {
+  const handleSkipAll = useCallback(async () => {
     try {
       setSubmitError(null);
       await completeOnboarding();
@@ -226,14 +252,15 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       setSubmitError(errorMsg);
       toast.error(errorMsg);
     }
-  };
+  }, [dispatch, onComplete, navigate]);
 
-  const handleRetryError = () => {
+  const handleRetryError = useCallback(() => {
     setSubmitError(null);
-    if (statusError) {
-      refetchStatus();
-    }
-  };
+  }, []);
+
+  const handleStepLoadingChange = useCallback((loading) => {
+    setIsStepLoading(loading);
+  }, []);
 
   const isFirstStep = localCurrentStep === 1;
   const isLoading = updateProfileMutation.isPending || dismissMutation.isPending || isStepLoading;
@@ -245,10 +272,16 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     return null; 
   }
 
-  const handleStepLoadingChange = (loading) => {
-    setIsStepLoading(loading);
-    forceUpdate({});
-  };
+  // Memoize child props để tránh tái tạo object mỗi lần render
+  // CHỈ phụ thuộc vào localCurrentStep và các handlers (đã được memoize)
+  const childProps = useMemo(() => ({
+    currentStep: localCurrentStep,
+    stepData: stepDataRef.current[localCurrentStep] || {},
+    onNext: handleNext,
+    isLoading,
+    error: submitError,
+    onLoadingChange: handleStepLoadingChange
+  }), [localCurrentStep, handleNext, isLoading, submitError, handleStepLoadingChange]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -258,10 +291,10 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
         onClick={handleSkipAll}
       />
       <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-card rounded-2xl shadow-2xl border border-border/50 animate-in zoom-in-95 duration-300">
-        {(submitError || statusError) && (
+        {submitError && (
           <div className="absolute top-0 left-0 right-0 z-10 rounded-t-2xl overflow-hidden">
             <InlineErrorAlert
-              message={submitError || getErrorMessage(statusError, 'Tải trạng thái onboarding')}
+              message={submitError}
               onRetry={handleRetryError}
               onDismiss={() => setSubmitError(null)}
             />
@@ -335,15 +368,11 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-          <div className="animate-in slide-in-from-right-5 duration-300">
-            {children({
-              currentStep: localCurrentStep,
-              stepData: stepData[localCurrentStep] || {},
-              onNext: handleNext,
-              isLoading,
-              error: submitError,
-              onLoadingChange: handleStepLoadingChange
-            })}
+          <div 
+            key={localCurrentStep}
+            className="animate-in slide-in-from-right-5 duration-200"
+          >
+            {children(childProps)}
           </div>
         </div>
         <div className="flex-shrink-0 px-8 py-6 border-t border-border/50 bg-muted/30">
