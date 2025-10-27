@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { OnboardingWrapper } from '@/components/onboarding/OnboardingWrapper';
 import { BasicInfoStep } from '@/components/onboarding/steps/BasicInfoStep';
-import { SkillsExperienceStep } from '@/components/onboarding/steps/SkillsExperienceStep';
+import { SkillsStep } from '@/components/onboarding/steps/SkillsStep';
 import { SalaryPreferencesStep } from '@/components/onboarding/steps/SalaryPreferencesStep';
+import { ExperienceEducationStep } from '@/components/onboarding/steps/ExperienceEducationStep';
+import { CertificatesProjectsStep } from '@/components/onboarding/steps/CertificatesProjectsStep';
 import { LoadingState } from '@/components/onboarding/LoadingState';
 import { ErrorState } from '@/components/onboarding/ErrorState';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
@@ -62,7 +64,7 @@ const OnboardingPage = () => {
         );
       case 2:
         return (
-          <SkillsExperienceStep
+          <SkillsStep
             initialData={stepData}
             onNext={onNext}
             isLoading={isLoading}
@@ -72,6 +74,24 @@ const OnboardingPage = () => {
       case 3:
         return (
           <SalaryPreferencesStep
+            initialData={stepData}
+            onNext={onNext}
+            isLoading={isLoading}
+            onLoadingChange={onLoadingChange}
+          />
+        );
+      case 4:
+        return (
+          <ExperienceEducationStep
+            initialData={stepData}
+            onNext={onNext}
+            isLoading={isLoading}
+            onLoadingChange={onLoadingChange}
+          />
+        );
+      case 5:
+        return (
+          <CertificatesProjectsStep
             initialData={stepData}
             onNext={onNext}
             isLoading={isLoading}

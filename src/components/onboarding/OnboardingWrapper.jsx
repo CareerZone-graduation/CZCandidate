@@ -3,47 +3,58 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, X } from 'lucide-react';
 import { updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
-import { useFormSubmitWithRetry } from '@/hooks/useFormSubmitWithRetry';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
-import { getErrorMessage, getErrorType, ErrorType } from '@/utils/errorHandling';
+import { getErrorMessage } from '@/utils/errorHandling';
 import { OnboardingBackground } from './OnboardingBackground';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { fetchOnboardingStatus } from '@/redux/slices/onboardingThunks';
+import { nextStep, previousStep, setCurrentStep } from '@/redux/slices/onboardingSlice';
 
 const ONBOARDING_STORAGE_KEY = 'careerzone_onboarding_progress';
 
 const STEPS = [
   { id: 1, name: 'Thông tin cơ bản', component: 'BasicInfoStep' },
-  { id: 2, name: 'Kỹ năng & Kinh nghiệm', component: 'SkillsExperienceStep' },
-  { id: 3, name: 'Mức lương & Điều kiện', component: 'SalaryPreferencesStep' }
+  { id: 2, name: 'Kỹ năng', component: 'SkillsStep' },
+  { id: 3, name: 'Mức lương & Điều kiện', component: 'SalaryPreferencesStep' },
+  { id: 4, name: 'Kinh nghiệm & Học vấn', component: 'ExperienceEducationStep' },
+  { id: 5, name: 'Chứng chỉ & Dự án', component: 'CertificatesProjectsStep' }
 ];
 
 export const OnboardingWrapper = ({ children, onComplete }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [currentStep, setCurrentStep] = useState(1);
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
   const [, forceUpdate] = useState({});
-
-  // Use Redux hook for onboarding status (cached)
+  
+  // Use Redux hook for onboarding status (cached) - chỉ lấy data khác, không lấy currentStep
   const { 
+    currentStep: reduxCurrentStep,
     profileCompleteness, 
     error: statusError, 
     refresh: refetchStatus 
   } = useOnboardingStatus();
-  
-  // Create a compatible onboardingStatus object for existing code
-  const onboardingStatus = {
-    data: {
-      profileCompleteness
+
+  // Khởi tạo localCurrentStep từ localStorage hoặc Redux hoặc default = 1
+  const getInitialStep = () => {
+    try {
+      const savedProgress = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      if (savedProgress) {
+        const { step } = JSON.parse(savedProgress);
+        return step || 1;
+      }
+    } catch (error) {
+      console.error('Failed to load onboarding progress:', error);
     }
+    return reduxCurrentStep > 0 ? reduxCurrentStep : 1;
   };
+
+  // Sử dụng local state cho currentStep để tránh re-render khi Redux thay đổi
+  const [localCurrentStep, setLocalCurrentStep] = useState(getInitialStep);
 
   // Load saved progress from localStorage on mount
   useEffect(() => {
@@ -51,8 +62,12 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     if (savedProgress) {
       try {
         const { step, data } = JSON.parse(savedProgress);
-        setCurrentStep(step);
-        setStepData(data);
+        if (step && step !== localCurrentStep) {
+          setLocalCurrentStep(step);
+        }
+        if (data) {
+          setStepData(data);
+        }
       } catch (error) {
         console.error('Failed to load onboarding progress:', error);
       }
@@ -61,28 +76,31 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
 
   // Save progress to localStorage whenever it changes
   useEffect(() => {
-    const progress = {
-      step: currentStep,
-      data: stepData,
-      timestamp: new Date().toISOString()
-    };
-    localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
-  }, [currentStep, stepData]);
+    if (localCurrentStep > 0) {
+      const progress = {
+        step: localCurrentStep,
+        data: stepData,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(progress));
+    }
+  }, [localCurrentStep, stepData]);
 
   // Update profile mutation with enhanced error handling
   const updateProfileMutation = useMutation({
     mutationFn: (profileData) => updateProfileData(profileData),
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    onSuccess: (response) => {
+    onSuccess: () => {
       setSubmitError(null);
-      // Refresh Redux state để cập nhật completeness
+      // Tải lại trạng thái trong nền để cập nhật % hoàn thành
       dispatch(fetchOnboardingStatus());
     },
     onError: (error) => {
       const errorMsg = getErrorMessage(error, 'Lưu tiến trình');
       setSubmitError(errorMsg);
-      toast.error(errorMsg);
+      // Vẫn cho phép chuyển step ngay cả khi lưu thất bại
+      toast.error(`${errorMsg}. Bạn có thể tiếp tục và cập nhật lại sau.`);
     }
   });
 
@@ -95,7 +113,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
       setSubmitError(null);
-      // Refresh Redux state
       dispatch(fetchOnboardingStatus());
       onComplete?.();
       navigate('/dashboard');
@@ -111,53 +128,80 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     try {
       setSubmitError(null);
 
-      // Save current step data
-      const updatedStepData = { ...stepData, [currentStep]: data };
+      const updatedStepData = { ...stepData, [localCurrentStep]: data };
       setStepData(updatedStepData);
 
-      // Update profile với data mới
-      await updateProfileMutation.mutateAsync(data);
+      // Luôn chuyển step trước, bất kể API có thành công hay không
+      if (localCurrentStep < STEPS.length) {
+        setLocalCurrentStep(prev => prev + 1);
+        // Cập nhật Redux state trong nền (không gây re-render vì dùng local state)
+        dispatch(nextStep());
+      }
 
-      if (currentStep < STEPS.length) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        // Last step - Đánh dấu hoàn thành onboarding
-        await completeOnboarding();
-        localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-        // Refresh Redux state
-        dispatch(fetchOnboardingStatus());
-        toast.success('Hoàn thành onboarding! 🎉');
-        onComplete?.();
-        navigate('/dashboard');
+      // Gọi API để lưu dữ liệu (không blocking UI)
+      try {
+        await updateProfileMutation.mutateAsync(data);
+      } catch (apiError) {
+        // API lỗi nhưng vẫn cho phép user tiếp tục
+        console.warn('API save failed but allowing user to continue:', apiError);
+      }
+
+      // Nếu đây là bước cuối cùng (sau khi đã nextStep), hoàn thành onboarding
+      if (localCurrentStep + 1 > STEPS.length) {
+        try {
+          await completeOnboarding();
+          localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+          dispatch(fetchOnboardingStatus());
+          toast.success('Hoàn thành onboarding! 🎉');
+          onComplete?.();
+          navigate('/dashboard');
+        } catch (completeError) {
+          console.error('Complete onboarding error:', completeError);
+          toast.error('Có lỗi khi hoàn thành onboarding. Vui lòng thử lại.');
+        }
       }
     } catch (error) {
-      // Error is already handled by mutation onError
       console.error('Error in handleNext:', error);
+      // Fallback: nếu có lỗi bất ngờ, vẫn cho phép chuyển step
+      if (localCurrentStep < STEPS.length) {
+        setLocalCurrentStep(prev => prev + 1);
+        dispatch(nextStep());
+        toast.error('Có lỗi xảy ra nhưng bạn có thể tiếp tục. Vui lòng kiểm tra lại thông tin sau.');
+      }
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    setLocalCurrentStep(prev => Math.max(1, prev - 1));
+    dispatch(previousStep());
   };
 
   const handleSkipStep = async () => {
     try {
       setSubmitError(null);
-
-      // Skip bước hiện tại, chuyển sang bước tiếp theo
-      if (currentStep < STEPS.length) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        // Nếu là bước cuối, đánh dấu hoàn thành
-        await completeOnboarding();
-        localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-        // Refresh Redux state
-        dispatch(fetchOnboardingStatus());
-        toast.success('Hoàn thành! Bạn có thể cập nhật hồ sơ bất cứ lúc nào');
-        onComplete?.();
-        navigate('/dashboard');
+      const currentStepInfo = STEPS.find(s => s.id === localCurrentStep);
+      
+      if (localCurrentStep < STEPS.length) {
+        setLocalCurrentStep(prev => prev + 1);
+        dispatch(nextStep());
+        if (currentStepInfo) {
+          toast.info(`Đã bỏ qua bước "${currentStepInfo.name}"`);
+        }
+      }
+      
+      // Kiểm tra nếu đây là bước cuối cùng (sau khi nextStep)
+      if (localCurrentStep + 1 > STEPS.length) {
+        try {
+          await completeOnboarding();
+          localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+          dispatch(fetchOnboardingStatus());
+          toast.success('Hoàn thành! Bạn có thể cập nhật hồ sơ bất cứ lúc nào');
+          onComplete?.();
+          navigate('/dashboard');
+        } catch (completeError) {
+          console.error('Complete onboarding error:', completeError);
+          toast.error('Có lỗi khi hoàn thành onboarding. Vui lòng thử lại.');
+        }
       }
     } catch (error) {
       console.error('Error in handleSkipStep:', error);
@@ -170,13 +214,10 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const handleSkipAll = async () => {
     try {
       setSubmitError(null);
-
-      // Bỏ qua tất cả → Đánh dấu hoàn thành onboarding
       await completeOnboarding();
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-      // Refresh Redux state
       dispatch(fetchOnboardingStatus());
-      toast.info('Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào');
+      toast.success('Đã bỏ qua onboarding. Bạn có thể hoàn thiện hồ sơ bất cứ lúc nào từ trang cá nhân!');
       onComplete?.();
       navigate('/dashboard');
     } catch (error) {
@@ -194,45 +235,29 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     }
   };
 
-  const progress = (currentStep / STEPS.length) * 100;
-  const isFirstStep = currentStep === 1;
+  const isFirstStep = localCurrentStep === 1;
   const isLoading = updateProfileMutation.isPending || dismissMutation.isPending || isStepLoading;
 
-  const currentStepInfo = STEPS[currentStep - 1];
+  const currentStepInfo = STEPS.find(s => s.id === localCurrentStep);
+
+  if (!currentStepInfo) {
+    // Trạng thái khởi tạo hoặc lỗi, có thể hiển thị loading hoặc lỗi
+    return null; 
+  }
 
   const handleStepLoadingChange = (loading) => {
-    console.log('🔔 OnboardingWrapper: handleStepLoadingChange called with:', loading);
     setIsStepLoading(loading);
-    // Force re-render to ensure button updates
     forceUpdate({});
-    console.log('🔔 OnboardingWrapper: isStepLoading set to:', loading);
   };
-
-  // Debug: Log state changes
-  useEffect(() => {
-    console.log('📊 State Update:', {
-      isStepLoading,
-      updateProfilePending: updateProfileMutation.isPending,
-      dismissPending: dismissMutation.isPending,
-      isLoading
-    });
-  }, [isStepLoading, updateProfileMutation.isPending, dismissMutation.isPending, isLoading]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-      {/* Animated Background */}
       <OnboardingBackground />
-
-      {/* Backdrop - Blurred background */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={handleSkipAll}
       />
-
-      {/* Modal Container */}
       <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-card rounded-2xl shadow-2xl border border-border/50 animate-in zoom-in-95 duration-300">
-
-        {/* Global Error Display */}
         {(submitError || statusError) && (
           <div className="absolute top-0 left-0 right-0 z-10 rounded-t-2xl overflow-hidden">
             <InlineErrorAlert
@@ -242,50 +267,46 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
             />
           </div>
         )}
-
-        {/* Header with progress */}
         <div className="flex-shrink-0 px-8 pt-8 pb-6 border-b border-border/50">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">{currentStep}</span>
+                  <span className="text-lg font-bold text-primary">{localCurrentStep}</span>
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-foreground">
                     {currentStepInfo.name}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Bước {currentStep} / {STEPS.length}
+                    Bước {localCurrentStep} / {STEPS.length}
                   </p>
                 </div>
               </div>
             </div>
             <Button
               variant="ghost"
-              size="icon"
               onClick={handleSkipAll}
               disabled={isLoading}
-              className="text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-full"
-              title="Đóng và bỏ qua"
+              className="text-muted-foreground hover:text-foreground hover:bg-destructive/10"
+              title="Bỏ qua tất cả và hoàn thành onboarding"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 mr-2" />
+              Bỏ qua tất cả
             </Button>
           </div>
-
-          {/* Progress bar with step indicators */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               {STEPS.map((step, index) => (
                 <div key={step.id} className="flex items-center flex-1">
                   <div className="flex-1 relative">
-                    <div className={`h-2 rounded-full transition-all duration-500 ${step.id < currentStep
+                    <div className={`h-2 rounded-full transition-all duration-500 ${step.id < localCurrentStep
                         ? 'bg-emerald-500'
-                        : step.id === currentStep
+                        : step.id === localCurrentStep
                           ? 'bg-primary'
                           : 'bg-muted'
                       }`}>
-                      {step.id === currentStep && (
+                      {step.id === localCurrentStep && (
                         <div className="absolute inset-0 bg-primary rounded-full animate-pulse" />
                       )}
                     </div>
@@ -300,9 +321,9 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
               {STEPS.map((step) => (
                 <div
                   key={step.id}
-                  className={`flex-1 text-center text-xs font-medium transition-colors duration-300 ${step.id === currentStep
+                  className={`flex-1 text-center text-xs font-medium transition-colors duration-300 ${step.id === localCurrentStep
                       ? 'text-primary'
-                      : step.id < currentStep
+                      : step.id < localCurrentStep
                         ? 'text-emerald-600'
                         : 'text-muted-foreground'
                     }`}
@@ -313,13 +334,11 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
             </div>
           </div>
         </div>
-
-        {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
           <div className="animate-in slide-in-from-right-5 duration-300">
             {children({
-              currentStep,
-              stepData: stepData[currentStep] || {},
+              currentStep: localCurrentStep,
+              stepData: stepData[localCurrentStep] || {},
               onNext: handleNext,
               isLoading,
               error: submitError,
@@ -327,11 +346,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
             })}
           </div>
         </div>
-
-        {/* Footer navigation */}
         <div className="flex-shrink-0 px-8 py-6 border-t border-border/50 bg-muted/30">
           <div className="flex items-center justify-between gap-4">
-            {/* Left: Back button */}
             <Button
               variant="outline"
               onClick={handleBack}
@@ -341,8 +357,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
               <ChevronLeft className="w-4 h-4 mr-1" />
               Quay lại
             </Button>
-
-            {/* Right: Skip and Continue buttons */}
             <div className="flex gap-3">
               <Button
                 variant="ghost"
@@ -354,7 +368,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
               </Button>
               <Button
                 onClick={() => {
-                  // Trigger form submission in child component
                   const form = document.querySelector('form');
                   if (form) {
                     form.requestSubmit();
@@ -368,7 +381,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     {isStepLoading ? 'Đang tải ảnh...' : 'Đang xử lý...'}
                   </span>
-                ) : currentStep === STEPS.length ? (
+                ) : localCurrentStep >= STEPS.length ? (
                   'Hoàn thành'
                 ) : (
                   'Tiếp tục'
@@ -378,8 +391,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           </div>
         </div>
       </div>
-
-      {/* Custom scrollbar styles */}
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;

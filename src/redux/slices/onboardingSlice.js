@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  currentStep: 0,
+  currentStep: 1, // Bắt đầu từ step 1 thay vì 0
   completedSteps: [],
   skippedSteps: [],
   isOnboardingComplete: false,
@@ -52,7 +52,8 @@ const onboardingSlice = createSlice({
 
     // Go to next step
     nextStep: (state) => {
-      if (state.currentStep < 5) {
+      // Cho phép tăng lên 6 để handle logic hoàn thành onboarding
+      if (state.currentStep <= 5) {
         state.currentStep += 1;
       }
     },

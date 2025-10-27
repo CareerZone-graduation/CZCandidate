@@ -1,7 +1,9 @@
 import { OnboardingWrapper } from '@/components/onboarding';
 import { BasicInfoStep } from '@/components/onboarding/steps/BasicInfoStep';
-import { SkillsExperienceStep } from '@/components/onboarding/steps/SkillsExperienceStep';
+import { SkillsStep } from '@/components/onboarding/steps/SkillsStep';
 import { SalaryPreferencesStep } from '@/components/onboarding/steps/SalaryPreferencesStep';
+import { ExperienceEducationStep } from '@/components/onboarding/steps/ExperienceEducationStep';
+import { CertificatesProjectsStep } from '@/components/onboarding/steps/CertificatesProjectsStep';
 
 const OnboardingPage = () => {
   const handleComplete = () => {
@@ -11,7 +13,7 @@ const OnboardingPage = () => {
 
   return (
     <OnboardingWrapper onComplete={handleComplete}>
-      {({ currentStep, stepData, onNext, isLoading }) => {
+      {({ currentStep, stepData, onNext, isLoading, onLoadingChange }) => {
         switch (currentStep) {
           case 1:
             return (
@@ -19,14 +21,16 @@ const OnboardingPage = () => {
                 initialData={stepData}
                 onNext={onNext}
                 isLoading={isLoading}
+                onLoadingChange={onLoadingChange}
               />
             );
           case 2:
             return (
-              <SkillsExperienceStep
+              <SkillsStep
                 initialData={stepData}
                 onNext={onNext}
                 isLoading={isLoading}
+                onLoadingChange={onLoadingChange}
               />
             );
           case 3:
@@ -35,6 +39,25 @@ const OnboardingPage = () => {
                 initialData={stepData}
                 onNext={onNext}
                 isLoading={isLoading}
+                onLoadingChange={onLoadingChange}
+              />
+            );
+          case 4:
+            return (
+              <ExperienceEducationStep
+                initialData={stepData}
+                onNext={onNext}
+                isLoading={isLoading}
+                onLoadingChange={onLoadingChange}
+              />
+            );
+          case 5:
+            return (
+              <CertificatesProjectsStep
+                initialData={stepData}
+                onNext={onNext}
+                isLoading={isLoading}
+                onLoadingChange={onLoadingChange}
               />
             );
           default:
