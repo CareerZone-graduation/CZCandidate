@@ -83,7 +83,7 @@ const HomeSearchAutocomplete = forwardRef(({
   // Effect for autocomplete suggestions (with debounce to avoid excessive API calls)
   useEffect(() => {
     // Clear autocomplete if query is too short
-    if (!query || query.trim().length < 2) {
+    if (!query || query.trim().length < 1) {
       setSuggestions(prev => ({ ...prev, autocomplete: [] }));
       setIsLoadingAutocomplete(false);
       return;
