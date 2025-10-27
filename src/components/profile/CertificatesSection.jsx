@@ -1,17 +1,95 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2, Award, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, Award, ExternalLink, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+const CertificateForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
+  return (
+    <div className="space-y-4 p-4 border rounded-lg bg-card">
+      <div>
+        <Label htmlFor="name">Tên chứng chỉ <span className="text-destructive">*</span></Label>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => onFormChange('name', e.target.value)}
+          placeholder="VD: AWS Certified Solutions Architect"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="issuer">Đơn vị cấp <span className="text-destructive">*</span></Label>
+        <Input
+          id="issuer"
+          value={formData.issuer}
+          onChange={(e) => onFormChange('issuer', e.target.value)}
+          placeholder="VD: Amazon Web Services"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="issueDate">Ngày cấp <span className="text-destructive">*</span></Label>
+          <Input
+            id="issueDate"
+            type="month"
+            value={formData.issueDate}
+            onChange={(e) => onFormChange('issueDate', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="expiryDate">Ngày hết hạn</Label>
+          <Input
+            id="expiryDate"
+            type="month"
+            value={formData.expiryDate}
+            onChange={(e) => onFormChange('expiryDate', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="credentialId">Mã chứng chỉ</Label>
+        <Input
+          id="credentialId"
+          value={formData.credentialId}
+          onChange={(e) => onFormChange('credentialId', e.target.value)}
+          placeholder="VD: ABC123XYZ"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="url">Link xác thực</Label>
+        <Input
+          id="url"
+          type="url"
+          value={formData.url}
+          onChange={(e) => onFormChange('url', e.target.value)}
+          placeholder="https://..."
+        />
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
+          <X className="w-4 h-4 mr-2" />
+          Hủy
+        </Button>
+        <Button onClick={onSave} disabled={isUpdating}>
+          <Save className="w-4 h-4 mr-2" />
+          {isUpdating ? 'Đang lưu...' : 'Lưu'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const CertificatesSection = ({ certificates = [], onUpdate }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [formData, setFormData] = useState({
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [currentCertificateFormData, setCurrentCertificateFormData] = useState({
     name: '',
     issuer: '',
     issueDate: '',
@@ -19,10 +97,20 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
     credentialId: '',
     url: ''
   });
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleFormChange = useCallback((field, value) => {
+    setCurrentCertificateFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
+  };
 
   const handleAdd = () => {
-    setEditingIndex(null);
-    setFormData({
+    setCurrentCertificateFormData({
       name: '',
       issuer: '',
       issueDate: '',
@@ -30,53 +118,74 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
       credentialId: '',
       url: ''
     });
-    setIsDialogOpen(true);
+    setIsAdding(true);
+    setEditingId(null);
   };
 
-  const handleEdit = (index) => {
-    setEditingIndex(index);
-    setFormData(certificates[index]);
-    setIsDialogOpen(true);
+  const handleEdit = (cert) => {
+    setEditingId(cert._id);
+    setCurrentCertificateFormData({
+      ...cert,
+      issueDate: cert.issueDate ? new Date(cert.issueDate).toISOString().split('T')[0] : '',
+      expiryDate: cert.expiryDate ? new Date(cert.expiryDate).toISOString().split('T')[0] : ''
+    });
+    setIsAdding(false);
   };
 
-  const handleDelete = async (index) => {
-    const updatedCertificates = certificates.filter((_, i) => i !== index);
-    try {
-      await onUpdate({ certificates: updatedCertificates });
-      toast.success('Đã xóa chứng chỉ');
-    } catch (error) {
-      toast.error('Không thể xóa chứng chỉ');
-    }
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setCurrentCertificateFormData({
+      name: '',
+      issuer: '',
+      issueDate: '',
+      expiryDate: '',
+      credentialId: '',
+      url: ''
+    });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.issuer || !formData.issueDate) {
+  const handleSave = async () => {
+    if (!currentCertificateFormData.name || !currentCertificateFormData.issuer || !currentCertificateFormData.issueDate) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
 
-    const updatedCertificates = [...certificates];
-    if (editingIndex !== null) {
-      updatedCertificates[editingIndex] = formData;
-    } else {
-      updatedCertificates.push(formData);
-    }
-
     try {
+      setIsUpdating(true);
+      let updatedCertificates;
+
+      if (isAdding) {
+        updatedCertificates = [...certificates, currentCertificateFormData];
+      } else {
+        updatedCertificates = certificates.map(cert =>
+          cert._id === editingId ? { ...cert, ...currentCertificateFormData } : cert
+        );
+      }
+
       await onUpdate({ certificates: updatedCertificates });
-      toast.success(editingIndex !== null ? 'Đã cập nhật chứng chỉ' : 'Đã thêm chứng chỉ');
-      setIsDialogOpen(false);
+      toast.success(isAdding ? 'Thêm chứng chỉ thành công' : 'Cập nhật chứng chỉ thành công');
+      handleCancel(); // Reset form and editing state
     } catch (error) {
-      toast.error('Không thể lưu chứng chỉ');
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
+  const handleDelete = async (certId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa chứng chỉ này?')) return;
+
+    try {
+      setIsUpdating(true);
+      const updatedCertificates = certificates.filter(cert => cert._id !== certId);
+      await onUpdate({ certificates: updatedCertificates });
+      toast.success('Xóa chứng chỉ thành công');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -86,13 +195,25 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
           <Award className="w-5 h-5" />
           Chứng chỉ
         </CardTitle>
-        <Button onClick={handleAdd} size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm chứng chỉ
-        </Button>
+        {!isAdding && !editingId && (
+          <Button onClick={handleAdd} size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm chứng chỉ
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
-        {certificates.length === 0 ? (
+        {isAdding && (
+          <CertificateForm
+            formData={currentCertificateFormData}
+            onFormChange={handleFormChange}
+            onCancel={handleCancel}
+            onSave={handleSave}
+            isUpdating={isUpdating}
+          />
+        )}
+
+        {certificates.length === 0 && !isAdding ? (
           <div className="text-center py-8 text-muted-foreground">
             <Award className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>Chưa có chứng chỉ nào</p>
@@ -100,140 +221,70 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {certificates.map((cert, index) => (
-              <div key={index} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-foreground">{cert.name}</h4>
-                    <p className="text-sm text-muted-foreground">{cert.issuer}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>Cấp: {formatDate(cert.issueDate)}</span>
-                      {cert.expiryDate && (
-                        <span>Hết hạn: {formatDate(cert.expiryDate)}</span>
-                      )}
+            {certificates.map((cert) => (
+              <div key={cert._id} className="space-y-2">
+                {editingId === cert._id ? (
+                  <CertificateForm
+                    formData={currentCertificateFormData}
+                    onFormChange={handleFormChange}
+                    onCancel={handleCancel}
+                    onSave={handleSave}
+                    isUpdating={isUpdating}
+                  />
+                ) : (
+                  <div className="border-l-2 border-primary/20 pl-4 pb-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-lg text-foreground">{cert.name}</h4>
+                        <p className="text-sm text-muted-foreground">{cert.issuer}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <span>Cấp: {formatDate(cert.issueDate)}</span>
+                          {cert.expiryDate && (
+                            <span>Hết hạn: {formatDate(cert.expiryDate)}</span>
+                          )}
+                        </div>
+                        {cert.credentialId && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Mã: {cert.credentialId}
+                          </p>
+                        )}
+                        {cert.url && (
+                          <a
+                            href={cert.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+                          >
+                            Xem chứng chỉ <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(cert)}
+                          disabled={isUpdating}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(cert._id)}
+                          disabled={isUpdating}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    {cert.credentialId && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Mã: {cert.credentialId}
-                      </p>
-                    )}
-                    {cert.url && (
-                      <a
-                        href={cert.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                      >
-                        Xem chứng chỉ <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(index)}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(index)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
         )}
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingIndex !== null ? 'Chỉnh sửa chứng chỉ' : 'Thêm chứng chỉ'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Tên chứng chỉ *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="VD: AWS Certified Solutions Architect"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="issuer">Đơn vị cấp *</Label>
-                <Input
-                  id="issuer"
-                  value={formData.issuer}
-                  onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
-                  placeholder="VD: Amazon Web Services"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="issueDate">Ngày cấp *</Label>
-                  <Input
-                    id="issueDate"
-                    type="month"
-                    value={formData.issueDate}
-                    onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="expiryDate">Ngày hết hạn</Label>
-                  <Input
-                    id="expiryDate"
-                    type="month"
-                    value={formData.expiryDate}
-                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="credentialId">Mã chứng chỉ</Label>
-                <Input
-                  id="credentialId"
-                  value={formData.credentialId}
-                  onChange={(e) => setFormData({ ...formData, credentialId: e.target.value })}
-                  placeholder="VD: ABC123XYZ"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="url">Link xác thực</Label>
-                <Input
-                  id="url"
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Hủy
-                </Button>
-                <Button type="submit">
-                  {editingIndex !== null ? 'Cập nhật' : 'Thêm'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

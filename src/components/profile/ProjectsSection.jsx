@@ -166,8 +166,8 @@ export const ProjectsSection = ({ projects = [], onUpdate }) => {
     setEditingId(project._id);
     setCurrentProjectFormData({
       ...project,
-      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : ''
+      startDate: project.startDate ? new Date(project.startDate).toISOString().slice(0, 7) : '',
+      endDate: project.endDate ? new Date(project.endDate).toISOString().slice(0, 7) : ''
     });
     setIsAdding(false);
   };
