@@ -50,6 +50,16 @@ const SALARY_RANGES = [
     { min: 50000000, max: 100000000, label: '50-100 triệu' }
 ];
 
+const EXPERIENCE_LEVELS = [
+    { value: 'NO_EXPERIENCE', label: 'Chưa có kinh nghiệm' },
+    { value: 'INTERN', label: 'Thực tập sinh' },
+    { value: 'FRESHER', label: 'Mới ra trường' },
+    { value: 'ENTRY_LEVEL', label: 'Mới đi làm' },
+    { value: 'MID_LEVEL', label: 'Trung cấp' },
+    { value: 'SENIOR_LEVEL', label: 'Cao cấp' },
+    { value: 'EXECUTIVE', label: 'Quản lý/Điều hành' }
+];
+
 export const PreferencesSection = ({ profile, onUpdate }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -57,7 +67,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
     const [formData, setFormData] = useState({
         preferredLocations: profile?.preferredLocations || [],
         expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-        workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] }
+        workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [], experienceLevel: '' }
     });
 
     const [newLocation, setNewLocation] = useState({ province: '', district: '' });
@@ -456,6 +466,39 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
                                 <p className="text-muted-foreground text-sm">Chưa cập nhật loại hợp đồng</p>
                             )}
                         </div>
+                    )}
+                </div>
+
+                {/* Experience Level */}
+                <div>
+                    <Label className="text-base font-semibold mb-3">Mức độ kinh nghiệm</Label>
+                    {isEditing ? (
+                        <Select
+                            value={formData.workPreferences?.experienceLevel || ''}
+                            onValueChange={(value) => setFormData(prev => ({
+                                ...prev,
+                                workPreferences: { ...prev.workPreferences, experienceLevel: value }
+                            }))}
+                        >
+                            <SelectTrigger className="w-[240px]">
+                                <SelectValue placeholder="Chọn mức độ kinh nghiệm" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {EXPERIENCE_LEVELS.map((level) => (
+                                    <SelectItem key={level.value} value={level.value}>
+                                        {level.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <p className="text-foreground">
+                            {profile?.workPreferences?.experienceLevel ? (
+                                EXPERIENCE_LEVELS.find(level => level.value === profile.workPreferences.experienceLevel)?.label
+                            ) : (
+                                <span className="text-muted-foreground text-sm">Chưa cập nhật mức độ kinh nghiệm</span>
+                            )}
+                        </p>
                     )}
                 </div>
 

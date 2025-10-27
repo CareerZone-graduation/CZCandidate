@@ -7,94 +7,117 @@ import { Label } from '@/components/ui/label';
 import { GraduationCap, Calendar, Plus, Edit3, Trash2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => (
-  <div className="space-y-4 p-4 border rounded-lg bg-card">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="school">Trường <span className="text-destructive">*</span></Label>
-        <Input
-          id="school"
-          value={formData.school}
-          onChange={(e) => onFormChange('school', e.target.value)}
-          placeholder="VD: Đại học Bách Khoa"
-        />
+const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
+  return (
+    <div className="space-y-4 p-4 border rounded-lg bg-card">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="school">Trường <span className="text-destructive">*</span></Label>
+          <Input
+            id="school"
+            value={formData.school}
+            onChange={(e) => onFormChange('school', e.target.value)}
+            placeholder="VD: Đại học Bách Khoa"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="major">Chuyên ngành <span className="text-destructive">*</span></Label>
+          <Input
+            id="major"
+            value={formData.major}
+            onChange={(e) => onFormChange('major', e.target.value)}
+            placeholder="VD: Công nghệ thông tin"
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="major">Chuyên ngành <span className="text-destructive">*</span></Label>
-        <Input
-          id="major"
-          value={formData.major}
-          onChange={(e) => onFormChange('major', e.target.value)}
-          placeholder="VD: Công nghệ thông tin"
-        />
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="degree">Bằng cấp <span className="text-destructive">*</span></Label>
-        <Input
-          id="degree"
-          value={formData.degree}
-          onChange={(e) => onFormChange('degree', e.target.value)}
-          placeholder="VD: Cử nhân"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="degree">Bằng cấp <span className="text-destructive">*</span></Label>
+          <Input
+            id="degree"
+            value={formData.degree}
+            onChange={(e) => onFormChange('degree', e.target.value)}
+            placeholder="VD: Cử nhân"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="gpa">GPA</Label>
+          <Input
+            id="gpa"
+            value={formData.gpa}
+            onChange={(e) => onFormChange('gpa', e.target.value)}
+            placeholder="VD: 3.5/4.0"
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="gpa">GPA</Label>
-        <Input
-          id="gpa"
-          value={formData.gpa}
-          onChange={(e) => onFormChange('gpa', e.target.value)}
-          placeholder="VD: 3.5/4.0"
-        />
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label htmlFor="startDate">Ngày bắt đầu <span className="text-destructive">*</span></Label>
+        <Label htmlFor="location">Địa điểm</Label>
         <Input
-          id="startDate"
-          type="date"
-          value={formData.startDate}
-          onChange={(e) => onFormChange('startDate', e.target.value)}
+          id="location"
+          value={formData.location || ''}
+          onChange={(e) => onFormChange('location', e.target.value)}
+          placeholder="VD: TP. Hồ Chí Minh"
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startDate">Ngày bắt đầu <span className="text-destructive">*</span></Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => onFormChange('startDate', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endDate">Ngày kết thúc</Label>
+          <Input
+            id="endDate"
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => onFormChange('endDate', e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
-        <Label htmlFor="endDate">Ngày kết thúc</Label>
-        <Input
-          id="endDate"
-          type="date"
-          value={formData.endDate}
-          onChange={(e) => onFormChange('endDate', e.target.value)}
+        <Label htmlFor="description">Mô tả</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => onFormChange('description', e.target.value)}
+          placeholder="Mô tả về quá trình học tập..."
+          rows={3}
         />
       </div>
-    </div>
 
-    <div className="space-y-2">
-      <Label htmlFor="description">Mô tả</Label>
-      <Textarea
-        id="description"
-        value={formData.description}
-        onChange={(e) => onFormChange('description', e.target.value)}
-        placeholder="Mô tả về quá trình học tập..."
-        rows={3}
-      />
-    </div>
+      <div className="space-y-2">
+        <Label htmlFor="honors">Giải thưởng / Danh hiệu</Label>
+        <Textarea
+          id="honors"
+          value={formData.honors || ''}
+          onChange={(e) => onFormChange('honors', e.target.value)}
+          placeholder="VD: Học bổng xuất sắc, Sinh viên 5 tốt..."
+          rows={2}
+        />
+      </div>
 
-    <div className="flex gap-2 justify-end">
-      <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
-        <X className="w-4 h-4 mr-2" />
-        Hủy
-      </Button>
-      <Button onClick={onSave} disabled={isUpdating}>
-        <Save className="w-4 h-4 mr-2" />
-        {isUpdating ? 'Đang lưu...' : 'Lưu'}
-      </Button>
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
+          <X className="w-4 h-4 mr-2" />
+          Hủy
+        </Button>
+        <Button onClick={onSave} disabled={isUpdating}>
+          <Save className="w-4 h-4 mr-2" />
+          {isUpdating ? 'Đang lưu...' : 'Lưu'}
+        </Button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const EducationSection = ({ educations = [], onUpdate }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -107,7 +130,9 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
     endDate: '',
     description: '',
     gpa: '',
-    type: ''
+    type: '',
+    location: '',
+    honors: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -129,7 +154,9 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
       endDate: '',
       description: '',
       gpa: '',
-      type: ''
+      type: '',
+      location: '',
+      honors: ''
     });
     setIsAdding(true);
   };
@@ -246,8 +273,17 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
                         <Calendar className="w-4 h-4 mr-1" />
                         {formatDate(edu.startDate)} - {edu.endDate ? formatDate(edu.endDate) : 'Hiện tại'}
                       </div>
+                      {edu.location && (
+                        <p className="text-sm text-muted-foreground mb-2">📍 {edu.location}</p>
+                      )}
                       {edu.description && (
                         <p className="text-muted-foreground mt-2">{edu.description}</p>
+                      )}
+                      {edu.honors && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">🏆 Giải thưởng:</p>
+                          <p className="text-sm text-muted-foreground">{edu.honors}</p>
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">

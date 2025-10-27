@@ -9,6 +9,9 @@ import { PreferencesSection } from '@/components/profile/PreferencesSection';
 import { ExperienceSection } from '@/components/profile/ExperienceSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { SkillsSection } from '@/components/profile/SkillsSection';
+import { CertificatesSection } from '@/components/profile/CertificatesSection';
+import { ProjectsSection } from '@/components/profile/ProjectsSection';
+import { SocialLinksSection } from '@/components/profile/SocialLinksSection';
 import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenessCard';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
 import { ProfileCompletenessTest } from '@/components/profile/ProfileCompletenessTest';
@@ -137,7 +140,7 @@ const ProfilePage = () => {
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Experience & Education */}
+            {/* Left Column - Experience, Education, Projects, Certificates */}
             <div className="lg:col-span-2 space-y-6">
               <ExperienceSection
                 experiences={profile?.experiences || []}
@@ -148,9 +151,19 @@ const ProfilePage = () => {
                 educations={profile?.educations || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
+
+              <ProjectsSection
+                projects={profile?.projects || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
+
+              <CertificatesSection
+                certificates={profile?.certificates || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
             </div>
 
-            {/* Right Column - Completeness & Skills */}
+            {/* Right Column - Completeness, Skills, Social Links */}
             <div className="space-y-6">
               {/* TEST Component - Remove after debugging */}
               <ProfileCompletenessTest profile={profile} />
@@ -163,6 +176,11 @@ const ProfilePage = () => {
 
               <SkillsSection
                 skills={profile?.skills || []}
+                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              />
+
+              <SocialLinksSection
+                profile={profile}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
             </div>

@@ -6,35 +6,57 @@ import { Badge } from '@/components/ui/badge';
 import { Star, Plus, X, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
+const SKILL_LEVELS = [
+  { value: 'Beginner', label: 'Cơ bản' },
+  { value: 'Intermediate', label: 'Trung cấp' },
+  { value: 'Advanced', label: 'Nâng cao' },
+  { value: 'Expert', label: 'Chuyên gia' },
+  { value: '', label: 'Chưa xác định' }
+];
+
+const SKILL_CATEGORIES = [
+  { value: 'Technical', label: 'Kỹ thuật' },
+  { value: 'Soft Skills', label: 'Kỹ năng mềm' },
+  { value: 'Language', label: 'Ngoại ngữ' },
+  { value: 'Other', label: 'Khác' },
+  { value: '', label: 'Chưa xác định' }
+];
+
 export const SkillsSection = ({ skills = [], onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editSkills, setEditSkills] = useState([]);
-  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkill, setNewSkill] = useState({ name: '', level: '', category: '' });
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleEdit = () => {
-    setEditSkills([...skills]);
+    setEditSkills(skills.map(skill => ({ ...skill }))); // Deep copy to avoid direct mutation
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setNewSkillName('');
+    setNewSkill({ name: '', level: '', category: '' });
   };
 
   const handleAddSkill = () => {
-    if (!newSkillName.trim()) {
+    if (!newSkill.name.trim()) {
       toast.error('Vui lòng nhập tên kỹ năng');
       return;
     }
 
-    if (editSkills.some(skill => skill.name.toLowerCase() === newSkillName.toLowerCase())) {
+    if (editSkills.some(skill => skill.name.toLowerCase() === newSkill.name.toLowerCase())) {
       toast.error('Kỹ năng này đã tồn tại');
       return;
     }
 
-    setEditSkills([...editSkills, { name: newSkillName.trim() }]);
-    setNewSkillName('');
+    setEditSkills([...editSkills, { ...newSkill, name: newSkill.name.trim() }]);
+    setNewSkill({ name: '', level: '', category: '' });
+  };
+
+  const handleSkillChange = (index, field, value) => {
+    const updatedSkills = [...editSkills];
+    updatedSkills[index] = { ...updatedSkills[index], [field]: value };
+    setEditSkills(updatedSkills);
   };
 
   const handleRemoveSkill = (index) => {
@@ -97,34 +119,109 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
       <CardContent>
         {isEditing ? (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={newSkillName}
-                onChange={(e) => setNewSkillName(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Nhập tên kỹ năng..."
-              />
-              <Button onClick={handleAddSkill}>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Label htmlFor="newSkillName">Tên kỹ năng</Label>
+                <Input
+                  id="newSkillName"
+                  value={newSkill.name}
+                  onChange={(e) => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Nhập tên kỹ năng..."
+                />
+              </div>
+              <div className="w-1/4">
+                <Label htmlFor="newSkillLevel">Mức độ</Label>
+                <Select
+                  value={newSkill.level}
+                  onValueChange={(value) => setNewSkill(prev => ({ ...prev, level: value }))}
+                >
+                  <SelectTrigger id="newSkillLevel">
+                    <SelectValue placeholder="Mức độ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SKILL_LEVELS.map(level => (
+                      <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/4">
+                <Label htmlFor="newSkillCategory">Danh mục</Label>
+                <Select
+                  value={newSkill.category}
+                  onValueChange={(value) => setNewSkill(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger id="newSkillCategory">
+                    <SelectValue placeholder="Danh mục" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SKILL_CATEGORIES.map(category => (
+                      <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleAddSkill} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             
             {editSkills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
                 {editSkills.map((skill, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="bg-primary/10 text-primary pr-1"
-                  >
-                    {skill.name}
-                    <button
+                  <div key={index} className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label htmlFor={`skillName-${index}`}>Tên kỹ năng</Label>
+                      <Input
+                        id={`skillName-${index}`}
+                        value={skill.name}
+                        onChange={(e) => handleSkillChange(index, 'name', e.target.value)}
+                        placeholder="Tên kỹ năng..."
+                      />
+                    </div>
+                    <div className="w-1/4">
+                      <Label htmlFor={`skillLevel-${index}`}>Mức độ</Label>
+                      <Select
+                        value={skill.level}
+                        onValueChange={(value) => handleSkillChange(index, 'level', value)}
+                      >
+                        <SelectTrigger id={`skillLevel-${index}`}>
+                          <SelectValue placeholder="Mức độ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SKILL_LEVELS.map(level => (
+                            <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-1/4">
+                      <Label htmlFor={`skillCategory-${index}`}>Danh mục</Label>
+                      <Select
+                        value={skill.category}
+                        onValueChange={(value) => handleSkillChange(index, 'category', value)}
+                      >
+                        <SelectTrigger id={`skillCategory-${index}`}>
+                          <SelectValue placeholder="Danh mục" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SKILL_CATEGORIES.map(category => (
+                            <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleRemoveSkill(index)}
-                      className="ml-2 hover:bg-primary/20 rounded-full p-0.5"
+                      className="shrink-0"
                     >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             ) : (
