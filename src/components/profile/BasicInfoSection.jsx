@@ -173,10 +173,6 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                 ) : (
                   <>
                     <h1 className="text-2xl md:text-3xl font-bold mb-2">{profile?.fullname}</h1>
-                    <div className="flex items-center text-primary-foreground/80 mb-2">
-                      <Mail className="w-4 h-4 mr-2" />
-                      <span>{profile?.email}</span>
-                    </div>
                     <div className="flex items-center text-primary-foreground/80">
                       <Phone className="w-4 h-4 mr-2" />
                       <span>{profile?.phone || 'Chưa cập nhật số điện thoại'}</span>
