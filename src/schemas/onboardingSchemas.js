@@ -78,6 +78,12 @@ export const basicInfoSchema = z.object({
 
 // Skills Step Schema (Bước 2)
 export const skillsSchema = z.object({
+  preferredCategories: z.array(z.string(), {
+    required_error: 'Vui lòng chọn ít nhất 1 ngành nghề',
+    invalid_type_error: errorMessages.invalidFormat
+  })
+    .min(1, { message: 'Vui lòng chọn ít nhất 1 ngành nghề' })
+    .max(5, { message: errorMessages.maxItems(5) + ' ngành nghề' }),
   skills: z.array(z.string().trim().min(1, 'Kỹ năng không được để trống'), {
     required_error: errorMessages.required,
     invalid_type_error: errorMessages.invalidFormat

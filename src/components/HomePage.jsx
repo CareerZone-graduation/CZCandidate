@@ -1,5 +1,5 @@
 import HeroSection from './sections/HeroSection';
-import FeaturedJobs from './sections/FeaturedJobs';
+import RecommendedJobs from './sections/RecommendedJobs';
 import PopularCategories from './sections/PopularCategories';
 import TopCompanies from './sections/TopCompanies';
 import Testimonials from './sections/Testimonials';
@@ -13,7 +13,7 @@ const HomePage = () => {
     <div className="flex flex-col min-h-full bg-background">
       <HeroSection />
       <StatsSection />
-      <FeaturedJobs />
+      <RecommendedJobs />
       <HowItWorks />
       <PopularCategories />
       <TopCompanies />

@@ -13,6 +13,7 @@ import { CertificatesSection } from '@/components/profile/CertificatesSection';
 import { ProjectsSection } from '@/components/profile/ProjectsSection';
 import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenessCard';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
+import { CategoryUpdatePrompt } from '@/components/profile/CategoryUpdatePrompt';
 import * as profileService from '@/services/profileService';
 
 const ProfilePage = () => {
@@ -114,7 +115,7 @@ const ProfilePage = () => {
     );
   }
 
-  return (
+    return (
     <div className="min-h-screen">
       <div className="container mx-auto py-8">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -124,6 +125,9 @@ const ProfilePage = () => {
             profile={profile}
           />
 
+          {/* Category Update Prompt for existing users */}
+          <CategoryUpdatePrompt profile={profile} />
+
           {/* Basic Info Section */}
           <BasicInfoSection
             profile={profile}
@@ -132,10 +136,12 @@ const ProfilePage = () => {
           />
 
           {/* Preferences Section */}
-          <PreferencesSection
-            profile={profile}
-            onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
-          />
+          <div data-section="preferences">
+            <PreferencesSection
+              profile={profile}
+              onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
+            />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Skills, Completeness */}

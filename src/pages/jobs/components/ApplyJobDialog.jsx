@@ -175,7 +175,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cv">Chọn CV</Label>
+          <Label htmlFor="cv">Chọn CV (đã tải lên)</Label>
           <Select onValueChange={setSelectedCv} value={selectedCv} required>
             <SelectTrigger id="cv" className="w-full border-gray-300 focus:border-green-600 focus:ring-green-600">
               <SelectValue placeholder="Chọn CV để ứng tuyển..." />

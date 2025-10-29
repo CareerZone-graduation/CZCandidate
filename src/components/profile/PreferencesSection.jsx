@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, DollarSign, Edit3, Save, X, Plus, Trash2, Briefcase } from 'lucide-react';
+import { MapPin, DollarSign, Edit3, Save, X, Plus, Trash2, Briefcase, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import locationData from '@/data/oldtree.json';
+import { JOB_CATEGORIES, getCategoryLabel, getCategoryIcon } from '@/constants/jobCategories';
 
 // Process location data từ oldtree.json
 const processLocationData = () => {
@@ -61,13 +63,15 @@ const EXPERIENCE_LEVELS = [
 ];
 
 export const PreferencesSection = ({ profile, onUpdate }) => {
+    const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const [formData, setFormData] = useState({
         preferredLocations: profile?.preferredLocations || [],
         expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-        workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [], experienceLevel: '' }
+        workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [], experienceLevel: '' },
+        preferredCategories: profile?.preferredCategories || []
     });
 
     const [newLocation, setNewLocation] = useState({ province: '', district: '' });
@@ -78,7 +82,8 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             setFormData({
                 preferredLocations: profile?.preferredLocations || [],
                 expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-                workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] }
+                workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] },
+                preferredCategories: profile?.preferredCategories || []
             });
         }
     }, [profile, isEditing]);
@@ -87,7 +92,8 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
         setFormData({
             preferredLocations: profile?.preferredLocations || [],
             expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-            workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] }
+            workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] },
+            preferredCategories: profile?.preferredCategories || []
         });
         setIsEditing(true);
     };
@@ -102,6 +108,12 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             setIsUpdating(true);
             console.log('Saving preferences:', formData);
             await onUpdate(formData);
+            
+            // Invalidate related queries to refresh recommendations and completeness
+            queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+            queryClient.invalidateQueries({ queryKey: ['jobRecommendations'] });
+            queryClient.invalidateQueries({ queryKey: ['profileCompleteness'] });
+            
             setIsEditing(false);
             toast.success('Cập nhật thông tin thành công');
         } catch (error) {
@@ -199,6 +211,17 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
         }).format(value || 0);
     };
 
+    const toggleCategory = (categoryValue) => {
+        setFormData(prev => {
+            const categories = prev.preferredCategories || [];
+            const newCategories = categories.includes(categoryValue)
+                ? categories.filter(c => c !== categoryValue)
+                : [...categories, categoryValue];
+            
+            return { ...prev, preferredCategories: newCategories };
+        });
+    };
+
     const getProvinceName = (provinceName) => {
         return provinceName;
     };
@@ -223,6 +246,59 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             </CardHeader>
 
             <CardContent className="space-y-6">
+                {/* Preferred Categories */}
+                <div>
+                    <Label className="text-base font-semibold mb-3 flex items-center">
+                        <Layers className="w-4 h-4 mr-2" />
+                        Ngành nghề quan tâm
+                    </Label>
+
+                    {isEditing ? (
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {JOB_CATEGORIES.map((category) => (
+                                    <Button
+                                        key={category.value}
+                                        type="button"
+                                        variant={
+                                            formData.preferredCategories?.includes(category.value)
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                        size="sm"
+                                        onClick={() => toggleCategory(category.value)}
+                                        className="justify-start h-auto py-2 px-3"
+                                    >
+                                        <span className="mr-2 text-lg">{getCategoryIcon(category.value)}</span>
+                                        <span className="text-xs">{category.label}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Đã chọn: {formData.preferredCategories?.length || 0} ngành nghề
+                                {formData.preferredCategories?.length > 0 && 
+                                    formData.preferredCategories.length < 1 && 
+                                    ' (Tối thiểu 1 ngành nghề)'}
+                                {formData.preferredCategories?.length > 5 && 
+                                    ' (Tối đa 5 ngành nghề)'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {profile?.preferredCategories?.length > 0 ? (
+                                profile.preferredCategories.map((category) => (
+                                    <Badge key={category} variant="secondary" className="px-3 py-1">
+                                        <span className="mr-1">{getCategoryIcon(category)}</span>
+                                        {getCategoryLabel(category)}
+                                    </Badge>
+                                ))
+                            ) : (
+                                <p className="text-muted-foreground text-sm">Chưa cập nhật ngành nghề</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 {/* Preferred Locations */}
                 <div>
                     <Label className="text-base font-semibold mb-3 flex items-center">

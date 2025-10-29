@@ -1,74 +1,74 @@
 export const popularSkills = [
-  // Programming Languages
-  'JavaScript',
-  'Python',
-  'Java',
-  'C#',
-  'PHP',
-  'TypeScript',
-  'C++',
-  'Ruby',
-  'Go',
-  'Swift',
   
-  // Frontend
-  'React',
-  'Vue.js',
-  'Angular',
-  'HTML/CSS',
-  'Tailwind CSS',
-  'Bootstrap',
-  'jQuery',
-  
-  // Backend
-  'Node.js',
-  'Express.js',
-  'Django',
-  'Spring Boot',
-  'Laravel',
-  'ASP.NET',
-  'Flask',
-  
-  // Database
-  'MySQL',
-  'PostgreSQL',
-  'MongoDB',
-  'Redis',
-  'Oracle',
-  'SQL Server',
-  
-  // DevOps & Cloud
-  'Docker',
-  'Kubernetes',
-  'AWS',
-  'Azure',
-  'Google Cloud',
+  // 🧩 Other General Skills
+  'Agile/Scrum',
+  'Testing',
+  'Documentation',
+  'Customer Service',
+  'Research',
+  'Analytical Thinking',
   'CI/CD',
-  'Jenkins',
   'Git',
-  
-  // Mobile
+  'Jenkins',
+
+  // 📱 Mobile
   'React Native',
   'Flutter',
-  'iOS Development',
   'Android Development',
-  
-  // Data & AI
-  'Machine Learning',
-  'Data Analysis',
+  'iOS Development',
+
+  // 🤖 Data & AI
+  'Data Visualization',
   'TensorFlow',
-  'PyTorch',
-  'Power BI',
-  'Tableau',
-  
-  // Other
-  'Agile/Scrum',
-  'REST API',
-  'GraphQL',
-  'Microservices',
-  'Testing',
-  'UI/UX Design'
+
+  // 🎨 Design & Creative
+  'UI/UX Design',
+  'Figma',
+  'Canva',
+  '3D Modeling',
+  'Video Editing',
+
+  // 📈 Business & Marketing
+  'Digital Marketing',
+  'SEO',
+  'Content Marketing',
+  'Google Ads',
+  'Facebook Ads',
+  'Email Marketing',
+  'Copywriting',
+  'Market Research',
+  'CRM',
+  'Branding',
+  'Project Management',
+
+  // 💼 Finance & Management
+  'Accounting',
+  'Financial Analysis',
+  'Budgeting',
+  'Leadership',
+  'Negotiation',
+  'Risk Management',
+
+  // 🧠 Soft Skills
+  'Problem Solving',
+  'Critical Thinking',
+  'Teamwork',
+  'Decision Making',
+
+  // ⚙️ Engineering & Technical
+  'AutoCAD',
+  'Mechanical Design',
+  'Quality Assurance',
+
+  // 🌍 Languages & Communication
+  'English',
+  'Japanese',
+  'Public Speaking',
+  'Technical Writing',
+  'Translation',
+
 ];
+
 
 export const jobFields = [
   'Công nghệ thông tin',
