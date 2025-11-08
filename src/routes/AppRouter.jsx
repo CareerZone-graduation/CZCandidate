@@ -25,6 +25,7 @@ import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
 import Profile from '../pages/profile/ProfilePage';
 import NotificationsPage from '../pages/notification/NotificationsPage.jsx';
 import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
+import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
 import News from '../pages/news/News';
 import NotFound from '../pages/NotFound';
 import BillingPage from '../pages/billing/Billing';
@@ -157,6 +158,7 @@ const AppRouter = () => {
             <Route path="saved-jobs" element={<SavedJobs />} />
             <Route path="view-history" element={<ViewHistory />} />
             <Route path="settings/job-alerts" element={<JobAlertSettings />} />
+            <Route path="settings/privacy" element={<PrivacySettings />} />
             {/* Thêm route cho trang nạp xu */}
             <Route path="billing" element={<BillingPage />} />
             <Route path="top-up" element={<Billing />} />

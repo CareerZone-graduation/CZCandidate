@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Briefcase, Bookmark, FileCheck, Bell, ChevronDown } from 'lucide-react';
+import { Briefcase, Bookmark, FileCheck, Bell, Shield, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const JobsDropdownMenu = ({ isHeaderWhite }) => {
@@ -36,6 +36,13 @@ const JobsDropdownMenu = ({ isHeaderWhite }) => {
       label: 'Quản lý thông báo việc làm',
       icon: <Bell className="h-4 w-4" />,
       description: 'Cài đặt thông báo việc làm',
+      public: false,
+    },
+    {
+      to: '/dashboard/settings/privacy',
+      label: 'Cài đặt riêng tư',
+      icon: <Shield className="h-4 w-4" />,
+      description: 'Quản lý quyền riêng tư hồ sơ',
       public: false,
     },
   ];

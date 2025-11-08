@@ -98,7 +98,8 @@ export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
       },
 
       onError: (status, message) => {
-        const errorMessage = `Lỗi Soniox: ${message}`;
+        console.error(`Lỗi Soniox: ${message}`);
+        const errorMessage = `Vui lòng cho phép truy cập micro`;
         setError(errorMessage);
         toast.error(errorMessage);
       },

@@ -35,7 +35,8 @@ import {
   History,
   Plus,
   FileEdit,
-  Upload
+  Upload,
+  Shield
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { logout as logoutService } from '@/services/authService';
@@ -349,6 +350,9 @@ const Header = () => {
                       </Link>
                       <Link to="/dashboard/settings/job-alerts" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
                         <Bell className="h-4 w-4" /> Quản lý thông báo
+                      </Link>
+                      <Link to="/dashboard/settings/privacy" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <Shield className="h-4 w-4" /> Cài đặt riêng tư
                       </Link>
                     </>
                   )}

@@ -94,3 +94,9 @@ export const updateProfilePreferences = async (preferences) => {
   const response = await apiClient.put('/candidate/profile/preferences', preferences);
   return response.data;
 };
+
+// Cập nhật cài đặt riêng tư (allowSearch)
+export const updatePrivacySettings = async (settings) => {
+  const response = await apiClient.patch('/candidate/settings/privacy', settings);
+  return response.data;
+};
