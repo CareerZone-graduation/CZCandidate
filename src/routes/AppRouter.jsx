@@ -26,6 +26,7 @@ import Profile from '../pages/profile/ProfilePage';
 import NotificationsPage from '../pages/notification/NotificationsPage.jsx';
 import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
+import MessagesPage from '../pages/messages/MessagesPage.jsx';
 import News from '../pages/news/News';
 import NotFound from '../pages/NotFound';
 import BillingPage from '../pages/billing/Billing';
@@ -176,6 +177,13 @@ const AppRouter = () => {
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/notifications" element={<MainLayout />}>
             <Route index element={<NotificationsPage />} />
+          </Route>
+        </Route>
+
+        {/* Protected messages routes - now use standard protected route */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/messages" element={<MainLayout />}>
+            <Route index element={<MessagesPage />} />
           </Route>
         </Route>
 

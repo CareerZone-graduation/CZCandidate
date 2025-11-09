@@ -36,7 +36,8 @@ import {
   Plus,
   FileEdit,
   Upload,
-  Shield
+  Shield,
+  MessageCircle
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { logout as logoutService } from '@/services/authService';
@@ -46,6 +47,7 @@ import { cn } from '@/lib/utils';
 import JobsDropdownMenu from './JobsDropdownMenu';
 import CVDropdownMenu from './CVDropdownMenu';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import socketService from '@/services/socketService';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -60,6 +62,9 @@ const Header = () => {
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+
+  // Messages states
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // Navigation links (excluding Jobs and CV - handled by dropdown menus)
   const navLinks = [
@@ -206,22 +211,67 @@ const Header = () => {
     }
   };
 
-  // Check for new notifications
+  // Fetch unread messages count
+  const fetchUnreadMessagesCount = async () => {
+    try {
+      const response = await apiClient.get('/chat/conversations');
+      if (response.data.success) {
+        const conversations = response.data.data || [];
+        const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+        setUnreadMessagesCount(totalUnread);
+      }
+    } catch (error) {
+      console.error('Error fetching unread messages count:', error);
+      setUnreadMessagesCount(0);
+    }
+  };
+
+  // Check for new notifications and setup Socket.io for real-time updates
   useEffect(() => {
     if (isAuthenticated) {
       fetchJobAlerts();
+      fetchUnreadMessagesCount();
 
-      // Kiểm tra thông báo mới mỗi 5 phút
-      const interval = setInterval(fetchJobAlerts, 5 * 60 * 1000);
+      // Connect to Socket.io for real-time message updates
+      socketService.connect().then(() => {
+        console.log('[Header] Socket.io connected for real-time updates');
+      }).catch((error) => {
+        console.error('[Header] Failed to connect to Socket.io:', error);
+      });
 
-      return () => clearInterval(interval);
+      // Subscribe to new message events to update unread count
+      const handleNewMessage = (message) => {
+        console.log('[Header] New message received via Socket.io:', message);
+        // Increment unread count if message is not from current user
+        if (message.senderId !== user?.user?._id) {
+          setUnreadMessagesCount(prev => prev + 1);
+        }
+      };
+
+      socketService.onNewMessage(handleNewMessage);
+
+      // Kiểm tra thông báo mới mỗi 5 phút (fallback)
+      const interval = setInterval(() => {
+        fetchJobAlerts();
+        fetchUnreadMessagesCount();
+      }, 5 * 60 * 1000);
+
+      return () => {
+        clearInterval(interval);
+        // Clean up Socket.io event listener
+        socketService.off('onNewMessage', handleNewMessage);
+      };
     } else {
       // Reset notifications when user logs out
       setNotifications([]);
       setNotificationCount(0);
       setHasNewNotifications(false);
+      setUnreadMessagesCount(0);
+      
+      // Disconnect Socket.io when user logs out
+      socketService.disconnect();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   // Close dropdowns on Escape key
   useEffect(() => {
@@ -342,6 +392,14 @@ const Header = () => {
                   </Link>
                   {isAuthenticated && (
                     <>
+                      <Link to="/messages" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <MessageCircle className="h-4 w-4" /> Tin nhắn
+                        {unreadMessagesCount > 0 && (
+                          <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs">
+                            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                          </Badge>
+                        )}
+                      </Link>
                       <Link to="/dashboard/saved-jobs" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
                         <Bookmark className="h-4 w-4" /> Việc làm đã lưu
                       </Link>
@@ -451,6 +509,45 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <ThemeToggle />
+
+              {/* Messages Button */}
+              <Link to="/messages" className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 rounded-full relative transition-all duration-300 group",
+                    "hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100/50",
+                    "hover:shadow-lg hover:shadow-blue-500/20 hover:scale-110",
+                    unreadMessagesCount > 0 && "animate-pulse"
+                  )}
+                >
+                  <MessageCircle className={cn(
+                    "h-5 w-5 transition-all",
+                    unreadMessagesCount > 0 
+                      ? "text-blue-600 group-hover:scale-110" 
+                      : "text-muted-foreground group-hover:text-blue-600 group-hover:scale-110"
+                  )} />
+                  {/* Ring effect for new messages */}
+                  {unreadMessagesCount > 0 && (
+                    <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
+                  )}
+                </Button>
+
+                {/* Unread Badge */}
+                {unreadMessagesCount > 0 && (
+                  <Badge
+                    className={cn(
+                      "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0",
+                      "bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold",
+                      "rounded-full border-2 border-background shadow-lg",
+                      "animate-bounce"
+                    )}
+                  >
+                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </Badge>
+                )}
+              </Link>
 
               {/* Notification Bell */}
               <div className="relative" data-dropdown>
@@ -766,6 +863,26 @@ const Header = () => {
                             <FileText className="h-4 w-4 text-emerald-600" />
                           </div>
                           <span className="font-medium">Đơn ứng tuyển</span>
+                        </Link>
+
+                        <Link
+                          to="/messages"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <div className="mr-3 p-1.5 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                            <MessageCircle className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <span className="font-medium">Tin nhắn</span>
+                          {unreadMessagesCount > 0 && (
+                            <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs animate-pulse">
+                              {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                            </Badge>
+                          )}
                         </Link>
 
                         <Link
