@@ -100,3 +100,15 @@ export const updatePrivacySettings = async (settings) => {
   const response = await apiClient.patch('/candidate/settings/privacy', settings);
   return response.data;
 };
+
+// Lấy cài đặt allow search hiện tại
+export const getAllowSearchSettings = async () => {
+  const response = await apiClient.get('/candidate/settings/allow-search');
+  return response.data;
+};
+
+// Toggle allow search với chọn CV
+export const toggleAllowSearch = async (data) => {
+  const response = await apiClient.patch('/candidate/settings/allow-search', data);
+  return response.data;
+};
