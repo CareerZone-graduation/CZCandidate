@@ -140,7 +140,18 @@ const JobMapView = ({
   const [clusters, setClusters] = useState([]); // State để lưu clusters từ backend
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
   const [totalJobsInView, setTotalJobsInView] = useState(0);
+  const [mapError, setMapError] = useState(null);
   const mapRef = useRef(null);
+
+  // Log để debug
+  useEffect(() => {
+    console.log('🗺️ JobMapView mounted with:', {
+      initialJobs: initialJobs.length,
+      isLoading: initialLoading,
+      userLocation,
+      searchFilters
+    });
+  }, []);
 
   // Update jobs when initialJobs changes (first load)
   useEffect(() => {
@@ -308,8 +319,11 @@ const JobMapView = ({
   if (initialLoading) {
     return (
       <Card className={cn("h-[700px]", className)}>
-        <CardContent className="p-0 h-full">
-          <Skeleton className="w-full h-full rounded-lg" />
+        <CardContent className="p-0 h-full flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+            <p className="text-sm text-muted-foreground">Đang tải bản đồ...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -335,6 +349,32 @@ const JobMapView = ({
 
   const userCoords = getUserCoords();
 
+  // Error fallback UI
+  if (mapError) {
+    return (
+      <Card className={cn("h-[700px]", className)}>
+        <CardContent className="p-0 h-full flex items-center justify-center">
+          <div className="text-center space-y-4 p-8">
+            <MapPin className="h-16 w-16 text-muted-foreground mx-auto opacity-50" />
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Không thể tải bản đồ</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {mapError}
+              </p>
+              <Button onClick={() => {
+                setMapError(null);
+                window.location.reload();
+              }}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Thử lại
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={cn(
       "h-[700px] overflow-hidden",
@@ -351,6 +391,9 @@ const JobMapView = ({
           ref={mapRef}
           zoomControl={true}
           scrollWheelZoom={true}
+          whenReady={() => {
+            console.log('✅ Map loaded successfully');
+          }}
         >
           {/* OpenStreetMap Tile Layer */}
           <TileLayer

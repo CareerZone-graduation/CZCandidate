@@ -116,7 +116,22 @@ const JobSearch = () => {
     refetch
   } = useQuery({
     queryKey: ['jobs', 'search', apiValidation.data || searchParameters],
-    queryFn: () => searchJobsHybrid(apiValidation.data || searchParameters),
+    queryFn: async () => {
+      const result = await searchJobsHybrid(apiValidation.data || searchParameters);
+      
+      // 🔍 DEBUG: Log API response để kiểm tra logo
+      console.log('🔍 API Response:', result);
+      if (result?.data?.length > 0) {
+        console.log('📊 First job sample:', {
+          title: result.data[0].title,
+          company: result.data[0].company,
+          hasLogo: !!result.data[0].company?.logo,
+          logoUrl: result.data[0].company?.logo
+        });
+      }
+      
+      return result;
+    },
     enabled: apiValidation.success, // Always fetch when parameters are valid
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes

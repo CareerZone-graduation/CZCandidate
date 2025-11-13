@@ -2,6 +2,7 @@ import HeroSection from './sections/HeroSection';
 import RecommendedJobs from './sections/RecommendedJobs';
 import PopularCategories from './sections/PopularCategories';
 import TopCompanies from './sections/TopCompanies';
+import TrendingCompanies from './sections/TrendingCompanies';
 import Testimonials from './sections/Testimonials';
 import CareerGuideSection from './sections/CareerGuideSection';
 import NewsletterSection from './sections/NewsletterSection';
@@ -17,6 +18,7 @@ const HomePage = () => {
       <HowItWorks />
       <PopularCategories />
       <TopCompanies />
+      <TrendingCompanies limit={6} showHeader={true} variant="grid" />
       <Testimonials />
       <CareerGuideSection />
       <NewsletterSection />

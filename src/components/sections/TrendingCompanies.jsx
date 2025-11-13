@@ -1,16 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Briefcase, Star, ArrowRight, Building2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Building2, 
+  Users, 
+  Briefcase, 
+  ArrowRight,
+  Target
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { SectionHeader } from '../common/SectionHeader';
 import apiClient from '../../services/apiClient';
 
-const TopCompanies = () => {
+export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
   const navigate = useNavigate();
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Fetch most applied companies (công ty được nộp CV nhiều nhất) với React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['trending-companies', limit],
+    queryFn: async () => {
+      const response = await apiClient.get(`/analytics/most-applied-companies?limit=${limit}`);
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 phút
+    cacheTime: 10 * 60 * 1000, // 10 phút
+  });
+
+  const companies = data?.data || [];
 
   // Format số nhân viên
   const formatEmployees = (employees) => {
@@ -30,41 +48,19 @@ const TopCompanies = () => {
     navigate('/companies');
   };
 
-  useEffect(() => {
-    const fetchTopCompanies = async () => {
-      try {
-        setLoading(true);
-        console.log('🔄 Fetching top companies...');
-        const response = await apiClient.get('/analytics/top-companies?limit=6');
-        console.log('📦 API Response:', response.data);
-        
-        if (response.data.success) {
-          console.log('✅ Companies data:', response.data.data);
-          setCompanies(response.data.data);
-        } else {
-          console.warn('⚠️ API returned success: false');
-        }
-      } catch (error) {
-        console.error('❌ Failed to fetch top companies:', error);
-        console.error('Error details:', error.response?.data || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTopCompanies();
-  }, []);
   return (
     <section className="py-20 bg-background">
       <div className="container">
-        <SectionHeader
-          badgeText="🏢 Đối tác uy tín"
-          title={<>Top công ty <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span></>}
-          description="Các công ty có nhiều tin tuyển dụng nhất. Khám phá cơ hội việc làm hấp dẫn từ những nhà tuyển dụng uy tín."
-          className="mb-12"
-        />
+        {showHeader && (
+          <SectionHeader
+            badgeText="🔥 Đang hot"
+            title={<>Top công ty <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">được săn đón nhất</span></>}
+            description="Những công ty được ứng viên quan tâm và nộp CV nhiều nhất. Nơi có cơ hội việc làm thu hút và hấp dẫn nhất."
+            className="mb-12"
+          />
+        )}
 
-        {loading ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse bg-muted h-80" />
@@ -102,7 +98,7 @@ const TopCompanies = () => {
                   </CardDescription>
 
                   {index < 3 && (
-                    <Badge className="absolute top-4 right-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 shadow-md">
+                    <Badge className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md">
                       Top {index + 1}
                     </Badge>
                   )}
@@ -114,8 +110,14 @@ const TopCompanies = () => {
                       <span className="font-medium">{formatEmployees(company.employees)}</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
+                      <Target className="h-4 w-4 text-orange-600" /> 
+                      <span className="font-medium text-orange-600 font-semibold">
+                        {company.applicationCount || 0} CV nhận được
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
                       <Briefcase className="h-4 w-4 text-emerald-600" /> 
-                      <span className="font-medium text-emerald-600 font-semibold">
+                      <span className="font-medium text-emerald-600">
                         {company.activeJobCount} tin tuyển dụng
                       </span>
                     </div>
@@ -129,7 +131,7 @@ const TopCompanies = () => {
                 <CardFooter>
                   <Button 
                     variant="outline" 
-                    className="w-full border-2 border-emerald-200 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 rounded-xl font-semibold"
+                    className="w-full border-2 border-orange-200 text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all duration-300 rounded-xl font-semibold"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCompanyClick(company._id);
@@ -146,7 +148,7 @@ const TopCompanies = () => {
         <div className="text-center mt-12">
           <Button 
             size="lg" 
-            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            className="px-8 py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             onClick={handleViewAllCompanies}
           >
             Xem tất cả công ty
@@ -158,4 +160,4 @@ const TopCompanies = () => {
   );
 };
 
-export default TopCompanies;
+export default TrendingCompanies;

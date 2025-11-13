@@ -22,6 +22,7 @@ import { getProfileCompleteness } from '../../services/profileService';
 import { ProfileCompletionBanner } from '../../components/profile/ProfileCompletionBanner';
 import { getRecommendations } from '../../services/recommendationService';
 import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
+import FeaturedCompanies from '../../components/dashboard/FeaturedCompanies';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -283,23 +284,30 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recommended Jobs Section */}
-      {profileCompleteness && profileCompleteness.percentage >= 60 && (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Việc làm được gợi ý cho bạn</h2>
-            {recommendedJobs.length > 0 && (
-              <Link to="/dashboard/job-suggestions">
-                <Button variant="link" className="text-primary">
-                  Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            )}
-          </div>
+      {/* Featured Companies & Recommended Jobs Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Featured Companies - Takes 1 column */}
+        <div className="lg:col-span-1">
+          <FeaturedCompanies />
+        </div>
+
+        {/* Recommended Jobs - Takes 2 columns */}
+        {profileCompleteness && profileCompleteness.percentage >= 60 ? (
+          <div className="lg:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Việc làm được gợi ý cho bạn</h2>
+              {recommendedJobs.length > 0 && (
+                <Link to="/dashboard/job-suggestions">
+                  <Button variant="link" className="text-primary">
+                    Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           
           {isLoadingRecommendations ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-6">
                     <div className="h-6 bg-gray-200 rounded mb-2"></div>
@@ -310,7 +318,7 @@ const Dashboard = () => {
               ))}
             </div>
           ) : recommendedJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {recommendedJobs.slice(0, 6).map((job) => (
                 <Link key={job._id} to={`/jobs/${job._id}`}>
                   <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
@@ -350,33 +358,33 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
-        </div>
-      )}
-
-      {/* Low Profile Completeness Warning */}
-      {profileCompleteness && profileCompleteness.percentage < 60 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 mb-2">
-                  Hoàn thiện hồ sơ để nhận gợi ý việc làm
-                </h3>
-                <p className="text-sm text-orange-800 mb-4">
-                  Hồ sơ của bạn đang ở mức {profileCompleteness.percentage}%. 
-                  Hoàn thiện tối thiểu 60% để nhận được gợi ý việc làm phù hợp.
-                </p>
-                <Link to="/profile">
-                  <Button variant="default" size="sm">
-                    Hoàn thiện hồ sơ ngay
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        ) : (
+          <div className="lg:col-span-2">
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-orange-900 mb-2">
+                      Hoàn thiện hồ sơ để nhận gợi ý việc làm
+                    </h3>
+                    <p className="text-sm text-orange-800 mb-4">
+                      Hồ sơ của bạn đang ở mức {profileCompleteness?.percentage || 0}%. 
+                      Hoàn thiện tối thiểu 60% để nhận được gợi ý việc làm phù hợp từ hệ thống AI.
+                    </p>
+                    <Link to="/profile">
+                      <Button variant="default" size="sm">
+                        Hoàn thiện hồ sơ ngay
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
 
       {/* Recent Activity */}
       <div>

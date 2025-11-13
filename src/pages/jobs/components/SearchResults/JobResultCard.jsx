@@ -262,6 +262,12 @@ const JobResultCard = ({
                   src={job.company?.logo}
                   alt={job.company?.name}
                   className="object-cover"
+                  onError={(e) => {
+                    console.warn(`⚠️ Logo failed to load for ${job.company?.name}:`, job.company?.logo);
+                  }}
+                  onLoad={() => {
+                    console.log(`✅ Logo loaded for ${job.company?.name}:`, job.company?.logo);
+                  }}
                 />
                 <AvatarFallback className={cn(
                   "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent",
