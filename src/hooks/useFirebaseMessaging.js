@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import {  requestForToken, setupOnMessageListener } from '@/services/firebase';
+import { useDispatch } from 'react-redux';
+import { requestForToken, setupOnMessageListener } from '@/services/firebase';
+import { fetchRecentNotifications, fetchUnreadCount } from '@/redux/notificationSlice';
 import { toast } from 'sonner';
 
 /**
@@ -8,6 +10,7 @@ import { toast } from 'sonner';
  */
 const useFirebaseMessaging = () => {
   const [notification, setNotification] = useState(null);
+  const dispatch = useDispatch();
 
   /**
    * Manually requests notification permission and retrieves the FCM token.
@@ -51,6 +54,11 @@ useEffect(() => {
               },
             },
           });
+
+          // Gọi API để cập nhật lại notifications trong Redux
+          console.log('Fetching updated notifications after push notification...');
+          dispatch(fetchRecentNotifications());
+          dispatch(fetchUnreadCount());
         }
       });
 
@@ -61,7 +69,7 @@ useEffect(() => {
         unsubscribe();
       };
     }
-  }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy một lần lúc mount
+  }, [dispatch]); // Thêm dispatch vào dependency array
 
 
 
