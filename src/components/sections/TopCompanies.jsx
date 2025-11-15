@@ -34,12 +34,12 @@ const TopCompanies = () => {
     const fetchTopCompanies = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching top companies...');
+        console.log('🔄 Fetching top companies (by jobs)...');
         const response = await apiClient.get('/analytics/top-companies?limit=6');
-        console.log('📦 API Response:', response.data);
-        
+        console.log('📦 TOP COMPANIES API Response:', response.data);
+
         if (response.data.success) {
-          console.log('✅ Companies data:', response.data.data);
+          console.log('✅ Top Companies data:', response.data.data);
           setCompanies(response.data.data);
         } else {
           console.warn('⚠️ API returned success: false');
@@ -60,7 +60,7 @@ const TopCompanies = () => {
         <SectionHeader
           badgeText="🏢 Đối tác uy tín"
           title={<>Top công ty <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span></>}
-          description="Các công ty có nhiều tin tuyển dụng nhất. Khám phá cơ hội việc làm hấp dẫn từ những nhà tuyển dụng uy tín."
+          description="Những công ty tuyển dụng nhiều vị trí nhất. Nơi có nhiều cơ hội việc làm đa dạng và phong phú."
           className="mb-12"
         />
 

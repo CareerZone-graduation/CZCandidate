@@ -22,13 +22,21 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
     queryKey: ['trending-companies', limit],
     queryFn: async () => {
       const response = await apiClient.get(`/analytics/most-applied-companies?limit=${limit}`);
+      console.log('🔥 TRENDING API Response:', response.data); // DEBUG LOG
       return response.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 phút
-    cacheTime: 10 * 60 * 1000, // 10 phút
+    staleTime: 0, // TẮT CACHE TẠM THỜI ĐỂ DEBUG
+    cacheTime: 0, // TẮT CACHE TẠM THỜI ĐỂ DEBUG
   });
 
   const companies = data?.data || [];
+
+  // DEBUG: Log ra để xem data
+  console.log('🔥 TRENDING COMPANIES:', companies.map(c => ({
+    name: c.companyName,
+    apps: c.applicationCount,
+    jobs: c.activeJobCount
+  })));
 
   // Format số nhân viên
   const formatEmployees = (employees) => {

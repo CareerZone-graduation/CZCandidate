@@ -21,7 +21,7 @@ const categoryIcons = {
 
 // Tên tiếng Việt cho categories
 const categoryNames = {
-  'SOFTWARE_DEVELOPMENT': 'Công nghệ thông tin',
+  'SOFTWARE_DEVELOPMENT': 'Phát triển phần mềm',
   'MARKETING': 'Marketing & PR',
   'DESIGN': 'Thiết kế',
   'FINANCE': 'Tài chính & Kế toán',
@@ -29,6 +29,12 @@ const categoryNames = {
   'SALES': 'Bán hàng',
   'EDUCATION': 'Giáo dục',
   'HEALTHCARE': 'Y tế',
+  'ACCOUNTING': 'Kế toán',
+  'DATA_SCIENCE': 'Khoa học dữ liệu',
+  'IT': 'Công nghệ thông tin',
+  'CUSTOMER_SERVICE': 'Dịch vụ khách hàng',
+  'GRAPHIC_DESIGN': 'Thiết kế đồ họa',
+  'WEB_DEVELOPMENT': 'Phát triển Web',
 };
 
 const PopularCategories = () => {
