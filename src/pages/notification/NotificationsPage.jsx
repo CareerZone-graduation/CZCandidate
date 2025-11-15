@@ -190,7 +190,7 @@ const NotificationsPage = () => {
                       variant="ghost"
                       size="sm"
                       onClick={handleMarkAllRead}
-                      disabled={loading || (notifications && !notifications.some(n => !n.read))}
+                      disabled={loading || (notifications && !notifications.some(n => !n.isRead))}
                   >
                       <CheckCheck className="mr-2 h-4 w-4" />
                       Đánh dấu tất cả đã đọc

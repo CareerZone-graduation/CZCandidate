@@ -55,6 +55,7 @@ const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { unreadCount: notificationCount } = useSelector((state) => state.notifications);
   const isHeaderWhite = useHeaderTheme(500); // Khoảng 2/3 màn hình
 
   // User dropdown state

@@ -110,7 +110,7 @@ const notificationSlice = createSlice({
       }
       
       // Tăng unread count nếu notification chưa đọc
-      if (!newNotification.read) {
+      if (!newNotification.isRead) {
         state.unreadCount += 1;
       }
     },
@@ -193,22 +193,22 @@ const notificationSlice = createSlice({
         
         // Update in notifications list
         const notifIndex = state.notifications.findIndex(n => n._id === notificationId);
-        if (notifIndex !== -1 && !state.notifications[notifIndex].read) {
-          state.notifications[notifIndex].read = true;
+        if (notifIndex !== -1 && !state.notifications[notifIndex].isRead) {
+          state.notifications[notifIndex].isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
         
         // Update in recent notifications
         const recentIndex = state.recentNotifications.findIndex(n => n._id === notificationId);
-        if (recentIndex !== -1 && !state.recentNotifications[recentIndex].read) {
-          state.recentNotifications[recentIndex].read = true;
+        if (recentIndex !== -1 && !state.recentNotifications[recentIndex].isRead) {
+          state.recentNotifications[recentIndex].isRead = true;
         }
       })
       
       // Mark all as read
       .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
-        state.notifications = state.notifications.map(n => ({ ...n, read: true }));
-        state.recentNotifications = state.recentNotifications.map(n => ({ ...n, read: true }));
+        state.notifications = state.notifications.map(n => ({ ...n, isRead: true }));
+        state.recentNotifications = state.recentNotifications.map(n => ({ ...n, isRead: true }));
         state.unreadCount = 0;
       });
   }
