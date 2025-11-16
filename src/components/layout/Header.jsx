@@ -37,7 +37,9 @@ import {
   FileEdit,
   Upload,
   Shield,
-  MessageCircle
+  MessageCircle,
+  Video,
+  Calendar
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { clearNotifications } from '@/redux/notificationSlice';
@@ -225,6 +227,9 @@ const Header = () => {
                             {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                           </Badge>
                         )}
+                      </Link>
+                      <Link to="/interviews" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                        <Video className="h-4 w-4" /> Lịch phỏng vấn
                       </Link>
                       <Link to="/dashboard/saved-jobs" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
                         <Bookmark className="h-4 w-4" /> Việc làm đã lưu
@@ -539,6 +544,21 @@ const Header = () => {
                               {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                             </Badge>
                           )}
+                        </Link>
+
+                        <Link
+                          to="/interviews"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <div className="mr-3 p-1.5 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                            <Video className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="font-medium">Lịch phỏng vấn</span>
                         </Link>
 
                         <Link

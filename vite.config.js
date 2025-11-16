@@ -12,8 +12,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), mkcert()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, './src')
     },
+  },
+  define: {
+    global: 'globalThis',
+    'process.env': {},
   },
   build: {
     rollupOptions: {

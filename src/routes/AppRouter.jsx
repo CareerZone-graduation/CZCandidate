@@ -28,6 +28,9 @@ import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
 import MessagesPage from '../pages/messages/MessagesPage.jsx';
 import News from '../pages/news/News';
+import MyInterviews from '../pages/interviews/MyInterviews';
+import InterviewRoom from '../pages/interviews/InterviewRoom';
+import DeviceTest from '../components/interviews/DeviceTest';
 import NotFound from '../pages/NotFound';
 import BillingPage from '../pages/billing/Billing';
 import Billing from '../pages/billing/Billing'; // Import trang nạp xu
@@ -185,6 +188,16 @@ const AppRouter = () => {
           <Route path="/messages" element={<MainLayout />}>
             <Route index element={<MessagesPage />} />
           </Route>
+        </Route>
+
+        {/* Protected interviews routes - now use standard protected route */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/interviews" element={<MainLayout />}>
+            <Route index element={<MyInterviews />} />
+          </Route>
+          {/* Interview room routes - no layout for full-screen experience */}
+          <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
+          <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
         </Route>
 
         {/* Payment result routes - không cần layout */}
