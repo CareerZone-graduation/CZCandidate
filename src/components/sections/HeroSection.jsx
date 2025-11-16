@@ -74,9 +74,9 @@ const HeroSection = () => {
 </div>
 
          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-              <span className="text-gradient-primary bg-clip-text text-transparent">Tìm kiếm công việc</span>
+              <span className="text-gradient-primary shimmer-text">Tìm kiếm công việc</span>
               <br />
-              <span className="text-foreground">định hình tương lai của bạn</span>
+              <span className="shimmer-text-dark">định hình tương lai của bạn</span>
             </h1>
 
           <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-border bg-card/80">
