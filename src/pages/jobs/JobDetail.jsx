@@ -24,7 +24,7 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react';
-import { getJobApplicantCount, getJobById, getAllJobs } from '../../services/jobService';
+import { getJobApplicantCount, getJobById, getJobsByCompany } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { saveViewHistory } from '../../services/viewHistoryService';
 import { toast } from 'sonner';
@@ -57,16 +57,15 @@ const JobDetail = () => {
     select: (data) => data.data.data,
   });
 
-  // Fetch related jobs
+  // Fetch jobs from the same company
   const { data: relatedJobs, isLoading: isLoadingRelated } = useQuery({
-    queryKey: ['relatedJobs', job?.company?._id, job?.skills],
-    queryFn: () => getAllJobs({
+    queryKey: ['companyJobs', job?.company?._id, id],
+    queryFn: () => getJobsByCompany(job?.company?._id, {
       limit: 20,
-      companyId: job?.company?._id,
       excludeId: id
     }),
     enabled: !!job?.company?._id,
-    select: (data) => data.data.data?.filter(j => j._id !== id) || [],
+    select: (data) => data.data?.filter(j => j._id !== id) || [],
   });
 
   // Tự động lưu lịch sử xem khi vào trang chi tiết job

@@ -24,6 +24,8 @@ import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { BellRing, CheckCheck, BellPlus } from 'lucide-react';
 import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
+import NotificationPermissionGuide from '@/components/common/NotificationPermissionGuide';
+import NotificationPermissionAlert from '@/components/common/NotificationPermissionAlert';
 
 const NotificationItem = ({ notification, onMarkAsRead }) => {
   const handleClick = () => {
@@ -67,9 +69,14 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
 const NotificationsPage = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
+  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const dispatch = useDispatch();
   const { notifications, pagination, loading, error } = useSelector((state) => state.notifications);
-  const { requestPermission } = useFirebaseMessaging();
+  const { requestPermission, permissionDenied } = useFirebaseMessaging({
+    onPermissionDenied: () => {
+      setShowPermissionGuide(true);
+    }
+  });
 
   // Load notifications khi component mount hoặc page thay đổi
   useEffect(() => {
@@ -197,11 +204,28 @@ const NotificationsPage = () => {
                   </Button>
                 </div>
             </CardHeader>
+            
+            {/* Permission Denied Alert */}
+            {permissionDenied && (
+              <div className="px-6 pb-4">
+                <NotificationPermissionAlert 
+                  onShowGuide={() => setShowPermissionGuide(true)}
+                />
+              </div>
+            )}
+            
             <CardContent className="p-0">
                 {renderContent()}
             </CardContent>
         </Card>
         {renderPagination()}
+        
+        {/* Permission Guide Modal */}
+        <NotificationPermissionGuide
+          isOpen={showPermissionGuide}
+          onClose={() => setShowPermissionGuide(false)}
+          onRetry={requestPermission}
+        />
     </div>
   );
 };

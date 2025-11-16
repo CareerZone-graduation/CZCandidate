@@ -387,3 +387,21 @@ export const getMapClusters = async (bounds) => {
   const response = await apiClient.get(`/jobs/map-clusters?${queryParams.toString()}`);
   return response.data;
 };
+
+// Lấy danh sách công việc cùng công ty
+export const getJobsByCompany = async (companyId, params = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params.excludeId) queryParams.append('excludeId', params.excludeId);
+    
+    const url = `/companies/${companyId}/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching jobs by company:', error);
+    throw error;
+  }
+};

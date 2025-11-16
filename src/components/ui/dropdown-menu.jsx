@@ -36,7 +36,18 @@ const DropdownMenuSubContent = React.forwardRef(({ className, ...props }, ref) =
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
+      "z-50 min-w-32 overflow-hidden rounded-xl p-1 text-popover-foreground",
+      // Glass morphism effect
+      "bg-popover/95 backdrop-blur-xl",
+      // Enhanced border
+      "border-2 border-border/50",
+      // Enhanced shadow for depth
+      "shadow-[0_20px_70px_-15px_rgba(0,0,0,0.3)]",
+      "dark:shadow-[0_20px_70px_-15px_rgba(0,0,0,0.6)]",
+      // Ring effect
+      "ring-1 ring-black/5 dark:ring-white/10",
+      // Animations
+      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
       className
     )}
     {...props} />
@@ -50,7 +61,17 @@ const DropdownMenuContent = React.forwardRef(({ className, sideOffset = 4, ...pr
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 overflow-y-auto overflow-x-hidden rounded-xl p-1 text-popover-foreground",
+        // Glass morphism effect
+        "bg-popover/95 backdrop-blur-xl",
+        // Enhanced border
+        "border-2 border-border/50",
+        // Enhanced shadow for depth
+        "shadow-[0_20px_70px_-15px_rgba(0,0,0,0.3)]",
+        "dark:shadow-[0_20px_70px_-15px_rgba(0,0,0,0.6)]",
+        // Ring effect
+        "ring-1 ring-black/5 dark:ring-white/10",
+        // Animations
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
         className
       )}

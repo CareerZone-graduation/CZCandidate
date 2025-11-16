@@ -57,6 +57,7 @@ const PopularCategories = () => {
       try {
         // Gọi API không cần authentication
         const response = await apiClient.get('/analytics/job-categories');
+        console.log(response.data);
         if (response.data.success) {
           const categoryData = response.data.data.map(cat => ({
             name: categoryNames[cat.category] || cat.category,
@@ -89,7 +90,7 @@ const PopularCategories = () => {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <Card key={i} className="animate-pulse bg-muted h-48" />
+              <Card key={i} classNcategoriesame="animate-pulse bg-muted h-48" />
             ))}
           </div>
         ) : categories.length === 0 ? (

@@ -23,6 +23,7 @@ import {
     formatSalary
 } from '@/utils/formatters';
 import {
+    Briefcase,
     ChevronLeft,
     ChevronRight,
     MapPin
@@ -46,7 +47,7 @@ const JobDetailSidebar = ({
         <div className="space-y-6">
             <Card className="border-0 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg font-bold">Việc làm liên quan</CardTitle>
+                    <CardTitle className="text-lg font-bold">Việc làm cùng công ty</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoadingRelated ? (
@@ -138,8 +139,8 @@ const JobDetailSidebar = ({
                     ) : (
                         <div className="text-center py-12 text-muted-foreground">
                             <Briefcase className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg font-medium mb-2">Không có việc làm liên quan</p>
-                            <p className="text-sm">Chúng tôi sẽ cập nhật thêm cơ hội việc làm từ công ty này</p>
+                            <p className="text-lg font-medium mb-2">Không có việc làm khác</p>
+                            <p className="text-sm">Công ty này chưa có vị trí tuyển dụng nào khác</p>
                         </div>
                     )}
                 </CardContent>

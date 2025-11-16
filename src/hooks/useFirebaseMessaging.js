@@ -8,8 +8,10 @@ import { toast } from 'sonner';
  * A hook to manage Firebase Cloud Messaging.
  * It requests permission, gets the token, and listens for foreground messages.
  */
-const useFirebaseMessaging = () => {
+const useFirebaseMessaging = (options = {}) => {
+  const { onPermissionDenied } = options;
   const [notification, setNotification] = useState(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const dispatch = useDispatch();
   const { pagination, initialized } = useSelector((state) => state.notifications);
 
@@ -18,17 +20,64 @@ const useFirebaseMessaging = () => {
    */
   const requestPermission = async () => {
     try {
+      // Reset permission denied state
+      setPermissionDenied(false);
+      
       const token = await requestForToken();
       if (token) {
         toast.success('Thông báo đã được bật.');
         console.log('FCM token obtained:', token);
-        // TODO: Send the token to your server here
       } else {
-        toast.warning('Yêu cầu quyền thông báo đã bị từ chối.');
+        // Permission was denied
+        const errorMessage = 'Quyền thông báo bị từ chối. Nhấn "Xem hướng dẫn" để biết cách bật.';
+        setPermissionDenied(true);
+        
+        toast.error(errorMessage, {
+          duration: 5000,
+          action: {
+            label: 'Xem hướng dẫn',
+            onClick: () => {
+              if (onPermissionDenied) {
+                onPermissionDenied();
+              }
+            }
+          }
+        });
+        
+        // Auto trigger permission guide callback after delay
+        if (onPermissionDenied) {
+          setTimeout(() => onPermissionDenied(), 1500);
+        }
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
-      toast.error('Đã xảy ra lỗi khi bật thông báo.');
+      
+      // Check if it's a permission error
+      const isPermissionError = error.message?.toLowerCase().includes('permission') || 
+                                error.message?.toLowerCase().includes('denied');
+      
+      if (isPermissionError) {
+        setPermissionDenied(true);
+        const errorMessage = 'Quyền thông báo bị từ chối. Nhấn "Xem hướng dẫn" để biết cách bật.';
+        
+        toast.error(errorMessage, {
+          duration: 5000,
+          action: {
+            label: 'Xem hướng dẫn',
+            onClick: () => {
+              if (onPermissionDenied) {
+                onPermissionDenied();
+              }
+            }
+          }
+        });
+        
+        if (onPermissionDenied) {
+          setTimeout(() => onPermissionDenied(), 1500);
+        }
+      } else {
+        toast.error('Đã xảy ra lỗi khi bật thông báo.');
+      }
     }
   };
 useEffect(() => {
@@ -110,7 +159,11 @@ useEffect(() => {
     };
   }, [dispatch, pagination.page, pagination.limit, initialized]);
 
-  return { notification, requestPermission };
+  return { 
+    notification, 
+    requestPermission,
+    permissionDenied 
+  };
 };
 
 export default useFirebaseMessaging;

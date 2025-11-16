@@ -425,9 +425,19 @@ const Header = () => {
                 {showUserDropdown && (
                   <div
                     className={cn(
-                      "absolute right-0 top-full mt-2 w-80 bg-background",
-                      "border border-border rounded-2xl shadow-2xl z-50 overflow-hidden",
-                      "animate-in slide-in-from-top-2 fade-in-0 duration-300"
+                      "absolute right-0 top-full mt-2 w-80",
+                      // Glass morphism effect
+                      "bg-background/95 backdrop-blur-xl",
+                      // Enhanced border with gradient
+                      "border-2 border-border/50",
+                      "rounded-2xl shadow-2xl z-50 overflow-hidden",
+                      // Enhanced shadow for depth
+                      "shadow-[0_20px_70px_-15px_rgba(0,0,0,0.3)]",
+                      "dark:shadow-[0_20px_70px_-15px_rgba(0,0,0,0.6)]",
+                      // Animation
+                      "animate-in slide-in-from-top-2 fade-in-0 duration-300",
+                      // Ring effect
+                      "ring-1 ring-black/5 dark:ring-white/10"
                     )}
                     data-dropdown
                   >

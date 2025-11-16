@@ -89,7 +89,7 @@ const NotificationDropdown = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 bg-white border shadow-lg" align="end">
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="flex justify-between items-center">
             <span>Thông báo mới</span>
             {hasUnread && unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground">({unreadCount} chưa đọc)</span>}

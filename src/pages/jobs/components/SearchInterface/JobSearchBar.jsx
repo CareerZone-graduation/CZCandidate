@@ -8,6 +8,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 // --- THAY ĐỔI 1: Import hook mới ---
 import { useSonioxSearch } from '@/hooks/useSonioxSearch';
 import VoiceSearchButton from '@/components/common/VoiceSearchButton';
+import MicrophonePermissionGuide from '@/components/common/MicrophonePermissionGuide';
+import MicrophonePermissionAlert from '@/components/common/MicrophonePermissionAlert';
 // Search history imports
 import SearchHistoryDropdown from '@/components/jobs/SearchHistoryDropdown';
 import {
@@ -43,19 +45,35 @@ const JobSearchBar = forwardRef(({
   // Debounce query để tối ưu hóa API calls
   const debouncedQuery = useDebounce(query, 300);
 
-  // --- THAY ĐỔI 3: Khởi tạo hook Soniox ---
+  // --- THAY ĐỔI 3: State cho microphone permission guide ---
+  const [showMicPermissionGuide, setShowMicPermissionGuide] = useState(false);
+  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+
+  // --- THAY ĐỔI 4: Khởi tạo hook Soniox ---
   const {
     state: voiceState,
     isListening,
     fullTranscript,
+    permissionDenied: voicePermissionDenied,
     isSupported: isVoiceSupported,
     toggleSearch: toggleVoiceSearch
   } = useSonioxSearch({
     onResult: (text) => {
       setQuery(text);
       handleSearch(text);
+    },
+    onPermissionDenied: () => {
+      setMicPermissionDenied(true);
+      setShowMicPermissionGuide(true);
     }
   });
+
+  // Sync permission denied state
+  useEffect(() => {
+    if (voicePermissionDenied) {
+      setMicPermissionDenied(true);
+    }
+  }, [voicePermissionDenied]);
 
   // Cập nhật input với transcript real-time từ Soniox
   useEffect(() => {
@@ -461,6 +479,25 @@ const JobSearchBar = forwardRef(({
           background: radial-gradient(circle, var(--tw-gradient-stops));
         }
       `}</style>
+
+      {/* Microphone Permission Alert */}
+      {micPermissionDenied && !isListening && (
+        <div className="mt-4">
+          <MicrophonePermissionAlert 
+            onShowGuide={() => setShowMicPermissionGuide(true)}
+          />
+        </div>
+      )}
+
+      {/* Microphone Permission Guide Modal */}
+      <MicrophonePermissionGuide
+        isOpen={showMicPermissionGuide}
+        onClose={() => setShowMicPermissionGuide(false)}
+        onRetry={() => {
+          setMicPermissionDenied(false);
+          toggleVoiceSearch();
+        }}
+      />
     </div>
   );
 });

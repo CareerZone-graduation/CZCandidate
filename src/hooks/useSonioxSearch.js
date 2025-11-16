@@ -10,7 +10,7 @@ import { getTemporarySonioxApiKey, refreshSonioxApiKeyIfNeeded } from '@/service
  * @param {function} options.onResult - Callback được gọi khi có kết quả cuối cùng.
  * @returns {object} - Trạng thái và các hàm điều khiển voice search.
  */
-export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
+export const useSonioxSearch = ({ lang = 'vi', onResult, onPermissionDenied }) => {
   const sonioxClient = useRef(null);
   const [state, setState] = useState("Idle");
   
@@ -21,6 +21,7 @@ export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
   const finalTranscriptRef = useRef('');
 
   const [error, setError] = useState(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   
   // Store API key and expiration
   const apiKeyRef = useRef(null);
@@ -61,6 +62,7 @@ export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
     setDisplayTranscript('');
     finalTranscriptRef.current = '';
     setError(null);
+    setPermissionDenied(false);
 
     if (!sonioxClient.current) return;
 
@@ -101,9 +103,38 @@ enableSpeakerDiarization: true,
 
       onError: (status, message) => {
         console.error(`Lỗi Soniox: ${message}`);
-        const errorMessage = `Vui lòng cho phép truy cập micro`;
-        setError(errorMessage);
-        toast.error(errorMessage);
+        
+        // Check if it's a permission error
+        const isPermissionError = message.toLowerCase().includes('permission') || 
+                                  message.toLowerCase().includes('denied') ||
+                                  message.toLowerCase().includes('notallowed');
+        
+        if (isPermissionError) {
+          const errorMessage = 'Quyền truy cập microphone bị từ chối. Nhấn "Xem hướng dẫn" để biết cách bật.';
+          setError(errorMessage);
+          setPermissionDenied(true);
+          
+          toast.error(errorMessage, {
+            duration: 5000,
+            action: {
+              label: 'Xem hướng dẫn',
+              onClick: () => {
+                if (onPermissionDenied) {
+                  onPermissionDenied();
+                }
+              }
+            }
+          });
+          
+          // Auto trigger permission guide callback after delay
+          if (onPermissionDenied) {
+            setTimeout(() => onPermissionDenied(), 1500);
+          }
+        } else {
+          const errorMessage = `Lỗi: ${message}`;
+          setError(errorMessage);
+          toast.error(errorMessage);
+        }
       },
 
       onPartialResult: (result) => {
@@ -160,6 +191,7 @@ enableSpeakerDiarization: true,
     isListening: state === "Running",
     fullTranscript: displayTranscript, // This is sent to the JobSearchBar input
     error,
+    permissionDenied,
     isSupported: !!sonioxClient.current,
     toggleSearch,
   };

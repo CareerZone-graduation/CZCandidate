@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { MapPin, Navigation, X } from 'lucide-react';
+import { MapPin, Navigation, X, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import LocationPermissionGuide from '@/components/common/LocationPermissionGuide';
+import LocationPermissionAlert from '@/components/common/LocationPermissionAlert';
 
 /**
  * DistanceFilter - Component lọc công việc theo khoảng cách
@@ -20,6 +22,8 @@ const DistanceFilter = ({
   const [distanceValue, setDistanceValue] = useState(10); // Default 10km
   const [userCoords, setUserCoords] = useState(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // Distance presets in km
   const distancePresets = [
@@ -50,6 +54,7 @@ const DistanceFilter = ({
     }
 
     setIsGettingLocation(true);
+    setPermissionDenied(false); // Reset permission denied state
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { longitude, latitude } = position.coords;
@@ -70,15 +75,30 @@ const DistanceFilter = ({
         console.error('Geolocation error:', error);
         
         let errorMessage = 'Không thể lấy vị trí của bạn.';
+        let showGuide = false;
+        
         if (error.code === error.PERMISSION_DENIED) {
-          errorMessage = 'Vui lòng cấp quyền truy cập vị trí trong cài đặt trình duyệt.';
+          errorMessage = 'Quyền truy cập vị trí bị từ chối. Nhấn "Xem hướng dẫn" để biết cách bật.';
+          showGuide = true;
+          setPermissionDenied(true);
         } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMessage = 'Thông tin vị trí không khả dụng.';
+          errorMessage = 'Thông tin vị trí không khả dụng. Vui lòng kiểm tra cài đặt thiết bị.';
         } else if (error.code === error.TIMEOUT) {
-          errorMessage = 'Yêu cầu lấy vị trí đã hết thời gian.';
+          errorMessage = 'Yêu cầu lấy vị trí đã hết thời gian. Vui lòng thử lại.';
         }
         
-        toast.error(errorMessage);
+        toast.error(errorMessage, {
+          duration: 5000,
+          action: showGuide ? {
+            label: 'Xem hướng dẫn',
+            onClick: () => setShowPermissionGuide(true)
+          } : undefined
+        });
+        
+        // Auto show guide for permission denied after a short delay
+        if (showGuide) {
+          setTimeout(() => setShowPermissionGuide(true), 1500);
+        }
       },
       {
         enableHighAccuracy: true,
@@ -160,45 +180,62 @@ const DistanceFilter = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-primary" />
-          <Label className="font-semibold text-sm">Lọc theo khoảng cách</Label>
+    <>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            <Label className="font-semibold text-sm">Lọc theo khoảng cách</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPermissionGuide(true)}
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+              title="Hướng dẫn bật quyền vị trí"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {isEnabled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClear}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
         </div>
-        {isEnabled && (
+
+        {/* Permission Denied Alert */}
+        {!isEnabled && permissionDenied && (
+          <LocationPermissionAlert 
+            onShowGuide={() => setShowPermissionGuide(true)}
+          />
+        )}
+
+        {/* Enable/Get Location Button */}
+        {!isEnabled && (
           <Button
-            variant="ghost"
+            onClick={toggleFilter}
+            disabled={isGettingLocation}
+            variant="outline"
             size="sm"
-            onClick={handleClear}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            className={cn(
+              "w-full transition-all duration-300",
+              "border-2 border-primary/40 hover:border-primary",
+              "hover:bg-primary/10"
+            )}
           >
-            <X className="h-3 w-3" />
+            <Navigation className={cn(
+              "h-4 w-4 mr-2",
+              isGettingLocation && "animate-pulse"
+            )} />
+            {isGettingLocation ? 'Đang lấy vị trí...' : 'Bật lọc theo vị trí'}
           </Button>
         )}
-      </div>
-
-      {/* Enable/Get Location Button */}
-      {!isEnabled && (
-        <Button
-          onClick={toggleFilter}
-          disabled={isGettingLocation}
-          variant="outline"
-          size="sm"
-          className={cn(
-            "w-full transition-all duration-300",
-            "border-2 border-primary/40 hover:border-primary",
-            "hover:bg-primary/10"
-          )}
-        >
-          <Navigation className={cn(
-            "h-4 w-4 mr-2",
-            isGettingLocation && "animate-pulse"
-          )} />
-          {isGettingLocation ? 'Đang lấy vị trí...' : 'Bật lọc theo vị trí'}
-        </Button>
-      )}
 
       {/* Distance Slider & Controls (when enabled) */}
       {isEnabled && userCoords && (
@@ -272,13 +309,21 @@ const DistanceFilter = ({
         </div>
       )}
 
-      {/* Help Text */}
-      {!isEnabled && (
-        <p className="text-xs text-muted-foreground">
-          Tìm công việc trong bán kính tùy chọn từ vị trí hiện tại của bạn.
-        </p>
-      )}
-    </div>
+        {/* Help Text */}
+        {!isEnabled && (
+          <p className="text-xs text-muted-foreground">
+            Tìm công việc trong bán kính tùy chọn từ vị trí hiện tại của bạn.
+          </p>
+        )}
+      </div>
+
+      {/* Permission Guide Modal */}
+      <LocationPermissionGuide
+        isOpen={showPermissionGuide}
+        onClose={() => setShowPermissionGuide(false)}
+        onRetry={getUserLocation}
+      />
+    </>
   );
 };
 
