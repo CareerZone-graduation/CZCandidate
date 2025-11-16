@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -49,7 +48,7 @@ const ChatPanel = ({ messages = [], onSendMessage, onClose, currentUserId }) => 
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
@@ -89,7 +88,7 @@ const ChatPanel = ({ messages = [], onSendMessage, onClose, currentUserId }) => 
           )}
           <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       <Separator className="bg-gray-700" />
 

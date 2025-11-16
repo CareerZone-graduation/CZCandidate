@@ -290,8 +290,17 @@ const InterviewRoom = () => {
     // Chat message
     interviewSocketService.on('onChatMessage', (data) => {
       console.log('[InterviewRoom] Chat message received:', data);
+      console.log('[InterviewRoom] Comparing senderId:', data.senderId, 'with userId:', userId);
+      
+      // Skip if this is our own message (shouldn't happen with socket.to(), but just in case)
+      // Convert both to string for comparison
+      if (String(data.senderId) === String(userId)) {
+        console.log('[InterviewRoom] Skipping own message from socket event');
+        return;
+      }
+      
       const newMessage = {
-        id: data.messageId || Date.now(),
+        id: data._id || data.messageId || Date.now(),
         senderId: data.senderId,
         senderName: data.senderName || 'Nhà tuyển dụng',
         message: data.message,
@@ -573,15 +582,15 @@ setIsRecording(true);
 
   const handleSendMessage = async (message) => {
     try {
-      await interviewSocketService.sendChatMessage(interviewId, message);
+      const response = await interviewSocketService.sendChatMessage(interviewId, message);
       
-      // Add to local messages
+      // Add message to local state immediately for better UX
       const newMessage = {
-        id: Date.now(),
+        id: response.message?._id || Date.now(),
         senderId: currentUserId,
         senderName: 'Bạn',
         message,
-        timestamp: new Date()
+        timestamp: response.message?.timestamp || new Date()
       };
       setChatMessages(prev => [...prev, newMessage]);
     } catch (error) {

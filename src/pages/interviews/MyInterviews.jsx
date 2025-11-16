@@ -23,7 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Skeleton } from '../../components/ui/skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
-import { InterviewInvitation } from '../../components/interviews/InterviewInvitation';
+
 import { 
   getMyInterviews, 
   checkCanJoinInterview,
@@ -33,13 +33,13 @@ import { toast } from 'sonner';
 
 /**
  * MyInterviews Page
- * Displays candidate's interviews with tabs for pending invitations, upcoming, and past interviews
+ * Displays candidate's interviews with tabs for upcoming and past interviews
  */
 const MyInterviews = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('upcoming');
 
   // Fetch all interviews
   const { 
@@ -56,10 +56,6 @@ const MyInterviews = () => {
   const interviews = interviewsData?.data || [];
 
   // Categorize interviews - Backend uses uppercase status values
-  const pendingInvitations = interviews.filter(
-    (interview) => interview.status === 'SCHEDULED' && !interview.acceptedByCandidate
-  );
-
   const upcomingInterviews = interviews.filter((interview) => {
     // SCHEDULED or RESCHEDULED interviews that haven't passed yet
     if (interview.status !== 'SCHEDULED' && interview.status !== 'RESCHEDULED') return false;
@@ -92,7 +88,6 @@ const MyInterviews = () => {
     });
   };
 
-  const filteredPending = filterInterviews(pendingInvitations);
   const filteredUpcoming = filterInterviews(upcomingInterviews);
   const filteredPast = filterInterviews(pastInterviews);
 
@@ -114,9 +109,7 @@ const MyInterviews = () => {
     navigate('/interviews/device-test');
   };
 
-  const handleInvitationStatusChange = () => {
-    refetch();
-  };
+
 
   if (isLoading) {
     return (
@@ -186,15 +179,7 @@ const MyInterviews = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending" className="relative">
-            Pending Invitations
-            {filteredPending.length > 0 && (
-              <Badge variant="destructive" className="ml-2 px-1.5 min-w-[20px] h-5">
-                {filteredPending.length}
-              </Badge>
-            )}
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upcoming" className="relative">
             Upcoming
             {filteredUpcoming.length > 0 && (
@@ -205,36 +190,6 @@ const MyInterviews = () => {
           </TabsTrigger>
           <TabsTrigger value="past">Past</TabsTrigger>
         </TabsList>
-
-        {/* Pending Invitations Tab */}
-        <TabsContent value="pending" className="space-y-4">
-          {filteredPending.length === 0 ? (
-            <EmptyState
-              icon={Calendar}
-              title="No pending invitations"
-              description="You don't have any pending interview invitations at the moment."
-            />
-          ) : (
-            <>
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Action Required</AlertTitle>
-                <AlertDescription>
-                  Please review and respond to your interview invitations below.
-                </AlertDescription>
-              </Alert>
-              <div className="grid gap-6">
-                {filteredPending.map((interview) => (
-                  <InterviewInvitation
-                    key={interview.id}
-                    interview={interview}
-                    onStatusChange={handleInvitationStatusChange}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </TabsContent>
 
         {/* Upcoming Interviews Tab */}
         <TabsContent value="upcoming" className="space-y-4">
