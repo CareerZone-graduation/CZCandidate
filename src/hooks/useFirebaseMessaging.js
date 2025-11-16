@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import {  requestForToken, setupOnMessageListener } from '@/services/firebase';
+import { useDispatch, useSelector } from 'react-redux';
+import { requestForToken, setupOnMessageListener } from '@/services/firebase';
+import { fetchRecentNotifications, fetchUnreadCount, fetchNotifications } from '@/redux/notificationSlice';
 import { toast } from 'sonner';
 
 /**
@@ -8,6 +10,8 @@ import { toast } from 'sonner';
  */
 const useFirebaseMessaging = () => {
   const [notification, setNotification] = useState(null);
+  const dispatch = useDispatch();
+  const { pagination, initialized } = useSelector((state) => state.notifications);
 
   /**
    * Manually requests notification permission and retrieves the FCM token.
@@ -51,6 +55,21 @@ useEffect(() => {
               },
             },
           });
+
+          // Gọi API để cập nhật lại notifications trong Redux
+          console.log('Fetching updated notifications after push notification...');
+          
+          // Cập nhật recent notifications và unread count
+          dispatch(fetchRecentNotifications());
+          dispatch(fetchUnreadCount());
+          
+          // Nếu user đã load notifications (đang ở NotificationsPage), refetch lại
+          if (initialized) {
+            dispatch(fetchNotifications({ 
+              page: pagination.page, 
+              limit: pagination.limit 
+            }));
+          }
         }
       });
 
@@ -61,9 +80,35 @@ useEffect(() => {
         unsubscribe();
       };
     }
-  }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy một lần lúc mount
+  }, [dispatch, pagination.page, pagination.limit, initialized]);
 
+  // === VISIBILITY CHANGE HANDLER ===
+  // Khi user quay lại tab sau khi ở background, refetch notifications
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && Notification.permission === 'granted') {
+        console.log('Tab became visible, refreshing notifications...');
+        
+        // Refetch tất cả để đảm bảo sync
+        dispatch(fetchRecentNotifications());
+        dispatch(fetchUnreadCount());
+        
+        // Nếu đang ở NotificationsPage, cũng refetch
+        if (initialized) {
+          dispatch(fetchNotifications({ 
+            page: pagination.page, 
+            limit: pagination.limit 
+          }));
+        }
+      }
+    };
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [dispatch, pagination.page, pagination.limit, initialized]);
 
   return { notification, requestPermission };
 };

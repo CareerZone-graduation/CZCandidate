@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { getRecentNotifications } from '@/services/notificationService';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchRecentNotifications, fetchUnreadCount } from '@/redux/notificationSlice';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +27,7 @@ const NotificationDropdownItem = ({ notification }) => (
        <div className="grow">
         <p className="font-semibold text-sm leading-tight">{notification.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-           {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true, locale: vi })}
+           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi })}
         </p>
        </div>
     </Link>
@@ -34,15 +36,22 @@ const NotificationDropdownItem = ({ notification }) => (
 
 
 const NotificationDropdown = () => {
-  const { data: notifications, isLoading, isError } = useQuery({
-    queryKey: ['recentNotifications'],
-    queryFn: getRecentNotifications,
-  });
+  const dispatch = useDispatch();
+  const { recentNotifications, unreadCount, loading } = useSelector((state) => state.notifications);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
-  const hasUnread = !isLoading && !isError && notifications && notifications.length > 0;
+  // Load notifications lần đầu khi component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchRecentNotifications());
+      dispatch(fetchUnreadCount());
+    }
+  }, [dispatch, isAuthenticated]);
+
+  const hasUnread = !loading && recentNotifications && recentNotifications.length > 0;
 
   const renderContent = () => {
-    if (isLoading) {
+    if (loading) {
       return (
         <div className="p-2.5 space-y-3">
           {[...Array(2)].map((_, i) => (
@@ -57,16 +66,12 @@ const NotificationDropdown = () => {
         </div>
       );
     }
-    
-    if (isError) {
-        return <p className="p-4 text-center text-sm text-destructive">Không thể tải thông báo.</p>;
-    }
 
     if (!hasUnread) {
       return <p className="p-4 text-center text-sm text-muted-foreground">Bạn không có thông báo mới.</p>;
     }
 
-    return notifications.map(n => <NotificationDropdownItem key={n.id} notification={n} />);
+    return recentNotifications.map(n => <NotificationDropdownItem key={n._id} notification={n} />);
   };
 
   return (
@@ -74,18 +79,20 @@ const NotificationDropdown = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-[1.2rem] w-[1.2rem]" />
-          {hasUnread && (
-            <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-            </span>
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold rounded-full"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 bg-white border shadow-lg" align="end">
         <DropdownMenuLabel className="flex justify-between items-center">
             <span>Thông báo mới</span>
-            {hasUnread && <span className="text-xs font-normal text-muted-foreground">({notifications.length})</span>}
+            {hasUnread && unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground">({unreadCount} chưa đọc)</span>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         

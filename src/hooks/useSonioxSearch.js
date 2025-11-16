@@ -85,8 +85,10 @@ export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
     }
 
     sonioxClient.current.start({
-      model: 'stt-rt-preview-v2',
-      language_hints: [lang],
+      model: 'stt-rt-v3',
+      // language_hints: [lang],
+      enableLanguageIdentification: true,
+enableSpeakerDiarization: true,
       enableEndpointDetection: true,
       
       onStarted: () => {
@@ -120,7 +122,8 @@ export const useSonioxSearch = ({ lang = 'vi', onResult }) => {
             .filter(t => !t.is_final)
             .map(t => t.text)
             .join("");
-
+        console.log('Non-final text:', nonFinalText);
+        console.log(result);
         // Update the display transcript, filtering out the <end> token
         setDisplayTranscript((finalTranscriptRef.current + nonFinalText).replace(/<end>/g, ''));
       },

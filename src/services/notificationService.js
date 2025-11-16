@@ -1,56 +1,59 @@
 // src/services/notificationService.js
-import { mockNotifications } from '@/data/notifications';
-
-// Simulate API latency
-const API_LATENCY = 500;
-
-let notifications = [...mockNotifications];
+import apiClient from './apiClient';
 
 /**
  * Lấy danh sách thông báo có phân trang.
  * @param {object} params
  * @param {number} params.page - Số trang (bắt đầu từ 1)
  * @param {number} params.limit - Số lượng mục trên mỗi trang
- * @returns {Promise<{data: Notification[], total: number, pages: number}>}
+ * @param {string} params.type - Lọc theo loại thông báo
+ * @param {string} params.read - Lọc theo trạng thái đọc (true/false/all)
+ * @returns {Promise<{data: Notification[], meta: object}>}
  */
-export const getNotifications = ({ page = 1, limit = 10 }) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      const paginatedData = notifications.slice(start, end);
-      resolve({
-        data: paginatedData,
-        total: notifications.length,
-        pages: Math.ceil(notifications.length / limit),
-      });
-    }, API_LATENCY);
-  });
+export const getNotifications = async ({ page = 1, limit = 10, type, read }) => {
+  const params = new URLSearchParams();
+  params.append('page', page);
+  params.append('limit', limit);
+  if (type) params.append('type', type);
+  if (read !== undefined) params.append('read', read);
+
+  const response = await apiClient.get(`/notifications?${params.toString()}`);
+  return response.data;
 };
 
 /**
- * Lấy 4 thông báo gần nhất chưa đọc.
- * @returns {Promise<Notification[]>}
+ * Lấy số lượng thông báo chưa đọc.
+ * @returns {Promise<number>}
  */
-export const getRecentNotifications = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const unread = notifications.filter(n => !n.read);
-      const sorted = unread.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      resolve(sorted.slice(0, 4));
-    }, API_LATENCY);
-  });
+export const getUnreadCount = async () => {
+  const response = await apiClient.get('/notifications/unread-count');
+  return response.data.data.unreadCount;
+};
+
+/**
+ * Đánh dấu một thông báo là đã đọc.
+ * @param {string} notificationId - ID của thông báo
+ * @returns {Promise<object>}
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  const response = await apiClient.patch(`/notifications/${notificationId}/read`);
+  return response.data;
 };
 
 /**
  * Đánh dấu tất cả thông báo là đã đọc.
  * @returns {Promise<{success: boolean}>}
  */
-export const markAllAsRead = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      notifications = notifications.map(n => ({ ...n, read: true }));
-      resolve({ success: true });
-    }, API_LATENCY);
-  });
+export const markAllAsRead = async () => {
+  const response = await apiClient.patch('/notifications/read-all');
+  return { success: response.success };
+};
+
+/**
+ * Lấy thông báo gần nhất chưa đọc (dùng cho dropdown).
+ * @returns {Promise<Notification[]>}
+ */
+export const getRecentNotifications = async () => {
+  const response = await apiClient.get('/notifications?page=1&limit=5&read=false');
+  return response.data.data;
 };
