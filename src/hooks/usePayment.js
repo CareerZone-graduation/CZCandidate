@@ -11,12 +11,30 @@ export const usePayment = () => {
             const response = await createPaymentOrder(values);
             console.log('Payment Response:', response);
             
-            // Dựa theo logic của project recruiter
-            if (response.success && response.data.order_url) {
-                // Redirect to payment gateway
-                window.location.href = response.data.order_url;
+            // Extract payment URL from different response structures
+            let paymentUrl = null;
+            
+            if (response?.success && response?.data) {
+                // VNPay: { success: true, data: { paymentUrl: "..." } }
+                if (response.data.paymentUrl) {
+                    paymentUrl = response.data.paymentUrl;
+                }
+                // Momo: { success: true, data: "https://..." } (string)
+                else if (typeof response.data === 'string' && response.data.startsWith('http')) {
+                    paymentUrl = response.data;
+                }
+                // ZaloPay: { success: true, data: { order_url: "..." } }
+                else if (response.data.order_url) {
+                    paymentUrl = response.data.order_url;
+                }
+            }
+            
+            if (paymentUrl) {
+                console.log('Redirecting to payment gateway:', paymentUrl);
+                window.location.href = paymentUrl;
             } else {
-                toast.error(response.message || 'Failed to create payment order. Please try again.');
+                console.error('No payment URL found in response:', response);
+                toast.error(response?.message || 'Failed to create payment order. Please try again.');
             }
         } catch (error) {
             console.error('Payment Error:', error);

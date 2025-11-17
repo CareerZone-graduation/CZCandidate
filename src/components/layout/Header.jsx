@@ -189,7 +189,7 @@ const Header = () => {
       "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500 shadow-sm",
       isHeaderWhite
         ? "bg-white/10 border-white/20 shadow-white/10"
-        : "bg-background/95 border-border shadow-md"
+        : "bg-background/50 border-border shadow-md"
     )}>
       <div className="container flex h-16 items-center justify-between relative">
         {/* Gradient accent line */}
