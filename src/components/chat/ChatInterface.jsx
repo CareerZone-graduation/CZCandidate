@@ -20,9 +20,9 @@ import { getAccessToken } from '@/utils/token';
  * @param {Function} props.onClose - Callback to close the chat interface
  * @param {string} props.conversationId - Initial conversation ID to open (optional)
  */
-const ChatInterface = ({ 
-  isOpen, 
-  onClose, 
+const ChatInterface = ({
+  isOpen,
+  onClose,
   conversationId: initialConversationId = null
 }) => {
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -30,11 +30,11 @@ const ChatInterface = ({
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [nextRetryDelay, setNextRetryDelay] = useState(0);
   const [showMobileThread, setShowMobileThread] = useState(false);
-  
+
   // Get current user and token from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
   const token = getAccessToken();
-  
+
   // Use ref to track if we've already initiated connection
   const isConnectionInitiatedRef = useRef(false);
 
@@ -73,7 +73,7 @@ const ChatInterface = ({
       try {
         await socketService.connect(token);
         console.log('[ChatInterface] Socket.connect() call successful');
-        
+
         if (socketService.getConnectionStatus()) {
           setConnectionStatus('connected');
         }
@@ -207,7 +207,12 @@ const ChatInterface = ({
    */
   const getOtherParticipant = (conversation) => {
     if (!conversation || !currentUser) return null;
-    
+
+    // Use pre-calculated otherParticipant if available
+    if (conversation.otherParticipant) {
+      return conversation.otherParticipant;
+    }
+
     if (conversation.participant1?._id === currentUser._id) {
       return conversation.participant2;
     }
@@ -296,10 +301,10 @@ const ChatInterface = ({
                   console.log('[ChatInterface] Manual reconnect triggered');
                   socketService.disconnect();
                   isConnectionInitiatedRef.current = false;
-                  
+
                   setConnectionStatus('connecting');
                   isConnectionInitiatedRef.current = true;
-                  
+
                   try {
                     await socketService.connect(token);
                     console.log('[ChatInterface] Manual reconnect successful');
@@ -314,7 +319,7 @@ const ChatInterface = ({
             </AlertDescription>
           </Alert>
         )}
-        
+
         {/* Reconnecting alert */}
         {connectionStatus === 'reconnecting' && (
           <Alert className="m-4 mb-0 border-amber-500 bg-amber-50 text-amber-900">
@@ -355,7 +360,7 @@ const ChatInterface = ({
                     ← Quay lại
                   </Button>
                 </div>
-                
+
                 {/* Show loading state while connecting */}
                 {connectionStatus === 'connecting' ? (
                   <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -372,7 +377,7 @@ const ChatInterface = ({
                   <MessageThread
                     conversationId={selectedConversation._id}
                     recipientId={getOtherParticipant(selectedConversation)?._id}
-                    recipientName={getOtherParticipant(selectedConversation)?.fullName || 'Nhà tuyển dụng'}
+                    recipientName={getOtherParticipant(selectedConversation)?.name || 'Nhà tuyển dụng'}
                     recipientAvatar={getOtherParticipant(selectedConversation)?.avatar}
                   />
                 )}

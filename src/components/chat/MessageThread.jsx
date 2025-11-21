@@ -23,11 +23,11 @@ import { vi } from 'date-fns/locale';
  * @param {string} props.recipientName - Recipient name
  * @param {string} props.recipientAvatar - Recipient avatar URL
  */
-const MessageThread = ({ 
-  conversationId, 
-  recipientId, 
-  recipientName, 
-  recipientAvatar 
+const MessageThread = ({
+  conversationId,
+  recipientId,
+  recipientName,
+  recipientAvatar
 }) => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -39,24 +39,24 @@ const MessageThread = ({
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+
   const scrollAreaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const shouldScrollRef = useRef(true);
   const previousScrollHeightRef = useRef(0);
-  
+
   const queryClient = useQueryClient();
-  
+
   // Get current user from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
 
   // Fetch initial messages
-  const { 
-    data: messagesData, 
-    isLoading, 
+  const {
+    data: messagesData,
+    isLoading,
     isError,
-    error 
+    error
   } = useQuery({
     queryKey: ['messages', conversationId, page],
     queryFn: () => getConversationMessages(conversationId, page, 50),
@@ -67,19 +67,22 @@ const MessageThread = ({
   // Update messages when data changes
   useEffect(() => {
     if (messagesData?.data) {
+      // Create a copy and reverse it to get chronological order (oldest first)
+      const sortedMessages = [...messagesData.data].reverse();
+
       setMessages(prevMessages => {
         if (page === 1) {
           // First page, replace all messages
-          return messagesData.data;
+          return sortedMessages;
         } else {
           // Append older messages to the beginning
-          const newMessages = messagesData.data.filter(
+          const newMessages = sortedMessages.filter(
             newMsg => !prevMessages.some(msg => msg._id === newMsg._id)
           );
           return [...newMessages, ...prevMessages];
         }
       });
-      
+
       // Check if there are more messages
       setHasMore(messagesData.data.length === 50);
     }
@@ -102,11 +105,11 @@ const MessageThread = ({
     // Function to join conversation
     const joinConversation = () => {
       if (hasJoined) return;
-      
+
       console.log('[MessageThread] Joining conversation:', conversationId);
       socketService.joinConversation(conversationId);
       hasJoined = true;
-      
+
       // Mark messages as read
       markConversationAsRead(conversationId).catch(err => {
         console.error('Failed to mark conversation as read:', err);
@@ -119,7 +122,7 @@ const MessageThread = ({
     } else {
       // Otherwise, wait for connection
       console.log('[MessageThread] Socket not connected yet, waiting for connection...');
-      
+
       const handleConnect = () => {
         console.log('[MessageThread] Socket connected, now joining conversation');
         // Add small delay to ensure connection is fully established
@@ -157,23 +160,50 @@ const MessageThread = ({
     };
   }, [conversationId]);
 
+  // Re-join conversation on reconnect
+  useEffect(() => {
+    const handleReconnectJoin = () => {
+      if (conversationId && socketService.getConnectionStatus()) {
+        console.log('[MessageThread] Socket reconnected, re-joining conversation:', conversationId);
+        socketService.joinConversation(conversationId);
+      }
+    };
+
+    socketService.onConnect(handleReconnectJoin);
+    socketService.onReconnect(handleReconnectJoin);
+
+    return () => {
+      socketService.off('onConnect', handleReconnectJoin);
+      socketService.off('onReconnect', handleReconnectJoin);
+    };
+  }, [conversationId]);
+
   // Handle new message from Socket.io
   const handleNewMessage = useCallback((message) => {
     if (message.conversationId !== conversationId) return;
-    
+
     console.log('[MessageThread] New message received:', message);
-    
+
     setMessages(prevMessages => {
-      // Check if message already exists (avoid duplicates)
-      const exists = prevMessages.some(msg => msg._id === message._id);
-      if (exists) return prevMessages;
-      
+      // Check if message already exists by _id OR tempMessageId
+      const existingIndex = prevMessages.findIndex(msg =>
+        msg._id === message._id ||
+        (message.tempMessageId && msg._id === message.tempMessageId)
+      );
+
+      if (existingIndex !== -1) {
+        // If it exists, replace it (to update status from sending -> sent)
+        const newMessages = [...prevMessages];
+        newMessages[existingIndex] = { ...message, status: 'sent' };
+        return newMessages;
+      }
+
       return [...prevMessages, message];
     });
-    
+
     // Auto-scroll to bottom for new messages
     shouldScrollRef.current = true;
-    
+
     // Mark as read if from other user
     if (message.senderId !== currentUser?._id) {
       markConversationAsRead(conversationId).catch(err => {
@@ -185,9 +215,9 @@ const MessageThread = ({
   // Handle message read receipt
   const handleMessageRead = useCallback((data) => {
     if (data.conversationId !== conversationId) return;
-    
+
     console.log('[MessageThread] Messages marked as read:', data);
-    
+
     setMessages(prevMessages => {
       return prevMessages.map(msg => {
         if (data.messageIds.includes(msg._id)) {
@@ -202,7 +232,7 @@ const MessageThread = ({
   const handleTypingStart = useCallback((data) => {
     if (data.conversationId !== conversationId) return;
     if (data.userId === currentUser?._id) return;
-    
+
     console.log('[MessageThread] User started typing:', data.userId);
     setIsTyping(true);
   }, [conversationId, currentUser]);
@@ -210,7 +240,7 @@ const MessageThread = ({
   const handleTypingStop = useCallback((data) => {
     if (data.conversationId !== conversationId) return;
     if (data.userId === currentUser?._id) return;
-    
+
     console.log('[MessageThread] User stopped typing:', data.userId);
     setIsTyping(false);
   }, [conversationId, currentUser]);
@@ -227,35 +257,35 @@ const MessageThread = ({
   // Handle reconnection - sync missed messages
   const handleReconnect = useCallback(async () => {
     console.log('[MessageThread] Socket reconnected, syncing missed messages...');
-    
+
     // Get the timestamp of the last message
     if (messages.length === 0) return;
-    
+
     const lastMessage = messages[messages.length - 1];
     const lastTimestamp = lastMessage.sentAt || lastMessage.createdAt;
-    
+
     if (!lastTimestamp) return;
-    
+
     setIsSyncing(true);
-    
+
     try {
       const missedMessages = await socketService.syncMissedMessages(
         conversationId,
         lastTimestamp
       );
-      
+
       if (missedMessages && missedMessages.length > 0) {
         console.log('[MessageThread] Synced', missedMessages.length, 'missed messages');
-        
+
         setMessages(prevMessages => {
           // Filter out duplicates
           const newMessages = missedMessages.filter(
             newMsg => !prevMessages.some(msg => msg._id === newMsg._id)
           );
-          
+
           return [...prevMessages, ...newMessages];
         });
-        
+
         // Auto-scroll to show new messages
         shouldScrollRef.current = true;
       }
@@ -289,17 +319,17 @@ const MessageThread = ({
   const handleInputChange = (e) => {
     const value = e.target.value;
     setMessageInput(value);
-    
+
     // Send typing indicator
     if (value.trim() && !typingTimeoutRef.current) {
       socketService.startTyping(conversationId);
     }
-    
+
     // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // Stop typing after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       socketService.stopTyping(conversationId);
@@ -311,17 +341,17 @@ const MessageThread = ({
   const handleSendMessage = async () => {
     const content = messageInput.trim();
     if (!content || isSending) return;
-    
+
     // Clear typing indicator
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
     socketService.stopTyping(conversationId);
-    
+
     // Generate temporary message ID
     const tempMessageId = `temp_${Date.now()}_${Math.random()}`;
-    
+
     // Create optimistic message
     const optimisticMessage = {
       _id: tempMessageId,
@@ -334,13 +364,13 @@ const MessageThread = ({
       status: 'sending',
       isOptimistic: true
     };
-    
+
     // Add optimistic message to UI
     setMessages(prev => [...prev, optimisticMessage]);
     setMessageInput('');
     setIsSending(true);
     shouldScrollRef.current = true;
-    
+
     try {
       // Send message via Socket.io
       const response = await socketService.sendMessage(
@@ -348,9 +378,9 @@ const MessageThread = ({
         content,
         tempMessageId
       );
-      
+
       console.log('[MessageThread] Message sent successfully:', response);
-      
+
       // Update optimistic message with real data
       setMessages(prev => prev.map(msg => {
         if (msg._id === tempMessageId) {
@@ -361,17 +391,17 @@ const MessageThread = ({
         }
         return msg;
       }));
-      
+
       // Remove from failed messages if it was there
       setFailedMessages(prev => {
         const newMap = new Map(prev);
         newMap.delete(tempMessageId);
         return newMap;
       });
-      
+
     } catch (error) {
       console.error('[MessageThread] Failed to send message:', error);
-      
+
       // Mark message as failed
       setMessages(prev => prev.map(msg => {
         if (msg._id === tempMessageId) {
@@ -379,10 +409,10 @@ const MessageThread = ({
         }
         return msg;
       }));
-      
+
       // Store failed message for retry
       setFailedMessages(prev => new Map(prev).set(tempMessageId, content));
-      
+
     } finally {
       setIsSending(false);
     }
@@ -392,9 +422,9 @@ const MessageThread = ({
   const handleRetryMessage = async (messageId) => {
     const content = failedMessages.get(messageId);
     if (!content) return;
-    
+
     console.log('[MessageThread] Retrying failed message:', messageId);
-    
+
     // Update message status to sending
     setMessages(prev => prev.map(msg => {
       if (msg._id === messageId) {
@@ -402,7 +432,7 @@ const MessageThread = ({
       }
       return msg;
     }));
-    
+
     try {
       // Resend message via Socket.io
       const response = await socketService.sendMessage(
@@ -410,9 +440,9 @@ const MessageThread = ({
         content,
         messageId
       );
-      
+
       console.log('[MessageThread] Retry successful:', response);
-      
+
       // Update message with real data
       setMessages(prev => prev.map(msg => {
         if (msg._id === messageId) {
@@ -423,17 +453,17 @@ const MessageThread = ({
         }
         return msg;
       }));
-      
+
       // Remove from failed messages
       setFailedMessages(prev => {
         const newMap = new Map(prev);
         newMap.delete(messageId);
         return newMap;
       });
-      
+
     } catch (error) {
       console.error('[MessageThread] Retry failed:', error);
-      
+
       // Mark as failed again
       setMessages(prev => prev.map(msg => {
         if (msg._id === messageId) {
@@ -448,17 +478,17 @@ const MessageThread = ({
   const handleScroll = useCallback((e) => {
     const target = e.target;
     const scrollTop = target.scrollTop;
-    
+
     // Check if scrolled to top
     if (scrollTop === 0 && hasMore && !isLoadingMore) {
       console.log('[MessageThread] Loading more messages...');
       setIsLoadingMore(true);
       previousScrollHeightRef.current = target.scrollHeight;
       shouldScrollRef.current = false;
-      
+
       // Load next page
       setPage(prev => prev + 1);
-      
+
       setTimeout(() => {
         setIsLoadingMore(false);
       }, 500);
@@ -490,10 +520,10 @@ const MessageThread = ({
    */
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
-    
+
     try {
       const date = new Date(timestamp);
-      
+
       if (isToday(date)) {
         return format(date, 'HH:mm', { locale: vi });
       } else if (isYesterday(date)) {
@@ -547,7 +577,7 @@ const MessageThread = ({
             <Skeleton className="h-3 w-20" />
           </div>
         </div>
-        
+
         {/* Messages skeleton */}
         <div className="flex-1 p-4 space-y-4">
           {[1, 2, 3, 4].map((i) => (
@@ -570,8 +600,8 @@ const MessageThread = ({
         <p className="text-xs text-muted-foreground mb-4">
           {error?.message || 'Đã xảy ra lỗi'}
         </p>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           onClick={() => queryClient.invalidateQueries(['messages', conversationId])}
         >
@@ -610,7 +640,7 @@ const MessageThread = ({
       </div>
 
       {/* Messages */}
-      <ScrollArea 
+      <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 p-4"
         onScroll={handleScroll}
@@ -621,7 +651,7 @@ const MessageThread = ({
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}
-        
+
         {/* Syncing missed messages indicator */}
         {isSyncing && (
           <div className="flex justify-center mb-4">
@@ -631,13 +661,13 @@ const MessageThread = ({
             </div>
           </div>
         )}
-        
+
         {/* Messages list */}
         <div className="space-y-4">
           {messages.map((message) => {
             const isSentByMe = message.senderId === currentUser?._id;
             const isFailed = message.status === 'failed';
-            
+
             return (
               <div
                 key={message._id}
@@ -655,7 +685,7 @@ const MessageThread = ({
                     </AvatarFallback>
                   </Avatar>
                 )}
-                
+
                 {/* Message bubble */}
                 <div className={cn(
                   "flex flex-col gap-1 max-w-[70%]",
@@ -663,26 +693,26 @@ const MessageThread = ({
                 )}>
                   <div className={cn(
                     "rounded-lg px-3 py-2 break-words",
-                    isSentByMe 
-                      ? "bg-primary text-primary-foreground" 
+                    isSentByMe
+                      ? "bg-primary text-primary-foreground"
                       : "bg-muted",
                     isFailed && "bg-destructive/10 border border-destructive"
                   )}>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
-                  
+
                   {/* Timestamp and status */}
                   <div className="flex items-center gap-1 px-1">
                     <span className="text-xs text-muted-foreground">
                       {formatMessageTime(message.sentAt || message.createdAt)}
                     </span>
-                    
+
                     {isSentByMe && (
                       <span className="flex items-center">
                         {getStatusIcon(message)}
                       </span>
                     )}
-                    
+
                     {/* Retry button for failed messages */}
                     {isFailed && (
                       <Button
@@ -700,7 +730,7 @@ const MessageThread = ({
               </div>
             );
           })}
-          
+
           {/* Scroll anchor */}
           <div ref={messagesEndRef} />
         </div>
