@@ -3,7 +3,8 @@ import {
     CheckCircle,
     DollarSign,
     UserCheck,
-    Eye
+    Eye,
+    MessageCircle
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ShareButtons from '@/components/common/ShareButtons';
+
 const JobDetailHeader = ({
     job,
     isAuthenticated,
@@ -34,7 +36,8 @@ const JobDetailHeader = ({
     applicantCount,
     hasViewedApplicants,
     isLoadingApplicants,
-    handleViewApplicants
+    handleViewApplicants,
+    handleMessage
 }) => {
     const navigate = useNavigate();
     return (
@@ -114,10 +117,19 @@ const JobDetailHeader = ({
 
                         <div className="flex flex-col sm:flex-row gap-3">
                             {job.isApplied ? (
-                                <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Đã ứng tuyển
-                                </Badge>
+                                <div className="flex gap-2">
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
+                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                        Đã ứng tuyển
+                                    </Badge>
+                                    <Button
+                                        onClick={handleMessage}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 font-medium"
+                                    >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        Nhắn tin
+                                    </Button>
+                                </div>
                             ) : (
                                 <Button
                                     onClick={handleApply}

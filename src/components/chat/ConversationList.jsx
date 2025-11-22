@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ import { vi } from 'date-fns/locale';
  * @param {string} props.selectedConversationId - Currently selected conversation ID
  * @param {Function} props.onConversationSelect - Callback when conversation is clicked
  */
-const ConversationList = ({ selectedConversationId, onConversationSelect }) => {
+const ConversationList = ({ selectedConversationId, onConversationSelect, onlineUsers }) => {
   const [conversations, setConversations] = useState([]);
 
   // Get current user from Redux
@@ -53,9 +53,37 @@ const ConversationList = ({ selectedConversationId, onConversationSelect }) => {
     }
   }, [conversationsData]);
 
+  // Optimistically mark conversation as read when selected
+  useEffect(() => {
+    if (selectedConversationId && conversations.length > 0) {
+      setConversations(prev => prev.map(conv => {
+        if (conv._id === selectedConversationId && conv.unreadCount > 0) {
+          return { ...conv, unreadCount: 0 };
+        }
+        return conv;
+      }));
+    }
+  }, [selectedConversationId, conversations.length]);
+
+  const queryClient = useQueryClient();
+
   // Handle new message event from Socket.io
   const handleNewMessage = useCallback((message) => {
     console.log('[ConversationList] New message received:', message);
+
+    // Update messages cache for this conversation if it exists
+    queryClient.setQueryData(['messages', message.conversationId, 1], (oldData) => {
+      if (!oldData || !oldData.data) return oldData;
+
+      // Check if message already exists
+      if (oldData.data.some(msg => msg._id === message._id)) return oldData;
+
+      // Add new message to the beginning (assuming API returns newest first)
+      return {
+        ...oldData,
+        data: [message, ...oldData.data]
+      };
+    });
 
     setConversations(prevConversations => {
       // Find the conversation that received the message
@@ -95,7 +123,7 @@ const ConversationList = ({ selectedConversationId, onConversationSelect }) => {
 
       return updatedConversations;
     });
-  }, [refetch, currentUser]);
+  }, [refetch, currentUser, queryClient]);
 
   // Handle message read event
   const handleMessageRead = useCallback((data) => {
@@ -255,6 +283,10 @@ const ConversationList = ({ selectedConversationId, onConversationSelect }) => {
                     {getInitials(otherParticipant?.name)}
                   </AvatarFallback>
                 </Avatar>
+                {/* Online indicator */}
+                {otherParticipant?._id && onlineUsers.has(otherParticipant._id) && (
+                  <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                )}
               </div>
 
               {/* Content */}
@@ -275,10 +307,10 @@ const ConversationList = ({ selectedConversationId, onConversationSelect }) => {
                 {/* Last message preview */}
                 <div className="flex items-center justify-between gap-2">
                   <p className={cn(
-                    "text-sm text-muted-foreground truncate",
+                    "text-sm text-muted-foreground line-clamp-1 break-all",
                     hasUnread && "font-medium text-foreground"
                   )}>
-                    {truncateMessage(conversation.latestMessage?.content || conversation.lastMessage?.content)}
+                    {conversation.latestMessage?.content || conversation.lastMessage?.content || 'Chưa có tin nhắn'}
                   </p>
 
                   {/* Unread badge */}

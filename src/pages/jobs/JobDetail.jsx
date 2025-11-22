@@ -35,6 +35,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import JobLocationMap from '@/components/common/JobLocationMap';
 import JobDetailHeader from '@/components/common/JobDetail/Header';
 import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
+import ChatInterface from '@/components/chat/ChatInterface';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -47,6 +48,8 @@ const JobDetail = () => {
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [relatedJobsPage, setRelatedJobsPage] = useState(1);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
   const jobsPerPage = 6;
 
   // Fetch job details using React Query
@@ -131,9 +134,9 @@ const JobDetail = () => {
     try {
       setIsLoadingApplicants(true);
       setShowConfirmDialog(false);
-      
+
       const response = await getJobApplicantCount(id);
-      
+
       if (response.data.success) {
         setApplicantCount(response.data.data.applicantCount);
         setHasViewedApplicants(true);
@@ -168,7 +171,7 @@ const JobDetail = () => {
     queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
     queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
   };
-  
+
   const { mutate: toggleSaveJob } = useMutation({
     mutationFn: () => {
       return job?.isSaved ? unsaveJob(id) : saveJob(id);
@@ -211,9 +214,19 @@ const JobDetail = () => {
     toggleSaveJob();
   };
 
+  const handleMessage = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để nhắn tin.');
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+    // Open chat with recruiter
+    setIsChatOpen(true);
+  };
+
   // Hàm handleShare đã được thay thế bằng ShareButtons component
 
-  
+
 
   const ConfirmDialog = () => {
     if (!showConfirmDialog) return null;
@@ -240,7 +253,7 @@ const JobDetail = () => {
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
               </p>
             </div>
-            
+
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
@@ -251,14 +264,14 @@ const JobDetail = () => {
             </div>
 
             <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCancelViewApplicants}
                 className="flex-1"
               >
                 Hủy
               </Button>
-              <Button 
+              <Button
                 onClick={handleConfirmViewApplicants}
                 className="flex-1 btn-gradient text-primary-foreground"
                 disabled={isLoadingApplicants}
@@ -331,14 +344,14 @@ const JobDetail = () => {
         {/* Basic Meta Tags */}
         <title>{job?.title} - {job?.company?.name || 'CareerZone'}</title>
         <meta name="description" content={jobDescription} />
-        
+
         {/* Open Graph Tags cho Facebook */}
         <meta property="og:url" content={currentUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
         <meta property="og:description" content={jobDescription} />
         <meta property="og:image" content={companyLogo} />
-        
+
         {/* Twitter Card Tags (bonus) */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
@@ -368,6 +381,7 @@ const JobDetail = () => {
               hasViewedApplicants={hasViewedApplicants}
               isLoadingApplicants={isLoadingApplicants}
               handleViewApplicants={handleViewApplicants}
+              handleMessage={handleMessage}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -375,40 +389,40 @@ const JobDetail = () => {
               <div className="lg:col-span-2 space-y-8">
                 {/* Job Overview */}
                 <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
-                      <p className="text-foreground font-semibold">{job.location?.province}</p>
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-6">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
+                        <p className="text-foreground font-semibold">{job.location?.province}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Briefcase className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
-                      <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
-                      <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
+                        <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
-                      <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
+                        <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
                 {/* Job Description */}
                 <Card className="border-0 shadow-sm">
@@ -501,7 +515,15 @@ const JobDetail = () => {
             jobTitle={job.title}
             open={showApplyDialog}
             onOpenChange={setShowApplyDialog}
-            onSuccess={handleApplySuccess}
+          />
+        )}
+
+        {job && (
+          <ChatInterface
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            recipientId={job.recruiterProfileId?.userId || job.recruiterProfileId}
+            jobId={job._id}
           />
         )}
       </div>
@@ -510,5 +532,3 @@ const JobDetail = () => {
 };
 
 export default JobDetail;
-
-

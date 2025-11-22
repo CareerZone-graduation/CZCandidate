@@ -19,9 +19,9 @@ const withRetry = async (requestFn, retries = RETRY_CONFIG.maxRetries) => {
   try {
     return await requestFn();
   } catch (error) {
-    const shouldRetry = 
-      retries > 0 && 
-      error.response && 
+    const shouldRetry =
+      retries > 0 &&
+      error.response &&
       RETRY_CONFIG.retryableStatuses.includes(error.response.status);
 
     if (shouldRetry) {
@@ -47,13 +47,45 @@ export const getConversations = async () => {
     return response.data.data || response.data;
   } catch (error) {
     console.error('Error fetching conversations:', error);
-    
+
     // Return empty array on error to prevent UI crashes
     if (error.response?.status >= 500) {
       console.warn('Server error, returning empty conversations list');
       return [];
     }
-    
+
+    throw error;
+  }
+};
+
+/**
+ * Create or get conversation with a recruiter
+ * @param {string} recipientId - Recruiter user ID (or recruiterProfileId if backend handles it)
+ * @param {string} jobId - Optional Job ID to attach context
+ * @returns {Promise<Object>} Conversation object
+ */
+export const createOrGetConversation = async (recipientId, jobId = null) => {
+  try {
+    const payload = { recipientId };
+    if (jobId) payload.jobId = jobId;
+
+    const response = await withRetry(() =>
+      apiClient.post('/chat/conversations', payload)
+    );
+    // Backend returns { success, message, data: conversation }
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error('Error creating/getting conversation:', error);
+
+    // Handle specific error cases
+    if (error.response?.status === 403) {
+      throw new Error('Bạn không có quyền nhắn tin cho người này');
+    }
+
+    if (error.response?.status === 404) {
+      throw new Error('Không tìm thấy người dùng');
+    }
+
     throw error;
   }
 };
@@ -79,16 +111,16 @@ export const getConversationMessages = async (conversationId, page = 1, limit = 
     };
   } catch (error) {
     console.error('Error fetching conversation messages:', error);
-    
+
     // Handle specific error cases
     if (error.response?.status === 404) {
       throw new Error('Không tìm thấy cuộc trò chuyện');
     }
-    
+
     if (error.response?.status === 403) {
       throw new Error('Bạn không có quyền truy cập cuộc trò chuyện này');
     }
-    
+
     throw error;
   }
 };
@@ -106,13 +138,13 @@ export const markConversationAsRead = async (conversationId) => {
     return response;
   } catch (error) {
     console.error('Error marking conversation as read:', error);
-    
+
     // Non-critical operation, log but don't throw
     if (error.response?.status >= 500) {
       console.warn('Failed to mark conversation as read, will retry later');
       return { success: false };
     }
-    
+
     throw error;
   }
 };
@@ -130,16 +162,16 @@ export const getConversationDetails = async (conversationId) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching conversation details:', error);
-    
+
     // Handle specific error cases
     if (error.response?.status === 404) {
       throw new Error('Không tìm thấy cuộc trò chuyện');
     }
-    
+
     if (error.response?.status === 403) {
       throw new Error('Bạn không có quyền truy cập cuộc trò chuyện này');
     }
-    
+
     throw error;
   }
 };
@@ -157,13 +189,31 @@ export const markMessagesAsRead = async (messageIds) => {
     return response;
   } catch (error) {
     console.error('Error marking messages as read:', error);
-    
+
     // Non-critical operation, log but don't throw
     if (error.response?.status >= 500) {
       console.warn('Failed to mark messages as read, will retry later');
       return { success: false };
     }
-    
+
+    throw error;
+  }
+};
+
+/**
+ * Update conversation context manually
+ * @param {string} conversationId - Conversation ID
+ * @param {Object} contextData - Context data to update
+ * @returns {Promise<Object>} Updated conversation
+ */
+export const updateConversationContext = async (conversationId, contextData) => {
+  try {
+    const response = await withRetry(() =>
+      apiClient.put(`/chat/conversations/${conversationId}/context`, contextData)
+    );
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error('Error updating conversation context:', error);
     throw error;
   }
 };

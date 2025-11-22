@@ -200,6 +200,12 @@ class SocketService {
       this._triggerHandler('onConversationCreated', data);
     });
 
+    // Online users list
+    this.socket.on('online:users', (users) => {
+      console.log('[SocketService] Online users list:', users);
+      this._triggerHandler('onOnlineUsers', users);
+    });
+
     // Error events
     this.socket.on('chat:error', (error) => {
       console.error('[SocketService] Chat error:', error);
@@ -342,6 +348,16 @@ class SocketService {
   }
 
   /**
+   * Request list of online users
+   */
+  getOnlineUsers() {
+    if (!this.socket || !this.isConnected) {
+      return;
+    }
+    this.socket.emit('get:online:users');
+  }
+
+  /**
    * Register event handler
    * @param {string} eventName - Event name (e.g., 'onNewMessage')
    * @param {function} callback - Callback function
@@ -416,6 +432,10 @@ class SocketService {
 
   onConversationCreated(callback) {
     this.on('onConversationCreated', callback);
+  }
+
+  onOnlineUsers(callback) {
+    this.on('onOnlineUsers', callback);
   }
 
   onConnect(callback) {

@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Send, Check, CheckCheck, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
-import { getConversationMessages, markConversationAsRead } from '@/services/chatService';
+import { getConversationMessages, markConversationAsRead, updateConversationContext } from '@/services/chatService';
 import socketService from '@/services/socketService';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'sonner';
+import ChatContextPicker from './ChatContextPicker';
 
 /**
  * MessageThread Component
@@ -22,12 +24,16 @@ import { vi } from 'date-fns/locale';
  * @param {string} props.recipientId - Recipient user ID
  * @param {string} props.recipientName - Recipient name
  * @param {string} props.recipientAvatar - Recipient avatar URL
+ * @param {Function} props.onContextUpdate - Callback when context is updated
+ * @param {boolean} props.isOnline - Whether the recipient is online
  */
 const MessageThread = ({
   conversationId,
   recipientId,
   recipientName,
-  recipientAvatar
+  recipientAvatar,
+  onContextUpdate,
+  isOnline
 }) => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -37,7 +43,6 @@ const MessageThread = ({
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const scrollAreaRef = useRef(null);
@@ -50,6 +55,7 @@ const MessageThread = ({
 
   // Get current user from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
+  const isCandidate = currentUser?.role === 'candidate';
 
   // Fetch initial messages
   const {
@@ -245,15 +251,6 @@ const MessageThread = ({
     setIsTyping(false);
   }, [conversationId, currentUser]);
 
-  // Handle user presence (online status)
-  const handleUserPresence = useCallback((data) => {
-    // Check if the presence update is for the recipient
-    if (data.userId === recipientId) {
-      console.log('[MessageThread] User presence update:', data);
-      setIsOnline(data.isOnline || data.status === 'online');
-    }
-  }, [recipientId]);
-
   // Handle reconnection - sync missed messages
   const handleReconnect = useCallback(async () => {
     console.log('[MessageThread] Socket reconnected, syncing missed messages...');
@@ -302,7 +299,6 @@ const MessageThread = ({
     socketService.onMessageRead(handleMessageRead);
     socketService.onTypingStart(handleTypingStart);
     socketService.onTypingStop(handleTypingStop);
-    socketService.onUserPresence(handleUserPresence);
     socketService.onReconnect(handleReconnect);
 
     return () => {
@@ -310,10 +306,9 @@ const MessageThread = ({
       socketService.off('onMessageRead', handleMessageRead);
       socketService.off('onTypingStart', handleTypingStart);
       socketService.off('onTypingStop', handleTypingStop);
-      socketService.off('onUserPresence', handleUserPresence);
       socketService.off('onReconnect', handleReconnect);
     };
-  }, [handleNewMessage, handleMessageRead, handleTypingStart, handleTypingStop, handleUserPresence, handleReconnect]);
+  }, [handleNewMessage, handleMessageRead, handleTypingStart, handleTypingStop, handleReconnect]);
 
   // Handle input change with typing indicator
   const handleInputChange = (e) => {
@@ -565,6 +560,21 @@ const MessageThread = ({
     return name.substring(0, 2).toUpperCase();
   };
 
+  // Handle manual context selection
+  const handleContextSelect = async (contextData) => {
+    try {
+      const updatedConversation = await updateConversationContext(conversationId, contextData);
+      toast.success('Đã đính kèm hồ sơ ứng tuyển vào cuộc trò chuyện');
+
+      if (onContextUpdate && updatedConversation.context) {
+        onContextUpdate(updatedConversation.context);
+      }
+    } catch (error) {
+      console.error('Error updating context:', error);
+      toast.error('Không thể cập nhật ngữ cảnh cuộc trò chuyện');
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -614,8 +624,9 @@ const MessageThread = ({
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-background">
+      <div className="flex items-center gap-3 p-4 border-b bg-background flex-shrink-0">
         <div className="relative">
           <Avatar className="h-10 w-10">
             <AvatarImage src={recipientAvatar} alt={recipientName} />
@@ -626,7 +637,7 @@ const MessageThread = ({
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold truncate">{recipientName}</h3>
             {isOnline && (
@@ -637,6 +648,11 @@ const MessageThread = ({
             <p className="text-xs text-muted-foreground">Đang nhập...</p>
           )}
         </div>
+
+        {/* Manual Context Attachment for Candidate */}
+        {isCandidate && (
+          <ChatContextPicker onSelect={handleContextSelect} recipientId={recipientId} />
+        )}
       </div>
 
       {/* Messages */}
@@ -737,7 +753,7 @@ const MessageThread = ({
       </ScrollArea>
 
       {/* Input area */}
-      <div className="p-4 border-t bg-background">
+      <div className="p-4 border-t bg-background flex-shrink-0">
         <div className="flex items-end gap-2">
           <Input
             value={messageInput}
