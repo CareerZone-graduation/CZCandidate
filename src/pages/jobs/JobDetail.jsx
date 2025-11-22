@@ -524,6 +524,7 @@ const JobDetail = () => {
             onClose={() => setIsChatOpen(false)}
             recipientId={job.recruiterProfileId?.userId || job.recruiterProfileId}
             jobId={job._id}
+            companyName={job.company?.name || job.recruiterProfileId?.company?.name}
           />
         )}
       </div>

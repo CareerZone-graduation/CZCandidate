@@ -28,7 +28,8 @@ const ChatInterface = ({
   onClose,
   conversationId: initialConversationId = null,
   recipientId: initialRecipientId = null,
-  jobId = null
+  jobId = null,
+  companyName = null
 }) => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected', 'connecting', 'reconnecting', 'disconnected'
@@ -222,6 +223,21 @@ const ChatInterface = ({
           const conversation = await createOrGetConversation(initialRecipientId, jobId);
           console.log('[ChatInterface] Conversation created/retrieved:', conversation);
 
+          // Override name with company name if provided and role is recruiter
+          if (companyName) {
+            const otherParticipant = conversation.otherParticipant ||
+              (conversation.participant1?._id === currentUser?._id ? conversation.participant2 : conversation.participant1);
+
+            if (otherParticipant && otherParticipant.role === 'recruiter') {
+              otherParticipant.name = companyName;
+              // Also update in participants array if it exists
+              if (conversation.participants) {
+                const p = conversation.participants.find(p => p._id === otherParticipant._id);
+                if (p) p.name = companyName;
+              }
+            }
+          }
+
           setSelectedConversation(conversation);
           setShowMobileThread(true);
         } catch (error) {
@@ -232,7 +248,7 @@ const ChatInterface = ({
     };
 
     initializeConversation();
-  }, [isOpen, initialConversationId, initialRecipientId, connectionStatus]);
+  }, [isOpen, initialConversationId, initialRecipientId, connectionStatus, companyName, jobId]);
 
   /**
    * Handle conversation selection from list
