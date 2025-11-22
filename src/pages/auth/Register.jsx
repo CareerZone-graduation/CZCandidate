@@ -97,7 +97,6 @@ const Register = () => {
       console.log(err);
       const errorMessage = err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
       setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -35,23 +35,31 @@ const withRetry = async (requestFn, retries = RETRY_CONFIG.maxRetries) => {
 };
 
 /**
- * Get all conversations for current user
- * @returns {Promise<Array>} List of conversations
+ * Get all conversations for current user with pagination and search
+ * @param {Object} params - { search, page, limit }
+ * @returns {Promise<{data: Array, meta: Object}>} List of conversations and metadata
  */
-export const getConversations = async () => {
+export const getConversations = async ({ search, page = 1, limit = 10 } = {}) => {
   try {
     const response = await withRetry(() =>
-      apiClient.get('/chat/conversations')
+      apiClient.get('/chat/conversations', {
+        params: { search, page, limit }
+      })
     );
-    // Backend returns { success, message, data: conversations[] }
-    return response.data.data || response.data;
+    // Backend returns { success, message, data: conversations[], meta: {} }
+    // If backend hasn't been updated yet (backward compat), it might just return data
+    // But we updated backend to return { data, meta }
+    return {
+      data: response.data.data || [],
+      meta: response.data.meta || {}
+    };
   } catch (error) {
     console.error('Error fetching conversations:', error);
 
-    // Return empty array on error to prevent UI crashes
+    // Return empty structure on error
     if (error.response?.status >= 500) {
       console.warn('Server error, returning empty conversations list');
-      return [];
+      return { data: [], meta: {} };
     }
 
     throw error;

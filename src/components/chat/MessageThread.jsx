@@ -65,7 +65,7 @@ const MessageThread = ({
     error
   } = useQuery({
     queryKey: ['messages', conversationId, page],
-    queryFn: () => getConversationMessages(conversationId, page, 50),
+    queryFn: () => getConversationMessages(conversationId, page, 10),
     enabled: !!conversationId,
     staleTime: 30000,
   });
