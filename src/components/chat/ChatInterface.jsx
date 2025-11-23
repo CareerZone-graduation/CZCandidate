@@ -339,7 +339,7 @@ const ChatInterface = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] bg-black/10">
       <div className="fixed inset-4 md:inset-auto md:right-4 md:bottom-4 md:top-4 md:w-[900px] md:max-w-[calc(100vw-2rem)] bg-background border rounded-lg shadow-lg flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">

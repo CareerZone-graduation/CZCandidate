@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useChat } from '@/contexts/ChatContext';
 import {
   MapPin,
   Clock,
@@ -35,21 +36,19 @@ import { EmptyState } from '@/components/common/EmptyState';
 import JobLocationMap from '@/components/common/JobLocationMap';
 import JobDetailHeader from '@/components/common/JobDetail/Header';
 import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
-import ChatInterface from '@/components/chat/ChatInterface';
 
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
+  const { openChat } = useChat();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [relatedJobsPage, setRelatedJobsPage] = useState(1);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedConversationId, setSelectedConversationId] = useState(null);
   const jobsPerPage = 6;
 
   // Fetch job details using React Query
@@ -221,7 +220,11 @@ const JobDetail = () => {
       return;
     }
     // Open chat with recruiter
-    setIsChatOpen(true);
+    openChat({
+      recipientId: job.recruiterProfileId?.userId || job.recruiterProfileId,
+      jobId: job._id,
+      companyName: job.companyId?.name
+    });
   };
 
   // Hàm handleShare đã được thay thế bằng ShareButtons component
@@ -515,16 +518,6 @@ const JobDetail = () => {
             jobTitle={job.title}
             open={showApplyDialog}
             onOpenChange={setShowApplyDialog}
-          />
-        )}
-
-        {job && (
-          <ChatInterface
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            recipientId={job.recruiterProfileId?.userId || job.recruiterProfileId}
-            jobId={job._id}
-            companyName={job.company?.name || job.recruiterProfileId?.company?.name}
           />
         )}
       </div>

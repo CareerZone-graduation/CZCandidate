@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useChat } from '@/contexts/ChatContext';
 import {
   Menu,
   Briefcase,
@@ -59,6 +60,7 @@ const Header = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { unreadCount: notificationCount } = useSelector((state) => state.notifications);
   const isHeaderWhite = useHeaderTheme(500); // Khoảng 2/3 màn hình
+  const { openChat } = useChat();
 
   // User dropdown state
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -220,14 +222,17 @@ const Header = () => {
                   </Link>
                   {isAuthenticated && (
                     <>
-                      <Link to="/messages" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
+                      <button 
+                        onClick={() => openChat()} 
+                        className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4 w-full text-left"
+                      >
                         <MessageCircle className="h-4 w-4" /> Tin nhắn
                         {unreadMessagesCount > 0 && (
                           <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs">
                             {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                           </Badge>
                         )}
-                      </Link>
+                      </button>
                       <Link to="/interviews" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
                         <Video className="h-4 w-4" /> Lịch phỏng vấn
                       </Link>
@@ -342,10 +347,11 @@ const Header = () => {
               <ThemeToggle />
 
               {/* Messages Button */}
-              <Link to="/messages" className="relative">
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => openChat()}
                   className={cn(
                     "h-10 w-10 rounded-full relative transition-all duration-300 group",
                     "hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100/50",
@@ -378,7 +384,7 @@ const Header = () => {
                     {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                   </Badge>
                 )}
-              </Link>
+              </div>
 
               {/* Notification Dropdown Component */}
               <NotificationDropdown />
@@ -536,14 +542,16 @@ const Header = () => {
                           <span className="font-medium">Đơn ứng tuyển</span>
                         </Link>
 
-                        <Link
-                          to="/messages"
+                        <button
+                          onClick={() => {
+                            openChat();
+                            setShowUserDropdown(false);
+                          }}
                           className={cn(
-                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group w-full text-left",
                             "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
                             "hover:shadow-md hover:scale-105 hover:translate-x-1"
                           )}
-                          onClick={() => setShowUserDropdown(false)}
                         >
                           <div className="mr-3 p-1.5 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
                             <MessageCircle className="h-4 w-4 text-blue-600" />
@@ -554,7 +562,7 @@ const Header = () => {
                               {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                             </Badge>
                           )}
-                        </Link>
+                        </button>
 
                         <Link
                           to="/interviews"

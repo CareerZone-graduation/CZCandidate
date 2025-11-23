@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,6 +49,7 @@ const MessageThread = ({
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const shouldScrollRef = useRef(true);
+  const isInitialLoadRef = useRef(true);
   const previousScrollHeightRef = useRef(0);
 
   const queryClient = useQueryClient();
@@ -61,6 +62,7 @@ const MessageThread = ({
   const {
     data: messagesData,
     isLoading,
+    isFetching,
     isError,
     error
   } = useQuery({
@@ -69,6 +71,16 @@ const MessageThread = ({
     enabled: !!conversationId,
     staleTime: 30000,
   });
+
+  // Reset state when conversation changes
+  useEffect(() => {
+    setMessages([]);
+    setPage(1);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    shouldScrollRef.current = true;
+    isInitialLoadRef.current = true;
+  }, [conversationId]);
 
   // Update messages when data changes
   useEffect(() => {
@@ -89,15 +101,18 @@ const MessageThread = ({
         }
       });
 
-      // Check if there are more messages
-      setHasMore(messagesData.data.length === 50);
+      // Check if there are more messages (limit is 10)
+      setHasMore(messagesData.data.length === 10);
+      setIsLoadingMore(false);
     }
   }, [messagesData, page]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (shouldScrollRef.current && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      const behavior = isInitialLoadRef.current ? 'auto' : 'smooth';
+      messagesEndRef.current.scrollIntoView({ behavior });
+      isInitialLoadRef.current = false;
     }
   }, [messages]);
 
@@ -474,30 +489,49 @@ const MessageThread = ({
     const target = e.target;
     const scrollTop = target.scrollTop;
 
-    // Check if scrolled to top
-    if (scrollTop === 0 && hasMore && !isLoadingMore) {
+    // Check if scrolled to top (with some buffer)
+    if (scrollTop < 50 && hasMore && !isLoadingMore && !isFetching) {
       console.log('[MessageThread] Loading more messages...');
       setIsLoadingMore(true);
       previousScrollHeightRef.current = target.scrollHeight;
       shouldScrollRef.current = false;
 
-      // Load next page
-      setPage(prev => prev + 1);
-
+      // Load next page with 1s delay
       setTimeout(() => {
-        setIsLoadingMore(false);
-      }, 500);
+        setPage(prev => prev + 1);
+      }, 2000);
     }
-  }, [hasMore, isLoadingMore]);
+  }, [hasMore, isLoadingMore, isFetching]);
+
+  // Attach scroll listener to ScrollArea viewport
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current;
+    if (!scrollArea) return;
+
+    const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   // Restore scroll position after loading more messages
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (page > 1 && scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport && previousScrollHeightRef.current) {
         const newScrollHeight = viewport.scrollHeight;
         const scrollDiff = newScrollHeight - previousScrollHeightRef.current;
-        viewport.scrollTop = scrollDiff;
+
+        // Only adjust if new content was added (or just spinner removed)
+        if (scrollDiff >= 0) {
+          const currentScrollTop = viewport.scrollTop;
+          // If the user was at the top (loading more), keep them at the same relative message
+          // Subtract approx height of loading spinner (40px) to prevent jump
+          if (currentScrollTop < 50) {
+            viewport.scrollTop = currentScrollTop + scrollDiff - 40;
+          }
+        }
       }
     }
   }, [messages, page]);
@@ -575,8 +609,8 @@ const MessageThread = ({
     }
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only for initial load
+  if (isLoading && page === 1) {
     return (
       <div className="flex flex-col h-full">
         {/* Header skeleton */}
@@ -659,7 +693,6 @@ const MessageThread = ({
       <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 p-4"
-        onScroll={handleScroll}
       >
         {/* Loading more indicator */}
         {isLoadingMore && (

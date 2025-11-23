@@ -51,7 +51,7 @@ const ChatContextPicker = ({ onSelect, children, recipientId }) => {
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] z-[150]">
                 <DialogHeader>
                     <DialogTitle>Đính kèm đơn ứng tuyển</DialogTitle>
                 </DialogHeader>
