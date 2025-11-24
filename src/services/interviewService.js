@@ -15,11 +15,11 @@ import apiClient from './apiClient';
  */
 export const getMyInterviews = async (params = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   if (params.status) queryParams.append('status', params.status);
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
-  
+
   const url = `/interviews/my-scheduled-interviews${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   const response = await apiClient.get(url);
   return response.data;
@@ -66,26 +66,26 @@ export const checkCanJoinInterview = (scheduledTime) => {
   const now = new Date();
   const interviewTime = new Date(scheduledTime);
   const diffMinutes = Math.floor((interviewTime - now) / 1000 / 60);
-  
-  if (diffMinutes > 30) {
+
+  if (diffMinutes > 15) {
     return {
       canJoin: false,
-      reason: 'Interview has not started yet. You can join 30 minutes before the scheduled time.',
+      reason: 'Buổi phỏng vấn chưa bắt đầu. Bạn có thể tham gia trước 15 phút.',
       minutesUntilStart: diffMinutes
     };
   }
-  
+
   if (diffMinutes < -30) {
     return {
       canJoin: false,
-      reason: 'Interview window has closed. You can only join within 30 minutes after the scheduled time.',
+      reason: 'Thời gian phỏng vấn đã kết thúc. Bạn chỉ có thể tham gia trong vòng 30 phút sau khi bắt đầu.',
       minutesUntilStart: diffMinutes
     };
   }
-  
+
   return {
     canJoin: true,
-    reason: 'You can join the interview now.',
+    reason: 'Bạn có thể tham gia phỏng vấn ngay bây giờ.',
     minutesUntilStart: diffMinutes
   };
 };
@@ -97,14 +97,14 @@ export const checkCanJoinInterview = (scheduledTime) => {
  */
 export const generateGoogleCalendarLink = (interview) => {
   const { scheduledTime, job, duration = 60 } = interview;
-  
+
   const startTime = new Date(scheduledTime);
   const endTime = new Date(startTime.getTime() + duration * 60000);
-  
+
   const formatDate = (date) => {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
-  
+
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: `Interview for ${job?.title || 'Position'}`,
@@ -112,7 +112,7 @@ export const generateGoogleCalendarLink = (interview) => {
     details: `Online interview for ${job?.title || 'Position'} position at ${job?.company?.name || 'Company'}.\n\nJoin link: ${window.location.origin}/interviews/${interview._id}/room`,
     location: 'Online Video Interview'
   });
-  
+
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
 
@@ -123,14 +123,14 @@ export const generateGoogleCalendarLink = (interview) => {
  */
 export const generateICSFile = (interview) => {
   const { scheduledTime, job, duration = 60, _id } = interview;
-  
+
   const startTime = new Date(scheduledTime);
   const endTime = new Date(startTime.getTime() + duration * 60000);
-  
+
   const formatICSDate = (date) => {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
-  
+
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -152,7 +152,7 @@ export const generateICSFile = (interview) => {
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
-  
+
   return icsContent;
 };
 
@@ -180,23 +180,23 @@ export const downloadICSFile = (interview) => {
 export const formatInterviewTime = (scheduledTime) => {
   const date = new Date(scheduledTime);
   const now = new Date();
-  
+
   const dateString = date.toLocaleDateString('vi-VN', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
-  
+
   const timeString = date.toLocaleTimeString('vi-VN', {
     hour: '2-digit',
     minute: '2-digit'
   });
-  
+
   // Calculate relative time
   const diffMinutes = Math.floor((date - now) / 1000 / 60);
   let relativeTime = '';
-  
+
   if (diffMinutes > 0) {
     if (diffMinutes < 60) {
       relativeTime = `in ${diffMinutes} minutes`;
@@ -212,7 +212,7 @@ export const formatInterviewTime = (scheduledTime) => {
   } else {
     relativeTime = 'completed';
   }
-  
+
   return {
     date: dateString,
     time: timeString,
