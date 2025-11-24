@@ -108,12 +108,12 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             setIsUpdating(true);
             console.log('Saving preferences:', formData);
             await onUpdate(formData);
-            
+
             // Invalidate related queries to refresh recommendations and completeness
             queryClient.invalidateQueries({ queryKey: ['myProfile'] });
             queryClient.invalidateQueries({ queryKey: ['jobRecommendations'] });
             queryClient.invalidateQueries({ queryKey: ['profileCompleteness'] });
-            
+
             setIsEditing(false);
             toast.success('Cập nhật thông tin thành công');
         } catch (error) {
@@ -142,13 +142,13 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             return;
         }
 
-        const newLocationData = { 
-            province: newLocation.province, 
-            district: normalizedDistrict 
+        const newLocationData = {
+            province: newLocation.province,
+            district: normalizedDistrict
         };
 
         console.log('Adding location:', newLocationData);
-        
+
         setFormData(prev => {
             const updated = {
                 ...prev,
@@ -157,7 +157,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             console.log('Updated formData:', updated);
             return updated;
         });
-        
+
         setNewLocation({ province: '', district: '' });
         toast.success('Đã thêm địa điểm');
     };
@@ -217,7 +217,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             const newCategories = categories.includes(categoryValue)
                 ? categories.filter(c => c !== categoryValue)
                 : [...categories, categoryValue];
-            
+
             return { ...prev, preferredCategories: newCategories };
         });
     };
@@ -229,7 +229,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
     const selectedDistricts = newLocation.province ? DISTRICT_MAP.get(newLocation.province) || [] : [];
 
     return (
-        <Card>
+        <Card className="card-hover">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center">
@@ -276,10 +276,10 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Đã chọn: {formData.preferredCategories?.length || 0} ngành nghề
-                                {formData.preferredCategories?.length > 0 && 
-                                    formData.preferredCategories.length < 1 && 
+                                {formData.preferredCategories?.length > 0 &&
+                                    formData.preferredCategories.length < 1 &&
                                     ' (Tối thiểu 1 ngành nghề)'}
-                                {formData.preferredCategories?.length > 5 && 
+                                {formData.preferredCategories?.length > 5 &&
                                     ' (Tối đa 5 ngành nghề)'}
                             </p>
                         </div>

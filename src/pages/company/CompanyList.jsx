@@ -113,11 +113,11 @@ const CompanyList = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              
+
               <span className="text-sm text-muted-foreground">
                 Trang {currentPage} / {companiesData.meta.totalPages}
               </span>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -169,11 +169,11 @@ const CompanyCard = ({ company, onClick }) => {
               <Building className="h-10 w-10" />
             </AvatarFallback>
           </Avatar>
-          
+
           <h3 className="font-bold text-lg mb-2 line-clamp-2 hover:text-primary transition-colors">
             {company.name}
           </h3>
-          
+
           {company.industry && (
             <Badge variant="secondary" className="mb-3">
               <Briefcase className="h-3 w-3 mr-1" />
@@ -189,7 +189,7 @@ const CompanyCard = ({ company, onClick }) => {
               <span>{company.size}</span>
             </div>
           )}
-          
+
           {company.location && (
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 flex-shrink-0" />
@@ -214,14 +214,21 @@ const CompanyCard = ({ company, onClick }) => {
 const CompanyCardSkeleton = () => (
   <Card>
     <CardContent className="pt-6">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center mb-4">
         <Skeleton className="h-20 w-20 rounded-lg mb-4" />
         <Skeleton className="h-6 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-1/2 mb-4" />
-        <div className="w-full space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-        </div>
+        <Skeleton className="h-5 w-1/3 mb-3" />
+      </div>
+
+      <div className="space-y-3 mb-4">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+
+      <div className="space-y-2 mt-4 pt-4 border-t">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-2/3" />
       </div>
     </CardContent>
   </Card>

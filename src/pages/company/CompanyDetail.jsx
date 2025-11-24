@@ -100,7 +100,7 @@ const CompanyDetail = () => {
           <CardContent className="py-20">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold mb-2">Không tìm thấy công ty</h2>
+              <h2 className="text-xl font-semibold mb-2">Không tìm thấy công ty</h2>
               <p className="text-muted-foreground">
                 Công ty này không tồn tại hoặc đã bị xóa.
               </p>
@@ -128,7 +128,7 @@ const CompanyDetail = () => {
             <Card className="mb-8 overflow-hidden border-0 shadow-lg">
               {/* Cover Image */}
               <div className="h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5" />
-              
+
               <CardContent className="relative pt-0 pb-6">
                 {/* Company Logo */}
                 <div className="flex flex-col md:flex-row gap-6 -mt-16 md:-mt-12">
@@ -151,7 +151,7 @@ const CompanyDetail = () => {
                           </Badge>
                         )}
                       </div>
-                      
+
                       {/* Follow Button */}
                       <Button
                         onClick={handleFollowCompany}
@@ -182,39 +182,6 @@ const CompanyDetail = () => {
                           <Briefcase className="h-4 w-4 text-muted-foreground" />
                           <span>{jobsData.meta.totalItems} việc làm đang tuyển</span>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Contact Links */}
-                    <div className="flex flex-wrap gap-4">
-                      {companyData?.website && (
-                        <a
-                          href={companyData.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <Globe className="h-4 w-4" />
-                          Website
-                        </a>
-                      )}
-                      {companyData?.contactInfo?.email && (
-                        <a
-                          href={`mailto:${companyData.contactInfo.email}`}
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <Mail className="h-4 w-4" />
-                          Email
-                        </a>
-                      )}
-                      {companyData?.contactInfo?.phone && (
-                        <a
-                          href={`tel:${companyData.contactInfo.phone}`}
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <Phone className="h-4 w-4" />
-                          {companyData.contactInfo.phone}
-                        </a>
                       )}
                     </div>
                   </div>
@@ -251,7 +218,7 @@ const CompanyDetail = () => {
                           <Badge variant="secondary">{jobsData.meta.totalItems}</Badge>
                         )}
                       </CardTitle>
-                      
+
                       {/* Search Form */}
                       <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
                         <Input
@@ -289,7 +256,7 @@ const CompanyDetail = () => {
                               <ChevronLeft className="h-4 w-4 mr-1" />
                               Trước
                             </Button>
-                            
+
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium">
                                 Trang {currentPage}
@@ -298,7 +265,7 @@ const CompanyDetail = () => {
                                 / {jobsData.meta.totalPages}
                               </span>
                             </div>
-                            
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -379,6 +346,39 @@ const CompanyDetail = () => {
                         <p className="text-sm text-muted-foreground pl-6">{companyData.industry}</p>
                       </div>
                     )}
+
+                    {/* Contact Links */}
+                    <div className="flex flex-wrap gap-4 pt-4 border-t mt-4">
+                      {companyData?.website && (
+                        <a
+                          href={companyData.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <Globe className="h-4 w-4" />
+                          Website
+                        </a>
+                      )}
+                      {companyData?.contactInfo?.email && (
+                        <a
+                          href={`mailto:${companyData.contactInfo.email}`}
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <Mail className="h-4 w-4" />
+                          Email
+                        </a>
+                      )}
+                      {companyData?.contactInfo?.phone && (
+                        <a
+                          href={`tel:${companyData.contactInfo.phone}`}
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <Phone className="h-4 w-4" />
+                          {companyData.contactInfo.phone}
+                        </a>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -438,7 +438,7 @@ const JobCard = ({ job, onClick }) => {
             </span>
           </div>
         )}
-        
+
         {(job.minSalary || job.maxSalary) && (
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -485,22 +485,41 @@ const JobCard = ({ job, onClick }) => {
 // Skeleton Components
 const CompanyDetailSkeleton = () => (
   <div className="space-y-8">
+    {/* Company Header Card Skeleton */}
     <Card className="overflow-hidden border-0 shadow-lg">
       <div className="h-32 bg-muted" />
-      <CardContent className="pt-0 pb-6">
-        <div className="flex gap-6 -mt-16">
-          <Skeleton className="h-32 w-32 rounded-2xl" />
-          <div className="flex-1 mt-16 space-y-3">
-            <Skeleton className="h-10 w-96" />
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-full max-w-2xl" />
+      <CardContent className="relative pt-0 pb-6">
+        <div className="flex flex-col md:flex-row gap-6 -mt-16 md:-mt-12">
+          <Skeleton className="h-32 w-32 rounded-2xl border-4 border-background" />
+          <div className="flex-1 mt-16 md:mt-4 space-y-4">
+            <div className="flex flex-col md:flex-row justify-between gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64 md:w-96" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+
+            <div className="flex flex-wrap gap-6">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-5 w-40" />
+            </div>
+
+            <div className="flex gap-4">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-24" />
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
-    
+
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Left Column - Main Content Skeleton */}
       <div className="lg:col-span-2 space-y-6">
+        {/* About Company Skeleton */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <Skeleton className="h-6 w-48" />
@@ -508,12 +527,44 @@ const CompanyDetailSkeleton = () => (
           <CardContent className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </CardContent>
         </Card>
+
+        {/* Jobs Section Skeleton */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-10 w-64" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <JobListSkeleton />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Right Column - Sidebar Skeleton */}
       <div className="space-y-6">
+        {/* Map Skeleton */}
         <Skeleton className="h-64 w-full rounded-lg" />
+
+        {/* Info Card Skeleton */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i}>
+                <Skeleton className="h-5 w-24 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   </div>

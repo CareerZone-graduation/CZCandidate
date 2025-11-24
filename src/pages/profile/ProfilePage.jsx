@@ -15,6 +15,7 @@ import { ProfileCompletenessCard } from '@/components/profile/ProfileCompletenes
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
 import { CategoryUpdatePrompt } from '@/components/profile/CategoryUpdatePrompt';
 import * as profileService from '@/services/profileService';
+import { cn } from '@/lib/utils';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -57,8 +58,6 @@ const ProfilePage = () => {
     }
   });
 
-
-
   // Redirect if not authenticated
   if (!isAuthenticated) {
     navigate('/login');
@@ -68,18 +67,24 @@ const ProfilePage = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto py-8">
-          <div className="max-w-6xl mx-auto space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-64 w-full" />
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto py-8 px-4">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Banner Skeleton */}
+            <Skeleton className="h-64 w-full rounded-xl" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column Skeleton */}
+              <div className="lg:col-span-4 space-y-6">
+                <Skeleton className="h-48 w-full rounded-xl" />
+                <Skeleton className="h-64 w-full rounded-xl" />
               </div>
-              <div className="space-y-6">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
+
+              {/* Right Column Skeleton */}
+              <div className="lg:col-span-8 space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                ))}
               </div>
             </div>
           </div>
@@ -92,62 +97,61 @@ const ProfilePage = () => {
   if (isError) {
     const errorMessage = error.response?.data?.message || error.message;
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8">
-              <CardContent>
-                <div className="text-destructive mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">Có lỗi xảy ra</h3>
-                <p className="text-muted-foreground mb-4">{errorMessage}</p>
-                <Button onClick={() => refetch()} size="lg">
-                  Thử lại
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-md mx-auto text-center py-8 shadow-lg border-destructive/20">
+            <CardContent>
+              <div className="text-destructive mb-4 bg-destructive/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Có lỗi xảy ra</h3>
+              <p className="text-muted-foreground mb-6">{errorMessage}</p>
+              <Button onClick={() => refetch()} size="lg" className="w-full">
+                Thử lại
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-    return (
-    <div className="min-h-screen">
-      <div className="container mx-auto py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Profile Completion Banner */}
-          <ProfileCompletionBanner 
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      {/* Decorative Background Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/5 via-primary/5 to-transparent opacity-50" />
+        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[500px] bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-[10%] -left-[10%] w-[40%] h-[400px] bg-green-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container mx-auto px-4 pt-6 relative z-10 max-w-7xl">
+        {/* Top Alerts/Banners */}
+        <div className="space-y-4 mb-8">
+          <ProfileCompletionBanner
             profileCompleteness={profile?.profileCompleteness}
             profile={profile}
           />
-
-          {/* Category Update Prompt for existing users */}
           <CategoryUpdatePrompt profile={profile} />
+        </div>
 
-          {/* Basic Info Section */}
+        {/* Header Section (Basic Info) */}
+        <div className="mb-8">
           <BasicInfoSection
             profile={profile}
             onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
             onAvatarUpdate={(formData) => uploadAvatarMutation.mutateAsync(formData)}
           />
+        </div>
 
-          {/* Preferences Section */}
-          <div data-section="preferences">
-            <PreferencesSection
-              profile={profile}
-              onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Skills, Completeness */}
-            <div className="space-y-6">
-              {/* Profile Completeness Card */}
-              <ProfileCompletenessCard 
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Sidebar (Sticky) */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="lg:sticky lg:top-24 space-y-6">
+              <ProfileCompletenessCard
                 profileCompleteness={profile?.profileCompleteness}
                 profile={profile}
               />
@@ -156,30 +160,35 @@ const ProfilePage = () => {
                 skills={profile?.skills || []}
                 onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
               />
-            </div>
 
-            {/* Right Column - Experience, Education, Projects, Certificates */}
-            <div className="lg:col-span-2 space-y-6">
-              <ExperienceSection
-                experiences={profile?.experiences || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-
-              <EducationSection
-                educations={profile?.educations || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-
-              <ProjectsSection
-                projects={profile?.projects || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
-              />
-
-              <CertificatesSection
-                certificates={profile?.certificates || []}
-                onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+              <PreferencesSection
+                profile={profile}
+                onUpdate={(data) => updatePreferencesMutation.mutateAsync(data)}
               />
             </div>
+          </div>
+
+          {/* Right Content */}
+          <div className="lg:col-span-8 space-y-8">
+            <ExperienceSection
+              experiences={profile?.experiences || []}
+              onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+            />
+
+            <EducationSection
+              educations={profile?.educations || []}
+              onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+            />
+
+            <ProjectsSection
+              projects={profile?.projects || []}
+              onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+            />
+
+            <CertificatesSection
+              certificates={profile?.certificates || []}
+              onUpdate={(data) => updateProfileMutation.mutateAsync(data)}
+            />
           </div>
         </div>
       </div>

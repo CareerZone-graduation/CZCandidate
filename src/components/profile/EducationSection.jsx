@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Calendar, Plus, Edit3, Trash2, Save, X } from 'lucide-react';
+import { GraduationCap, Calendar, Plus, Edit3, Trash2, Save, X, MapPin, Award } from 'lucide-react';
 import { toast } from 'sonner';
 
 const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="space-y-4 p-6 border rounded-xl bg-card/50 backdrop-blur-sm shadow-sm animate-in fade-in zoom-in-95 duration-200">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="school">Trường <span className="text-destructive">*</span></Label>
@@ -18,6 +18,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             value={formData.school}
             onChange={(e) => onFormChange('school', e.target.value)}
             placeholder="VD: Đại học Bách Khoa"
+            className="bg-background"
           />
         </div>
         <div className="space-y-2">
@@ -27,6 +28,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             value={formData.major}
             onChange={(e) => onFormChange('major', e.target.value)}
             placeholder="VD: Công nghệ thông tin"
+            className="bg-background"
           />
         </div>
       </div>
@@ -39,6 +41,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             value={formData.degree}
             onChange={(e) => onFormChange('degree', e.target.value)}
             placeholder="VD: Cử nhân"
+            className="bg-background"
           />
         </div>
         <div className="space-y-2">
@@ -48,6 +51,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             value={formData.gpa}
             onChange={(e) => onFormChange('gpa', e.target.value)}
             placeholder="VD: 3.5/4.0"
+            className="bg-background"
           />
         </div>
       </div>
@@ -59,6 +63,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
           value={formData.location || ''}
           onChange={(e) => onFormChange('location', e.target.value)}
           placeholder="VD: TP. Hồ Chí Minh"
+          className="bg-background"
         />
       </div>
 
@@ -70,6 +75,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             type="date"
             value={formData.startDate}
             onChange={(e) => onFormChange('startDate', e.target.value)}
+            className="bg-background"
           />
         </div>
         <div className="space-y-2">
@@ -79,6 +85,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
             type="date"
             value={formData.endDate}
             onChange={(e) => onFormChange('endDate', e.target.value)}
+            className="bg-background"
           />
         </div>
       </div>
@@ -91,6 +98,7 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
           onChange={(e) => onFormChange('description', e.target.value)}
           placeholder="Mô tả về quá trình học tập..."
           rows={3}
+          className="bg-background resize-none"
         />
       </div>
 
@@ -102,10 +110,11 @@ const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating })
           onChange={(e) => onFormChange('honors', e.target.value)}
           placeholder="VD: Học bổng xuất sắc, Sinh viên 5 tốt..."
           rows={2}
+          className="bg-background resize-none"
         />
       </div>
 
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-2 justify-end pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
           <X className="w-4 h-4 mr-2" />
           Hủy
@@ -136,13 +145,12 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Memoized handler to prevent re-render
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
   };
 
   const handleAdd = () => {
@@ -188,7 +196,7 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
       if (isAdding) {
         updatedEducations = [...educations, formData];
       } else {
-        updatedEducations = educations.map(edu => 
+        updatedEducations = educations.map(edu =>
           edu._id === editingId ? { ...edu, ...formData } : edu
         );
       }
@@ -220,23 +228,25 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="card-hover border-none shadow-md">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <GraduationCap className="w-5 h-5 mr-2 text-primary" />
-            Học vấn
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <GraduationCap className="w-5 h-5 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold">Học vấn</h3>
           </div>
           {!isAdding && !editingId && (
-            <Button size="sm" onClick={handleAdd}>
+            <Button size="sm" onClick={handleAdd} variant="outline" className="hover:bg-primary hover:text-primary-foreground">
               <Plus className="w-4 h-4 mr-2" />
-              Thêm
+              Thêm mới
             </Button>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isAdding && <EducationForm 
+      <CardContent className="space-y-6">
+        {isAdding && <EducationForm
           formData={formData}
           onFormChange={handleFormChange}
           onCancel={handleCancel}
@@ -245,71 +255,122 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
         />}
 
         {educations.length === 0 && !isAdding ? (
-          <p className="text-muted-foreground text-center py-8">
-            Chưa có thông tin học vấn. Nhấn "Thêm" để bắt đầu.
-          </p>
-        ) : (
-          educations.map((edu) => (
-            <div key={edu._id} className="space-y-2">
-              {editingId === edu._id ? (
-                <EducationForm 
-                  formData={formData}
-                  onFormChange={handleFormChange}
-                  onCancel={handleCancel}
-                  onSave={handleSave}
-                  isUpdating={isUpdating}
-                />
-              ) : (
-                <div className="border-l-2 border-primary/20 pl-4 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground">{edu.school}</h3>
-                      <div className="text-primary font-medium mb-1">{edu.major}</div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                        <span>{edu.degree}</span>
-                        {edu.gpa && <span>GPA: {edu.gpa}</span>}
-                      </div>
-                      <div className="flex items-center text-muted-foreground text-sm mb-2">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(edu.startDate)} - {edu.endDate ? formatDate(edu.endDate) : 'Hiện tại'}
-                      </div>
-                      {edu.location && (
-                        <p className="text-sm text-muted-foreground mb-2">📍 {edu.location}</p>
-                      )}
-                      {edu.description && (
-                        <p className="text-muted-foreground mt-2">{edu.description}</p>
-                      )}
-                      {edu.honors && (
-                        <div className="mt-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">🏆 Giải thưởng:</p>
-                          <p className="text-sm text-muted-foreground">{edu.honors}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleEdit(edu)}
-                        disabled={isUpdating}
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(edu._id)}
-                        disabled={isUpdating}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+          <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
+              <GraduationCap className="w-6 h-6 text-muted-foreground" />
             </div>
-          ))
+            <p className="text-muted-foreground font-medium">
+              Chưa có thông tin học vấn
+            </p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              Thêm học vấn để nhà tuyển dụng biết về trình độ của bạn
+            </p>
+            <Button onClick={handleAdd} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm học vấn
+            </Button>
+          </div>
+        ) : (
+          <div className="relative pl-2">
+            {/* Timeline Line */}
+            <div className="absolute left-[9px] top-2 bottom-2 w-[2px] bg-border/60"></div>
+
+            <div className="space-y-8">
+              {educations.map((edu, index) => (
+                <div key={edu._id} className="relative pl-8 group">
+                  {/* Timeline Dot */}
+                  <div className="absolute left-0 top-1.5 w-5 h-5 rounded-full border-4 border-background bg-primary shadow-sm z-10 group-hover:scale-110 transition-transform"></div>
+
+                  {editingId === edu._id ? (
+                    <EducationForm
+                      formData={formData}
+                      onFormChange={handleFormChange}
+                      onCancel={handleCancel}
+                      onSave={handleSave}
+                      isUpdating={isUpdating}
+                    />
+                  ) : (
+                    <div className="group/item relative rounded-xl p-4 hover:bg-muted/40 transition-colors border border-transparent hover:border-border/50">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <h3 className="font-bold text-lg text-foreground group-hover/item:text-primary transition-colors">
+                              {edu.school}
+                            </h3>
+                            <div className="text-base font-medium text-primary mt-1">
+                              {edu.major}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center bg-muted px-2 py-1 rounded">
+                              <span className="font-medium mr-1.5">Bằng cấp:</span>
+                              {edu.degree}
+                            </div>
+                            {edu.gpa && (
+                              <div className="flex items-center bg-muted px-2 py-1 rounded">
+                                <span className="font-medium mr-1.5">GPA:</span>
+                                {edu.gpa}
+                              </div>
+                            )}
+                            <div className="flex items-center bg-muted px-2 py-1 rounded">
+                              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                              {formatDate(edu.startDate)} - {edu.endDate ? formatDate(edu.endDate) : 'Hiện tại'}
+                            </div>
+                            {edu.location && (
+                              <div className="flex items-center bg-muted px-2 py-1 rounded">
+                                <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                                {edu.location}
+                              </div>
+                            )}
+                          </div>
+
+                          {edu.description && (
+                            <p className="text-muted-foreground leading-relaxed text-sm mt-3">
+                              {edu.description}
+                            </p>
+                          )}
+
+                          {edu.honors && (
+                            <div className="mt-4 bg-muted/30 p-3 rounded-lg border border-border/50">
+                              <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center">
+                                <Award className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                                Giải thưởng & Danh hiệu
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {edu.honors}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEdit(edu)}
+                            disabled={isUpdating}
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(edu._id)}
+                            disabled={isUpdating}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
