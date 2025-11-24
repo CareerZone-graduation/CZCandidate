@@ -208,20 +208,4 @@ export const markMessagesAsRead = async (messageIds) => {
   }
 };
 
-/**
- * Update conversation context manually
- * @param {string} conversationId - Conversation ID
- * @param {Object} contextData - Context data to update
- * @returns {Promise<Object>} Updated conversation
- */
-export const updateConversationContext = async (conversationId, contextData) => {
-  try {
-    const response = await withRetry(() =>
-      apiClient.put(`/chat/conversations/${conversationId}/context`, contextData)
-    );
-    return response.data.data || response.data;
-  } catch (error) {
-    console.error('Error updating conversation context:', error);
-    throw error;
-  }
-};
+

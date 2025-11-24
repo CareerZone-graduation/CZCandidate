@@ -7,13 +7,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Send, Check, CheckCheck, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
-import { getConversationMessages, markConversationAsRead, updateConversationContext } from '@/services/chatService';
+import { getConversationMessages, markConversationAsRead } from '@/services/chatService';
 import socketService from '@/services/socketService';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { toast } from 'sonner';
-import ChatContextPicker from './ChatContextPicker';
 
 /**
  * MessageThread Component
@@ -56,7 +54,6 @@ const MessageThread = ({
 
   // Get current user from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
-  const isCandidate = currentUser?.role === 'candidate';
 
   // Fetch initial messages
   const {
@@ -594,21 +591,6 @@ const MessageThread = ({
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Handle manual context selection
-  const handleContextSelect = async (contextData) => {
-    try {
-      const updatedConversation = await updateConversationContext(conversationId, contextData);
-      toast.success('Đã đính kèm hồ sơ ứng tuyển vào cuộc trò chuyện');
-
-      if (onContextUpdate && updatedConversation.context) {
-        onContextUpdate(updatedConversation.context);
-      }
-    } catch (error) {
-      console.error('Error updating context:', error);
-      toast.error('Không thể cập nhật ngữ cảnh cuộc trò chuyện');
-    }
-  };
-
   // Loading state - only for initial load
   if (isLoading && page === 1) {
     return (
@@ -682,11 +664,6 @@ const MessageThread = ({
             <p className="text-xs text-muted-foreground">Đang nhập...</p>
           )}
         </div>
-
-        {/* Manual Context Attachment for Candidate */}
-        {isCandidate && (
-          <ChatContextPicker onSelect={handleContextSelect} recipientId={recipientId} />
-        )}
       </div>
 
       {/* Messages */}

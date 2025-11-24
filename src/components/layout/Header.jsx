@@ -355,8 +355,7 @@ const Header = () => {
                   className={cn(
                     "h-10 w-10 rounded-full relative transition-all duration-300 group",
                     "hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100/50",
-                    "hover:shadow-lg hover:shadow-blue-500/20 hover:scale-110",
-                    unreadMessagesCount > 0 && "animate-pulse"
+                    "hover:shadow-lg hover:shadow-blue-500/20 hover:scale-110"
                   )}
                 >
                   <MessageCircle className={cn(
@@ -365,10 +364,6 @@ const Header = () => {
                       ? "text-blue-600 group-hover:scale-110" 
                       : "text-muted-foreground group-hover:text-blue-600 group-hover:scale-110"
                   )} />
-                  {/* Ring effect for new messages */}
-                  {unreadMessagesCount > 0 && (
-                    <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
-                  )}
                 </Button>
 
                 {/* Unread Badge */}
@@ -376,9 +371,8 @@ const Header = () => {
                   <Badge
                     className={cn(
                       "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0",
-                      "bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold",
-                      "rounded-full border-2 border-background shadow-lg",
-                      "animate-bounce"
+                      "bg-gradient-to-br from-red-500 to-red-600 text-white text-xs font-bold",
+                      "rounded-full border-2 border-background shadow-lg"
                     )}
                   >
                     {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
@@ -541,28 +535,6 @@ const Header = () => {
                           </div>
                           <span className="font-medium">Đơn ứng tuyển</span>
                         </Link>
-
-                        <button
-                          onClick={() => {
-                            openChat();
-                            setShowUserDropdown(false);
-                          }}
-                          className={cn(
-                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group w-full text-left",
-                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
-                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
-                          )}
-                        >
-                          <div className="mr-3 p-1.5 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                            <MessageCircle className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <span className="font-medium">Tin nhắn</span>
-                          {unreadMessagesCount > 0 && (
-                            <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs animate-pulse">
-                              {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                            </Badge>
-                          )}
-                        </button>
 
                         <Link
                           to="/interviews"
