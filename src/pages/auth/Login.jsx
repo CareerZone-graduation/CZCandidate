@@ -42,7 +42,7 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [email, password, dispatch, navigate]);
+  }, [dispatch, navigate]);
 
   // Xử lý đăng nhập Google
   const handleGoogleLoginSuccess = useCallback(async (credentialResponse) => {
@@ -55,6 +55,10 @@ const Login = () => {
       console.log("✅ Google login response:", loginData);
 
       if (loginData && loginData.data && loginData.data.accessToken) {
+        if (loginData.data.role !== 'candidate') {
+          toast.error('Tài khoản này là tài khoản nhà tuyển dụng, không thể đăng nhập vào trang ứng viên.');
+          return;
+        }
         // Lưu token vào Redux store giống như đăng nhập thường
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
 
@@ -85,7 +89,7 @@ const Login = () => {
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
         {/* Multi-layer background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
-        
+
         {/* Gradient orbs */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 via-purple-400/20 to-pink-400/30 rounded-full blur-3xl"></div>
@@ -95,10 +99,10 @@ const Login = () => {
           <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-gradient-to-r from-cyan-400/25 to-blue-400/25 rounded-full blur-xl"></div>
           <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-gradient-to-l from-violet-400/25 to-purple-400/25 rounded-full blur-xl"></div>
         </div>
-        
+
         {/* Overlay gradient for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10"></div>
-        
+
         <div className="w-full max-w-md relative z-10">
           <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-xl">
             <CardHeader className="text-center pb-8 pt-10">
@@ -106,11 +110,11 @@ const Login = () => {
                 <Link to="/" className="inline-flex items-center gap-3 text-3xl font-bold text-foreground hover:opacity-80">
                   <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-lg">
                     <span className="text-white text-2xl">💼</span>
-                  </div>                
-  Career<span className="text-gradient-primary">Zone</span>
+                  </div>
+                  Career<span className="text-gradient-primary">Zone</span>
                 </Link>
               </div>
-              
+
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold text-foreground">
                   Chào mừng trở lại! 👋
@@ -127,15 +131,15 @@ const Login = () => {
                   <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="email@example.com" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                      required 
-                      disabled={isLoading} 
-                      className="pl-10 h-10" 
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-10 h-10"
                     />
                   </div>
                 </div>
@@ -149,40 +153,40 @@ const Login = () => {
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••••" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      required 
-                      disabled={isLoading} 
-                      className="pl-10 pr-10 h-10" 
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="pl-10 pr-10 h-10"
                     />
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" 
-                      onClick={() => setShowPassword(!showPassword)} 
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading}
                     >
-                      {showPassword ? 
-                        <EyeOff className="h-4 w-4 text-muted-foreground" /> : 
+                      {showPassword ?
+                        <EyeOff className="h-4 w-4 text-muted-foreground" /> :
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       }
                     </Button>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={isLoading} 
+                <Button
+                  type="submit"
+                  disabled={isLoading}
                   className="w-full h-10 bg-gradient-primary hover:bg-primary/90"
                 >
                   {isLoading ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div> 
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
                       Đang xử lý...
                     </div>
                   ) : (
