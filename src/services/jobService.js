@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 // Lấy tất cả việc làm với filter và pagination
 export const getAllJobs = async (params = {}) => {
-  const queryParams = new URLSearchParams();  
+  const queryParams = new URLSearchParams();
   if (params.search) queryParams.append('search', params.search);
   if (params.category) queryParams.append('category', params.category);
   if (params.location) queryParams.append('location', params.location);
@@ -14,7 +14,7 @@ export const getAllJobs = async (params = {}) => {
   if (params.sortBy) queryParams.append('sortBy', params.sortBy);
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
-  
+
   const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   const response = await apiClient.get(url);
   return response;
@@ -66,13 +66,13 @@ export const getAppliedJobIds = async () => {
 // Lấy danh sách đơn ứng tuyển chi tiết
 export const getMyApplications = async (params = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
   if (params.status) queryParams.append('status', params.status);
-  
+
   const url = `/candidate/my-applications${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  
+
   const response = await apiClient.get(url);
   return response.data;
 };
@@ -86,12 +86,12 @@ export const getApplicationById = async (applicationId) => {
 // Lấy danh sách công việc đã lưu
 export const getSavedJobs = async (params = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
   if (params.sortBy) queryParams.append('sortBy', params.sortBy);
   if (params.keyword) queryParams.append('keyword', params.keyword);
-  
+
   const url = `/jobs/saved/list${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   const response = await apiClient.get(url);
   return response.data;
@@ -103,7 +103,7 @@ export const getJobTitleSuggestions = async (query, limit = 10) => {
     const queryParams = new URLSearchParams();
     if (query) queryParams.append('query', query.trim());
     if (limit) queryParams.append('limit', Math.min(limit, 20)); // Giới hạn tối đa 20
-    
+
     const url = `/jobs/autocomplete/titles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get(url);
     return response.data;
@@ -122,14 +122,14 @@ export const getJobTitleSuggestions = async (query, limit = 10) => {
 export const searchJobsHybrid = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     // Required parameters
     if (params.query !== undefined && params.query !== null) {
       queryParams.append('query', params.query); // Include even if empty string
     }
     if (params.page) queryParams.append('page', params.page);
     if (params.size) queryParams.append('size', params.size);
-    
+
     // Optional filter parameters
     if (params.category) queryParams.append('category', params.category);
     if (params.type) queryParams.append('type', params.type);
@@ -139,12 +139,12 @@ export const searchJobsHybrid = async (params = {}) => {
     if (params.district) queryParams.append('district', params.district);
     if (params.minSalary) queryParams.append('minSalary', params.minSalary);
     if (params.maxSalary) queryParams.append('maxSalary', params.maxSalary);
-    
+
     // Location distance filter parameters
     if (params.latitude !== undefined && params.latitude !== null) queryParams.append('latitude', params.latitude);
     if (params.longitude !== undefined && params.longitude !== null) queryParams.append('longitude', params.longitude);
     if (params.distance) queryParams.append('distance', params.distance);
-    
+
     const url = `/jobs/search/hybrid${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     console.log('Final URL:', url);
     console.log('Query params string:', queryParams.toString());
@@ -250,7 +250,7 @@ export const getSearchStats = async (query) => {
   try {
     const queryParams = new URLSearchParams();
     if (query) queryParams.append('query', query);
-    
+
     const url = `/search/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get(url);
     return response.data;
@@ -271,13 +271,13 @@ export const getSearchStats = async (query) => {
 // Helper function để format search parameters cho URL
 export const formatSearchParams = (params) => {
   const searchParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== '') {
       searchParams.append(key, value.toString());
     }
   });
-  
+
   return searchParams.toString();
 };
 
@@ -285,7 +285,7 @@ export const formatSearchParams = (params) => {
 export const parseSearchParams = (searchString) => {
   const params = new URLSearchParams(searchString);
   const result = {};
-  
+
   for (const [key, value] of params) {
     // Convert numeric parameters
     if (['page', 'size', 'minSalary', 'maxSalary'].includes(key)) {
@@ -294,7 +294,7 @@ export const parseSearchParams = (searchString) => {
       result[key] = value || undefined;
     }
   }
-  
+
   return result;
 };
 
@@ -306,14 +306,14 @@ export const searchJobsOnMap = async (bounds) => {
     queryParams.append('sw_lng', bounds.sw_lng);
     queryParams.append('ne_lat', bounds.ne_lat);
     queryParams.append('ne_lng', bounds.ne_lng);
-    
+
     // Luôn tuân thủ giới hạn của backend (max 50)
     if (bounds.limit && bounds.limit <= 50) {
       queryParams.append('limit', bounds.limit);
     } else {
       queryParams.append('limit', '50'); // Default safe limit
     }
-    
+
     // Thêm các filters bổ sung
     if (bounds.category) queryParams.append('category', bounds.category);
     if (bounds.experience) queryParams.append('experience', bounds.experience);
@@ -321,10 +321,10 @@ export const searchJobsOnMap = async (bounds) => {
     if (bounds.workType) queryParams.append('workType', bounds.workType);
     if (bounds.province) queryParams.append('province', bounds.province);
     if (bounds.district) queryParams.append('district', bounds.district);
-    
+
     const url = `/jobs/map-search?${queryParams.toString()}`;
     const response = await apiClient.get(url);
-    
+
     // Response structure: { success: true, data: [...], meta: {...} }
     return response.data;
   } catch (error) {
@@ -343,7 +343,7 @@ export const getJobClusters = async (bounds, zoom) => {
     queryParams.append('ne_lat', bounds.ne_lat);
     queryParams.append('ne_lng', bounds.ne_lng);
     queryParams.append('zoom', zoom);
-    
+
     // Thêm các filters bổ sung
     if (bounds.category) queryParams.append('category', bounds.category);
     if (bounds.experience) queryParams.append('experience', bounds.experience);
@@ -351,10 +351,10 @@ export const getJobClusters = async (bounds, zoom) => {
     if (bounds.workType) queryParams.append('workType', bounds.workType);
     if (bounds.province) queryParams.append('province', bounds.province);
     if (bounds.district) queryParams.append('district', bounds.district);
-    
+
     const url = `/jobs/map-clusters?${queryParams.toString()}`;
     const response = await apiClient.get(url);
-    
+
     // Response structure: { success: true, data: [...] }
     // data là mảng phẳng chứa cả clusters và single jobs
     return response.data.data;
@@ -396,7 +396,7 @@ export const getJobsByCompany = async (companyId, params = {}) => {
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.sortBy) queryParams.append('sortBy', params.sortBy);
     if (params.excludeId) queryParams.append('excludeId', params.excludeId);
-    
+
     const url = `/companies/${companyId}/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get(url);
     return response.data;
@@ -404,4 +404,11 @@ export const getJobsByCompany = async (companyId, params = {}) => {
     console.error('Error fetching jobs by company:', error);
     throw error;
   }
+};
+
+
+// Phản hồi lời đề nghị (Accept/Decline)
+export const respondToOffer = async (applicationId, status) => {
+  const response = await apiClient.patch(`/candidate/my-applications/${applicationId}/respond`, { status });
+  return response.data;
 };

@@ -4,8 +4,10 @@ import { useMutation } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, X, LogOut } from 'lucide-react';
 import { updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
+import { logout } from '@/services/authService';
+import { logoutSuccess } from '@/redux/authSlice';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
 import { getErrorMessage } from '@/utils/errorHandling';
 import { OnboardingBackground } from './OnboardingBackground';
@@ -29,19 +31,19 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
-  
+
   // Sử dụng ref để track lần cuối save localStorage (tránh save quá nhiều)
   const lastSaveTimeRef = useRef(0);
   const saveTimeoutRef = useRef(null);
-  
+
   // Sử dụng ref để store stepData - tránh stale closure trong callback
   const stepDataRef = useRef(stepData);
   useEffect(() => {
     stepDataRef.current = stepData;
   }, [stepData]);
-  
+
   // Use Redux hook for onboarding status (cached) - CHỈ lấy lần đầu để init
-  const { 
+  const {
     currentStep: reduxCurrentStep,
   } = useOnboardingStatus();
 
@@ -206,7 +208,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     try {
       setSubmitError(null);
       const currentStepInfo = STEPS.find(s => s.id === localCurrentStep);
-      
+
       if (localCurrentStep < STEPS.length) {
         setLocalCurrentStep(prev => prev + 1);
         dispatch(nextStep());
@@ -214,7 +216,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           toast.info(`Đã bỏ qua bước "${currentStepInfo.name}"`);
         }
       }
-      
+
       // Kiểm tra nếu đây là bước cuối cùng (sau khi nextStep)
       if (localCurrentStep + 1 > STEPS.length) {
         try {
@@ -254,6 +256,20 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
     }
   }, [dispatch, onComplete, navigate]);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+      dispatch(logoutSuccess());
+      navigate('/login');
+      toast.success('Đăng xuất thành công');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout on error
+      dispatch(logoutSuccess());
+      navigate('/login');
+    }
+  }, [dispatch, navigate]);
+
   const handleRetryError = useCallback(() => {
     setSubmitError(null);
   }, []);
@@ -269,7 +285,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
 
   if (!currentStepInfo) {
     // Trạng thái khởi tạo hoặc lỗi, có thể hiển thị loading hoặc lỗi
-    return null; 
+    return null;
   }
 
   // Memoize child props để tránh tái tạo object mỗi lần render
@@ -288,7 +304,6 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
       <OnboardingBackground />
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
-        onClick={handleSkipAll}
       />
       <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-card rounded-2xl shadow-2xl border border-border/50 animate-in zoom-in-95 duration-300">
         {submitError && (
@@ -317,16 +332,28 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              onClick={handleSkipAll}
-              disabled={isLoading}
-              className="text-muted-foreground hover:text-foreground hover:bg-destructive/10"
-              title="Bỏ qua tất cả và hoàn thành onboarding"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Bỏ qua tất cả
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                disabled={isLoading}
+                className="text-muted-foreground hover:text-foreground hover:bg-destructive/10"
+                title="Đăng xuất"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Đăng xuất
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleSkipAll}
+                disabled={isLoading}
+                className="text-muted-foreground hover:text-foreground hover:bg-destructive/10"
+                title="Bỏ qua tất cả và hoàn thành onboarding"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Bỏ qua tất cả
+              </Button>
+            </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -334,10 +361,10 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
                 <div key={step.id} className="flex items-center flex-1">
                   <div className="flex-1 relative">
                     <div className={`h-2 rounded-full transition-all duration-500 ${step.id < localCurrentStep
-                        ? 'bg-emerald-500'
-                        : step.id === localCurrentStep
-                          ? 'bg-primary'
-                          : 'bg-muted'
+                      ? 'bg-emerald-500'
+                      : step.id === localCurrentStep
+                        ? 'bg-primary'
+                        : 'bg-muted'
                       }`}>
                       {step.id === localCurrentStep && (
                         <div className="absolute inset-0 bg-primary rounded-full animate-pulse" />
@@ -355,10 +382,10 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
                 <div
                   key={step.id}
                   className={`flex-1 text-center text-xs font-medium transition-colors duration-300 ${step.id === localCurrentStep
-                      ? 'text-primary'
-                      : step.id < localCurrentStep
-                        ? 'text-emerald-600'
-                        : 'text-muted-foreground'
+                    ? 'text-primary'
+                    : step.id < localCurrentStep
+                      ? 'text-emerald-600'
+                      : 'text-muted-foreground'
                     }`}
                 >
                   {step.name}
@@ -368,7 +395,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-          <div 
+          <div
             key={localCurrentStep}
             className="animate-in slide-in-from-right-5 duration-200"
           >

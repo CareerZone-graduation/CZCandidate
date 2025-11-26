@@ -56,13 +56,13 @@ const COMPLETENESS_ITEMS = [
 export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
   // Debug log
   console.log('ProfileCompletenessCard received:', profileCompleteness);
-  
+
   // If backend doesn't return profileCompleteness, calculate it on frontend
   let data = profileCompleteness;
-  
+
   if (!data && profile) {
     console.log('Calculating profileCompleteness on frontend (backend not ready)');
-    
+
     // Match backend logic
     const hasBasicInfo = !!(profile.fullname && profile.phone && profile.preferredLocations?.length > 0);
     const hasSkills = (profile.skills || []).length >= 3;
@@ -74,7 +74,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
     const hasAvatar = !!profile.avatar;
     const hasExperience = (profile.experiences || []).length > 0;
     const hasEducation = (profile.educations || []).length > 0;
-    
+
     data = {
       hasBasicInfo,
       hasSkills,
@@ -85,7 +85,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
       hasEducation,
       percentage: 0
     };
-    
+
     // Calculate percentage matching backend weights
     const weights = {
       hasBasicInfo: 30,
@@ -96,7 +96,7 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
       hasExperience: 5,
       hasEducation: 5
     };
-    
+
     data.percentage = Math.round(
       (data.hasBasicInfo ? weights.hasBasicInfo : 0) +
       (data.hasSkills ? weights.hasSkills : 0) +
@@ -107,14 +107,14 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
       (data.hasEducation ? weights.hasEducation : 0)
     );
   }
-  
+
   if (!data) {
     console.log('No profileCompleteness data - returning null');
     return null;
   }
 
   const { percentage = 0 } = data;
-  
+
   // Determine color based on percentage
   const getPercentageColor = (pct) => {
     if (pct >= 85) return 'text-emerald-600';
@@ -258,23 +258,31 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
                   💡 Mẹo tăng % hoàn thiện
                 </p>
                 <ul className="text-xs text-blue-800 dark:text-blue-200 mt-2 space-y-1">
-                  {!data.hasBasicInfo && (
-                    <li>• Cập nhật họ tên, số điện thoại và địa điểm làm việc</li>
-                  )}
-                  {!data.hasSkills && (
-                    <li>• Thêm ít nhất 3 kỹ năng của bạn</li>
-                  )}
-                  {!data.hasPreferences && (
-                    <li>• Thiết lập mức lương và hình thức làm việc mong muốn</li>
-                  )}
-                  {!data.hasBio && (
-                    <li>• Viết giới thiệu ngắn về bản thân</li>
-                  )}
-                  {!data.hasAvatar && (
-                    <li>• Tải lên ảnh đại diện</li>
-                  )}
-                  {percentage >= 80 && percentage < 100 && (
-                    <li>• Thêm kinh nghiệm & học vấn để nổi bật hơn</li>
+                  {data.recommendations && data.recommendations.length > 0 ? (
+                    data.recommendations.map((rec, index) => (
+                      <li key={index}>• {rec}</li>
+                    ))
+                  ) : (
+                    <>
+                      {!data.hasBasicInfo && (
+                        <li>• Cập nhật họ tên, số điện thoại và địa điểm làm việc</li>
+                      )}
+                      {!data.hasSkills && (
+                        <li>• Thêm ít nhất 3 kỹ năng của bạn</li>
+                      )}
+                      {!data.hasPreferences && (
+                        <li>• Thiết lập mức lương và hình thức làm việc mong muốn</li>
+                      )}
+                      {!data.hasBio && (
+                        <li>• Viết giới thiệu ngắn về bản thân</li>
+                      )}
+                      {!data.hasAvatar && (
+                        <li>• Tải lên ảnh đại diện</li>
+                      )}
+                      {percentage >= 80 && percentage < 100 && (
+                        <li>• Thêm kinh nghiệm & học vấn để nổi bật hơn</li>
+                      )}
+                    </>
                   )}
                 </ul>
               </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,12 +22,16 @@ import { vi } from 'date-fns/locale';
  * @param {string} props.recipientId - Recipient user ID
  * @param {string} props.recipientName - Recipient name
  * @param {string} props.recipientAvatar - Recipient avatar URL
+ * @param {Function} props.onContextUpdate - Callback when context is updated
+ * @param {boolean} props.isOnline - Whether the recipient is online
  */
 const MessageThread = ({
   conversationId,
   recipientId,
   recipientName,
-  recipientAvatar
+  recipientAvatar,
+  onContextUpdate,
+  isOnline
 }) => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
@@ -37,13 +41,13 @@ const MessageThread = ({
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const scrollAreaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const shouldScrollRef = useRef(true);
+  const isInitialLoadRef = useRef(true);
   const previousScrollHeightRef = useRef(0);
 
   const queryClient = useQueryClient();
@@ -55,14 +59,25 @@ const MessageThread = ({
   const {
     data: messagesData,
     isLoading,
+    isFetching,
     isError,
     error
   } = useQuery({
     queryKey: ['messages', conversationId, page],
-    queryFn: () => getConversationMessages(conversationId, page, 50),
+    queryFn: () => getConversationMessages(conversationId, page, 10),
     enabled: !!conversationId,
     staleTime: 30000,
   });
+
+  // Reset state when conversation changes
+  useEffect(() => {
+    setMessages([]);
+    setPage(1);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    shouldScrollRef.current = true;
+    isInitialLoadRef.current = true;
+  }, [conversationId]);
 
   // Update messages when data changes
   useEffect(() => {
@@ -83,15 +98,18 @@ const MessageThread = ({
         }
       });
 
-      // Check if there are more messages
-      setHasMore(messagesData.data.length === 50);
+      // Check if there are more messages (limit is 10)
+      setHasMore(messagesData.data.length === 10);
+      setIsLoadingMore(false);
     }
   }, [messagesData, page]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (shouldScrollRef.current && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      const behavior = isInitialLoadRef.current ? 'auto' : 'smooth';
+      messagesEndRef.current.scrollIntoView({ behavior });
+      isInitialLoadRef.current = false;
     }
   }, [messages]);
 
@@ -245,15 +263,6 @@ const MessageThread = ({
     setIsTyping(false);
   }, [conversationId, currentUser]);
 
-  // Handle user presence (online status)
-  const handleUserPresence = useCallback((data) => {
-    // Check if the presence update is for the recipient
-    if (data.userId === recipientId) {
-      console.log('[MessageThread] User presence update:', data);
-      setIsOnline(data.isOnline || data.status === 'online');
-    }
-  }, [recipientId]);
-
   // Handle reconnection - sync missed messages
   const handleReconnect = useCallback(async () => {
     console.log('[MessageThread] Socket reconnected, syncing missed messages...');
@@ -302,7 +311,6 @@ const MessageThread = ({
     socketService.onMessageRead(handleMessageRead);
     socketService.onTypingStart(handleTypingStart);
     socketService.onTypingStop(handleTypingStop);
-    socketService.onUserPresence(handleUserPresence);
     socketService.onReconnect(handleReconnect);
 
     return () => {
@@ -310,10 +318,9 @@ const MessageThread = ({
       socketService.off('onMessageRead', handleMessageRead);
       socketService.off('onTypingStart', handleTypingStart);
       socketService.off('onTypingStop', handleTypingStop);
-      socketService.off('onUserPresence', handleUserPresence);
       socketService.off('onReconnect', handleReconnect);
     };
-  }, [handleNewMessage, handleMessageRead, handleTypingStart, handleTypingStop, handleUserPresence, handleReconnect]);
+  }, [handleNewMessage, handleMessageRead, handleTypingStart, handleTypingStop, handleReconnect]);
 
   // Handle input change with typing indicator
   const handleInputChange = (e) => {
@@ -479,30 +486,49 @@ const MessageThread = ({
     const target = e.target;
     const scrollTop = target.scrollTop;
 
-    // Check if scrolled to top
-    if (scrollTop === 0 && hasMore && !isLoadingMore) {
+    // Check if scrolled to top (with some buffer)
+    if (scrollTop < 50 && hasMore && !isLoadingMore && !isFetching) {
       console.log('[MessageThread] Loading more messages...');
       setIsLoadingMore(true);
       previousScrollHeightRef.current = target.scrollHeight;
       shouldScrollRef.current = false;
 
-      // Load next page
-      setPage(prev => prev + 1);
-
+      // Load next page with 1s delay
       setTimeout(() => {
-        setIsLoadingMore(false);
-      }, 500);
+        setPage(prev => prev + 1);
+      }, 2000);
     }
-  }, [hasMore, isLoadingMore]);
+  }, [hasMore, isLoadingMore, isFetching]);
+
+  // Attach scroll listener to ScrollArea viewport
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current;
+    if (!scrollArea) return;
+
+    const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   // Restore scroll position after loading more messages
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (page > 1 && scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport && previousScrollHeightRef.current) {
         const newScrollHeight = viewport.scrollHeight;
         const scrollDiff = newScrollHeight - previousScrollHeightRef.current;
-        viewport.scrollTop = scrollDiff;
+
+        // Only adjust if new content was added (or just spinner removed)
+        if (scrollDiff >= 0) {
+          const currentScrollTop = viewport.scrollTop;
+          // If the user was at the top (loading more), keep them at the same relative message
+          // Subtract approx height of loading spinner (40px) to prevent jump
+          if (currentScrollTop < 50) {
+            viewport.scrollTop = currentScrollTop + scrollDiff - 40;
+          }
+        }
       }
     }
   }, [messages, page]);
@@ -565,8 +591,8 @@ const MessageThread = ({
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only for initial load
+  if (isLoading && page === 1) {
     return (
       <div className="flex flex-col h-full">
         {/* Header skeleton */}
@@ -614,8 +640,9 @@ const MessageThread = ({
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-background">
+      <div className="flex items-center gap-3 p-4 border-b bg-background flex-shrink-0">
         <div className="relative">
           <Avatar className="h-10 w-10">
             <AvatarImage src={recipientAvatar} alt={recipientName} />
@@ -626,7 +653,7 @@ const MessageThread = ({
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold truncate">{recipientName}</h3>
             {isOnline && (
@@ -643,7 +670,6 @@ const MessageThread = ({
       <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 p-4"
-        onScroll={handleScroll}
       >
         {/* Loading more indicator */}
         {isLoadingMore && (
@@ -737,7 +763,7 @@ const MessageThread = ({
       </ScrollArea>
 
       {/* Input area */}
-      <div className="p-4 border-t bg-background">
+      <div className="p-4 border-t bg-background flex-shrink-0">
         <div className="flex items-end gap-2">
           <Input
             value={messageInput}

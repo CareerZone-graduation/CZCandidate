@@ -2,12 +2,11 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Separator } from '../../components/ui/separator';
 import {
   FileText,
   Calendar,
@@ -21,7 +20,9 @@ import {
   ExternalLink,
   ArrowLeft,
   Download,
-  User,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { getMyApplications } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
@@ -34,7 +35,7 @@ const Applications = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const limit = 9;
+  const limit = 10; // Increased limit for list view
 
   // Query để lấy danh sách đơn ứng tuyển
   const { 
@@ -63,40 +64,35 @@ const Applications = () => {
     const statusMap = {
       'PENDING': {
         label: 'Đang chờ',
-        variant: 'secondary',
-        icon: <Hourglass className="h-4 w-4" />,
+        icon: <Hourglass className="h-3.5 w-3.5" />,
         bgColor: 'bg-yellow-50',
         textColor: 'text-yellow-700',
         borderColor: 'border-yellow-200'
       },
       'REVIEWING': {
         label: 'Đang xem xét',
-        variant: 'outline',
-        icon: <Eye className="h-4 w-4" />,
+        icon: <Eye className="h-3.5 w-3.5" />,
         bgColor: 'bg-blue-50',
         textColor: 'text-blue-700',
         borderColor: 'border-blue-200'
       },
       'INTERVIEW': {
         label: 'Phỏng vấn',
-        variant: 'default',
-        icon: <AlertCircle className="h-4 w-4" />,
+        icon: <AlertCircle className="h-3.5 w-3.5" />,
         bgColor: 'bg-purple-50',
         textColor: 'text-purple-700',
         borderColor: 'border-purple-200'
       },
       'ACCEPTED': {
         label: 'Đã chấp nhận',
-        variant: 'secondary',
-        icon: <CheckCircle className="h-4 w-4" />,
+        icon: <CheckCircle className="h-3.5 w-3.5" />,
         bgColor: 'bg-green-50',
         textColor: 'text-green-700',
         borderColor: 'border-green-200'
       },
       'REJECTED': {
         label: 'Đã từ chối',
-        variant: 'destructive',
-        icon: <XCircle className="h-4 w-4" />,
+        icon: <XCircle className="h-3.5 w-3.5" />,
         bgColor: 'bg-red-50',
         textColor: 'text-red-700',
         borderColor: 'border-red-200'
@@ -113,14 +109,12 @@ const Applications = () => {
     });
   };
 
-
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
       setCurrentPage(newPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
 
   const handleDownloadCV = (cvUrl) => {
     window.open(cvUrl, '_blank');
@@ -132,22 +126,21 @@ const Applications = () => {
 
   // Component Skeleton
   const ApplicationSkeleton = () => (
-    <Card className="mb-4">
+    <Card className="mb-4 border-0 shadow-sm">
       <CardContent className="p-6">
-        <div className="flex items-start space-x-4">
-          <Skeleton className="h-12 w-12 rounded-full" />
-          <div className="flex-1 space-y-3">
-            <div className="flex items-start justify-between">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <Skeleton className="h-16 w-16 rounded-lg shrink-0" />
+          <div className="flex-1 w-full space-y-4">
+            <div className="flex flex-col md:flex-row justify-between gap-4">
               <div className="space-y-2">
-                <Skeleton className="h-5 w-64" />
-                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
               </div>
-              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-8 w-28" />
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex gap-6">
               <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-32" />
             </div>
           </div>
         </div>
@@ -155,19 +148,25 @@ const Applications = () => {
     </Card>
   );
 
-
   // Render loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-64" />
             <Skeleton className="h-10 w-32" />
           </div>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <ApplicationSkeleton key={index} />
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <ApplicationSkeleton key={index} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -177,8 +176,8 @@ const Applications = () => {
   if (isError) {
     const errorMessage = error.response?.data?.message || error.message;
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-6">
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
           <ErrorState onRetry={refetch} message={errorMessage} />
         </div>
       </div>
@@ -186,21 +185,23 @@ const Applications = () => {
   }
 
   // Render empty state
-  if (!applications.length) {
+  if (!applications.length && selectedStatus === 'all') {
     return (
-      <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center py-12">
-            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <div className="text-center py-20 bg-white rounded-2xl border shadow-sm">
+            <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileText className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
               Chưa có đơn ứng tuyển nào
             </h3>
-            <p className="text-gray-600 mb-6">
-              Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp!
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              Bạn chưa ứng tuyển vào công việc nào. Hãy khám phá các cơ hội nghề nghiệp phù hợp với bạn ngay hôm nay!
             </p>
-            <Button onClick={() => navigate('/jobs')} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => navigate('/jobs')} size="lg" className="bg-primary hover:bg-primary/90">
               <ExternalLink className="h-4 w-4 mr-2" />
-              Tìm việc làm
+              Tìm việc làm ngay
             </Button>
           </div>
         </div>
@@ -209,260 +210,256 @@ const Applications = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Đơn ứng tuyển của tôi</h1>
-            <p className="text-gray-600">
-              Theo dõi trạng thái {totalItems} đơn ứng tuyển của bạn
+            <p className="text-gray-500 mt-1">
+              Quản lý và theo dõi trạng thái {totalItems} đơn ứng tuyển
             </p>
           </div>
         
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/dashboard')}
-          className="w-fit border-gray-300 hover:bg-gray-50"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại Dashboard
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Tổng số đơn', value: 'all', count: totalItems, icon: FileText, color: 'text-blue-600' },
-          {
-            label: 'Đang chờ',
-            value: 'PENDING',
-            count: applications.filter(app => app.status === 'PENDING').length,
-            icon: Hourglass,
-            color: 'text-yellow-600'
-          },
-          {
-            label: 'Đang xem xét',
-            value: 'REVIEWING',
-            count: applications.filter(app => app.status === 'REVIEWING').length,
-            icon: Eye,
-            color: 'text-purple-600'
-          },
-          {
-            label: 'Đã chấp nhận',
-            value: 'ACCEPTED',
-            count: applications.filter(app => app.status === 'ACCEPTED').length,
-            icon: CheckCircle,
-            color: 'text-green-600'
-          }
-        ].map((stat, index) => (
-          <Card
-            key={index}
-            className={cn(
-              "bg-white border border-gray-200 transition-all cursor-pointer",
-              selectedStatus === stat.value ? "ring-2 ring-green-500 shadow-lg" : "hover:shadow-md"
-            )}
-            onClick={() => setSelectedStatus(stat.value)}
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/dashboard')}
+            className="w-fit bg-white hover:bg-gray-50"
           >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
-                </div>
-                <stat.icon className={cn("h-8 w-8", stat.color)} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Quay lại Dashboard
+          </Button>
+        </div>
 
-      {/* Applications List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {applications.map((application) => {
-          const statusInfo = getStatusInfo(application.status);
-
-          return (
-            <Card 
-              key={application._id} 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Tổng số đơn', value: 'all', count: totalItems, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+            {
+              label: 'Đang chờ',
+              value: 'PENDING',
+              count: applications.filter(app => app.status === 'PENDING').length,
+              icon: Hourglass,
+              color: 'text-yellow-600',
+              bg: 'bg-yellow-50'
+            },
+            {
+              label: 'Đang xem xét',
+              value: 'REVIEWING',
+              count: applications.filter(app => app.status === 'REVIEWING').length,
+              icon: Eye,
+              color: 'text-purple-600',
+              bg: 'bg-purple-50'
+            },
+            {
+              label: 'Đã chấp nhận',
+              value: 'ACCEPTED',
+              count: applications.filter(app => app.status === 'ACCEPTED').length,
+              icon: CheckCircle,
+              color: 'text-green-600',
+              bg: 'bg-green-50'
+            }
+          ].map((stat, index) => (
+            <Card
+              key={index}
               className={cn(
-                "group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl cursor-pointer bg-white",
-                statusInfo.bgColor,
-                statusInfo.borderColor
+                "border transition-all cursor-pointer hover:shadow-md",
+                selectedStatus === stat.value 
+                  ? "ring-2 ring-primary border-transparent shadow-sm" 
+                  : "border-gray-200 bg-white"
               )}
-              onClick={() => handleViewDetail(application)}
+              onClick={() => setSelectedStatus(stat.value)}
             >
-              {/* Hiệu ứng highlight khi hover */}
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              
-              <CardContent className="relative p-6">
-                <div className="flex items-start space-x-4">
-                  {/* Logo công ty trong vòng tròn có shadow */}
-                  <Avatar className="h-14 w-14 shadow-md ring-2 ring-gray-200">
-                    <AvatarImage 
-                      src={application.jobSnapshot?.logo} 
-                      alt={application.jobSnapshot?.company} 
-                    />
-                    <AvatarFallback className="bg-green-100 text-green-600 font-bold">
-                      {application.jobSnapshot?.company?.charAt(0) || 'C'}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate group-hover:text-green-600 transition-colors">
-                          {application.jobSnapshot?.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 flex items-center">
-                          <Building className="h-4 w-4 mr-1" />
-                          {application.jobSnapshot?.company}
-                        </p>
-                      </div>
-
-                      {/* Badge tròn đẹp hơn */}
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm font-medium",
-                          statusInfo.textColor,
-                          statusInfo.borderColor,
-                          "bg-white/70 backdrop-blur-sm"
-                        )}
-                      >
-                        {statusInfo.icon}
-                        {statusInfo.label}
-                      </Badge>
-                    </div>
-
-                    {/* Info */}
-                    <div className="grid grid-cols-1 gap-2 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-green-600" />
-                        <span className="truncate">{application.candidateName}</span>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-green-600" />
-                        <span>Ứng tuyển: {formatDate(application.appliedAt)}</span>
-                      </div>
-                    </div>
-
-                    {/* Cover Letter Preview */}
-                    {application.coverLetter && (
-                      <div className="mb-4">
-                        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                          <p className="text-sm text-gray-600 line-clamp-2 italic">
-                            "{application.coverLetter}"
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <Separator className="my-3" />
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-xs text-gray-600">
-                        <Clock className="h-3 w-3 mr-1 text-green-600" />
-                        <span>{formatDate(application.lastStatusUpdateAt)}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {application.submittedCV && (
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadCV(application.submittedCV.path);
-                            }}
-                            className="text-xs rounded-full shadow-sm bg-gray-100 hover:bg-gray-200"
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            CV
-                          </Button>
-                        )}
-
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetail(application)
-                          }}
-                          className="rounded-full bg-green-600 hover:bg-green-700"
-                        >
-                          Chi tiết
-                          <Eye className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={cn("p-2 rounded-lg", stat.bg)}>
+                    <stat.icon className={cn("h-5 w-5", stat.color)} />
                   </div>
+                  {selectedStatus === stat.value && (
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
+                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center mt-6 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="border-gray-300 hover:bg-gray-50"
-          >
-            Trước
-          </Button>
-
-          {/* Hiển thị tối đa 5 trang, có "..." nếu nhiều */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter(page => 
-              page === 1 || 
-              page === totalPages || 
-              (page >= currentPage - 1 && page <= currentPage + 1)
-            )
-            .map((page, index, arr) => {
-              const prevPage = arr[index - 1];
-              const showDots = prevPage && page - prevPage > 1;
-
-              return (
-                <React.Fragment key={page}>
-                  {showDots && <span className="px-2">...</span>}
-                  <Button
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                    className={cn(
-                      "w-8 h-8 p-0",
-                      currentPage === page 
-                        ? "bg-green-600 hover:bg-green-700" 
-                        : "border-gray-300 hover:bg-gray-50"
-                    )}
-                  >
-                    {page}
-                  </Button>
-                </React.Fragment>
-              );
-            })}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="border-gray-300 hover:bg-gray-50"
-          >
-            Sau
-          </Button>
+          ))}
         </div>
-      )}
 
+        {/* Applications List */}
+        <div className="space-y-4">
+          {applications.length > 0 ? (
+            applications.map((application) => {
+              const statusInfo = getStatusInfo(application.status);
+              
+              return (
+                <Card 
+                  key={application._id} 
+                  className="group hover:shadow-lg transition-all duration-300 border-gray-200 cursor-pointer overflow-hidden"
+                  onClick={() => handleViewDetail(application)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                      {/* Company Logo */}
+                      <Avatar className="h-16 w-16 rounded-xl border bg-white shadow-sm shrink-0">
+                        <AvatarImage 
+                          src={application.jobSnapshot?.logo} 
+                          alt={application.jobSnapshot?.company} 
+                          className="object-contain p-1"
+                        />
+                        <AvatarFallback className="rounded-xl text-lg bg-gray-100 font-bold text-gray-500">
+                          {application.jobSnapshot?.company?.charAt(0) || 'C'}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0 w-full">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1 mb-1">
+                              {application.jobSnapshot?.title}
+                            </h3>
+                            <div className="flex items-center text-gray-500 font-medium">
+                              <Building className="h-4 w-4 mr-1.5 shrink-0" />
+                              <span className="truncate">{application.jobSnapshot?.company}</span>
+                            </div>
+                          </div>
+
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "w-fit px-3 py-1.5 rounded-full border flex items-center gap-1.5 font-medium transition-colors",
+                              statusInfo.bgColor,
+                              statusInfo.textColor,
+                              statusInfo.borderColor
+                            )}
+                          >
+                            {statusInfo.icon}
+                            <span>{statusInfo.label}</span>
+                          </Badge>
+                        </div>
+
+                        {/* Meta Info */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8 text-sm text-gray-500 mt-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                            <span>Ngày ứng tuyển: <span className="font-medium text-gray-900">{formatDate(application.appliedAt)}</span></span>
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                            <span>Cập nhật: <span className="font-medium text-gray-900">{formatDate(application.lastStatusUpdateAt)}</span></span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                          {application.submittedCV && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-gray-500 hover:text-primary hover:bg-primary/5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadCV(application.submittedCV.path);
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Tải CV
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            className="bg-primary hover:bg-primary/90 shadow-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetail(application)
+                            }}
+                          >
+                            Xem chi tiết
+                            <Eye className="h-4 w-4 ml-2" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          ) : (
+            <div className="text-center py-16 bg-white rounded-2xl border border-dashed">
+              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">
+                Không tìm thấy đơn ứng tuyển
+              </h3>
+              <p className="text-gray-500">
+                Không có đơn ứng tuyển nào phù hợp với bộ lọc hiện tại
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center mt-8 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="border-gray-200 hover:bg-gray-50"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Trước
+            </Button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => 
+                page === 1 || 
+                page === totalPages || 
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              )
+              .map((page, index, arr) => {
+                const prevPage = arr[index - 1];
+                const showDots = prevPage && page - prevPage > 1;
+
+                return (
+                  <React.Fragment key={page}>
+                    {showDots && <span className="px-2 text-gray-400">...</span>}
+                    <Button
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className={cn(
+                        "w-9 h-9 p-0 font-medium transition-all",
+                        currentPage === page 
+                          ? "bg-primary hover:bg-primary/90 shadow-sm" 
+                          : "border-gray-200 hover:bg-gray-50 text-gray-600"
+                      )}
+                    >
+                      {page}
+                    </Button>
+                  </React.Fragment>
+                );
+              })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="border-gray-200 hover:bg-gray-50"
+            >
+              Sau
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

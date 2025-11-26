@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  Clock, 
-  Video, 
-  CheckCircle, 
+import {
+  Calendar,
+  Clock,
+  Video,
+  CheckCircle,
   XCircle,
   AlertCircle,
   Search,
@@ -24,10 +24,10 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 
-import { 
-  getMyInterviews, 
+import {
+  getMyInterviews,
   checkCanJoinInterview,
-  formatInterviewTime 
+  formatInterviewTime
 } from '../../services/interviewService';
 import { toast } from 'sonner';
 
@@ -42,12 +42,12 @@ const MyInterviews = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
 
   // Fetch all interviews
-  const { 
-    data: interviewsData, 
-    isLoading, 
-    isError, 
+  const {
+    data: interviewsData,
+    isLoading,
+    isError,
     error,
-    refetch 
+    refetch
   } = useQuery({
     queryKey: ['myInterviews'],
     queryFn: () => getMyInterviews(),
@@ -76,7 +76,7 @@ const MyInterviews = () => {
   // Filter interviews based on search term
   const filterInterviews = (interviewList) => {
     if (!searchTerm) return interviewList;
-    
+
     const lowerSearch = searchTerm.toLowerCase();
     return interviewList.filter((interview) => {
       const jobSnapshot = interview.application?.jobSnapshot || {};
@@ -93,14 +93,14 @@ const MyInterviews = () => {
 
   const handleJoinInterview = (interviewId, scheduledTime) => {
     const { canJoin, reason } = checkCanJoinInterview(scheduledTime);
-    
+
     if (!canJoin) {
-      toast.error('Cannot join interview', {
+      toast.error('Không thể tham gia phỏng vấn', {
         description: reason
       });
       return;
     }
-    
+
     // Go to device test first
     navigate(`/interviews/${interviewId}/device-test`);
   };
@@ -132,8 +132,8 @@ const MyInterviews = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <ErrorState 
-          message={error?.response?.data?.message || 'Failed to load interviews'} 
+        <ErrorState
+          message={error?.response?.data?.message || 'Failed to load interviews'}
           onRetry={refetch}
         />
       </div>

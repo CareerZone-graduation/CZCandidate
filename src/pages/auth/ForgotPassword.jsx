@@ -56,7 +56,6 @@ const ForgotPassword = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi gửi email';
       setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -198,10 +197,7 @@ const ForgotPassword = () => {
           </CardTitle>
           <CardDescription className="text-gray-600">
             Nhập email của bạn để nhận liên kết đặt lại mật khẩu
-            <br />
-            <span className="text-xs text-amber-600 mt-1 block">
-              💡 Lưu ý: Nếu backend trả về token trực tiếp, chế độ phát triển sẽ hiển thị token để test
-            </span>
+
           </CardDescription>
         </CardHeader>
 

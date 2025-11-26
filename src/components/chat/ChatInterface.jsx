@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import ConversationList from './ConversationList';
 import MessageThread from './MessageThread';
+import ChatContextHeader from './ChatContextHeader';
 import socketService from '@/services/socketService';
 import { cn } from '@/lib/utils';
 import { getAccessToken } from '@/utils/token';
@@ -19,17 +20,23 @@ import { getAccessToken } from '@/utils/token';
  * @param {boolean} props.isOpen - Whether the chat interface is open
  * @param {Function} props.onClose - Callback to close the chat interface
  * @param {string} props.conversationId - Initial conversation ID to open (optional)
+ * @param {string} props.recipientId - Initial recipient ID to start conversation with (optional)
+ * @param {string} props.jobId - Optional Job ID for context attachment
  */
 const ChatInterface = ({
   isOpen,
   onClose,
-  conversationId: initialConversationId = null
+  conversationId: initialConversationId = null,
+  recipientId: initialRecipientId = null,
+  jobId = null,
+  companyName = null
 }) => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected', 'connecting', 'reconnecting', 'disconnected'
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [nextRetryDelay, setNextRetryDelay] = useState(0);
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   // Get current user and token from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
@@ -143,6 +150,24 @@ const ChatInterface = ({
       setConnectionStatus('disconnected');
     };
 
+    // Handle user presence update
+    const handleUserPresence = (data) => {
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        if (data.isOnline) {
+          newSet.add(data.userId);
+        } else {
+          newSet.delete(data.userId);
+        }
+        return newSet;
+      });
+    };
+
+    // Handle initial online users list
+    const handleOnlineUsers = (users) => {
+      setOnlineUsers(new Set(users));
+    };
+
     // Register event handlers
     socketService.onConnect(handleConnect);
     socketService.onDisconnect(handleDisconnect);
@@ -150,6 +175,13 @@ const ChatInterface = ({
     socketService.onReconnecting(handleReconnecting);
     socketService.onReconnect(handleReconnect);
     socketService.onReconnectFailed(handleReconnectFailed);
+    socketService.onUserPresence(handleUserPresence);
+    socketService.onOnlineUsers(handleOnlineUsers);
+
+    // Request online users if connected
+    if (socketService.getConnectionStatus()) {
+      socketService.getOnlineUsers();
+    }
 
     // Cleanup
     return () => {
@@ -159,23 +191,64 @@ const ChatInterface = ({
       socketService.off('onReconnecting', handleReconnecting);
       socketService.off('onReconnect', handleReconnect);
       socketService.off('onReconnectFailed', handleReconnectFailed);
+      socketService.off('onUserPresence', handleUserPresence);
+      socketService.off('onOnlineUsers', handleOnlineUsers);
     };
   }, [isOpen]);
 
   /**
-   * Handle initial conversation selection
+   * Handle initial conversation selection or creation
    */
   useEffect(() => {
-    if (!isOpen || connectionStatus !== 'connected' || !initialConversationId) {
+    if (!isOpen || connectionStatus !== 'connected' || (!initialConversationId && !initialRecipientId)) {
       return;
     }
 
-    console.log('[ChatInterface] Selecting initial conversationId:', initialConversationId);
-    setSelectedConversation({
-      _id: initialConversationId,
-    });
-    setShowMobileThread(true);
-  }, [isOpen, initialConversationId, connectionStatus]);
+    const initializeConversation = async () => {
+      // If conversationId is provided, select it
+      if (initialConversationId) {
+        console.log('[ChatInterface] Selecting initial conversationId:', initialConversationId);
+        setSelectedConversation({
+          _id: initialConversationId,
+        });
+        setShowMobileThread(true);
+        return;
+      }
+
+      // If recipientId is provided, create or get conversation
+      if (initialRecipientId) {
+        try {
+          console.log('[ChatInterface] Creating/getting conversation with recipient:', initialRecipientId);
+          const { createOrGetConversation } = await import('@/services/chatService');
+          const conversation = await createOrGetConversation(initialRecipientId, jobId);
+          console.log('[ChatInterface] Conversation created/retrieved:', conversation);
+
+          // Override name with company name if provided and role is recruiter
+          if (companyName) {
+            const otherParticipant = conversation.otherParticipant ||
+              (conversation.participant1?._id === currentUser?._id ? conversation.participant2 : conversation.participant1);
+
+            if (otherParticipant && otherParticipant.role === 'recruiter') {
+              otherParticipant.name = companyName;
+              // Also update in participants array if it exists
+              if (conversation.participants) {
+                const p = conversation.participants.find(p => p._id === otherParticipant._id);
+                if (p) p.name = companyName;
+              }
+            }
+          }
+
+          setSelectedConversation(conversation);
+          setShowMobileThread(true);
+        } catch (error) {
+          console.error('[ChatInterface] Error creating conversation:', error);
+          toast.error(error.message || 'Không thể tạo cuộc trò chuyện');
+        }
+      }
+    };
+
+    initializeConversation();
+  }, [isOpen, initialConversationId, initialRecipientId, connectionStatus, companyName, jobId]);
 
   /**
    * Handle conversation selection from list
@@ -266,7 +339,7 @@ const ChatInterface = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] bg-black/10">
       <div className="fixed inset-4 md:inset-auto md:right-4 md:bottom-4 md:top-4 md:w-[900px] md:max-w-[calc(100vw-2rem)] bg-background border rounded-lg shadow-lg flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
@@ -340,6 +413,7 @@ const ChatInterface = ({
             <ConversationList
               selectedConversationId={selectedConversation?._id}
               onConversationSelect={handleConversationSelect}
+              onlineUsers={onlineUsers}
             />
           </div>
 
@@ -374,12 +448,26 @@ const ChatInterface = ({
                   </div>
                 ) : (
                   /* Message thread */
-                  <MessageThread
-                    conversationId={selectedConversation._id}
-                    recipientId={getOtherParticipant(selectedConversation)?._id}
-                    recipientName={getOtherParticipant(selectedConversation)?.name || 'Nhà tuyển dụng'}
-                    recipientAvatar={getOtherParticipant(selectedConversation)?.avatar}
-                  />
+                  <div className="flex flex-col h-full overflow-hidden">
+                    <div className="flex-shrink-0">
+                      <ChatContextHeader context={selectedConversation.context} />
+                    </div>
+                    <div className="flex-1 min-h-0">
+                      <MessageThread
+                        conversationId={selectedConversation._id}
+                        recipientId={getOtherParticipant(selectedConversation)?._id}
+                        recipientName={getOtherParticipant(selectedConversation)?.name || 'Nhà tuyển dụng'}
+                        recipientAvatar={getOtherParticipant(selectedConversation)?.avatar}
+                        isOnline={getOtherParticipant(selectedConversation)?._id && onlineUsers.has(getOtherParticipant(selectedConversation)?._id)}
+                        onContextUpdate={(newContext) => {
+                          setSelectedConversation(prev => ({
+                            ...prev,
+                            context: newContext
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
                 )}
               </>
             ) : (

@@ -31,6 +31,7 @@ export default defineConfig({
     // https: true,       // bật https
     https: false,       // bật https
     host: 'localhost', // đảm bảo chạy localhost
+    open: true,
     port: 3000,        // giữ nguyên port hiện tại
     proxy: {
       '/api': {

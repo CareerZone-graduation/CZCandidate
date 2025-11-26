@@ -28,7 +28,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
   };
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="space-y-4 p-6 border rounded-xl bg-card/50 backdrop-blur-sm shadow-sm animate-in fade-in zoom-in-95 duration-200">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="position">Vị trí <span className="text-destructive">*</span></Label>
@@ -37,6 +37,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
             value={formData.position}
             onChange={(e) => onFormChange('position', e.target.value)}
             placeholder="VD: Senior Developer"
+            className="bg-background"
           />
         </div>
         <div className="space-y-2">
@@ -46,6 +47,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
             value={formData.company}
             onChange={(e) => onFormChange('company', e.target.value)}
             placeholder="VD: ABC Company"
+            className="bg-background"
           />
         </div>
       </div>
@@ -57,6 +59,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
           value={formData.location || ''}
           onChange={(e) => onFormChange('location', e.target.value)}
           placeholder="VD: TP. Hồ Chí Minh"
+          className="bg-background"
         />
       </div>
 
@@ -68,6 +71,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
             type="date"
             value={formData.startDate}
             onChange={(e) => onFormChange('startDate', e.target.value)}
+            className="bg-background"
           />
         </div>
         <div className="space-y-2">
@@ -78,6 +82,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
             value={formData.endDate}
             onChange={(e) => onFormChange('endDate', e.target.value)}
             disabled={formData.isCurrentJob}
+            className="bg-background"
           />
           <div className="flex items-center space-x-2 mt-2">
             <input
@@ -90,9 +95,9 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
                   onFormChange('endDate', '');
                 }
               }}
-              className="rounded border-gray-300"
+              className="rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <Label htmlFor="isCurrentJob" className="text-sm font-normal cursor-pointer">
+            <Label htmlFor="isCurrentJob" className="text-sm font-normal cursor-pointer select-none">
               Đây là công việc hiện tại
             </Label>
           </div>
@@ -107,6 +112,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
           onChange={(e) => onFormChange('description', e.target.value)}
           placeholder="Mô tả về công việc và trách nhiệm..."
           rows={3}
+          className="bg-background resize-none"
         />
       </div>
 
@@ -119,6 +125,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
                 value={achievement}
                 onChange={(e) => handleAchievementChange(index, e.target.value)}
                 placeholder="VD: Tăng doanh thu 30%"
+                className="bg-background"
               />
               <Button
                 type="button"
@@ -135,6 +142,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
             variant="outline"
             size="sm"
             onClick={handleAddAchievement}
+            className="w-full border-dashed"
           >
             <Plus className="w-4 h-4 mr-2" />
             Thêm thành tựu
@@ -142,7 +150,7 @@ const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }
         </div>
       </div>
 
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-2 justify-end pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isUpdating}>
           <X className="w-4 h-4 mr-2" />
           Hủy
@@ -172,14 +180,13 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Memoized handler to prevent re-render
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const calculateExperience = (experiences) => {
     if (!experiences || experiences.length === 0) return '0 năm';
-    
+
     let totalMonths = 0;
     experiences.forEach(exp => {
       const start = new Date(exp.startDate);
@@ -187,17 +194,17 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
       const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
       totalMonths += months;
     });
-    
+
     const years = Math.floor(totalMonths / 12);
     const months = totalMonths % 12;
-    
+
     if (years === 0) return `${months} tháng`;
     if (months === 0) return `${years} năm`;
     return `${years} năm ${months} tháng`;
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
   };
 
   const handleAdd = () => {
@@ -242,7 +249,7 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
       if (isAdding) {
         updatedExperiences = [...experiences, formData];
       } else {
-        updatedExperiences = experiences.map(exp => 
+        updatedExperiences = experiences.map(exp =>
           exp._id === editingId ? { ...exp, ...formData } : exp
         );
       }
@@ -274,26 +281,32 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="card-hover border-none shadow-md">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-primary" />
-            Kinh nghiệm làm việc
-            {experiences.length > 0 && (
-              <Badge variant="outline">{calculateExperience(experiences)}</Badge>
-            )}
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Briefcase className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Kinh nghiệm làm việc</h3>
+              {experiences.length > 0 && (
+                <p className="text-sm font-normal text-muted-foreground mt-0.5">
+                  Tổng thời gian: {calculateExperience(experiences)}
+                </p>
+              )}
+            </div>
           </div>
           {!isAdding && !editingId && (
-            <Button size="sm" onClick={handleAdd}>
+            <Button size="sm" onClick={handleAdd} variant="outline" className="hover:bg-primary hover:text-primary-foreground">
               <Plus className="w-4 h-4 mr-2" />
-              Thêm
+              Thêm mới
             </Button>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isAdding && <ExperienceForm 
+      <CardContent className="space-y-6">
+        {isAdding && <ExperienceForm
           formData={formData}
           onFormChange={handleFormChange}
           onCancel={handleCancel}
@@ -302,81 +315,122 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
         />}
 
         {experiences.length === 0 && !isAdding ? (
-          <p className="text-muted-foreground text-center py-8">
-            Chưa có kinh nghiệm làm việc. Nhấn "Thêm" để bắt đầu.
-          </p>
-        ) : (
-          experiences.map((exp) => (
-            <div key={exp._id} className="space-y-2">
-              {editingId === exp._id ? (
-                <ExperienceForm 
-                  formData={formData}
-                  onFormChange={handleFormChange}
-                  onCancel={handleCancel}
-                  onSave={handleSave}
-                  isUpdating={isUpdating}
-                />
-              ) : (
-                <div className="border-l-2 border-primary/20 pl-4 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-foreground">{exp.position}</h3>
-                      <div className="flex items-center text-primary font-medium mb-2">
-                        <Building className="w-4 h-4 mr-1" />
-                        {exp.company}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {formatDate(exp.startDate)} - {exp.endDate ? formatDate(exp.endDate) : 'Hiện tại'}
-                        </div>
-                        {exp.isCurrentJob && (
-                          <Badge variant="secondary" className="text-xs">
-                            Hiện tại
-                          </Badge>
-                        )}
-                      </div>
-                      {exp.location && (
-                        <p className="text-sm text-muted-foreground mb-2">📍 {exp.location}</p>
-                      )}
-                      {exp.description && (
-                        <p className="text-muted-foreground mt-2">{exp.description}</p>
-                      )}
-                      {exp.achievements && exp.achievements.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">🎯 Thành tựu:</p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside">
-                            {exp.achievements.map((achievement, i) => (
-                              <li key={i}>{achievement}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleEdit(exp)}
-                        disabled={isUpdating}
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(exp._id)}
-                        disabled={isUpdating}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+          <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/30">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
+              <Briefcase className="w-6 h-6 text-muted-foreground" />
             </div>
-          ))
+            <p className="text-muted-foreground font-medium">
+              Chưa có kinh nghiệm làm việc
+            </p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              Thêm kinh nghiệm để hồ sơ của bạn ấn tượng hơn
+            </p>
+            <Button onClick={handleAdd} variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm kinh nghiệm
+            </Button>
+          </div>
+        ) : (
+          <div className="relative pl-2">
+            {/* Timeline Line */}
+            <div className="absolute left-[9px] top-2 bottom-2 w-[2px] bg-border/60"></div>
+
+            <div className="space-y-8">
+              {experiences.map((exp, index) => (
+                <div key={exp._id} className="relative pl-8 group">
+                  {/* Timeline Dot */}
+                  <div className="absolute left-0 top-1.5 w-5 h-5 rounded-full border-4 border-background bg-primary shadow-sm z-10 group-hover:scale-110 transition-transform"></div>
+
+                  {editingId === exp._id ? (
+                    <ExperienceForm
+                      formData={formData}
+                      onFormChange={handleFormChange}
+                      onCancel={handleCancel}
+                      onSave={handleSave}
+                      isUpdating={isUpdating}
+                    />
+                  ) : (
+                    <div className="group/item relative rounded-xl p-4 hover:bg-muted/40 transition-colors border border-transparent hover:border-border/50">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <h3 className="font-bold text-lg text-foreground group-hover/item:text-primary transition-colors">
+                              {exp.position}
+                            </h3>
+                            <div className="flex items-center text-base font-medium text-muted-foreground mt-1">
+                              <Building className="w-4 h-4 mr-2" />
+                              {exp.company}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center bg-muted px-2 py-1 rounded">
+                              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                              {formatDate(exp.startDate)} - {exp.endDate ? formatDate(exp.endDate) : 'Hiện tại'}
+                            </div>
+                            {exp.location && (
+                              <div className="flex items-center bg-muted px-2 py-1 rounded">
+                                <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                                {exp.location}
+                              </div>
+                            )}
+                            {exp.isCurrentJob && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                                Công việc hiện tại
+                              </Badge>
+                            )}
+                          </div>
+
+                          {exp.description && (
+                            <p className="text-muted-foreground leading-relaxed text-sm mt-3">
+                              {exp.description}
+                            </p>
+                          )}
+
+                          {exp.achievements && exp.achievements.length > 0 && (
+                            <div className="mt-4 bg-muted/30 p-3 rounded-lg">
+                              <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center">
+                                🎯 Thành tựu chính
+                              </p>
+                              <ul className="space-y-1.5">
+                                {exp.achievements.map((achievement, i) => (
+                                  <li key={i} className="text-sm text-muted-foreground flex items-start">
+                                    <span className="mr-2 text-primary">•</span>
+                                    {achievement}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEdit(exp)}
+                            disabled={isUpdating}
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(exp._id)}
+                            disabled={isUpdating}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -4,11 +4,37 @@ import { Toaster } from '@/components/ui/sonner';
 import AnimatedBackground from '@/components/background/AnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ChatProvider } from '@/contexts/ChatContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
 import { Route } from 'lucide-react';
 import CVRenderOnlyPage from './pages/cv/CVRenderOnlyPage';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import TikTokPreloader from '@/components/common/TikTokPreloader';
+import ChatInterface from '@/components/chat/ChatInterface';
+import { useChat } from '@/contexts/ChatContext';
+
+function AppContent() {
+  const { isChatOpen, chatConfig, closeChat } = useChat();
+
+  return (
+    <>
+      <AnimatedBackground />
+      <AppRouter />
+      <Toaster position="top-center" richColors />
+      <ScrollToTop />
+      
+      {/* Global Chat Interface */}
+      <ChatInterface
+        isOpen={isChatOpen}
+        onClose={closeChat}
+        conversationId={chatConfig.conversationId}
+        recipientId={chatConfig.recipientId}
+        jobId={chatConfig.jobId}
+        companyName={chatConfig.companyName}
+      />
+    </>
+  );
+}
 
 function App() {
   useFirebaseMessaging();
@@ -20,10 +46,9 @@ function App() {
       {/* <TikTokPreloader minLoadTime={1500} /> */}
       <ThemeProvider>
         <BackgroundProvider>
-          <AnimatedBackground />
-          <AppRouter />
-          <Toaster position="top-center" richColors />
-          <ScrollToTop />
+          <ChatProvider>
+            <AppContent />
+          </ChatProvider>
         </BackgroundProvider>
       </ThemeProvider>
 

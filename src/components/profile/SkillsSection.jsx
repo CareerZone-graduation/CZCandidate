@@ -90,7 +90,7 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
   };
 
   return (
-    <Card>
+    <Card className="card-hover">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">
@@ -238,9 +238,9 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
                 {['Technical', 'Soft Skills', 'Language', 'Other'].map(categoryValue => {
                   const categorySkills = skills.filter(skill => skill.category === categoryValue);
                   if (categorySkills.length === 0) return null;
-                  
+
                   const categoryLabel = SKILL_CATEGORIES.find(c => c.value === categoryValue)?.label || categoryValue;
-                  
+
                   return (
                     <div key={categoryValue} className="space-y-2">
                       <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -248,7 +248,7 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
                       </h4>
                       <div className="space-y-2">
                         {categorySkills.map((skill, index) => (
-                          <div 
+                          <div
                             key={skill._id || index}
                             className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
                           >
@@ -260,7 +260,7 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
                     </div>
                   );
                 })}
-                
+
                 {/* Skills without category */}
                 {skills.filter(skill => !skill.category).length > 0 && (
                   <div className="space-y-2">
@@ -269,7 +269,7 @@ export const SkillsSection = ({ skills = [], onUpdate }) => {
                     </h4>
                     <div className="space-y-2">
                       {skills.filter(skill => !skill.category).map((skill, index) => (
-                        <div 
+                        <div
                           key={skill._id || index}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
                         >

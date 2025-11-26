@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useChat } from '@/contexts/ChatContext';
 import {
   MapPin,
   Clock,
@@ -41,6 +42,7 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
+  const { openChat } = useChat();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
@@ -131,9 +133,9 @@ const JobDetail = () => {
     try {
       setIsLoadingApplicants(true);
       setShowConfirmDialog(false);
-      
+
       const response = await getJobApplicantCount(id);
-      
+
       if (response.data.success) {
         setApplicantCount(response.data.data.applicantCount);
         setHasViewedApplicants(true);
@@ -168,7 +170,7 @@ const JobDetail = () => {
     queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
     queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
   };
-  
+
   const { mutate: toggleSaveJob } = useMutation({
     mutationFn: () => {
       return job?.isSaved ? unsaveJob(id) : saveJob(id);
@@ -211,9 +213,23 @@ const JobDetail = () => {
     toggleSaveJob();
   };
 
+  const handleMessage = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để nhắn tin.');
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+    // Open chat with recruiter
+    openChat({
+      recipientId: job.recruiterProfileId?.userId || job.recruiterProfileId,
+      jobId: job._id,
+      companyName: job.companyId?.name
+    });
+  };
+
   // Hàm handleShare đã được thay thế bằng ShareButtons component
 
-  
+
 
   const ConfirmDialog = () => {
     if (!showConfirmDialog) return null;
@@ -240,7 +256,7 @@ const JobDetail = () => {
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
               </p>
             </div>
-            
+
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
@@ -251,14 +267,14 @@ const JobDetail = () => {
             </div>
 
             <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCancelViewApplicants}
                 className="flex-1"
               >
                 Hủy
               </Button>
-              <Button 
+              <Button
                 onClick={handleConfirmViewApplicants}
                 className="flex-1 btn-gradient text-primary-foreground"
                 disabled={isLoadingApplicants}
@@ -285,27 +301,116 @@ const JobDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto py-8">
-          <div className="max-w-4xl mx-auto">
-            <Skeleton className="h-8 w-32 mb-6" />
-            <Card className="mb-6 overflow-hidden">
-              <Skeleton className="h-40 w-full" />
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-6 w-20" />
-                    <Skeleton className="h-6 w-20" />
-                    <Skeleton className="h-6 w-20" />
+        <div className="container mx-auto py-6 px-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Back Button Skeleton */}
+            <Skeleton className="h-10 w-24 mb-6" />
+
+            {/* Header Skeleton */}
+            <div className="mb-8">
+              <div className="bg-card rounded-xl shadow-sm border p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column (2/3 width) */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <Skeleton className="h-8 w-3/4" /> {/* Title */}
+                    <Skeleton className="h-6 w-1/2" /> {/* Company Name */}
+                    <Skeleton className="h-4 w-1/3" /> {/* Location */}
+                    <Skeleton className="h-8 w-40 mt-4" /> {/* Salary */}
+
+                    {/* Buttons */}
+                    <div className="flex gap-3 mt-6">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-10" />
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-32" />
+
+                  {/* Right Column (1/3 width) - Company Info */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-muted/50 rounded-lg p-4 h-full border border-transparent">
+                      <div className="flex items-center gap-4 mb-4">
+                        <Skeleton className="w-14 h-14 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-5 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-px w-full my-4" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Job Overview Skeleton */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <Skeleton className="h-7 w-48" />
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-32" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Job Description Skeleton */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <Skeleton className="h-7 w-40" />
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </CardContent>
+                </Card>
+
+                {/* Requirements Skeleton */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <Skeleton className="h-7 w-40" />
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column (Sidebar) */}
+              <div className="lg:col-span-1">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <Skeleton className="h-7 w-48" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex gap-3">
+                        <Skeleton className="w-10 h-10 rounded" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -331,14 +436,14 @@ const JobDetail = () => {
         {/* Basic Meta Tags */}
         <title>{job?.title} - {job?.company?.name || 'CareerZone'}</title>
         <meta name="description" content={jobDescription} />
-        
+
         {/* Open Graph Tags cho Facebook */}
         <meta property="og:url" content={currentUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
         <meta property="og:description" content={jobDescription} />
         <meta property="og:image" content={companyLogo} />
-        
+
         {/* Twitter Card Tags (bonus) */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${job?.title} - ${job?.company?.name || 'CareerZone'}`} />
@@ -368,6 +473,7 @@ const JobDetail = () => {
               hasViewedApplicants={hasViewedApplicants}
               isLoadingApplicants={isLoadingApplicants}
               handleViewApplicants={handleViewApplicants}
+              handleMessage={handleMessage}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -375,40 +481,40 @@ const JobDetail = () => {
               <div className="lg:col-span-2 space-y-8">
                 {/* Job Overview */}
                 <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
-                      <p className="text-foreground font-semibold">{job.location?.province}</p>
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-6">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
+                        <p className="text-foreground font-semibold">{job.location?.province}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Briefcase className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
-                      <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
-                      <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
+                        <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
-                      <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
+                        <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
                 {/* Job Description */}
                 <Card className="border-0 shadow-sm">
@@ -501,7 +607,6 @@ const JobDetail = () => {
             jobTitle={job.title}
             open={showApplyDialog}
             onOpenChange={setShowApplyDialog}
-            onSuccess={handleApplySuccess}
           />
         )}
       </div>
@@ -510,5 +615,3 @@ const JobDetail = () => {
 };
 
 export default JobDetail;
-
-
