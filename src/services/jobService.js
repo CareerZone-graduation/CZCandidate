@@ -407,3 +407,8 @@ export const getJobsByCompany = async (companyId, params = {}) => {
 };
 
 
+// Phản hồi lời đề nghị (Accept/Decline)
+export const respondToOffer = async (applicationId, status) => {
+  const response = await apiClient.patch(`/candidate/my-applications/${applicationId}/respond`, { status });
+  return response.data;
+};

@@ -104,7 +104,6 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     try {
       await applyJob(jobId, applicationData);
       toast.success('Nộp đơn ứng tuyển thành công!');
-      onSuccess();
       onOpenChange(false);
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi ứng tuyển.';

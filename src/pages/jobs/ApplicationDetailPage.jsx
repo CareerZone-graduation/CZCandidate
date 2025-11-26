@@ -1,7 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
-import { getApplicationById } from '../../services/jobService';
+import { getApplicationById, respondToOffer } from '../../services/jobService';
+import ActivityHistory from '../../components/jobs/ActivityHistory';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -50,12 +52,12 @@ const getStatusInfo = (status) => {
       borderColor: 'border-yellow-200',
       bgColor: 'bg-yellow-50',
     },
-    REVIEWING: {
-      label: 'Đang xem xét',
-      icon: <Eye className="h-4 w-4" />,
-      textColor: 'text-blue-700',
-      borderColor: 'border-blue-200',
-      bgColor: 'bg-blue-50',
+    SUITABLE: {
+      label: 'Phù hợp',
+      icon: <CheckCircle className="h-4 w-4" />,
+      textColor: 'text-green-700',
+      borderColor: 'border-green-200',
+      bgColor: 'bg-green-50',
     },
     SCHEDULED_INTERVIEW: {
       label: 'Đã xếp lịch phỏng vấn',
@@ -64,9 +66,9 @@ const getStatusInfo = (status) => {
       borderColor: 'border-cyan-200',
       bgColor: 'bg-cyan-50',
     },
-    INTERVIEW: {
-      label: 'Phỏng vấn',
-      icon: <AlertCircle className="h-4 w-4" />,
+    OFFER_SENT: {
+      label: 'Đã gửi đề nghị',
+      icon: <Star className="h-4 w-4" />,
       textColor: 'text-purple-700',
       borderColor: 'border-purple-200',
       bgColor: 'bg-purple-50',
@@ -87,34 +89,6 @@ const getStatusInfo = (status) => {
     },
   };
   return statusMap[status] || statusMap['PENDING'];
-};
-
-const getRatingInfo = (rating) => {
-  if (!rating) return null;
-  const ratingMap = {
-    SUITABLE: {
-      label: 'Phù hợp',
-      icon: <Star className="h-4 w-4" />,
-      textColor: 'text-green-700',
-      borderColor: 'border-green-200',
-      bgColor: 'bg-green-50',
-    },
-    NOT_SUITABLE: {
-      label: 'Không phù hợp',
-      icon: <XCircle className="h-4 w-4" />,
-      textColor: 'text-red-700',
-      borderColor: 'border-red-200',
-      bgColor: 'bg-red-50',
-    },
-    CONSIDERING: {
-      label: 'Đang cân nhắc',
-      icon: <Eye className="h-4 w-4" />,
-      textColor: 'text-blue-700',
-      borderColor: 'border-blue-200',
-      bgColor: 'bg-blue-50',
-    },
-  };
-  return ratingMap[rating];
 };
 
 const formatDateTime = (dateString) => {
@@ -216,6 +190,7 @@ const ApplicationDetailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const initialData = location.state?.application;
+  const [isResponding, setIsResponding] = React.useState(false);
 
   const {
     data: application,
@@ -228,6 +203,7 @@ const ApplicationDetailPage = () => {
     queryFn: () => getApplicationById(id),
     initialData: initialData,
   });
+
   if (isLoading && !initialData) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -255,8 +231,26 @@ const ApplicationDetailPage = () => {
     );
   }
 
+  const handleRespond = async (status) => {
+    if (!window.confirm(status === 'ACCEPTED'
+      ? 'Bạn có chắc chắn muốn chấp nhận lời mời làm việc này?'
+      : 'Bạn có chắc chắn muốn từ chối lời mời làm việc này?')) {
+      return;
+    }
+
+    setIsResponding(true);
+    try {
+      await respondToOffer(id, status);
+      toast.success(status === 'ACCEPTED' ? 'Đã chấp nhận lời mời!' : 'Đã từ chối lời mời.');
+      refetch();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi phản hồi.');
+    } finally {
+      setIsResponding(false);
+    }
+  };
+
   const statusInfo = getStatusInfo(application.status);
-  const ratingInfo = getRatingInfo(application.candidateRating);
   const jobSnapshot = application.jobSnapshot || {};
 
   return (
@@ -313,20 +307,7 @@ const ApplicationDetailPage = () => {
                       {statusInfo.icon}
                       {statusInfo.label}
                     </Badge>
-                    {ratingInfo && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'flex items-center gap-2 w-fit px-4 py-2 text-sm',
-                          ratingInfo.textColor,
-                          ratingInfo.borderColor,
-                          ratingInfo.bgColor,
-                        )}
-                      >
-                        {ratingInfo.icon}
-                        {ratingInfo.label}
-                      </Badge>
-                    )}
+
                   </div>
                   <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
@@ -340,6 +321,63 @@ const ApplicationDetailPage = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Offer Response Section */}
+              {(() => {
+                // Check if the latest relevant activity is OFFER_SENT or a response
+                // Sort history by timestamp descending (newest first)
+                const sortedHistory = [...(application.activityHistory || [])].sort((a, b) =>
+                  new Date(b.timestamp) - new Date(a.timestamp)
+                );
+
+                // Find the latest offer-related action
+                const latestAction = sortedHistory.find(item =>
+                  ['OFFER_SENT', 'OFFER_ACCEPTED', 'OFFER_DECLINED'].includes(item.action)
+                );
+
+                // Only show if the LATEST action is OFFER_SENT (meaning no response yet)
+                // AND the status is OFFER_SENT (double check)
+                const shouldShowResponse = application.status === 'OFFER_SENT' && latestAction?.action === 'OFFER_SENT';
+
+                if (!shouldShowResponse) return null;
+
+                return (
+                  <Card className="border-purple-200 bg-purple-50">
+                    <CardHeader>
+                      <CardTitle className="text-base text-purple-900 flex items-center gap-2">
+                        <Star className="h-5 w-5 text-purple-600" />
+                        Phản hồi lời đề nghị
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-purple-800 mb-4">
+                        Chúc mừng! Bạn đã nhận được lời mời làm việc từ <strong>{jobSnapshot.company}</strong>.
+                        Vui lòng phản hồi lời đề nghị này.
+                      </p>
+                      <div className="flex gap-3">
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                          onClick={() => handleRespond('ACCEPTED')}
+                          disabled={isResponding}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Chấp nhận
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleRespond('OFFER_DECLINED')}
+                          disabled={isResponding}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Từ chối
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Thông tin của bạn</CardTitle>
@@ -435,6 +473,9 @@ const ApplicationDetailPage = () => {
                 </DialogContent>
               </Dialog>
             )}
+
+            {/* Activity History */}
+            <ActivityHistory history={application.activityHistory} />
 
             {/* Actions */}
             <div className="flex justify-end pt-6 border-t">
