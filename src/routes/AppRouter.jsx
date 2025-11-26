@@ -46,6 +46,14 @@ import OnboardingPage from '../pages/onboarding/OnboardingPage';
 import { OnboardingPreview } from '../components/onboarding/OnboardingPreview';
 import ScrollToTopOnRouteChange from '../components/common/ScrollToTopOnRouteChange';
 
+// Support Request Pages
+import SupportRequestsPage from '../pages/support/SupportRequestsPage';
+import CreateSupportRequestPage from '../pages/support/CreateSupportRequestPage';
+import SupportRequestDetailPage from '../pages/support/SupportRequestDetailPage';
+
+// Contact Page
+import ContactPage from '../pages/contact/ContactPage';
+
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
@@ -198,6 +206,24 @@ const AppRouter = () => {
           {/* Interview room routes - no layout for full-screen experience */}
           <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
+        </Route>
+
+        {/* Protected support request routes */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/support" element={<MainLayout />}>
+            <Route index element={<SupportRequestsPage />} />
+          </Route>
+          <Route path="/support/new" element={<MainLayout />}>
+            <Route index element={<CreateSupportRequestPage />} />
+          </Route>
+          <Route path="/support/:id" element={<MainLayout />}>
+            <Route index element={<SupportRequestDetailPage />} />
+          </Route>
+        </Route>
+
+        {/* Public Contact Page */}
+        <Route path="/contact" element={<MainLayout />}>
+          <Route index element={<ContactPage />} />
         </Route>
 
         {/* Payment result routes - không cần layout */}
