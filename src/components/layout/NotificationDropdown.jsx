@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchRecentNotifications, fetchUnreadCount } from '@/redux/notificationSlice';
-import { Link } from 'react-router-dom';
+import { fetchRecentNotifications, fetchUnreadCount, markNotificationAsRead } from '@/redux/notificationSlice';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,28 +17,73 @@ import { Bell, BellRing } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
+const getNotificationLink = (notification) => {
+  const { type, entity, metadata } = notification;
 
-const NotificationDropdownItem = ({ notification }) => (
-  <DropdownMenuItem asChild>
-    <Link to={`/notifications`} className="flex items-start gap-3 p-2.5">
-       <div className="shrink-0 mt-1">
-         <BellRing size={16} className="text-primary"/>
-       </div>
-       <div className="grow">
-        <p className="font-semibold text-sm leading-tight">{notification.title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi })}
+  switch (type) {
+    case 'application':
+      return `/dashboard/applications/${entity?.id || metadata?.applicationId}`;
+    case 'interview':
+      // Candidate chỉ có trang danh sách phỏng vấn, không có trang chi tiết
+      return '/interviews';
+    case 'recommendation':
+      return '/jobs/recommended';
+    case 'profile_view':
+      return '/profile';
+    case 'job_alert':
+      return `/jobs/${entity?.id}`;
+    default:
+      return '/notifications';
+  }
+};
+
+const NotificationDropdownItem = ({ notification, onClose }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const link = getNotificationLink(notification);
+
+  const handleClick = () => {
+    if (!notification.isRead) {
+      dispatch(markNotificationAsRead(notification._id));
+    }
+    onClose();
+    navigate(link);
+  };
+
+  return (
+    <DropdownMenuItem
+      onClick={handleClick}
+      className="cursor-pointer flex items-start gap-3 p-2.5"
+    >
+      <div className="shrink-0 mt-1">
+        <BellRing size={16} className="text-primary" />
+      </div>
+      <div className="grow">
+        <p className={`text-sm leading-tight ${!notification.isRead ? 'font-bold' : 'font-medium'}`}>
+          {notification.title}
         </p>
-       </div>
-    </Link>
-  </DropdownMenuItem>
-);
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          {notification.message}
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi })}
+        </p>
+      </div>
+      {!notification.isRead && (
+        <div className="shrink-0 self-center">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+        </div>
+      )}
+    </DropdownMenuItem>
+  );
+};
 
 
 const NotificationDropdown = () => {
   const dispatch = useDispatch();
   const { recentNotifications, unreadCount, loading } = useSelector((state) => state.notifications);
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const [open, setOpen] = useState(false);
 
   // Load notifications lần đầu khi component mount
   useEffect(() => {
@@ -59,6 +104,7 @@ const NotificationDropdown = () => {
               <Skeleton className="w-4 h-4 rounded-full" />
               <div className="grow space-y-1.5">
                 <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-2 w-full" />
                 <Skeleton className="h-2 w-1/4" />
               </div>
             </div>
@@ -67,44 +113,54 @@ const NotificationDropdown = () => {
       );
     }
 
-    if (!hasUnread) {
+    if (!recentNotifications || recentNotifications.length === 0) {
       return <p className="p-4 text-center text-sm text-muted-foreground">Bạn không có thông báo mới.</p>;
     }
 
-    return recentNotifications.map(n => <NotificationDropdownItem key={n._id} notification={n} />);
+    return recentNotifications.map(n => (
+      <NotificationDropdownItem
+        key={n._id}
+        notification={n}
+        onClose={() => setOpen(false)}
+      />
+    ));
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-[1.2rem] w-[1.2rem]" />
+        <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 transition-colors">
+          <Bell className="h-5 w-5 text-muted-foreground" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold rounded-full"
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-sm border-2 border-background"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
-        <DropdownMenuLabel className="flex justify-between items-center">
-            <span>Thông báo mới</span>
-            {hasUnread && unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground">({unreadCount} chưa đọc)</span>}
+      <DropdownMenuContent className="w-80 sm:w-96" align="end">
+        <DropdownMenuLabel className="flex justify-between items-center py-3">
+          <span className="font-bold">Thông báo</span>
+          {unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{unreadCount} chưa đọc</span>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
-        <div className="max-h-80 overflow-y-auto">
-            {renderContent()}
+
+        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+          {renderContent()}
         </div>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-            <Link to="/notifications" className="flex items-center justify-center py-2">
-                Xem tất cả thông báo
-            </Link>
+          <Link
+            to="/notifications"
+            className="flex items-center justify-center py-3 text-sm font-medium text-primary hover:text-primary/80 cursor-pointer w-full"
+            onClick={() => setOpen(false)}
+          >
+            Xem tất cả thông báo
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
