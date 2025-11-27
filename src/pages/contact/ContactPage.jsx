@@ -1,141 +1,148 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useSelector } from 'react-redux';
-import { Mail, Phone, MapPin, Send, Clock, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Mail, Phone, MapPin, Send, Clock, MessageSquare, CheckCircle, Users, Briefcase } from 'lucide-react';
 import { submitContactForm } from '@/services/contactService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import AttachmentUploader from '@/components/common/AttachmentUploader';
+
+// Form validation schema - title, category và message
+const contactFormSchema = z.object({
+  title: z.string()
+    .min(5, 'Tiêu đề phải có ít nhất 5 ký tự')
+    .max(100, 'Tiêu đề không được quá 100 ký tự'),
+  category: z.string()
+    .min(1, 'Vui lòng chọn chủ đề'),
+  message: z.string()
+    .min(10, 'Tin nhắn phải có ít nhất 10 ký tự')
+    .max(500, 'Tin nhắn không được quá 500 ký tự')
+});
+
+const categories = [
+  { value: '', label: 'Chọn một chủ đề' },
+  { value: 'technical-issue', label: 'Vấn đề kỹ thuật' },
+  { value: 'account-issue', label: 'Vấn đề tài khoản' },
+  { value: 'payment-issue', label: 'Vấn đề thanh toán' },
+  { value: 'job-posting-issue', label: 'Vấn đề đăng tin' },
+  { value: 'application-issue', label: 'Vấn đề ứng tuyển' },
+  { value: 'general-inquiry', label: 'Thắc mắc chung' }
+];
 
 const ContactPage = () => {
-  // Get user info from Redux store
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    category: '',
-    message: '',
-  });
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [files, setFiles] = useState([]);
+  
+  // Get user info from Redux store
+  // Note: state.auth.user contains { user: {...}, profile: {...} }
+  const { user: authData, isAuthenticated } = useSelector((state) => state.auth);
+  const user = authData?.user; // Extract actual user object
+  const profile = authData?.profile; // Extract profile if needed
 
-  // Auto-fill form when user is logged in
-  useEffect(() => {
-    console.log('🔍 Contact Form - Checking user info...');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user object:', user);
-    
-    if (isAuthenticated && user) {
-      // User data is nested in user.user based on Redux structure
-      const userData = user.user || user;
-      const profileData = user.profile || {};
-      
-      console.log('userData:', userData);
-      console.log('profileData:', profileData);
-      
-      // Try multiple possible name fields
-      const possibleNames = [
-        userData.fullName,
-        userData.name,
-        profileData.fullName,
-        profileData.name,
-        userData.candidateProfile?.fullName,
-        // Try combining first and last name if available
-        (userData.firstName && userData.lastName) ? `${userData.firstName} ${userData.lastName}` : null,
-        (profileData.firstName && profileData.lastName) ? `${profileData.firstName} ${profileData.lastName}` : null,
-      ];
-      
-      const selectedName = possibleNames.find(n => n && n.trim()) || '';
-      
-      console.log('✅ Selected name:', selectedName);
-      console.log('✅ Selected email:', userData.email);
-      console.log('✅ Selected phone:', userData.phone || userData.phoneNumber || profileData.phone);
-      
-      setFormData((prev) => ({
-        ...prev,
-        name: selectedName,
-        email: userData.email || '',
-        phone: userData.phone || userData.phoneNumber || profileData.phone || '',
-      }));
+  const form = useForm({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      title: '',
+      category: '',
+      message: ''
     }
-  }, [isAuthenticated, user]);
+  });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field when user types
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = 'Tên phải có ít nhất 2 ký tự';
-    }
-    
-    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
-    }
-    
-    if (formData.phone && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
-    }
-    
-    if (!formData.category) {
-      newErrors.category = 'Vui lòng chọn chủ đề';
-    }
-    
-    if (!formData.message || formData.message.trim().length < 10) {
-      newErrors.message = 'Tin nhắn phải có ít nhất 10 ký tự';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
-    setShowError(false);
 
     try {
-      // Add userType to identify as candidate
-      const submitData = {
-        ...formData,
-        userType: 'candidate'
-      };
-      
-      await submitContactForm(submitData);
-      
-      setShowSuccess(true);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        category: '',
-        message: '',
-      });
+      // Check if user is authenticated
+      if (!isAuthenticated || !user?.email) {
+        toast.error('Vui lòng đăng nhập để gửi yêu cầu hỗ trợ.');
+        setIsSubmitting(false);
+        return;
+      }
 
-      // Hide success message after 5 seconds
-      setTimeout(() => setShowSuccess(false), 5000);
+      // Build submit data with user info
+      const submitData = {
+        title: data.title,
+        category: data.category,
+        message: data.message,
+        userType: 'candidate',
+        // Include user info from Redux store (user object or profile)
+        name: profile?.fullname || user?.fullName || user?.name || user?.email?.split('@')[0] || 'Ứng viên',
+        email: user?.email,
+        phone: profile?.phone || user?.phone || user?.phoneNumber || ''
+      };
+
+      // Submit with files if any
+      await submitContactForm(submitData, files);
+
+      toast.success('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 48 giờ.');
+
+      // Reset form and files
+      form.reset({
+        title: '',
+        category: '',
+        message: ''
+      });
+      setFiles([]);
     } catch (error) {
-      console.error('Contact form error:', error);
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
+      console.error('❌ Contact form error:', error);
+      console.error('Error response:', error.response?.data);
+      toast.error('Có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const contactInfo = [
+    {
+      icon: Mail,
+      title: 'Email hỗ trợ',
+      content: 'support@careerzone.vn',
+      description: 'Gửi email cho chúng tôi bất cứ lúc nào, 24/7'
+    },
+    {
+      icon: Phone,
+      title: 'Hotline hỗ trợ',
+      content: '+84 123 456 789',
+      description: 'Thứ 2 - Thứ 6: 8:00 - 18:00, Thứ 7: 8:00 - 12:00'
+    },
+    {
+      icon: MapPin,
+      title: 'Địa chỉ văn phòng',
+      content: '123 Đường ABC, Quận 1, TP.HCM',
+      description: 'Ghé thăm văn phòng của chúng tôi'
+    },
+    {
+      icon: Clock,
+      title: 'Thời gian phản hồi',
+      content: 'Trong vòng 24 giờ',
+      description: 'Cam kết phản hồi nhanh chóng trong giờ hành chính'
+    }
+  ];
+
+  const trustMetrics = [
+    {
+      icon: Users,
+      number: '50,000+',
+      label: 'Ứng viên tin tưởng sử dụng'
+    },
+    {
+      icon: Briefcase,
+      number: '10,000+',
+      label: 'Công việc được ứng tuyển thành công'
+    },
+    {
+      icon: CheckCircle,
+      number: '95%',
+      label: 'Tỷ lệ hài lòng của ứng viên'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -152,77 +159,135 @@ const ContactPage = () => {
       </div>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {/* Contact Information */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Contact Cards */}
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <div className="flex items-start space-x-4">
-                <div className="bg-primary/10 p-3 rounded-lg">
-                  <Mail className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                  <p className="text-sm text-gray-600 mb-2">Gửi email cho chúng tôi</p>
-                  <a
-                    href="mailto:support@careerzone.vn"
-                    className="text-primary hover:underline text-sm font-medium"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
+          {/* Contact Form */}
+          <Card className="shadow-xl border-0 bg-white">
+            <CardHeader className="pb-8">
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Gửi tin nhắn cho chúng tôi
+              </CardTitle>
+              <p className="text-gray-600 mt-2">
+                Điền thông tin vào form bên dưới và chúng tôi sẽ liên hệ lại với bạn sớm nhất có thể.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tiêu đề *</FormLabel>
+                        <FormControl>
+                          <input
+                            type="text"
+                            placeholder="Nhập tiêu đề yêu cầu hỗ trợ"
+                            {...field}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition bg-white h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chủ đề *</FormLabel>
+                        <FormControl>
+                          <select
+                            {...field}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition bg-white h-11"
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nội dung *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Nhập nội dung tin nhắn của bạn..."
+                            className="min-h-[120px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Tối thiểu 10 ký tự. Vui lòng mô tả chi tiết vấn đề của bạn.
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Attachments */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-900">
+                      Tệp đính kèm (Tùy chọn)
+                    </label>
+                    <AttachmentUploader
+                      files={files}
+                      onChange={setFiles}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Bạn có thể đính kèm ảnh chụp màn hình hoặc file liên quan đến vấn đề.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    disabled={isSubmitting}
                   >
-                    support@careerzone.vn
-                  </a>
-                </div>
-              </div>
-            </div>
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                        Đang gửi...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Gửi tin nhắn
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <div className="flex items-start space-x-4">
-                <div className="bg-primary/10 p-3 rounded-lg">
-                  <Phone className="h-6 w-6 text-primary" />
+          {/* Contact Information & Trust Indicators */}
+          <div className="space-y-8">
+            {/* Contact Info */}
+            <div className="grid gap-6">
+              {contactInfo.map((info, index) => (
+                <div key={index} className="flex items-start gap-4 p-6 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <info.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">{info.title}</h3>
+                    <p className="text-gray-900 font-medium mb-1">{info.content}</p>
+                    <p className="text-sm text-gray-600">{info.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Điện thoại</h3>
-                  <p className="text-sm text-gray-600 mb-2">Gọi cho chúng tôi</p>
-                  <a
-                    href="tel:+84123456789"
-                    className="text-primary hover:underline text-sm font-medium"
-                  >
-                    +84 123 456 789
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <div className="flex items-start space-x-4">
-                <div className="bg-primary/10 p-3 rounded-lg">
-                  <MapPin className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Địa chỉ</h3>
-                  <p className="text-sm text-gray-600 mb-2">Ghé thăm văn phòng</p>
-                  <p className="text-sm text-gray-700">
-                    123 Đường ABC, Quận 1<br />
-                    TP. Hồ Chí Minh, Việt Nam
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <div className="flex items-start space-x-4">
-                <div className="bg-primary/10 p-3 rounded-lg">
-                  <Clock className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Giờ làm việc</h3>
-                  <p className="text-sm text-gray-600 mb-2">Thời gian hỗ trợ</p>
-                  <p className="text-sm text-gray-700">
-                    Thứ 2 - Thứ 6: 8:00 - 18:00<br />
-                    Thứ 7: 8:00 - 12:00<br />
-                    Chủ nhật: Nghỉ
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
 
             {/* Quick Support Link */}
@@ -236,225 +301,69 @@ const ContactPage = () => {
                   </p>
                 </div>
               </div>
-              <button
-                className="w-full px-4 py-2 border border-primary text-primary rounded-md hover:bg-primary hover:text-white transition-colors"
-                onClick={() => (window.location.href = '/support')}
+              <Button
+                className="w-full border border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+                variant="outline"
+                onClick={() => navigate('/support')}
               >
                 Đi đến trang hỗ trợ
-              </button>
+              </Button>
             </div>
-          </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Gửi tin nhắn cho chúng tôi</h2>
-              <p className="text-gray-600 mb-6">
-                Điền thông tin vào form bên dưới và chúng tôi sẽ liên hệ lại với bạn sớm nhất có thể.
-              </p>
-
-              {showSuccess && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-green-900">Gửi thành công!</h3>
-                    <p className="text-sm text-green-700">Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 48 giờ.</p>
-                  </div>
+            {/* Trust Metrics */}
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+                  Tại sao chọn CareerZone?
+                </h3>
+                <div className="grid gap-6">
+                  {trustMetrics.map((metric, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <metric.icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-primary">{metric.number}</div>
+                        <div className="text-sm text-gray-700">{metric.label}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {showError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-red-900">Có lỗi xảy ra!</h3>
-                    <p className="text-sm text-red-700">Vui lòng thử lại sau hoặc liên hệ qua hotline.</p>
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {isAuthenticated && (
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <CheckCircle className="h-4 w-4 inline mr-1" />
-                      Thông tin của bạn đã được tự động điền từ tài khoản
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                      Họ và tên <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Nguyễn Văn A"
-                      required
-                      disabled={isAuthenticated}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.name ? 'border-red-500' : 'border-gray-300'
-                      } ${isAuthenticated ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    />
-                    {errors.name && (
-                      <p className="text-xs text-red-600">{errors.name}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="email@example.com"
-                      required
-                      disabled={isAuthenticated}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
-                      } ${isAuthenticated ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    />
-                    {errors.email && (
-                      <p className="text-xs text-red-600">{errors.email}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                      Số điện thoại
-                    </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="0123456789"
-                      disabled={isAuthenticated}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300'
-                      } ${isAuthenticated ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    />
-                    {errors.phone && (
-                      <p className="text-xs text-red-600">{errors.phone}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                      Chủ đề <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      required
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.category ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Chọn chủ đề</option>
-                      <option value="general">Câu hỏi chung</option>
-                      <option value="job_search">Tìm kiếm việc làm</option>
-                      <option value="cv_support">Hỗ trợ CV</option>
-                      <option value="account">Vấn đề tài khoản</option>
-                      <option value="technical">Hỗ trợ kỹ thuật</option>
-                      <option value="billing">Thanh toán & Gói dịch vụ</option>
-                      <option value="feedback">Góp ý & Phản hồi</option>
-                      <option value="other">Khác</option>
-                    </select>
-                    {errors.category && (
-                      <p className="text-xs text-red-600">{errors.category}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                    Nội dung <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Nhập nội dung tin nhắn của bạn..."
-                    rows={6}
-                    required
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${
-                      errors.message ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.message && (
-                    <p className="text-xs text-red-600">{errors.message}</p>
-                  )}
-                  <p className="text-xs text-gray-500">
-                    Tối thiểu 10 ký tự. Vui lòng mô tả chi tiết vấn đề của bạn.
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full px-4 py-3 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Đang gửi...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Gửi tin nhắn
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* FAQ Section */}
-            <div className="mt-8 bg-white rounded-lg shadow-md p-8 border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Câu hỏi thường gặp</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    Thời gian phản hồi trung bình là bao lâu?
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Chúng tôi cam kết phản hồi trong vòng 24 giờ làm việc. Các yêu cầu khẩn cấp sẽ được ưu tiên xử lý.
-                  </p>
+            <Card className="bg-white shadow-md">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Câu hỏi thường gặp</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">
+                      Thời gian phản hồi trung bình là bao lâu?
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Chúng tôi cam kết phản hồi trong vòng 24 giờ làm việc. Các yêu cầu khẩn cấp sẽ được ưu tiên xử lý.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">
+                      Tôi có thể theo dõi yêu cầu hỗ trợ của mình ở đâu?
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Bạn có thể truy cập trang <button onClick={() => navigate('/support')} className="text-primary hover:underline">Hỗ trợ</button> để xem tất cả các yêu cầu và trạng thái xử lý.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">
+                      Làm sao để liên hệ khẩn cấp?
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Vui lòng gọi hotline: <a href="tel:+84123456789" className="text-primary hover:underline">+84 123 456 789</a> trong giờ làm việc.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    Tôi có thể theo dõi yêu cầu hỗ trợ của mình ở đâu?
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Bạn có thể truy cập trang <a href="/support" className="text-primary hover:underline">Hỗ trợ</a> để xem tất cả các yêu cầu và trạng thái xử lý.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    Làm sao để liên hệ khẩn cấp?
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Vui lòng gọi hotline: <a href="tel:+84123456789" className="text-primary hover:underline">+84 123 456 789</a> trong giờ làm việc.
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
