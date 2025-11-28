@@ -1,9 +1,9 @@
- import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  fetchNotifications, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead 
+import {
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead
 } from '@/redux/notificationSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,15 +27,42 @@ import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
 import NotificationPermissionGuide from '@/components/common/NotificationPermissionGuide';
 import NotificationPermissionAlert from '@/components/common/NotificationPermissionAlert';
 
+import { useNavigate } from 'react-router-dom';
+
+const getNotificationLink = (notification) => {
+  const { type, entity, metadata } = notification;
+
+  switch (type) {
+    case 'application':
+      return `/dashboard/applications/${entity?.id || metadata?.applicationId}`;
+    case 'interview':
+      return '/interviews';
+    case 'recommendation':
+      return '/jobs/recommended';
+    case 'profile_view':
+      return '/profile';
+    case 'job_alert':
+      return `/jobs/${entity?.id}`;
+    default:
+      return null;
+  }
+};
+
 const NotificationItem = ({ notification, onMarkAsRead }) => {
+  const navigate = useNavigate();
+  const link = getNotificationLink(notification);
+
   const handleClick = () => {
     if (!notification.isRead) {
       onMarkAsRead(notification._id);
     }
+    if (link) {
+      navigate(link);
+    }
   };
 
   return (
-    <div 
+    <div
       className={cn(
         "flex items-start gap-4 p-4 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors",
         !notification.isRead && "bg-green-50"
@@ -169,10 +196,10 @@ const NotificationsPage = () => {
     return (
       <div>
         {notifications.map(notification => (
-          <NotificationItem 
-            key={notification._id} 
+          <NotificationItem
+            key={notification._id}
             notification={notification}
-            onMarkAsRead={handleMarkAsRead} 
+            onMarkAsRead={handleMarkAsRead}
           />
         ))}
       </div>
@@ -181,51 +208,51 @@ const NotificationsPage = () => {
 
   return (
     <div className="container py-8">
-        <Card className="max-w-4xl mx-auto">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl">Thông báo của bạn</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={requestPermission}
-                  >
-                      <BellPlus className="mr-2 h-4 w-4" />
-                      Bật thông báo đẩy
-                  </Button>
-                  <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleMarkAllRead}
-                      disabled={loading || (notifications && !notifications.some(n => !n.isRead))}
-                  >
-                      <CheckCheck className="mr-2 h-4 w-4" />
-                      Đánh dấu tất cả đã đọc
-                  </Button>
-                </div>
-            </CardHeader>
-            
-            {/* Permission Denied Alert */}
-            {permissionDenied && (
-              <div className="px-6 pb-4">
-                <NotificationPermissionAlert 
-                  onShowGuide={() => setShowPermissionGuide(true)}
-                />
-              </div>
-            )}
-            
-            <CardContent className="p-0">
-                {renderContent()}
-            </CardContent>
-        </Card>
-        {renderPagination()}
-        
-        {/* Permission Guide Modal */}
-        <NotificationPermissionGuide
-          isOpen={showPermissionGuide}
-          onClose={() => setShowPermissionGuide(false)}
-          onRetry={requestPermission}
-        />
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl">Thông báo của bạn</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={requestPermission}
+            >
+              <BellPlus className="mr-2 h-4 w-4" />
+              Bật thông báo đẩy
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllRead}
+              disabled={loading || (notifications && !notifications.some(n => !n.isRead))}
+            >
+              <CheckCheck className="mr-2 h-4 w-4" />
+              Đánh dấu tất cả đã đọc
+            </Button>
+          </div>
+        </CardHeader>
+
+        {/* Permission Denied Alert */}
+        {permissionDenied && (
+          <div className="px-6 pb-4">
+            <NotificationPermissionAlert
+              onShowGuide={() => setShowPermissionGuide(true)}
+            />
+          </div>
+        )}
+
+        <CardContent className="p-0">
+          {renderContent()}
+        </CardContent>
+      </Card>
+      {renderPagination()}
+
+      {/* Permission Guide Modal */}
+      <NotificationPermissionGuide
+        isOpen={showPermissionGuide}
+        onClose={() => setShowPermissionGuide(false)}
+        onRetry={requestPermission}
+      />
     </div>
   );
 };
