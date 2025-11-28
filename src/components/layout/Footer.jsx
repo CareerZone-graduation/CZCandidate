@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  
   return (
     // Sử dụng màu từ theme
     <footer className="bg-footer text-footer-foreground">
@@ -24,7 +27,9 @@ const Footer = () => {
               <li><Link to="/jobs" className="text-footer-muted hover:text-primary transition-colors">Việc làm</Link></li>
               <li><Link to="/companies" className="text-footer-muted hover:text-primary transition-colors">Công ty</Link></li>
               <li><Link to="/about" className="text-footer-muted hover:text-primary transition-colors">Về chúng tôi</Link></li>
-              <li><Link to="/contact" className="text-footer-muted hover:text-primary transition-colors">Liên hệ</Link></li>
+              {isAuthenticated && (
+                <li><Link to="/contact" className="text-footer-muted hover:text-primary transition-colors">Liên hệ</Link></li>
+              )}
             </ul>
           </div>
 

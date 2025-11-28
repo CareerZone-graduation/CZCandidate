@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   // COMMENT: Giữ nguyên toàn bộ logic state và xử lý form.
@@ -104,6 +104,15 @@ const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10"></div>
 
         <div className="w-full max-w-md relative z-10">
+          {/* Back to Landing Page Button */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 mb-4 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Quay lại trang chủ</span>
+          </Link>
+
           <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-xl">
             <CardHeader className="text-center pb-8 pt-10">
               <div className="mb-10">

@@ -156,7 +156,7 @@ const SalaryVisualization = ({
                 <YAxis 
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
-                  label={{ value: 'Triệu VND', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Triệu VNĐ', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="min" fill="hsl(var(--primary) / 0.3)" radius={[8, 8, 0, 0]} />

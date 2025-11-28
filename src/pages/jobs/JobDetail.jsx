@@ -250,7 +250,7 @@ const JobDetail = () => {
               </p>
               <div className="flex items-center justify-center space-x-2 text-lg font-semibold text-orange-600">
                 <Coins className="w-5 h-5" />
-                <span>50 xu</span>
+                <span>10 xu</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Xu sẽ được trừ từ tài khoản của bạn ngay lập tức.
@@ -287,7 +287,7 @@ const JobDetail = () => {
                 ) : (
                   <>
                     <Coins className="w-4 h-4 mr-2" />
-                    Đồng ý tiêu 50 xu
+                    Đồng ý tiêu 10 xu
                   </>
                 )}
               </Button>

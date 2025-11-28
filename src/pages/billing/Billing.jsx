@@ -79,6 +79,19 @@ const BillingPage = () => {
             </TabsList>
             
             <TabsContent value="recharge" className="mt-6">
+              {/* Gợi ý tiêu xu */}
+              <div className="mb-6 p-4 rounded-lg border border-blue-200 bg-blue-50">
+                <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  💡 Bạn có thể sử dụng xu để:
+                </h4>
+                <ul className="space-y-2 text-sm text-blue-800">
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span><strong>Xem số lượng ứng viên đã ứng tuyển công việc</strong> - 10 xu/lần xem</span>
+                  </li>
+                </ul>
+              </div>
+
               <div className="grid md:grid-cols-3 gap-8">
                 {/* Left Column: Coin Packages */}
                 <div className="md:col-span-2 space-y-4">
@@ -126,6 +139,16 @@ const BillingPage = () => {
                          className="mt-2"
                          min="1"
                       />
+                    </div>
+                  )}
+
+                  {/* Gợi ý sử dụng xu động */}
+                  {finalAmount > 0 && (
+                    <div className="pt-4 text-center text-sm text-muted-foreground italic border-t mt-4">
+                      <p className="mt-3">
+                        Với <strong className="text-primary">{finalAmount} xu</strong>, bạn có thể xem được{' '}
+                        <strong className="text-primary">{Math.floor(finalAmount / 10)} lần</strong> số lượng ứng viên đã ứng tuyển công việc.
+                      </p>
                     </div>
                   )}
                 </div>

@@ -106,7 +106,7 @@ const JobDetailHeader = ({
                                             ) : (
                                                 <>
                                                     <Eye className="w-4 h-4 mr-2" />
-                                                    Xem (50 xu)
+                                                    Xem (10 xu)
                                                 </>
                                             )}
                                         </Button>

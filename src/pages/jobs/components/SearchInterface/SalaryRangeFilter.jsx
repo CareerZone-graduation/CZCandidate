@@ -213,7 +213,7 @@ const SalaryRangeFilter = ({
             <div className="space-y-3 pt-3 border-t border-gray-200">
               <div className="space-y-1">
                 <label htmlFor="min-salary" className="text-sm font-medium text-gray-700">
-                  Lương tối thiểu (triệu VND)
+                  Lương tối thiểu (triệu VNĐ)
                 </label>
                 <input
                   id="min-salary"
@@ -231,7 +231,7 @@ const SalaryRangeFilter = ({
               </div>
               <div className="space-y-1">
                 <label htmlFor="max-salary" className="text-sm font-medium text-gray-700">
-                  Lương tối đa (triệu VND)
+                  Lương tối đa (triệu VNĐ)
                 </label>
                 <input
                   id="max-salary"

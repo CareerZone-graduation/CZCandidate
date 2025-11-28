@@ -221,9 +221,11 @@ const AppRouter = () => {
           </Route>
         </Route>
 
-        {/* Public Contact Page */}
-        <Route path="/contact" element={<MainLayout />}>
-          <Route index element={<ContactPage />} />
+        {/* Protected Contact Page - requires login */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/contact" element={<MainLayout />}>
+            <Route index element={<ContactPage />} />
+          </Route>
         </Route>
 
         {/* Payment result routes - không cần layout */}

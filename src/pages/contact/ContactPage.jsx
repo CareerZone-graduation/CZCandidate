@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Mail, Phone, MapPin, Send, Clock, MessageSquare, CheckCircle, Users, Briefcase } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Clock, MessageSquare, CheckCircle, Users, Briefcase, History, ChevronRight } from 'lucide-react';
 import { submitContactForm } from '@/services/contactService';
+import { getUserSupportRequests } from '@/services/supportRequestService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import AttachmentUploader from '@/components/common/AttachmentUploader';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 // Form validation schema - title, category và message
 const contactFormSchema = z.object({
@@ -35,16 +38,52 @@ const categories = [
   { value: 'general-inquiry', label: 'Thắc mắc chung' }
 ];
 
+const STATUS_CONFIG = {
+  pending: { label: 'Đang chờ', color: 'bg-yellow-100 text-yellow-800' },
+  'in-progress': { label: 'Đang xử lý', color: 'bg-blue-100 text-blue-800' },
+  resolved: { label: 'Đã giải quyết', color: 'bg-green-100 text-green-800' },
+  closed: { label: 'Đã đóng', color: 'bg-gray-100 text-gray-800' }
+};
+
+const CATEGORY_LABELS = {
+  'technical-issue': 'Vấn đề kỹ thuật',
+  'account-issue': 'Vấn đề tài khoản',
+  'payment-issue': 'Vấn đề thanh toán',
+  'job-posting-issue': 'Vấn đề đăng tin',
+  'application-issue': 'Vấn đề ứng tuyển',
+  'general-inquiry': 'Thắc mắc chung'
+};
+
 const ContactPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState([]);
+  const [supportHistory, setSupportHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   // Get user info from Redux store
-  // Note: state.auth.user contains { user: {...}, profile: {...} }
   const { user: authData, isAuthenticated } = useSelector((state) => state.auth);
-  const user = authData?.user; // Extract actual user object
-  const profile = authData?.profile; // Extract profile if needed
+  const user = authData?.user;
+  const profile = authData?.profile;
+
+  // Fetch support history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!isAuthenticated) return;
+      
+      setIsLoadingHistory(true);
+      try {
+        const response = await getUserSupportRequests({ limit: 5 });
+        setSupportHistory(response.data || []);
+      } catch (error) {
+        console.error('Error fetching support history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    fetchHistory();
+  }, [isAuthenticated]);
 
   const form = useForm({
     resolver: zodResolver(contactFormSchema),
@@ -366,6 +405,77 @@ const ContactPage = () => {
             </Card>
           </div>
         </div>
+
+        {/* Support History Section */}
+        {isAuthenticated && (
+          <div className="mt-12 max-w-7xl mx-auto">
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <History className="h-6 w-6 text-primary" />
+                    <CardTitle className="text-xl font-bold text-gray-900">
+                      Lịch sử yêu cầu hỗ trợ
+                    </CardTitle>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/support')}
+                    className="text-primary border-primary hover:bg-primary hover:text-white"
+                  >
+                    Xem tất cả
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingHistory ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : supportHistory.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>Bạn chưa có yêu cầu hỗ trợ nào</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {supportHistory.map((request) => (
+                      <div
+                        key={request._id}
+                        onClick={() => navigate(`/support/${request._id}`)}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {request.subject}
+                            </h4>
+                            {request.hasUnreadAdminResponse && (
+                              <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-500">
+                            <span>{CATEGORY_LABELS[request.category] || request.category}</span>
+                            <span>•</span>
+                            <span>{format(new Date(request.createdAt), 'dd/MM/yyyy', { locale: vi })}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 ml-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_CONFIG[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                            {STATUS_CONFIG[request.status]?.label || request.status}
+                          </span>
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

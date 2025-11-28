@@ -184,7 +184,7 @@ const SalaryRangeSlider = ({
           <div className="grid grid-cols-2 gap-3 px-3">
             <div className="space-y-1">
               <Label htmlFor="manual-min" className="text-xs text-muted-foreground">
-                Từ (triệu VND)
+                Từ (triệu VNĐ)
               </Label>
               <Input
                 id="manual-min"
@@ -200,7 +200,7 @@ const SalaryRangeSlider = ({
             </div>
             <div className="space-y-1">
               <Label htmlFor="manual-max" className="text-xs text-muted-foreground">
-                Đến (triệu VND)
+                Đến (triệu VNĐ)
               </Label>
               <Input
                 id="manual-max"
