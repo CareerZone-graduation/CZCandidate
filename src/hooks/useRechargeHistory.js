@@ -12,13 +12,21 @@ export const useRechargeHistory = () => {
     totalPages: 0
   });
 
-  const fetchHistory = async (page = 1, limit = 10) => {
+  const fetchHistory = async (page = 1, limit = 10, append = false) => {
     setLoading(true);
     try {
       const response = await getRechargeHistory({ page, limit });
-      
+
       if (response.success) {
-        setHistory(response.data);
+        if (append) {
+          setHistory(prev => {
+            const existingIds = new Set(prev.map(item => item._id));
+            const newItems = response.data.filter(item => !existingIds.has(item._id));
+            return [...prev, ...newItems];
+          });
+        } else {
+          setHistory(response.data);
+        }
         setPagination({
           page: response.meta.page,
           limit: response.meta.limit,
@@ -38,12 +46,12 @@ export const useRechargeHistory = () => {
 
   const loadMore = () => {
     if (pagination.page < pagination.totalPages) {
-      fetchHistory(pagination.page + 1, pagination.limit);
+      fetchHistory(pagination.page + 1, pagination.limit, true);
     }
   };
 
   const refresh = () => {
-    fetchHistory(1, pagination.limit);
+    fetchHistory(1, pagination.limit, false);
   };
 
   useEffect(() => {
