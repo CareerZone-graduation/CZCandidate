@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, Eye, Download, X } from 'lucide-react';
+import { ArrowLeft, Paperclip, Eye, Download, X, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import MessageThread from '../../components/support/MessageThread';
-import { getSupportRequestById } from '../../services/supportRequestService';
+import AttachmentUploader from '../../components/common/AttachmentUploader';
+import {
+  getSupportRequestById,
+  addFollowUpMessage
+} from '../../services/supportRequestService';
 
 const STATUS_CONFIG = {
   pending: { label: 'Đang chờ', color: 'bg-yellow-100 text-yellow-800' },
@@ -33,12 +38,39 @@ const CATEGORY_LABELS = {
 const SupportRequestDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [previewImage, setPreviewImage] = useState(null);
+  const [message, setMessage] = useState('');
+  const [files, setFiles] = useState([]);
+  const [showAttachments, setShowAttachments] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['supportRequest', id],
     queryFn: () => getSupportRequestById(id)
   });
+
+  const mutation = useMutation({
+    mutationFn: () => addFollowUpMessage(id, message, files),
+    onSuccess: () => {
+      toast.success('Tin nhắn đã được gửi');
+      setMessage('');
+      setFiles([]);
+      setShowAttachments(false);
+      queryClient.invalidateQueries(['supportRequest', id]);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!message.trim()) {
+      toast.error('Vui lòng nhập nội dung tin nhắn');
+      return;
+    }
+    mutation.mutate();
+  };
 
   if (isLoading) {
     return (
@@ -128,49 +160,72 @@ const SupportRequestDetailPage = () => {
           )}
         </div>
 
-        {/* Admin Responses - Read Only */}
+        {/* Messages Thread */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Phản hồi từ Admin</h2>
-          {request?.adminResponses && request.adminResponses.length > 0 ? (
-            <div className="space-y-4">
-              {request.adminResponses.map((response, index) => (
-                <div key={index} className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-blue-900">{response.adminName}</span>
-                    <span className="text-sm text-gray-500">
-                      {format(new Date(response.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 whitespace-pre-wrap">{response.response}</p>
-                  {response.statusChange && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      Trạng thái: {STATUS_CONFIG[response.statusChange.from]?.label} → {STATUS_CONFIG[response.statusChange.to]?.label}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">Chưa có phản hồi từ admin</p>
-          )}
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b">
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <h2 className="text-lg font-semibold text-gray-900">Lịch sử tin nhắn</h2>
+          </div>
+          <MessageThread
+            messages={request?.messages || []}
+            adminResponses={request?.adminResponses || []}
+          />
         </div>
 
-        {/* Messages Thread - Read Only */}
-        {request?.messages && request.messages.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Lịch sử tin nhắn</h2>
-            <MessageThread
-              messages={request.messages}
-              adminResponses={[]}
-              currentUserId={request?.requester?.userId}
-            />
+        {/* Follow-up Form */}
+        {(request?.status === 'pending' || request?.status === 'in-progress') && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Thêm tin nhắn
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                placeholder="Nhập tin nhắn của bạn..."
+                disabled={mutation.isPending}
+              />
+
+              {showAttachments && (
+                <AttachmentUploader files={files} onChange={setFiles} />
+              )}
+
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowAttachments(!showAttachments)}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                >
+                  <Paperclip className="w-5 h-5" />
+                  <span>{showAttachments ? 'Ẩn' : 'Đính kèm tệp'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={mutation.isPending || !message.trim()}
+                  className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-5 h-5" />
+                  <span>
+                    {mutation.isPending ? 'Đang gửi...' : 'Gửi tin nhắn'}
+                  </span>
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
-        {/* Notice - No messaging allowed */}
-        <div className="bg-gray-100 rounded-lg p-4 text-center text-gray-600">
-          <p>Nếu bạn cần hỗ trợ thêm, vui lòng tạo yêu cầu hỗ trợ mới tại trang <button onClick={() => navigate('/contact')} className="text-primary hover:underline font-medium">Liên hệ</button></p>
-        </div>
+        {request?.status !== 'pending' && request?.status !== 'in-progress' && (
+          <div className="bg-gray-100 rounded-lg p-4 text-center text-gray-600">
+            Yêu cầu này đã được{' '}
+            {request?.status === 'resolved' ? 'giải quyết' : 'đóng'}. Bạn không
+            thể thêm tin nhắn mới.
+          </div>
+        )}
       </div>
 
       {/* Image Preview Modal */}
