@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ const STEPS = [
 export const OnboardingWrapper = ({ children, onComplete }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
@@ -259,16 +260,18 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const handleLogout = useCallback(async () => {
     try {
       await logout();
+      queryClient.clear();
       dispatch(logoutSuccess());
       navigate('/login');
       toast.success('Đăng xuất thành công');
     } catch (error) {
       console.error('Logout error:', error);
       // Force logout on error
+      queryClient.clear();
       dispatch(logoutSuccess());
       navigate('/login');
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, queryClient]);
 
   const handleRetryError = useCallback(() => {
     setSubmitError(null);

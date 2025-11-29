@@ -6,6 +6,7 @@ import { fetchUser } from '../redux/authSlice';
 // Layouts
 import MainLayout from '../components/layout/MainLayout';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import ProfileLayout from '../components/layout/ProfileLayout';
 
 // Pages
 import HomePage from '../components/HomePage';
@@ -23,6 +24,9 @@ import ViewHistory from '../pages/jobs/ViewHistory';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
 import Profile from '../pages/profile/ProfilePage';
+import WorkPreferences from '../pages/profile/WorkPreferences';
+import ProfilePrivacySettings from '../pages/profile/ProfilePrivacySettings';
+import SecuritySettings from '../pages/profile/SecuritySettings';
 import NotificationsPage from '../pages/notification/NotificationsPage.jsx';
 import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
@@ -179,8 +183,13 @@ const AppRouter = () => {
         </Route>
         {/* Protected profile routes - now use standard protected route */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-          <Route path="/profile" element={<MainLayout />}>
-            <Route index element={<Profile />} />
+          <Route element={<MainLayout />}>
+            <Route path="/profile" element={<ProfileLayout />}>
+              <Route index element={<Profile />} />
+              <Route path="work-preferences" element={<WorkPreferences />} />
+              <Route path="privacy" element={<ProfilePrivacySettings />} />
+              <Route path="security" element={<SecuritySettings />} />
+            </Route>
           </Route>
         </Route>
 
