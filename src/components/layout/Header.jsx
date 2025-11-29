@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -57,6 +58,7 @@ import NotificationDropdown from './NotificationDropdown';
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { unreadCount: notificationCount } = useSelector((state) => state.notifications);
   const isHeaderWhite = useHeaderTheme(500); // Khoảng 2/3 màn hình
@@ -177,6 +179,8 @@ const Header = () => {
     } catch (error) {
       console.error("Logout failed", error);
     } finally {
+      // Clear React Query cache để tránh data user cũ bị giữ lại
+      queryClient.clear();
       dispatch(clearNotifications());
       dispatch(logoutSuccess());
       setShowUserDropdown(false);

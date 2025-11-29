@@ -52,6 +52,16 @@ export const forgotPassword = async (email) => {
   return response.data;
 };
 
+/**
+ * Change password for authenticated user
+ * @param {{ currentPassword: string, newPassword: string }} passwords
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const changePassword = async (passwords) => {
+  const response = await apiClient.patch('/auth/change-password', passwords);
+  return response.data;
+};
+
 export const resetPassword = async (token, newPassword) => {
   console.log('Reset password request:', { token, password: newPassword }); // Debug log
 

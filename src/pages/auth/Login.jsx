@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { loginSuccess, fetchUser } from '@/redux/authSlice';
+import { loginSuccess, fetchUser, logoutSuccess } from '@/redux/authSlice';
 import * as authService from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,11 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Ensure any stale auth state is cleared when visiting login page
+  useEffect(() => {
+    dispatch(logoutSuccess());
+  }, [dispatch]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -42,7 +47,7 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, email, password]);
 
   // Xử lý đăng nhập Google
   const handleGoogleLoginSuccess = useCallback(async (credentialResponse) => {
