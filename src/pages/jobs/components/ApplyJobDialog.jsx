@@ -19,10 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { applyJob } from '@/services/jobService';
 import { getCurrentUserProfile } from '@/services/profileService';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { getCvs } from '@/services/api';
+import { AlertCircle, Loader2, FileUp, FileText } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -37,6 +39,7 @@ import { ErrorState } from '@/components/common/ErrorState';
  * }} props
  */
 export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess }) => {
+  const [cvSource, setCvSource] = useState('uploaded'); // 'uploaded' or 'template'
   const [selectedCv, setSelectedCv] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
   const [candidateName, setCandidateName] = useState('');
@@ -45,21 +48,42 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  // Fetch user profile (includes uploaded CVs)
   const {
     data: profileData,
-    isLoading,
-    isError,
-    error: queryError,
-    refetch,
+    isLoading: isLoadingProfile,
+    isError: isProfileError,
+    error: profileQueryError,
+    refetch: refetchProfile,
   } = useQuery({
     queryKey: ['currentUserProfile'],
     queryFn: getCurrentUserProfile,
-    enabled: open, // Chỉ fetch khi dialog được mở
+    enabled: open,
+  });
+
+  // Fetch template CVs
+  const {
+    data: templateCvsData,
+    isLoading: isLoadingTemplateCvs,
+    isError: isTemplateCvsError,
+  } = useQuery({
+    queryKey: ['templateCvs'],
+    queryFn: getCvs,
+    enabled: open,
   });
 
   const userProfile = profileData?.data?.profile;
   const user = profileData?.data?.user;
-  const cvs = useMemo(() => userProfile?.cvs || [], [userProfile?.cvs]);
+  const uploadedCvs = useMemo(() => userProfile?.cvs || [], [userProfile?.cvs]);
+  const templateCvs = useMemo(() => templateCvsData?.data || [], [templateCvsData?.data]);
+
+  const isLoading = isLoadingProfile || isLoadingTemplateCvs;
+  const isError = isProfileError;
+
+  // Reset selected CV when source changes
+  useEffect(() => {
+    setSelectedCv('');
+  }, [cvSource]);
 
   useEffect(() => {
     if (open && userProfile) {
@@ -67,9 +91,14 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
       setCandidateEmail(user.email || '');
       setCandidatePhone(userProfile.phone || '');
 
-      const defaultCv = cvs.find(cv => cv.isDefault) || cvs[0];
-      if (defaultCv) {
-        setSelectedCv(defaultCv._id);
+      // Auto-select default CV based on available options
+      if (cvSource === 'uploaded') {
+        const defaultCv = uploadedCvs.find(cv => cv.isDefault) || uploadedCvs[0];
+        if (defaultCv) {
+          setSelectedCv(defaultCv._id);
+        }
+      } else if (cvSource === 'template' && templateCvs.length > 0) {
+        setSelectedCv(templateCvs[0]._id);
       }
 
       setCoverLetter(`Kính gửi Quý công ty,\n\nTôi viết đơn này để bày tỏ sự quan tâm sâu sắc đến vị trí ${jobTitle} được đăng trên CareerZone. Với nền tảng, kỹ năng và kinh nghiệm của mình, tôi tin rằng mình là một ứng viên phù hợp cho vai trò này.\n\nTôi rất mong có cơ hội được thảo luận thêm về việc làm thế nào tôi có thể đóng góp cho đội ngũ của quý vị.\n\nXin chân thành cảm ơn.\n\nTrân trọng,\n${userProfile.fullname || ''}`);
@@ -78,8 +107,10 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
       // Reset state when dialog closes
       setSubmitError(null);
       setIsSubmitting(false);
+      setCvSource('uploaded');
+      setSelectedCv('');
     }
-  }, [open, userProfile, user, jobTitle, cvs]);
+  }, [open, userProfile, user, jobTitle, uploadedCvs, templateCvs, cvSource]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,8 +124,9 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     setIsSubmitting(true);
     setSubmitError(null);
 
+    // Gửi cvId hoặc cvTemplateId tùy theo nguồn CV được chọn
     const applicationData = {
-      cvId: selectedCv,
+      ...(cvSource === 'uploaded' ? { cvId: selectedCv } : { cvTemplateId: selectedCv }),
       coverLetter,
       candidateName,
       candidateEmail,
@@ -114,6 +146,9 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     }
   };
 
+  const currentCvList = cvSource === 'uploaded' ? uploadedCvs : templateCvs;
+  const hasAnyCv = uploadedCvs.length > 0 || templateCvs.length > 0;
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -132,8 +167,8 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     if (isError) {
       return (
         <ErrorState
-          onRetry={refetch}
-          message={queryError.response?.data?.message || "Không thể tải thông tin của bạn."}
+          onRetry={refetchProfile}
+          message={profileQueryError.response?.data?.message || "Không thể tải thông tin của bạn."}
         />
       );
     }
@@ -173,22 +208,60 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
             className="border-gray-300 focus:border-green-600 focus:ring-green-600"
           />
         </div>
+
+        {/* CV Source Selection */}
+        <div className="space-y-3">
+          <Label>Chọn nguồn CV</Label>
+          <RadioGroup
+            value={cvSource}
+            onValueChange={setCvSource}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="uploaded" id="cv-uploaded" />
+              <Label htmlFor="cv-uploaded" className="flex items-center gap-2 cursor-pointer font-normal">
+                <FileUp className="h-4 w-4 text-blue-600" />
+                CV đã tải lên ({uploadedCvs.length})
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="template" id="cv-template" />
+              <Label htmlFor="cv-template" className="flex items-center gap-2 cursor-pointer font-normal">
+                <FileText className="h-4 w-4 text-green-600" />
+                CV tạo từ mẫu ({templateCvs.length})
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* CV Selection Dropdown */}
         <div className="space-y-2">
-          <Label htmlFor="cv">Chọn CV (đã tải lên)</Label>
+          <Label htmlFor="cv">
+            {cvSource === 'uploaded' ? 'Chọn CV đã tải lên' : 'Chọn CV mẫu đã tạo'}
+          </Label>
           <Select onValueChange={setSelectedCv} value={selectedCv} required>
             <SelectTrigger id="cv" className="w-full border-gray-300 focus:border-green-600 focus:ring-green-600">
               <SelectValue placeholder="Chọn CV để ứng tuyển..." />
             </SelectTrigger>
             <SelectContent className="z-9999 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto" container={document.body}>
-              {cvs.length > 0 ? (
-                cvs.map((cv) => (
+              {currentCvList.length > 0 ? (
+                currentCvList.map((cv) => (
                   <SelectItem key={cv._id} value={cv._id} className="hover:bg-gray-50 focus:bg-gray-50">
-                    {cv.name}
+                    <div className="flex items-center gap-2">
+                      {cvSource === 'uploaded' ? (
+                        <FileUp className="h-3.5 w-3.5 text-blue-500" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5 text-green-500" />
+                      )}
+                      {cv.name || cv.title || 'Untitled CV'}
+                    </div>
                   </SelectItem>
                 ))
               ) : (
                 <div className="p-4 text-center text-sm text-gray-600">
-                  Bạn chưa có CV nào. Vui lòng vào trang cá nhân để tải lên.
+                  {cvSource === 'uploaded' 
+                    ? 'Bạn chưa tải lên CV nào. Vui lòng vào trang cá nhân để tải lên.'
+                    : 'Bạn chưa tạo CV mẫu nào. Vui lòng vào trang tạo CV để thiết kế.'}
                 </div>
               )}
             </SelectContent>
@@ -227,7 +300,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || cvs.length === 0 || isLoading}
+            disabled={isSubmitting || !hasAnyCv || isLoading || !selectedCv}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

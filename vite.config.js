@@ -24,6 +24,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         render: path.resolve(__dirname, 'render.html'),
+        renderApplication: path.resolve(__dirname, 'render-application.html'),
       },
     },
   },
