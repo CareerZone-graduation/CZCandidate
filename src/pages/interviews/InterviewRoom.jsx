@@ -58,6 +58,38 @@ const InterviewRoom = () => {
     isCameraOff: false,
     name: 'Nhà tuyển dụng'
   });
+  const [floatingEmojis, setFloatingEmojis] = useState([]);
+
+  // Helper to add floating emoji
+  const addFloatingEmoji = (emoji, isLocal) => {
+    const id = Date.now() + Math.random();
+
+    // Position based on sender
+    // Local (Right side): 60-90%
+    // Remote (Left side): 10-40%
+    let min, max;
+    if (isLocal) {
+      min = 60;
+      max = 90;
+    } else {
+      min = 10;
+      max = 40;
+    }
+
+    const left = min + Math.random() * (max - min);
+
+    setFloatingEmojis(prev => [...prev, { id, emoji, left, isLocal }]);
+
+    // Remove after animation (2s)
+    setTimeout(() => {
+      setFloatingEmojis(prev => prev.filter(e => e.id !== id));
+    }, 2000);
+  };
+
+  const handleSendEmoji = (emoji) => {
+    interviewSocketService.sendEmoji(interviewId, emoji);
+    addFloatingEmoji(emoji, true); // Local
+  };
 
   // Load interview data
   useEffect(() => {
@@ -229,6 +261,10 @@ const InterviewRoom = () => {
           }
         });
       }
+    });
+
+    interviewSocketService.on('onEmoji', (data) => {
+      addFloatingEmoji(data.emoji, false); // Remote
     });
 
     // Media State Updates (Mute/Camera Off from remote)
@@ -428,6 +464,18 @@ const InterviewRoom = () => {
 
   return (
     <div className="h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black flex flex-col overflow-hidden text-slate-100 font-sans relative">
+      {/* Floating Emojis Overlay */}
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+        {floatingEmojis.map(item => (
+          <div
+            key={item.id}
+            className="absolute bottom-20 text-4xl animate-float-up"
+            style={{ left: `${item.left}%` }}
+          >
+            {item.emoji}
+          </div>
+        ))}
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden relative bg-[#202124]">
@@ -532,6 +580,7 @@ const InterviewRoom = () => {
           onEndCall={handleEndCall}
           interviewId={interviewId}
           interviewTitle={interviewData?.jobTitle}
+          onSendEmoji={handleSendEmoji}
         />
       </div>
 

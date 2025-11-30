@@ -246,6 +246,12 @@ class InterviewSocketService {
       this._triggerHandler('onChatMessage', data);
     });
 
+    // Received emoji
+    this.socket.on('interview:emoji', (data) => {
+      console.log('[InterviewSocket] Emoji received:', data);
+      this._triggerHandler('onEmoji', data);
+    });
+
     // Media state changed
     this.socket.on('interview:media-state', (data) => {
       console.log('[InterviewSocket] Media state changed:', data);
@@ -349,7 +355,6 @@ class InterviewSocketService {
    */
   sendIceCandidate(interviewId, candidate, to) {
     if (!this.socket || !this.isConnected) {
-      console.error('[InterviewSocket] Cannot send ICE candidate - socket not connected');
       return;
     }
 
@@ -409,6 +414,24 @@ class InterviewSocketService {
           reject(new Error(response?.error || 'Failed to send message'));
         }
       });
+    });
+  }
+
+  /**
+   * Send emoji reaction
+   * @param {string} interviewId - Interview ID
+   * @param {string} emoji - Emoji character
+   */
+  sendEmoji(interviewId, emoji) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('[InterviewSocket] Cannot send emoji: not connected');
+      return;
+    }
+
+    this.socket.emit('interview:emoji', {
+      roomId: interviewId, // Use interviewId as roomId
+      interviewId,
+      emoji
     });
   }
 
