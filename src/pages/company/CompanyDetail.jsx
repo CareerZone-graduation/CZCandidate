@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { getCompanyById, getCompanyJobs } from '@/services/companyService';
 import { formatSalary, formatTimeAgo } from '@/utils/formatters';
-import { toast } from 'sonner';
+
 import JobLocationMap from '@/components/common/JobLocationMap';
 
 const CompanyDetail = () => {
@@ -37,7 +37,6 @@ const CompanyDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [isFollowing, setIsFollowing] = useState(false);
   const jobsPerPage = 6;
 
   // Fetch company details
@@ -77,12 +76,6 @@ const CompanyDetail = () => {
     setSearchInput('');
     setSearchQuery('');
     setCurrentPage(1);
-  };
-
-  const handleFollowCompany = () => {
-    // TODO: Implement follow company logic
-    setIsFollowing(!isFollowing);
-    toast.success(isFollowing ? 'Đã bỏ theo dõi công ty' : 'Đã theo dõi công ty');
   };
 
   const handleJobClick = (jobId) => {
@@ -151,16 +144,6 @@ const CompanyDetail = () => {
                           </Badge>
                         )}
                       </div>
-
-                      {/* Follow Button */}
-                      <Button
-                        onClick={handleFollowCompany}
-                        variant={isFollowing ? "outline" : "default"}
-                        className="gap-2"
-                      >
-                        <Star className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
-                        {isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
-                      </Button>
                     </div>
 
                     {/* Company Stats */}
