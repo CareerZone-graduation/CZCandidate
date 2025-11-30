@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
-import { 
-  FileText, 
-  Eye, 
-  Heart, 
+import {
+  FileText,
+  Eye,
+  Heart,
   Clock,
   ArrowRight,
   Briefcase,
@@ -118,19 +118,26 @@ const RecentActivities = () => {
         bgColor: 'bg-yellow-50',
         borderColor: 'border-yellow-200'
       },
-      'REVIEWING': {
+      'SUITABLE': {
         label: 'Đang xem xét',
         icon: <Eye className="h-3 w-3" />,
         color: 'text-blue-600',
         bgColor: 'bg-blue-50',
         borderColor: 'border-blue-200'
       },
-      'INTERVIEW': {
+      'SCHEDULED_INTERVIEW': {
         label: 'Phỏng vấn',
         icon: <AlertCircle className="h-3 w-3" />,
         color: 'text-purple-600',
         bgColor: 'bg-purple-50',
         borderColor: 'border-purple-200'
+      },
+      'OFFER_SENT': {
+        label: 'Đã nhận lời mời',
+        icon: <CheckCircle className="h-3 w-3" />,
+        color: 'text-green-600',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200'
       },
       'ACCEPTED': {
         label: 'Đã chấp nhận',
@@ -145,6 +152,13 @@ const RecentActivities = () => {
         color: 'text-red-600',
         bgColor: 'bg-red-50',
         borderColor: 'border-red-200'
+      },
+      'OFFER_DECLINED': {
+        label: 'Đã từ chối lời mời',
+        icon: <XCircle className="h-3 w-3" />,
+        color: 'text-gray-600',
+        bgColor: 'bg-gray-50',
+        borderColor: 'border-gray-200'
       }
     };
     return statusMap[status] || statusMap['PENDING'];
@@ -187,7 +201,7 @@ const RecentActivities = () => {
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
     if (diffDays < 7) return `${diffDays} ngày trước`;
-    
+
     return date.toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
@@ -326,14 +340,14 @@ const RecentActivities = () => {
                       <span className="truncate">{activity.company}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatRelativeTime(activity.timestamp)}
                     </span>
                     {statusInfo && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={`text-[10px] px-1.5 py-0 ${statusInfo.bgColor} ${statusInfo.color} ${statusInfo.borderColor}`}
                       >
                         <span className="mr-0.5">{statusInfo.icon}</span>

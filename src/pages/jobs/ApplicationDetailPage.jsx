@@ -94,6 +94,13 @@ const getStatusInfo = (status) => {
       borderColor: 'border-red-200',
       bgColor: 'bg-red-50',
     },
+    OFFER_DECLINED: {
+      label: 'Đã từ chối lời mời',
+      icon: <XCircle className="h-4 w-4" />,
+      textColor: 'text-gray-700',
+      borderColor: 'border-gray-200',
+      bgColor: 'bg-gray-50',
+    },
   };
   return statusMap[status] || statusMap['PENDING'];
 };
@@ -223,7 +230,7 @@ const ApplicationDetailPage = () => {
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
-    
+
     // Mở chat với recruiter từ thông tin trong application
     openChat({
       recipientId: application?.recruiterId || application?.jobSnapshot?.recruiterId,
@@ -257,7 +264,7 @@ const ApplicationDetailPage = () => {
   // Tạo URL để xem CV template trên CareerZone
   const getTemplateCVViewUrl = () => {
     if (!application?.submittedCV) return null;
-    
+
     const token = localStorage.getItem('accessToken');
     const baseUrl = window.location.origin;
     return `${baseUrl}/render-application.html?applicationId=${application._id}&token=${encodeURIComponent(token)}&role=candidate`;
@@ -328,7 +335,7 @@ const ApplicationDetailPage = () => {
                     <Building className="h-4 w-4" />
                     <span className="font-medium">{jobSnapshot.company}</span>
                   </div>
-                  
+
                   {/* Status Badge */}
                   <Badge
                     variant="outline"
@@ -347,7 +354,7 @@ const ApplicationDetailPage = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
-                <Button 
+                <Button
                   onClick={handleMessage}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
@@ -463,7 +470,7 @@ const ApplicationDetailPage = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       {isUploadedCv && (
                         <>
@@ -502,16 +509,16 @@ const ApplicationDetailPage = () => {
                           </Dialog>
                         </>
                       )}
-                      
+
                       {isTemplateCv && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="bg-primary hover:bg-primary/90"
                           asChild
                         >
-                          <a 
-                            href={getTemplateCVViewUrl()} 
-                            target="_blank" 
+                          <a
+                            href={getTemplateCVViewUrl()}
+                            target="_blank"
                             rel="noopener noreferrer"
                           >
                             <LinkIcon className="h-4 w-4 mr-2" />
@@ -569,7 +576,7 @@ const ApplicationDetailPage = () => {
                     <p className="font-medium">{application.candidateName}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <div className="p-2 bg-primary/10 rounded-full">
                     <Mail className="h-4 w-4 text-primary" />
@@ -579,7 +586,7 @@ const ApplicationDetailPage = () => {
                     <p className="font-medium">{application.candidateEmail}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <div className="p-2 bg-primary/10 rounded-full">
                     <Phone className="h-4 w-4 text-primary" />
@@ -601,16 +608,16 @@ const ApplicationDetailPage = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button 
+                <Button
                   className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleMessage}
                 >
                   <MessageCircle className="h-4 w-4 mr-3" />
                   Nhắn tin nhà tuyển dụng
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="w-full justify-start"
                   asChild
                 >
@@ -619,9 +626,9 @@ const ApplicationDetailPage = () => {
                     Xem tin tuyển dụng gốc
                   </Link>
                 </Button>
-                
+
                 <Separator />
-                
+
                 <p className="text-xs text-muted-foreground text-center">
                   Có thắc mắc? Hãy nhắn tin trực tiếp cho nhà tuyển dụng để được hỗ trợ.
                 </p>
@@ -630,7 +637,7 @@ const ApplicationDetailPage = () => {
           </div>
         </div>
       </div>
-      
+
       <ConfirmationDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
