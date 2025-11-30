@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Briefcase, Calendar, Building, Plus, Edit3, Trash2, Save, X, MapPin } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 const ExperienceForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
   const handleAddAchievement = () => {
@@ -179,6 +180,8 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
     achievements: []
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [expToDelete, setExpToDelete] = useState(null);
 
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -265,18 +268,25 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
     }
   };
 
-  const handleDelete = async (expId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa kinh nghiệm này?')) return;
+  const handleDelete = (expId) => {
+    setExpToDelete(expId);
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!expToDelete) return;
 
     try {
       setIsUpdating(true);
-      const updatedExperiences = experiences.filter(exp => exp._id !== expId);
+      const updatedExperiences = experiences.filter(exp => exp._id !== expToDelete);
       await onUpdate({ experiences: updatedExperiences });
       toast.success('Xóa kinh nghiệm thành công');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+      setConfirmDeleteOpen(false);
+      setExpToDelete(null);
     }
   };
 
@@ -433,6 +443,17 @@ export const ExperienceSection = ({ experiences = [], onUpdate }) => {
           </div>
         )}
       </CardContent>
-    </Card>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Xóa kinh nghiệm?"
+        description="Bạn có chắc chắn muốn xóa kinh nghiệm làm việc này? Hành động này không thể hoàn tác."
+        onConfirm={executeDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
+    </Card >
   );
 };

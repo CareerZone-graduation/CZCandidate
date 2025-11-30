@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, FolderGit2, ExternalLink, X, Save, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import { useCallback } from 'react';
 
 const ProjectForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
@@ -144,6 +145,8 @@ export const ProjectsSection = ({ projects = [], onUpdate }) => {
     technologies: []
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [projToDelete, setProjToDelete] = useState(null);
 
   const handleFormChange = useCallback((field, value) => {
     setCurrentProjectFormData(prev => ({ ...prev, [field]: value }));
@@ -219,18 +222,25 @@ export const ProjectsSection = ({ projects = [], onUpdate }) => {
     }
   };
 
-  const handleDelete = async (projId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa dự án này?')) return;
+  const handleDelete = (projId) => {
+    setProjToDelete(projId);
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!projToDelete) return;
 
     try {
       setIsUpdating(true);
-      const updatedProjects = projects.filter(proj => proj._id !== projId);
+      const updatedProjects = projects.filter(proj => proj._id !== projToDelete);
       await onUpdate({ projects: updatedProjects });
       toast.success('Xóa dự án thành công');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+      setConfirmDeleteOpen(false);
+      setProjToDelete(null);
     }
   };
 
@@ -369,6 +379,17 @@ export const ProjectsSection = ({ projects = [], onUpdate }) => {
           </div>
         )}
       </CardContent>
-    </Card>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Xóa dự án?"
+        description="Bạn có chắc chắn muốn xóa dự án này? Hành động này không thể hoàn tác."
+        onConfirm={executeDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
+    </Card >
   );
 };

@@ -35,6 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import { toast } from 'sonner';
+import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import { getMyProfile, uploadCV, downloadCV, deleteCV, updateProfile, uploadAvatar } from '../../services/profileService';
 import ExperienceFormItem from '../../components/profile/ExperienceFormItem';
 import EducationFormItem from '../../components/profile/EducationFormItem';
@@ -49,6 +51,8 @@ const Profile = () => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingCvId, setDeletingCvId] = useState(null);
+  const [confirmDeleteCVOpen, setConfirmDeleteCVOpen] = useState(false);
+  const [cvToDelete, setCvToDelete] = useState(null);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -215,13 +219,13 @@ const Profile = () => {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
     if (!allowedTypes.includes(file.type)) {
-      alert('Chỉ chấp nhận file PDF, DOC, DOCX.');
+      toast.error('Chỉ chấp nhận file PDF, DOC, DOCX.');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Kích thước file không được vượt quá 5MB.');
+      toast.error('Kích thước file không được vượt quá 5MB.');
       return;
     }
 
@@ -237,7 +241,7 @@ const Profile = () => {
       setProfile(prev => ({ ...prev, cvs: response.data }));
     } catch (err) {
       console.error('Upload failed:', err);
-      alert('Tải lên thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Tải lên thất bại: ' + (err.response?.data?.message || err.message));
     } finally {
       setIsUploading(false);
     }
@@ -256,22 +260,30 @@ const Profile = () => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Download failed:', err);
-      alert('Tải xuống thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Tải xuống thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
-  const handleDeleteCV = async (cvId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa CV này?')) return;
+  const handleDeleteCV = (cvId) => {
+    setCvToDelete(cvId);
+    setConfirmDeleteCVOpen(true);
+  };
+
+  const executeDeleteCV = async () => {
+    if (!cvToDelete) return;
 
     try {
-      setDeletingCvId(cvId);
-      await deleteCV(cvId);
+      setDeletingCvId(cvToDelete);
+      await deleteCV(cvToDelete);
       await fetchProfile();
+      toast.success('Xóa CV thành công');
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('Xóa thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Xóa thất bại: ' + (err.response?.data?.message || err.message));
     } finally {
       setDeletingCvId(null);
+      setConfirmDeleteCVOpen(false);
+      setCvToDelete(null);
     }
   };
 
@@ -339,7 +351,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Update failed:', err);
-      alert('Cập nhật thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Cập nhật thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -358,7 +370,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Update bio failed:', err);
-      alert('Cập nhật giới thiệu thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Cập nhật giới thiệu thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -377,7 +389,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Update experience failed:', err);
-      alert('Cập nhật kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Cập nhật kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -396,7 +408,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Update education failed:', err);
-      alert('Cập nhật học vấn thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Cập nhật học vấn thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -418,7 +430,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Update skills failed:', err);
-      alert('Cập nhật kỹ năng thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Cập nhật kỹ năng thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -445,7 +457,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Add experience failed:', err);
-      alert('Thêm kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Thêm kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -474,7 +486,7 @@ const Profile = () => {
       await fetchProfile();
     } catch (err) {
       console.error('Add education failed:', err);
-      alert('Thêm học vấn thất bại: ' + (err.response?.data?.message || err.message));
+      toast.error('Thêm học vấn thất bại: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -1201,6 +1213,17 @@ const Profile = () => {
           </Dialog>
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={confirmDeleteCVOpen}
+        onOpenChange={setConfirmDeleteCVOpen}
+        title="Xóa CV?"
+        description="Bạn có chắc chắn muốn xóa CV này? Hành động này không thể hoàn tác."
+        onConfirm={executeDeleteCV}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
     </div>
   );
 };

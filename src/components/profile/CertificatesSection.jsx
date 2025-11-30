@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit2, Trash2, Award, ExternalLink, Save, X, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 const CertificateForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
   return (
@@ -104,6 +105,8 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
     url: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [certToDelete, setCertToDelete] = useState(null);
 
   const handleFormChange = useCallback((field, value) => {
     setCurrentCertificateFormData(prev => ({ ...prev, [field]: value }));
@@ -179,18 +182,25 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
     }
   };
 
-  const handleDelete = async (certId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa chứng chỉ này?')) return;
+  const handleDelete = (certId) => {
+    setCertToDelete(certId);
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!certToDelete) return;
 
     try {
       setIsUpdating(true);
-      const updatedCertificates = certificates.filter(cert => cert._id !== certId);
+      const updatedCertificates = certificates.filter(cert => cert._id !== certToDelete);
       await onUpdate({ certificates: updatedCertificates });
       toast.success('Xóa chứng chỉ thành công');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+      setConfirmDeleteOpen(false);
+      setCertToDelete(null);
     }
   };
 
@@ -324,6 +334,17 @@ export const CertificatesSection = ({ certificates = [], onUpdate }) => {
           </div>
         )}
       </CardContent>
-    </Card>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Xóa chứng chỉ?"
+        description="Bạn có chắc chắn muốn xóa chứng chỉ này? Hành động này không thể hoàn tác."
+        onConfirm={executeDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
+    </Card >
   );
 };

@@ -5,15 +5,19 @@ import CVPreview from '../../components/CVPreview/CVPreview';
 import { mapToFrontend } from '../../utils/dataMapper';
 
 /**
- * ApplicationCVRenderPage - Trang render CV từ Application (dành cho recruiter xem qua iframe)
+ * ApplicationCVRenderPage - Trang render CV từ Application (dành cho cả recruiter và candidate xem qua iframe)
  * 
  * Trang này nhận applicationId từ query params và gọi API để lấy snapshot data của CV
- * URL: /render-application.html?applicationId=xxx&token=xxx
+ * URL: /render-application.html?applicationId=xxx&token=xxx&role=candidate|recruiter
+ * 
+ * - role=recruiter (default): Gọi /api/applications/:id/render-cv (recruiter xem CV ứng viên)
+ * - role=candidate: Gọi /api/candidate/my-applications/:id/render-cv (candidate xem CV của mình)
  */
 const ApplicationCVRenderPage = () => {
   const [searchParams] = useSearchParams();
   const applicationId = searchParams.get('applicationId');
-  const token = searchParams.get('token'); // Token để xác thực recruiter
+  const token = searchParams.get('token'); // Token để xác thực
+  const role = searchParams.get('role') || 'recruiter'; // 'recruiter' hoặc 'candidate'
 
   const [cvData, setCvData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,14 +38,21 @@ const ApplicationCVRenderPage = () => {
       }
 
       try {
-        // Gọi API trực tiếp đến backend với token trong query param
-        // Backend sẽ tự động đọc token từ query param và xác thực
+        // Gọi API trực tiếp đến backend với token trong header
         const apiUrl = import.meta.env.VITE_API_BASE_URL 
           ? `${import.meta.env.VITE_API_BASE_URL}/api`
           : '/api';
-        const response = await axios.get(
-          `${apiUrl}/applications/${applicationId}/render-cv?token=${token}`
-        );
+        
+        // Chọn endpoint dựa trên role
+        const endpoint = role === 'candidate'
+          ? `${apiUrl}/candidate/my-applications/${applicationId}/render-cv`
+          : `${apiUrl}/applications/${applicationId}/render-cv?token=${token}`;
+        
+        const response = await axios.get(endpoint, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
         const data = response.data?.data;
         
@@ -59,14 +70,14 @@ const ApplicationCVRenderPage = () => {
       } catch (err) {
         console.error("Error fetching application CV data:", err);
         const errorMessage = err.response?.data?.message || err.message || 'Failed to load CV data.';
-        setError(errorMessage + ' ' + JSON.stringify(err.response?.data || {}));
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
     fetchApplicationCVData();
-  }, [applicationId, token]);
+  }, [applicationId, token, role]);
 
   // Sau khi load xong, set data-cv-ready để puppeteer có thể capture
   useEffect(() => {

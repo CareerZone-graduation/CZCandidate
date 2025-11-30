@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Upload, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 export const CVSection = ({ cvs = [], onUpload, onDelete, onDownload }) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingCvId, setDeletingCvId] = useState(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [cvToDelete, setCvToDelete] = useState(null);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -56,17 +59,24 @@ export const CVSection = ({ cvs = [], onUpload, onDelete, onDownload }) => {
     }
   };
 
-  const handleDelete = async (cvId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa CV này?')) return;
+  const handleDelete = (cvId) => {
+    setCvToDelete(cvId);
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!cvToDelete) return;
 
     try {
-      setDeletingCvId(cvId);
-      await onDelete(cvId);
+      setDeletingCvId(cvToDelete);
+      await onDelete(cvToDelete);
       toast.success('Xóa CV thành công');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Xóa thất bại');
     } finally {
       setDeletingCvId(null);
+      setConfirmDeleteOpen(false);
+      setCvToDelete(null);
     }
   };
 
@@ -79,15 +89,15 @@ export const CVSection = ({ cvs = [], onUpload, onDelete, onDownload }) => {
         accept=".pdf,.doc,.docx"
         className="hidden"
       />
-      
+
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">
             <FileText className="w-5 h-5 mr-2 text-primary" />
             CV của tôi
           </div>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
           >
@@ -123,16 +133,16 @@ export const CVSection = ({ cvs = [], onUpload, onDelete, onDownload }) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="ghost"
                     onClick={() => handleDownload(cv._id, cv.name)}
                   >
                     <Download className="w-4 h-4" />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDelete(cv._id)}
                     disabled={deletingCvId === cv._id}
@@ -149,6 +159,17 @@ export const CVSection = ({ cvs = [], onUpload, onDelete, onDownload }) => {
           ))
         )}
       </CardContent>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Xóa CV?"
+        description="Bạn có chắc chắn muốn xóa CV này? Hành động này không thể hoàn tác."
+        onConfirm={executeDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
     </Card>
   );
 };
