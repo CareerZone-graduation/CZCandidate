@@ -51,6 +51,12 @@ export const applyJob = async (jobId, applicationData) => {
   return response;
 };
 
+// Ứng tuyển lại việc làm
+export const reapplyJob = async (jobId, applicationData) => {
+  const response = await apiClient.post(`/jobs/${jobId}/reapply`, applicationData);
+  return response;
+};
+
 // Lấy số lượng ứng viên đã apply vào công việc
 export const getJobApplicantCount = async (jobId) => {
   const response = await apiClient.post(`/jobs/${jobId}/applicant-count`);
@@ -411,4 +417,10 @@ export const getJobsByCompany = async (companyId, params = {}) => {
 export const respondToOffer = async (applicationId, status) => {
   const response = await apiClient.patch(`/candidate/my-applications/${applicationId}/respond`, { status });
   return response.data;
+};
+
+// Get multiple jobs by their IDs (for job alert notifications)
+export const getJobsByIds = async (ids) => {
+  const response = await apiClient.post('/jobs/by-ids', { ids });
+  return response.data.data;
 };

@@ -21,6 +21,7 @@ import JobSearch from '../pages/jobs/JobSearch';
 import RecommendedJobsPage from '../pages/RecommendedJobsPage';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import ViewHistory from '../pages/jobs/ViewHistory';
+import JobAlertJobsPage from '../pages/jobs/JobAlertJobsPage';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
 import Profile from '../pages/profile/ProfilePage';
@@ -137,6 +138,13 @@ const AppRouter = () => {
           <Route path="/news" element={<News />} />
           <Route path="/editor" element={<CVBuilder />} />
           <Route path="/editor/:cvId" element={<CVBuilder />} />
+        </Route>
+
+        {/* Protected Job Alert Jobs Page */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/jobs/alert" element={<MainLayout />}>
+            <Route index element={<JobAlertJobsPage />} />
+          </Route>
         </Route>
 
         {/* Onboarding Preview - Public route without layout */}

@@ -23,6 +23,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
+  History,
 } from 'lucide-react';
 import { getMyApplications } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
@@ -38,16 +40,16 @@ const Applications = () => {
   const limit = 10; // Increased limit for list view
 
   // Query để lấy danh sách đơn ứng tuyển
-  const { 
-    data: applicationsData, 
-    isLoading, 
-    isError, 
+  const {
+    data: applicationsData,
+    isLoading,
+    isError,
     error,
-    refetch 
+    refetch
   } = useQuery({
     queryKey: ['myApplications', currentPage, selectedStatus],
-    queryFn: () => getMyApplications({ 
-      page: currentPage, 
+    queryFn: () => getMyApplications({
+      page: currentPage,
       limit,
       status: selectedStatus === 'all' ? undefined : selectedStatus
     }),
@@ -56,8 +58,12 @@ const Applications = () => {
 
   const applications = applicationsData?.data || [];
   const meta = applicationsData?.meta || {};
+  const stats = applicationsData?.stats || {};
   const totalPages = meta.totalPages || 1;
   const totalItems = meta.totalItems || 0;
+
+  // Calculate global total from stats
+  const globalTotal = Object.values(stats).reduce((acc, curr) => acc + curr, 0);
 
   // Helper functions
   const getStatusInfo = (status) => {
@@ -69,19 +75,26 @@ const Applications = () => {
         textColor: 'text-yellow-700',
         borderColor: 'border-yellow-200'
       },
-      'REVIEWING': {
+      'SUITABLE': {
         label: 'Đang xem xét',
         icon: <Eye className="h-3.5 w-3.5" />,
         bgColor: 'bg-blue-50',
         textColor: 'text-blue-700',
         borderColor: 'border-blue-200'
       },
-      'INTERVIEW': {
+      'SCHEDULED_INTERVIEW': {
         label: 'Phỏng vấn',
         icon: <AlertCircle className="h-3.5 w-3.5" />,
         bgColor: 'bg-purple-50',
         textColor: 'text-purple-700',
         borderColor: 'border-purple-200'
+      },
+      'OFFER_SENT': {
+        label: 'Đã nhận lời mời',
+        icon: <CheckCircle className="h-3.5 w-3.5" />,
+        bgColor: 'bg-green-50',
+        textColor: 'text-green-700',
+        borderColor: 'border-green-200'
       },
       'ACCEPTED': {
         label: 'Đã chấp nhận',
@@ -96,6 +109,13 @@ const Applications = () => {
         bgColor: 'bg-red-50',
         textColor: 'text-red-700',
         borderColor: 'border-red-200'
+      },
+      'OFFER_DECLINED': {
+        label: 'Đã từ chối lời mời',
+        icon: <XCircle className="h-3.5 w-3.5" />,
+        bgColor: 'bg-gray-50',
+        textColor: 'text-gray-700',
+        borderColor: 'border-gray-200'
       }
     };
     return statusMap[status] || statusMap['PENDING'];
@@ -104,7 +124,7 @@ const Applications = () => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       day: '2-digit',
-      month: '2-digit', 
+      month: '2-digit',
       year: 'numeric'
     });
   };
@@ -157,9 +177,9 @@ const Applications = () => {
             <Skeleton className="h-8 w-64" />
             <Skeleton className="h-10 w-32" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
             ))}
           </div>
           <div className="space-y-4">
@@ -217,12 +237,12 @@ const Applications = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Đơn ứng tuyển của tôi</h1>
             <p className="text-gray-500 mt-1">
-              Quản lý và theo dõi trạng thái {totalItems} đơn ứng tuyển
+              Quản lý và theo dõi trạng thái {globalTotal} đơn ứng tuyển
             </p>
           </div>
-        
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             onClick={() => navigate('/dashboard')}
             className="w-fit bg-white hover:bg-gray-50"
           >
@@ -232,56 +252,72 @@ const Applications = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'Tổng số đơn', value: 'all', count: totalItems, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Tổng số đơn', value: 'all', count: globalTotal, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
             {
               label: 'Đang chờ',
               value: 'PENDING',
-              count: applications.filter(app => app.status === 'PENDING').length,
+              count: stats.PENDING || 0,
               icon: Hourglass,
               color: 'text-yellow-600',
               bg: 'bg-yellow-50'
             },
             {
-              label: 'Đang xem xét',
-              value: 'REVIEWING',
-              count: applications.filter(app => app.status === 'REVIEWING').length,
+              label: 'Phù hợp',
+              value: 'SUITABLE',
+              count: stats.SUITABLE || 0,
               icon: Eye,
               color: 'text-purple-600',
               bg: 'bg-purple-50'
             },
             {
-              label: 'Đã chấp nhận',
+              label: 'Phỏng vấn',
+              value: 'SCHEDULED_INTERVIEW',
+              count: stats.SCHEDULED_INTERVIEW || 0,
+              icon: AlertCircle,
+              color: 'text-indigo-600',
+              bg: 'bg-indigo-50'
+            },
+            {
+              label: 'Đã chấp nhận offer',
               value: 'ACCEPTED',
-              count: applications.filter(app => app.status === 'ACCEPTED').length,
+              count: stats.ACCEPTED || 0,
               icon: CheckCircle,
               color: 'text-green-600',
               bg: 'bg-green-50'
+            },
+            {
+              label: 'Không phù hợp (Bị từ chối)',
+              value: 'REJECTED',
+              count: stats.REJECTED || 0,
+              icon: XCircle,
+              color: 'text-red-600',
+              bg: 'bg-red-50'
             }
           ].map((stat, index) => (
             <Card
               key={index}
               className={cn(
                 "border transition-all cursor-pointer hover:shadow-md",
-                selectedStatus === stat.value 
-                  ? "ring-2 ring-primary border-transparent shadow-sm" 
+                selectedStatus === stat.value
+                  ? "ring-2 ring-primary border-transparent shadow-sm"
                   : "border-gray-200 bg-white"
               )}
               onClick={() => setSelectedStatus(stat.value)}
             >
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <div className={cn("p-2 rounded-lg", stat.bg)}>
-                    <stat.icon className={cn("h-5 w-5", stat.color)} />
+                  <div className={cn("p-1.5 rounded-lg", stat.bg)}>
+                    <stat.icon className={cn("h-4 w-4", stat.color)} />
                   </div>
                   {selectedStatus === stat.value && (
-                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   )}
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
-                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                  <p className="text-xl font-bold text-gray-900">{stat.count}</p>
+                  <p className="text-xs font-medium text-gray-500 truncate">{stat.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -293,10 +329,10 @@ const Applications = () => {
           {applications.length > 0 ? (
             applications.map((application) => {
               const statusInfo = getStatusInfo(application.status);
-              
+
               return (
-                <Card 
-                  key={application._id} 
+                <Card
+                  key={application._id}
                   className="group hover:shadow-lg transition-all duration-300 border-gray-200 cursor-pointer overflow-hidden"
                   onClick={() => handleViewDetail(application)}
                 >
@@ -304,9 +340,9 @@ const Applications = () => {
                     <div className="flex flex-col md:flex-row gap-6 items-start">
                       {/* Company Logo */}
                       <Avatar className="h-16 w-16 rounded-xl border bg-white shadow-sm shrink-0">
-                        <AvatarImage 
-                          src={application.jobSnapshot?.logo} 
-                          alt={application.jobSnapshot?.company} 
+                        <AvatarImage
+                          src={application.jobSnapshot?.logo}
+                          alt={application.jobSnapshot?.company}
                           className="object-contain p-1"
                         />
                         <AvatarFallback className="rounded-xl text-lg bg-gray-100 font-bold text-gray-500">
@@ -318,17 +354,25 @@ const Applications = () => {
                       <div className="flex-1 min-w-0 w-full">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1 mb-1">
-                              {application.jobSnapshot?.title}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+                                {application.jobSnapshot?.title}
+                              </h3>
+                              {application.isReapplied && (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Ứng tuyển lại
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex items-center text-gray-500 font-medium">
                               <Building className="h-4 w-4 mr-1.5 shrink-0" />
                               <span className="truncate">{application.jobSnapshot?.company}</span>
                             </div>
                           </div>
 
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={cn(
                               "w-fit px-3 py-1.5 rounded-full border flex items-center gap-1.5 font-medium transition-colors",
                               statusInfo.bgColor,
@@ -354,34 +398,54 @@ const Applications = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                          {application.submittedCV && (
-                            <Button 
-                              variant="ghost" 
+                        <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+                          {/* Previous Application Link */}
+                          <div>
+                            {application.previousApplicationId && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/dashboard/applications/${application.previousApplicationId}`);
+                                }}
+                              >
+                                <History className="h-4 w-4 mr-2" />
+                                Xem đơn trước
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {application.submittedCV && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-gray-500 hover:text-primary hover:bg-primary/5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadCV(application.submittedCV.path);
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Tải CV
+                              </Button>
+                            )}
+
+                            <Button
+                              variant="default"
                               size="sm"
-                              className="text-gray-500 hover:text-primary hover:bg-primary/5"
+                              className="bg-primary hover:bg-primary/90 shadow-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDownloadCV(application.submittedCV.path);
+                                handleViewDetail(application)
                               }}
                             >
-                              <Download className="h-4 w-4 mr-2" />
-                              Tải CV
+                              Xem chi tiết
+                              <Eye className="h-4 w-4 ml-2" />
                             </Button>
-                          )}
-                          
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            className="bg-primary hover:bg-primary/90 shadow-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetail(application)
-                            }}
-                          >
-                            Xem chi tiết
-                            <Eye className="h-4 w-4 ml-2" />
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -419,9 +483,9 @@ const Applications = () => {
             </Button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(page => 
-                page === 1 || 
-                page === totalPages || 
+              .filter(page =>
+                page === 1 ||
+                page === totalPages ||
                 (page >= currentPage - 1 && page <= currentPage + 1)
               )
               .map((page, index, arr) => {
@@ -437,8 +501,8 @@ const Applications = () => {
                       onClick={() => handlePageChange(page)}
                       className={cn(
                         "w-9 h-9 p-0 font-medium transition-all",
-                        currentPage === page 
-                          ? "bg-primary hover:bg-primary/90 shadow-sm" 
+                        currentPage === page
+                          ? "bg-primary hover:bg-primary/90 shadow-sm"
                           : "border-gray-200 hover:bg-gray-50 text-gray-600"
                       )}
                     >

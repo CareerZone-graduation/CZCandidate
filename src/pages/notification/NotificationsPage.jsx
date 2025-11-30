@@ -42,7 +42,16 @@ const getNotificationLink = (notification) => {
     case 'profile_view':
       return '/profile';
     case 'job_alert':
-      return `/jobs/${entity?.id}`;
+      // Navigate to job alert jobs page with jobIds from metadata
+      if (metadata?.jobIds && metadata.jobIds.length > 0) {
+        // Get keyword from notification title for display
+        const keywordMatch = notification.title?.match(/"([^"]+)"/);
+        const keyword = keywordMatch ? keywordMatch[1] : '';
+        const jobIdsParam = metadata.jobIds.join(',');
+        return `/jobs/alert?jobIds=${jobIdsParam}${keyword ? `&keyword=${encodeURIComponent(keyword)}` : ''}`;
+      }
+      // Fallback to job subscription settings if no job ids
+      return `/dashboard/settings/job-alerts`;
     default:
       return null;
   }

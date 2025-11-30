@@ -4,7 +4,8 @@ import {
     DollarSign,
     UserCheck,
     Eye,
-    MessageCircle
+    MessageCircle,
+    RefreshCw
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -117,11 +118,20 @@ const JobDetailHeader = ({
 
                         <div className="flex flex-col sm:flex-row gap-3">
                             {job.isApplied ? (
-                                <div className="flex gap-2">
-                                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-6 py-2 text-sm font-medium justify-center">
+                                <div className="flex flex-wrap gap-2">
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-4 py-2 text-sm font-medium justify-center">
                                         <CheckCircle className="w-4 h-4 mr-2" />
                                         Đã ứng tuyển
                                     </Badge>
+                                    {job.status === 'ACTIVE' && (
+                                        <Button
+                                            onClick={handleApply}
+                                            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 font-medium"
+                                        >
+                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                            Ứng tuyển lại
+                                        </Button>
+                                    )}
                                     <Button
                                         onClick={handleMessage}
                                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 font-medium"

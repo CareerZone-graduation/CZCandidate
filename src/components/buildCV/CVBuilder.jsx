@@ -16,14 +16,14 @@ import ProjectsForm from '../forms/ProjectsForm';
 import CertificatesForm from '../forms/CertificatesForm';
 import SimpleSectionOrderManager from './SimpleSectionOrderManager';
 import SampleDataSpotlight from './SampleDataSpotlight';
-import { 
-  User, 
-  Briefcase, 
-  Award, 
-  FileText, 
-  Eye, 
-  Save, 
-  Download, 
+import {
+  User,
+  Briefcase,
+  Award,
+  FileText,
+  Eye,
+  Save,
+  Download,
   Menu,
   X,
   Palette,
@@ -72,7 +72,7 @@ const CVBuilder = () => {
             }
             setCVData(mappedData);
             setSelectedTemplate(mappedData.template || 'modern-blue');
-            
+
             // Check if we should show suggestion for newly created CV
             if (searchParams.get('showSuggestion') === 'true') {
               setShowSampleSuggestion(true);
@@ -86,7 +86,7 @@ const CVBuilder = () => {
             id: 'temp-' + Date.now(),
             template: 'modern-blue',
             personalInfo: {
-              fullName: isAuthenticated 
+              fullName: isAuthenticated
                 ? 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
                 : 'CV Demo ' + new Date().toLocaleDateString('vi-VN')
             },
@@ -108,7 +108,7 @@ const CVBuilder = () => {
       } catch (error) {
         console.error("Error loading CV:", error);
         setError(error);
-        
+
         // Always fallback to sample data - Works for all users
         const basicCV = {
           ...sampleCVData,
@@ -116,7 +116,7 @@ const CVBuilder = () => {
           template: 'modern-blue',
           personalInfo: {
             ...sampleCVData.personalInfo,
-            fullName: isAuthenticated 
+            fullName: isAuthenticated
               ? 'CV Mới ' + new Date().toLocaleDateString('vi-VN')
               : 'CV Demo ' + new Date().toLocaleDateString('vi-VN')
           }
@@ -155,7 +155,7 @@ const CVBuilder = () => {
       default:
         sample = sampleCVData;
     }
-    
+
     // Keep the core identifiers and structure, but overwrite content
     setCVData(prevData => ({
       ...prevData,
@@ -164,7 +164,7 @@ const CVBuilder = () => {
       name: `CV mẫu - ${sample.personalInfo.fullName}`,
       template: sample.template || prevData.template,
     }));
-    
+
     // Close suggestion dialog and switch to personal info tab
     setShowSampleSuggestion(false);
     setActiveTab('personal');
@@ -178,10 +178,10 @@ const CVBuilder = () => {
 
   const exportPDF = async () => {
     if (!cvData || !cvData.id || cvData.id.startsWith('temp-')) {
-      alert('Vui lòng lưu CV trước khi xuất PDF.');
+      toast.error('Vui lòng lưu CV trước khi xuất PDF.');
       return;
     }
-    
+
     setIsExporting(true);
     try {
       // Gọi API từ backend để tạo PDF
@@ -194,7 +194,7 @@ const CVBuilder = () => {
       link.setAttribute('download', `${cvData.personalInfo.fullName || 'CV'}.pdf`);
       document.body.appendChild(link);
       link.click();
-      
+
       // Dọn dẹp
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
@@ -216,7 +216,7 @@ const CVBuilder = () => {
     setIsSaving(true);
     try {
       const backendData = mapToBackend(cvData);
-      
+
       if (cvId === 'new' || cvData.id.startsWith('temp-')) {
         // This is a new CV, create it
         const payload = {
@@ -264,260 +264,258 @@ const CVBuilder = () => {
       )}
 
       <div className="min-h-screen bg-gray-50">
-      
 
-      
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <div className={`${isSidebarOpen ? 'w-80' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300`}>
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              {isSidebarOpen && (
-                <h2 className="text-lg font-semibold text-gray-800">CV Builder</h2>
-              )}
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Sample Data Buttons */}
-          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-              <Sparkles className="w-4 h-4 mr-1 text-blue-600" />
-              Dùng dữ liệu mẫu
-            </h3>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={() => loadSampleData('default')}
-                className="flex items-center justify-center px-3 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-              >
-                <Zap className="w-3 h-3 mr-1" />
-                Kỹ sư phần mềm
-              </button>
-              <button
-                onClick={() => loadSampleData('creative')}
-                className="flex items-center justify-center px-3 py-2 text-xs font-medium text-purple-700 bg-purple-100 rounded-md hover:bg-purple-200 transition-colors"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                Nhà thiết kế
-              </button>
-              <button
-                onClick={() => loadSampleData('minimal')}
-                className="flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                <Coffee className="w-3 h-3 mr-1" />
-                Marketing
-              </button>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="p-4 space-y-2">
-            <button
-              onClick={saveCv}
-              disabled={isSaving}
-              className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {isSidebarOpen && <span>{isSaving ? 'Đang lưu...' : 'Lưu CV'}</span>}
-            </button>
 
-            <button
-              onClick={exportPDF}
-              disabled={isExporting}
-              className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              {isSidebarOpen && <span>{isExporting ? 'Đang export...' : '📄 Export PDF'}</span>}
-            </button>
-
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
-            >
-              <Eye className="w-4 h-4" />
-              {isSidebarOpen && <span>{showPreview ? 'Ẩn Preview' : 'Xem Preview'}</span>}
-            </button>
-          </div>
-
-          {/* Navigation Tabs */}
-          {isSidebarOpen && (
-            <div className="p-4">
-              <div className="space-y-1">
-                {[
-                  { id: 'template', label: 'Mẫu CV', icon: Palette },
-                  { id: 'personal', label: 'Thông tin cá nhân', icon: User },
-                  { id: 'summary', label: 'Tóm tắt', icon: FileText },
-                  { id: 'work', label: 'Kinh nghiệm', icon: Briefcase },
-                  { id: 'education', label: 'Học vấn', icon: GraduationCap },
-                  { id: 'skills', label: 'Kỹ năng', icon: Award },
-                  { id: 'projects', label: 'Dự án', icon: FolderOpen },
-                  { id: 'certificates', label: 'Chứng chỉ', icon: Certificate },
-                  { id: 'layout', label: 'Bố cục & Thứ tự', icon: Settings },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Main Content */}
-        <div className={`flex-1 flex ${showPreview ? 'w-1/2' : 'w-full'}`}>
-          <div className={`${showPreview ? 'w-1/2' : 'w-full'} overflow-y-auto`}>
-            <div className="p-6">
-              {cvData && (
-                <div>
-                  {activeTab === 'template' && (
-                    <TemplateGallery
-                      selectedTemplate={selectedTemplate}
-                      onSelectTemplate={handleTemplateSelect}
-                    />
-                  )}
-                  {activeTab === 'personal' && (
-                    <PersonalInfoForm
-                      personalInfo={cvData.personalInfo || {
-                        fullName: '',
-                        email: '',
-                        phone: '',
-                        address: '',
-                        website: '',
-                        linkedin: '',
-                        github: '',
-                        profileImage: ''
-                      }}
-                      onChange={(data) => setCVData({...cvData, personalInfo: data})}
-                    />
-                  )}
-                  {activeTab === 'summary' && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Tóm tắt nghề nghiệp</h3>
-                      <textarea
-                        value={cvData.professionalSummary || ''}
-                        onChange={(e) => setCVData({...cvData, professionalSummary: e.target.value})}
-                        rows={6}
-                        className="w-full p-3 border border-gray-300 rounded-lg"
-                        placeholder="Viết tóm tắt về bản thân và mục tiêu nghề nghiệp..."
-                      />
-                    </div>
-                  )}
-                  {activeTab === 'work' && (
-                    <WorkExperienceForm
-                      workExperience={cvData.workExperience || []}
-                      onChange={(data) => setCVData({...cvData, workExperience: data})}
-                    />
-                  )}
-                  {activeTab === 'education' && (
-                    <EducationForm
-                      education={cvData.education || []}
-                      onChange={(data) => setCVData({...cvData, education: data})}
-                    />
-                  )}
-                  {activeTab === 'skills' && (
-                    <SkillsForm
-                      skills={cvData.skills || []}
-                      onChange={(data) => setCVData({...cvData, skills: data})}
-                    />
-                  )}
-                  {activeTab === 'projects' && (
-                    <ProjectsForm
-                      projects={cvData.projects || []}
-                      onChange={(data) => setCVData({...cvData, projects: data})}
-                    />
-                  )}
-                  {activeTab === 'certificates' && (
-                    <CertificatesForm
-                      certificates={cvData.certificates || []}
-                      onChange={(data) => setCVData({...cvData, certificates: data})}
-                    />
-                  )}
-                  {activeTab === 'layout' && (
-                    <SimpleSectionOrderManager
-                      sectionOrder={cvData.sectionOrder || ['summary', 'experience', 'education', 'skills', 'projects', 'certificates']}
-                      hiddenSections={cvData.hiddenSections || []}
-                      currentTemplate={cvData.template || selectedTemplate}
-                      onChange={(newOrder) => {
-                        console.log('Section order changed:', newOrder);
-                        setCVData({...cvData, sectionOrder: newOrder});
-                      }}
-                      onHiddenChange={(newHidden) => {
-                        console.log('Hidden sections changed:', newHidden);
-                        setCVData({...cvData, hiddenSections: newHidden});
-                      }}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Preview Panel */}
-          {showPreview && (
-            <div className="w-1/2 bg-gray-100 border-l border-gray-200 overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-800">Preview</h3>
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6 flex justify-center items-start min-h-screen">
-                <div 
-                  style={{
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top center',
-                    transition: 'transform 0.1s ease-out',
-                  }}
-                  className="shadow-2xl"
+        <div className="flex h-screen">
+          {/* Sidebar */}
+          <div className={`${isSidebarOpen ? 'w-80' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300`}>
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                {isSidebarOpen && (
+                  <h2 className="text-lg font-semibold text-gray-800">CV Builder</h2>
+                )}
+                <button
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  {/* <CVPaginatedPreview ref={cvContentRef}> */}
+                  <Menu className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Sample Data Buttons */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <Sparkles className="w-4 h-4 mr-1 text-blue-600" />
+                Dùng dữ liệu mẫu
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  onClick={() => loadSampleData('default')}
+                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Kỹ sư phần mềm
+                </button>
+                <button
+                  onClick={() => loadSampleData('creative')}
+                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-purple-700 bg-purple-100 rounded-md hover:bg-purple-200 transition-colors"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Nhà thiết kế
+                </button>
+                <button
+                  onClick={() => loadSampleData('minimal')}
+                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  <Coffee className="w-3 h-3 mr-1" />
+                  Marketing
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-4 space-y-2">
+              <button
+                onClick={saveCv}
+                disabled={isSaving}
+                className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {isSidebarOpen && <span>{isSaving ? 'Đang lưu...' : 'Lưu CV'}</span>}
+              </button>
+
+              <button
+                onClick={exportPDF}
+                disabled={isExporting}
+                className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                {isSidebarOpen && <span>{isExporting ? 'Đang export...' : '📄 Export PDF'}</span>}
+              </button>
+
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
+              >
+                <Eye className="w-4 h-4" />
+                {isSidebarOpen && <span>{showPreview ? 'Ẩn Preview' : 'Xem Preview'}</span>}
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            {isSidebarOpen && (
+              <div className="p-4">
+                <div className="space-y-1">
+                  {[
+                    { id: 'template', label: 'Mẫu CV', icon: Palette },
+                    { id: 'personal', label: 'Thông tin cá nhân', icon: User },
+                    { id: 'summary', label: 'Tóm tắt', icon: FileText },
+                    { id: 'work', label: 'Kinh nghiệm', icon: Briefcase },
+                    { id: 'education', label: 'Học vấn', icon: GraduationCap },
+                    { id: 'skills', label: 'Kỹ năng', icon: Award },
+                    { id: 'projects', label: 'Dự án', icon: FolderOpen },
+                    { id: 'certificates', label: 'Chứng chỉ', icon: Certificate },
+                    { id: 'layout', label: 'Bố cục & Thứ tự', icon: Settings },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
+                            ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Main Content */}
+          <div className={`flex-1 flex ${showPreview ? 'w-1/2' : 'w-full'}`}>
+            <div className={`${showPreview ? 'w-1/2' : 'w-full'} overflow-y-auto`}>
+              <div className="p-6">
+                {cvData && (
+                  <div>
+                    {activeTab === 'template' && (
+                      <TemplateGallery
+                        selectedTemplate={selectedTemplate}
+                        onSelectTemplate={handleTemplateSelect}
+                      />
+                    )}
+                    {activeTab === 'personal' && (
+                      <PersonalInfoForm
+                        personalInfo={cvData.personalInfo || {
+                          fullName: '',
+                          email: '',
+                          phone: '',
+                          address: '',
+                          website: '',
+                          linkedin: '',
+                          github: '',
+                          profileImage: ''
+                        }}
+                        onChange={(data) => setCVData({ ...cvData, personalInfo: data })}
+                      />
+                    )}
+                    {activeTab === 'summary' && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Tóm tắt nghề nghiệp</h3>
+                        <textarea
+                          value={cvData.professionalSummary || ''}
+                          onChange={(e) => setCVData({ ...cvData, professionalSummary: e.target.value })}
+                          rows={6}
+                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          placeholder="Viết tóm tắt về bản thân và mục tiêu nghề nghiệp..."
+                        />
+                      </div>
+                    )}
+                    {activeTab === 'work' && (
+                      <WorkExperienceForm
+                        workExperience={cvData.workExperience || []}
+                        onChange={(data) => setCVData({ ...cvData, workExperience: data })}
+                      />
+                    )}
+                    {activeTab === 'education' && (
+                      <EducationForm
+                        education={cvData.education || []}
+                        onChange={(data) => setCVData({ ...cvData, education: data })}
+                      />
+                    )}
+                    {activeTab === 'skills' && (
+                      <SkillsForm
+                        skills={cvData.skills || []}
+                        onChange={(data) => setCVData({ ...cvData, skills: data })}
+                      />
+                    )}
+                    {activeTab === 'projects' && (
+                      <ProjectsForm
+                        projects={cvData.projects || []}
+                        onChange={(data) => setCVData({ ...cvData, projects: data })}
+                      />
+                    )}
+                    {activeTab === 'certificates' && (
+                      <CertificatesForm
+                        certificates={cvData.certificates || []}
+                        onChange={(data) => setCVData({ ...cvData, certificates: data })}
+                      />
+                    )}
+                    {activeTab === 'layout' && (
+                      <SimpleSectionOrderManager
+                        sectionOrder={cvData.sectionOrder || ['summary', 'experience', 'education', 'skills', 'projects', 'certificates']}
+                        hiddenSections={cvData.hiddenSections || []}
+                        currentTemplate={cvData.template || selectedTemplate}
+                        onChange={(newOrder) => {
+                          console.log('Section order changed:', newOrder);
+                          setCVData({ ...cvData, sectionOrder: newOrder });
+                        }}
+                        onHiddenChange={(newHidden) => {
+                          console.log('Hidden sections changed:', newHidden);
+                          setCVData({ ...cvData, hiddenSections: newHidden });
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Preview Panel */}
+            {showPreview && (
+              <div className="w-1/2 bg-gray-100 border-l border-gray-200 overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800">Preview</h3>
+                    <button
+                      onClick={() => setShowPreview(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6 flex justify-center items-start min-h-screen">
+                  <div
+                    style={{
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top center',
+                      transition: 'transform 0.1s ease-out',
+                    }}
+                    className="shadow-2xl"
+                  >
+                    {/* <CVPaginatedPreview ref={cvContentRef}> */}
                     <CVPreview
                       ref={cvContentRef}
                       cvData={cvData}
                       template={selectedTemplate}
                     />
-                  {/* </CVPaginatedPreview> */}
+                    {/* </CVPaginatedPreview> */}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+
+        {/* Hidden CV for export (no pagination) */}
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
+          <CVPreview
+            ref={cvExportRef}
+            cvData={cvData}
+            template={selectedTemplate}
+          />
         </div>
       </div>
-
-      {/* Hidden CV for export (no pagination) */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
-        <CVPreview
-          ref={cvExportRef}
-          cvData={cvData}
-          template={selectedTemplate}
-        />
-      </div>
-    </div>
     </>
   );
 };
 
 export default CVBuilder;
-  

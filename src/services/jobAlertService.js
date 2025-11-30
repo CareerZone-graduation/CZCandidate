@@ -31,19 +31,3 @@ export const deleteJobAlert = async (id) => {
   const { data } = await apiClient.delete(`/job-alerts/${id}`);
   return data;
 };
-
-/**
- * Get notification history for a specific alert
- */
-export const getNotificationHistory = async (id, params = {}) => {
-  const { data } = await apiClient.get(`/job-alerts/${id}/history`, { params });
-  return { data: data.data, meta: data.meta };
-};
-
-/**
- * Get all notification history
- */
-export const getAllNotificationHistory = async (params = {}) => {
-  const { data } = await apiClient.get('/job-alerts/history', { params });
-  return { data: data.data, meta: data.meta };
-};

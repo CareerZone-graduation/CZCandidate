@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { GraduationCap, Calendar, Plus, Edit3, Trash2, Save, X, MapPin, Award } from 'lucide-react';
 import { toast } from 'sonner';
+import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 
 const EducationForm = ({ formData, onFormChange, onCancel, onSave, isUpdating }) => {
   return (
@@ -144,6 +145,8 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
     honors: ''
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [eduToDelete, setEduToDelete] = useState(null);
 
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -212,18 +215,25 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
     }
   };
 
-  const handleDelete = async (eduId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa học vấn này?')) return;
+  const handleDelete = (eduId) => {
+    setEduToDelete(eduId);
+    setConfirmDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!eduToDelete) return;
 
     try {
       setIsUpdating(true);
-      const updatedEducations = educations.filter(edu => edu._id !== eduId);
+      const updatedEducations = educations.filter(edu => edu._id !== eduToDelete);
       await onUpdate({ educations: updatedEducations });
       toast.success('Xóa học vấn thành công');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+      setConfirmDeleteOpen(false);
+      setEduToDelete(null);
     }
   };
 
@@ -373,6 +383,17 @@ export const EducationSection = ({ educations = [], onUpdate }) => {
           </div>
         )}
       </CardContent>
-    </Card>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Xóa học vấn?"
+        description="Bạn có chắc chắn muốn xóa thông tin học vấn này? Hành động này không thể hoàn tác."
+        onConfirm={executeDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        variant="destructive"
+      />
+    </Card >
   );
 };

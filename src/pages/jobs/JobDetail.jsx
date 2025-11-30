@@ -607,6 +607,8 @@ const JobDetail = () => {
             jobTitle={job.title}
             open={showApplyDialog}
             onOpenChange={setShowApplyDialog}
+            onSuccess={handleApplySuccess}
+            isReapply={job.isApplied}
           />
         )}
       </div>
