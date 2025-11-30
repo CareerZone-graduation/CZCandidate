@@ -23,6 +23,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
+  History,
 } from 'lucide-react';
 import { getMyApplications } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
@@ -318,9 +320,17 @@ const Applications = () => {
                       <div className="flex-1 min-w-0 w-full">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1 mb-1">
-                              {application.jobSnapshot?.title}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+                                {application.jobSnapshot?.title}
+                              </h3>
+                              {application.isReapplied && (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Ứng tuyển lại
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex items-center text-gray-500 font-medium">
                               <Building className="h-4 w-4 mr-1.5 shrink-0" />
                               <span className="truncate">{application.jobSnapshot?.company}</span>
@@ -354,34 +364,54 @@ const Applications = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                          {application.submittedCV && (
+                        <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+                          {/* Previous Application Link */}
+                          <div>
+                            {application.previousApplicationId && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/dashboard/applications/${application.previousApplicationId}`);
+                                }}
+                              >
+                                <History className="h-4 w-4 mr-2" />
+                                Xem đơn trước
+                              </Button>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {application.submittedCV && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-gray-500 hover:text-primary hover:bg-primary/5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadCV(application.submittedCV.path);
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Tải CV
+                              </Button>
+                            )}
+                          
                             <Button 
-                              variant="ghost" 
+                              variant="default" 
                               size="sm"
-                              className="text-gray-500 hover:text-primary hover:bg-primary/5"
+                              className="bg-primary hover:bg-primary/90 shadow-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDownloadCV(application.submittedCV.path);
+                                handleViewDetail(application)
                               }}
                             >
-                              <Download className="h-4 w-4 mr-2" />
-                              Tải CV
+                              Xem chi tiết
+                              <Eye className="h-4 w-4 ml-2" />
                             </Button>
-                          )}
-                          
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            className="bg-primary hover:bg-primary/90 shadow-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetail(application)
-                            }}
-                          >
-                            Xem chi tiết
-                            <Eye className="h-4 w-4 ml-2" />
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     </div>

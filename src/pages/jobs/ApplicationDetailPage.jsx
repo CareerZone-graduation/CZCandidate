@@ -201,6 +201,8 @@ const ApplicationDetailPage = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { openChat } = useChat();
   const [showCVModal, setShowCVModal] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
 
   const {
     data: application,
@@ -213,6 +215,53 @@ const ApplicationDetailPage = () => {
     queryFn: () => getApplicationById(id),
     initialData: initialData,
   });
+
+  // Handler nhắn tin với nhà tuyển dụng
+  const handleMessage = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để nhắn tin.');
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+    
+    // Mở chat với recruiter từ thông tin trong application
+    openChat({
+      recipientId: application?.recruiterId || application?.jobSnapshot?.recruiterId,
+      jobId: application?.jobId,
+      companyName: application?.jobSnapshot?.company
+    });
+  };
+
+  const handleRespondClick = (status) => {
+    setPendingStatus(status);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmResponse = async () => {
+    if (!pendingStatus) return;
+
+    setIsResponding(true);
+    try {
+      await respondToOffer(id, pendingStatus);
+      toast.success(pendingStatus === 'ACCEPTED' ? 'Đã chấp nhận lời mời!' : 'Đã từ chối lời mời.');
+      refetch();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi phản hồi.');
+    } finally {
+      setIsResponding(false);
+      setConfirmOpen(false);
+      setPendingStatus(null);
+    }
+  };
+
+  // Tạo URL để xem CV template trên CareerZone
+  const getTemplateCVViewUrl = () => {
+    if (!application?.submittedCV) return null;
+    
+    const token = localStorage.getItem('accessToken');
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/render-application.html?applicationId=${application._id}&token=${encodeURIComponent(token)}&role=candidate`;
+  };
 
   if (isLoading && !initialData) {
     return (
@@ -240,56 +289,6 @@ const ApplicationDetailPage = () => {
       </div>
     );
   }
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState(null);
-
-  const handleRespondClick = (status) => {
-    setPendingStatus(status);
-    setConfirmOpen(true);
-  };
-
-  const handleConfirmResponse = async () => {
-    if (!pendingStatus) return;
-
-    setIsResponding(true);
-    try {
-      await respondToOffer(id, pendingStatus);
-      toast.success(pendingStatus === 'ACCEPTED' ? 'Đã chấp nhận lời mời!' : 'Đã từ chối lời mời.');
-      refetch();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi phản hồi.');
-    } finally {
-      setIsResponding(false);
-      setConfirmOpen(false);
-      setPendingStatus(null);
-    }
-  };
-
-  // Handler nhắn tin với nhà tuyển dụng
-  const handleMessage = () => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để nhắn tin.');
-      navigate('/login', { state: { from: location.pathname } });
-      return;
-    }
-    
-    // Mở chat với recruiter từ thông tin trong application
-    openChat({
-      recipientId: application.recruiterId || application.jobSnapshot?.recruiterId,
-      jobId: application.jobId,
-      companyName: application.jobSnapshot?.company
-    });
-  };
-
-  // Tạo URL để xem CV template trên CareerZone
-  const getTemplateCVViewUrl = () => {
-    if (!application?.submittedCV) return null;
-    
-    const token = localStorage.getItem('accessToken');
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/render-application.html?applicationId=${application._id}&token=${encodeURIComponent(token)}&role=candidate`;
-  };
 
   const statusInfo = getStatusInfo(application.status);
   const jobSnapshot = application.jobSnapshot || {};

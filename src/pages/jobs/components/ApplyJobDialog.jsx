@@ -21,10 +21,10 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { applyJob } from '@/services/jobService';
+import { applyJob, reapplyJob } from '@/services/jobService';
 import { getCurrentUserProfile } from '@/services/profileService';
 import { getCvs } from '@/services/api';
-import { AlertCircle, Loader2, FileUp, FileText } from 'lucide-react';
+import { AlertCircle, Loader2, FileUp, FileText, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -36,9 +36,10 @@ import { ErrorState } from '@/components/common/ErrorState';
  *  open: boolean;
  *  onOpenChange: (open: boolean) => void;
  *  onSuccess: () => void;
+ *  isReapply?: boolean;
  * }} props
  */
-export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess }) => {
+export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess, isReapply = false }) => {
   const [cvSource, setCvSource] = useState('uploaded'); // 'uploaded' or 'template'
   const [selectedCv, setSelectedCv] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
@@ -134,9 +135,16 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     };
 
     try {
-      await applyJob(jobId, applicationData);
-      toast.success('Nộp đơn ứng tuyển thành công!');
+      // Gọi API tương ứng: reapplyJob nếu là ứng tuyển lại, applyJob nếu là ứng tuyển mới
+      if (isReapply) {
+        await reapplyJob(jobId, applicationData);
+        toast.success('Nộp đơn ứng tuyển lại thành công!');
+      } else {
+        await applyJob(jobId, applicationData);
+        toast.success('Nộp đơn ứng tuyển thành công!');
+      }
       onOpenChange(false);
+      if (onSuccess) onSuccess();
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi ứng tuyển.';
       setSubmitError(errorMessage);
@@ -301,10 +309,19 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
           <Button
             type="submit"
             disabled={isSubmitting || !hasAnyCv || isLoading || !selectedCv}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className={isReapply 
+              ? "bg-orange-600 hover:bg-orange-700 text-white" 
+              : "bg-green-600 hover:bg-green-700 text-white"
+            }
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? 'Đang nộp đơn...' : 'Xác nhận ứng tuyển'}
+            {isReapply && !isSubmitting && <RefreshCw className="mr-2 h-4 w-4" />}
+            {isSubmitting 
+              ? 'Đang nộp đơn...' 
+              : isReapply 
+                ? 'Xác nhận ứng tuyển lại' 
+                : 'Xác nhận ứng tuyển'
+            }
           </Button>
         </DialogFooter>
       </form>
@@ -315,8 +332,15 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-gray-900">Ứng tuyển vị trí</DialogTitle>
-          <DialogDescription className="text-gray-600">{jobTitle}</DialogDescription>
+          <DialogTitle className="text-2xl text-gray-900">
+            {isReapply ? 'Ứng tuyển lại vị trí' : 'Ứng tuyển vị trí'}
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            {isReapply && (
+              <span className="text-orange-600 font-medium">Bạn đang ứng tuyển lại • </span>
+            )}
+            {jobTitle}
+          </DialogDescription>
         </DialogHeader>
         {renderContent()}
       </DialogContent>

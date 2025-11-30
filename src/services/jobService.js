@@ -51,6 +51,12 @@ export const applyJob = async (jobId, applicationData) => {
   return response;
 };
 
+// Ứng tuyển lại việc làm
+export const reapplyJob = async (jobId, applicationData) => {
+  const response = await apiClient.post(`/jobs/${jobId}/reapply`, applicationData);
+  return response;
+};
+
 // Lấy số lượng ứng viên đã apply vào công việc
 export const getJobApplicantCount = async (jobId) => {
   const response = await apiClient.post(`/jobs/${jobId}/applicant-count`);
