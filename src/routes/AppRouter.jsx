@@ -46,6 +46,7 @@ import CompanyDetail from '../pages/company/CompanyDetail';
 import CompanyList from '../pages/company/CompanyList';
 import CVBuilder from '../components/buildCV/CVBuilder';
 import CVBuilderPage from '../pages/cv/CVBuilderPage';
+import CVRenderOnlyPage from '../pages/cv/CVRenderOnlyPage';
 import UploadedCVPage from '../pages/cv/UploadedCVPage';
 import OnboardingPage from '../pages/onboarding/OnboardingPage';
 import { OnboardingPreview } from '../components/onboarding/OnboardingPreview';
@@ -77,7 +78,7 @@ const GlobalOnboardingChecker = () => {
   const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Use Redux hook to get onboarding status (auto-fetches if needed)
   const { needsOnboarding, isLoading } = useOnboardingStatus(isAuthenticated && !isInitializing);
 
@@ -150,7 +151,8 @@ const AppRouter = () => {
         {/* Onboarding Preview - Public route without layout */}
         <Route path="/onboarding-preview" element={<OnboardingPreview />} />
 
-        {/* CV Render Page is now handled by render.html, this route is deprecated */}
+        {/* CV Render Page - Public route without layout */}
+        <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
 
         {/* Protected CV Management routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
@@ -248,7 +250,7 @@ const AppRouter = () => {
         {/* Payment result routes - không cần layout */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/failure" element={<PaymentFailure />} />
-        
+
         {/* Fallback for any other route */}
         <Route path="*" element={<NotFound />} />
       </Routes>

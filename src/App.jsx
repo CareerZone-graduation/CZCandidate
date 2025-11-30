@@ -6,8 +6,6 @@ import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import useFirebaseMessaging from './hooks/useFirebaseMessaging';
-import { Route } from 'lucide-react';
-import CVRenderOnlyPage from './pages/cv/CVRenderOnlyPage';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import TikTokPreloader from '@/components/common/TikTokPreloader';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -22,7 +20,7 @@ function AppContent() {
       <AppRouter />
       <Toaster position="top-center" richColors />
       <ScrollToTop />
-      
+
       {/* Global Chat Interface */}
       <ChatInterface
         isOpen={isChatOpen}
@@ -52,7 +50,6 @@ function App() {
         </BackgroundProvider>
       </ThemeProvider>
 
-      <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
     </>
   );
 }
