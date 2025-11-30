@@ -16,7 +16,7 @@ class InterviewSocketService {
     this.connectionPromise = null;
     this.currentUser = null;
     this.currentUserId = null;
-    
+
     // Get Socket.io URL from environment
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     this.socketUrl = apiUrl.replace(/\/api$/, '');
@@ -37,7 +37,7 @@ class InterviewSocketService {
    */
   off(event, handler) {
     if (!this.eventHandlers.has(event)) return;
-    
+
     const handlers = this.eventHandlers.get(event);
     const index = handlers.indexOf(handler);
     if (index > -1) {
@@ -46,12 +46,26 @@ class InterviewSocketService {
   }
 
   /**
+   * Remove all listeners for an event or all events
+   * @param {string} event - Event name (optional)
+   */
+  removeAllListeners(event = null) {
+    if (event) {
+      this.eventHandlers.delete(event);
+    } else {
+      this.eventHandlers.clear();
+    }
+  }
+
+  /**
    * Trigger event handlers
    * @private
+   * @param {string} event - Event name
+   * @param {*} data - Event data
    */
   _triggerHandler(event, data) {
     if (!this.eventHandlers.has(event)) return;
-    
+
     const handlers = this.eventHandlers.get(event);
     handlers.forEach(handler => {
       try {
@@ -113,12 +127,12 @@ class InterviewSocketService {
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this._triggerHandler('onConnect', { socketId: this.socket.id });
-        
+
         // Debug: Log all socket events
         this.socket.onAny((eventName, ...args) => {
           console.log('[InterviewSocket] 🔔 Event received:', eventName, args);
         });
-        
+
         resolve();
       });
 
@@ -134,7 +148,7 @@ class InterviewSocketService {
         console.error('[InterviewSocket] Connection error:', error.message);
         this.isConnected = false;
         this.reconnectAttempts++;
-        
+
         this._triggerHandler('onConnectionError', {
           error,
           attempt: this.reconnectAttempts
@@ -152,12 +166,12 @@ class InterviewSocketService {
         console.log(`[InterviewSocket] Reconnected after ${attemptNumber} attempts`);
         this.isConnected = true;
         this.reconnectAttempts = 0;
-        
+
         if (this.currentInterviewId) {
           console.log('[InterviewSocket] Rejoining interview after reconnect');
           this.joinInterview(this.currentInterviewId, { role: 'candidate' });
         }
-        
+
         this._triggerHandler('onReconnect', attemptNumber);
       });
 
@@ -232,6 +246,18 @@ class InterviewSocketService {
       this._triggerHandler('onChatMessage', data);
     });
 
+    // Received emoji
+    this.socket.on('interview:emoji', (data) => {
+      console.log('[InterviewSocket] Emoji received:', data);
+      this._triggerHandler('onEmoji', data);
+    });
+
+    // Media state changed
+    this.socket.on('interview:media-state', (data) => {
+      console.log('[InterviewSocket] Media state changed:', data);
+      this._triggerHandler('onMediaStateChanged', data);
+    });
+
     // Recording started
     this.socket.on('interview:recording-started', (data) => {
       console.log('[InterviewSocket] Recording started');
@@ -268,7 +294,7 @@ class InterviewSocketService {
       }
 
       console.log('[InterviewSocket] Joining interview:', interviewId);
-      
+
       this.socket.emit('interview:join', {
         roomId: interviewId, // Backend expects both roomId and interviewId
         interviewId,
@@ -297,8 +323,8 @@ class InterviewSocketService {
     }
 
     console.log('[InterviewSocket] Leaving interview:', interviewId);
-    
-    this.socket.emit('interview:leave', { 
+
+    this.socket.emit('interview:leave', {
       interviewId,
       roomId: interviewId // Backend expects roomId
     });
@@ -315,7 +341,7 @@ class InterviewSocketService {
     }
 
     console.log('[InterviewSocket] Sending answer');
-    
+
     this.socket.emit('interview:answer', {
       interviewId,
       roomId: interviewId,
@@ -329,12 +355,11 @@ class InterviewSocketService {
    */
   sendIceCandidate(interviewId, candidate, to) {
     if (!this.socket || !this.isConnected) {
-      console.error('[InterviewSocket] Cannot send ICE candidate - socket not connected');
       return;
     }
 
     console.log('[InterviewSocket] Sending ICE candidate');
-    
+
     this.socket.emit('interview:ice-candidate', {
       interviewId,
       roomId: interviewId,
@@ -354,7 +379,7 @@ class InterviewSocketService {
     }
 
     console.log('[InterviewSocket] Sending signal:', signal.type || 'candidate', to ? `to ${to}` : 'to room');
-    
+
     // Use unified interview:signal event for all signal types
     this.socket.emit('interview:signal', {
       interviewId,
@@ -375,7 +400,7 @@ class InterviewSocketService {
       }
 
       console.log('[InterviewSocket] Sending chat message');
-      
+
       this.socket.emit('interview:chat-message', {
         roomId: interviewId, // Backend expects both roomId and interviewId
         interviewId,
@@ -393,6 +418,42 @@ class InterviewSocketService {
   }
 
   /**
+   * Send emoji reaction
+   * @param {string} interviewId - Interview ID
+   * @param {string} emoji - Emoji character
+   */
+  sendEmoji(interviewId, emoji) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('[InterviewSocket] Cannot send emoji: not connected');
+      return;
+    }
+
+    this.socket.emit('interview:emoji', {
+      roomId: interviewId, // Use interviewId as roomId
+      interviewId,
+      emoji
+    });
+  }
+
+  /**
+   * Notify media state changed (audio/video toggle)
+   */
+  notifyMediaStateChanged(interviewId, isAudioEnabled, isVideoEnabled) {
+    if (!this.socket || !this.isConnected) {
+      console.warn('[InterviewSocket] Cannot notify media state - socket not connected');
+      return;
+    }
+
+    console.log('[InterviewSocket] Notifying media state changed:', { isAudioEnabled, isVideoEnabled });
+
+    this.socket.emit('interview:media-state', {
+      roomId: interviewId,
+      isAudioEnabled,
+      isVideoEnabled
+    });
+  }
+
+  /**
    * Disconnect socket
    */
   disconnect() {
@@ -401,7 +462,7 @@ class InterviewSocketService {
       this.socket.disconnect();
       this.socket = null;
     }
-    
+
     this.isConnected = false;
     this.isConnecting = false;
     this.currentInterviewId = null;
@@ -434,6 +495,15 @@ class InterviewSocketService {
       reconnectAttempts: this.reconnectAttempts,
       currentUserId: this.currentUserId
     };
+  }
+  /**
+   * Reset the service
+   */
+  reset() {
+    this.disconnect();
+    this.eventHandlers.clear();
+    this.connectionPromise = null;
+    this.isConnecting = false;
   }
 }
 

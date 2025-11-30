@@ -201,18 +201,18 @@ const MyInterviews = () => {
             />
           ) : (
             <>
-              {/* Interview Preparation Tips */}
+              {/* Mẹo chuẩn bị phỏng vấn */}
               <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
                 <Lightbulb className="h-4 w-4 text-blue-600" />
                 <AlertTitle className="text-blue-900 dark:text-blue-100">
-                  Interview Preparation Tips
+                  Mẹo chuẩn bị phỏng vấn
                 </AlertTitle>
                 <AlertDescription className="text-blue-800 dark:text-blue-200">
                   <ul className="list-disc list-inside space-y-1 mt-2">
-                    <li>Test your camera and microphone 15 minutes before the interview</li>
-                    <li>Ensure you have a stable internet connection</li>
-                    <li>Prepare your resume and job description for reference</li>
-                    <li>Find a quiet, well-lit space for the interview</li>
+                    <li>Kiểm tra camera và microphone 15 phút trước khi phỏng vấn</li>
+                    <li>Đảm bảo bạn có kết nối internet ổn định</li>
+                    <li>Chuẩn bị sẵn CV và mô tả công việc để tham khảo</li>
+                    <li>Tìm một không gian yên tĩnh, đủ ánh sáng cho buổi phỏng vấn</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -310,21 +310,13 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest }) => {
 
         <div className="flex gap-3">
           <Button
-            variant="outline"
-            onClick={onDeviceTest}
-            className="flex-1"
-          >
-            <Video className="w-4 h-4 mr-2" />
-            Test Device
-          </Button>
-          <Button
             variant="default"
             onClick={() => onJoin(interview.id, interview.scheduledTime)}
             disabled={!canJoin}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
             <Video className="w-4 h-4 mr-2" />
-            Join Interview
+            Tham gia phỏng vấn
           </Button>
         </div>
       </CardContent>
