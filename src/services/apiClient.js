@@ -2,11 +2,11 @@ import axios from 'axios';
 import { getAccessToken, saveAccessToken } from '@/utils/token';
 
 const apiClient = axios.create({
-  baseURL:  '/api',
+  baseURL: '/api',
 });
 
 const apiRefreshClient = axios.create({
-  baseURL:  '/api',
+  baseURL: '/api',
   withCredentials: true,
 });
 
@@ -60,11 +60,11 @@ apiClient.interceptors.response.use(
       try {
         const { data } = await apiRefreshClient.post('/auth/refresh');
         const newAccessToken = data.data.accessToken;
-        
+
         saveAccessToken(newAccessToken);
         apiClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
         originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
-        
+
         processQueue(null, newAccessToken);
         return apiClient(originalRequest);
       } catch (refreshError) {

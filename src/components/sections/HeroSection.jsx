@@ -57,7 +57,7 @@ const HeroSection = () => {
   <Button
     size="lg"
     className="bg-card hover:bg-muted text-primary font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
-    onClick={() => window.open('http://localhost:4000/', '_blank')}
+    onClick={() => window.open(import.meta.env.VITE_RECRUITER_FE_URL || 'http://localhost:4000/', '_blank')}
   >
     <Briefcase className="mr-3 h-6 w-6" />
     Đăng tuyển

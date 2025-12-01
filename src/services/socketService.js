@@ -17,7 +17,7 @@ class SocketService {
     this.connectionPromise = null;
 
     // Get Socket.io URL from environment
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     // Extract base URL (remove /api suffix if present)
     this.socketUrl = apiUrl.replace(/\/api$/, '');
   }
