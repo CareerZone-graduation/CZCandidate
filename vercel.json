@@ -3,7 +3,7 @@
   "rewrites": [
       {
       "source": "/api/:match*",
-      "destination": "${VITE_API_BASE_URL}/api/:match*"
+      "destination": "http://98.92.58.241:5000/api/:match*"
     },
     {
       "source": "/(.*)",
