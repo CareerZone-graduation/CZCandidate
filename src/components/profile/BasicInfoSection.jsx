@@ -146,7 +146,6 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                 src={avatarFile ? URL.createObjectURL(avatarFile) : profile?.avatar}
                 alt={profile?.fullname}
                 referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
                 className="object-cover"
               />
               <AvatarFallback className="bg-primary/10 text-primary text-4xl font-bold">

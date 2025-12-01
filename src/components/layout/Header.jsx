@@ -139,7 +139,7 @@ const Header = () => {
     } else {
       // Reset messages when user logs out
       setUnreadMessagesCount(0);
-      
+
       // Disconnect Socket.io when user logs out
       socketService.disconnect();
     }
@@ -228,8 +228,8 @@ const Header = () => {
                   </Link>
                   {isAuthenticated && (
                     <>
-                      <button 
-                        onClick={() => openChat()} 
+                      <button
+                        onClick={() => openChat()}
                         className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4 w-full text-left"
                       >
                         <MessageCircle className="h-4 w-4" /> Tin nhắn
@@ -366,8 +366,8 @@ const Header = () => {
                 >
                   <MessageCircle className={cn(
                     "h-5 w-5 transition-all",
-                    unreadMessagesCount > 0 
-                      ? "text-blue-600 group-hover:scale-110" 
+                    unreadMessagesCount > 0
+                      ? "text-blue-600 group-hover:scale-110"
                       : "text-muted-foreground group-hover:text-blue-600 group-hover:scale-110"
                   )} />
                 </Button>
@@ -401,10 +401,11 @@ const Header = () => {
                 >
                   <div className="relative">
                     <Avatar className="w-8 h-8 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all duration-300">
-                      <AvatarImage src={user?.profile?.avatar} alt={user?.fullname}
-                      referrerPolicy="no-referrer"
-  crossOrigin="anonymous"
-   />
+                      <AvatarImage
+                        src={user?.profile?.avatar}
+                        alt={user?.fullname}
+                        referrerPolicy="no-referrer"
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-primary/20 to-blue-600/20 text-primary text-sm font-semibold">
                         {getUserInitials(user)}
                       </AvatarFallback>
@@ -461,8 +462,11 @@ const Header = () => {
                       <div className="flex items-center space-x-4 relative z-10">
                         <div className="relative">
                           <Avatar className="w-14 h-14 ring-2 ring-primary/30 shadow-lg">
-                            <AvatarImage referrerPolicy="no-referrer"
-  crossOrigin="anonymous" src={user?.profile?.avatar} alt={user?.profile?.fullname} />
+                            <AvatarImage
+                              referrerPolicy="no-referrer"
+                              src={user?.profile?.avatar}
+                              alt={user?.profile?.fullname}
+                            />
                             <AvatarFallback className="bg-gradient-to-br from-primary/30 to-blue-600/30 text-primary font-bold text-lg">
                               {getUserInitials(user)}
                             </AvatarFallback>
