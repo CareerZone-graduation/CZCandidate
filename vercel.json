@@ -1,8 +1,13 @@
 {
-    "rewrites": [
+  "version": 2,
+  "rewrites": [
       {
-        "source": "/(.*)",
-        "destination": "/index.html"
-      }
-    ]
-  }
+      "source": "/api/:match*",
+      "destination": "${VITE_API_BASE_URL}/api/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
