@@ -118,6 +118,7 @@ class InterviewSocketService {
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 2000,
         timeout: 20000,
+        path: '/socket.io',
       });
 
       this.socket.on('connect', () => {
