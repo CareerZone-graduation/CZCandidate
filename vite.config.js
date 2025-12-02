@@ -36,13 +36,13 @@ export default defineConfig(({ mode }) => {
       host: 'localhost',
       open: true,
       port: 3000,
-      proxy: {
-        '/api': {
-          // dùng env ở đây là được
-          target: env.VITE_API_BASE_URL || 'http://localhost:5000',
-          changeOrigin: true,
-        },
-      },
+      // proxy: {
+      //   '/api': {
+      //     // dùng env ở đây là được
+      //     target: env.VITE_API_BASE_URL || 'http://localhost:5000',
+      //     changeOrigin: true,
+      //   },
+      // },
       allowedHosts: true,
     },
   }
