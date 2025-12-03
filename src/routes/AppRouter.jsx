@@ -7,6 +7,7 @@ import { fetchUser } from '../redux/authSlice';
 import MainLayout from '../components/layout/MainLayout';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProfileLayout from '../components/layout/ProfileLayout';
+import EditorLayout from '../components/layout/EditorLayout';
 
 // Pages
 import HomePage from '../components/HomePage';
@@ -137,15 +138,12 @@ const AppRouter = () => {
           <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
-          <Route path="/editor" element={<CVBuilder />} />
-          <Route path="/editor/:cvId" element={<CVBuilder />} />
         </Route>
 
-        {/* Protected Job Alert Jobs Page */}
-        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-          <Route path="/jobs/alert" element={<MainLayout />}>
-            <Route index element={<JobAlertJobsPage />} />
-          </Route>
+        {/* Editor routes with specific layout */}
+        <Route element={<EditorLayout />}>
+          <Route path="/editor" element={<CVBuilder />} />
+          <Route path="/editor/:cvId" element={<CVBuilder />} />
         </Route>
 
         {/* Onboarding Preview - Public route without layout */}
@@ -254,7 +252,7 @@ const AppRouter = () => {
         {/* Fallback for any other route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </BrowserRouter >
   );
 };
 

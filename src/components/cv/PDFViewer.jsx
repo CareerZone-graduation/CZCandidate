@@ -16,16 +16,14 @@ const PDFViewer = ({ pdfUrl, onDownload, fileName = 'cv.pdf' }) => {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [scale, setScale] = useState(1.0);
-    const [loading, setLoading] = useState(true);
+
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);
-        setLoading(false);
     };
 
     const onDocumentLoadError = (error) => {
         console.error('Error loading PDF:', error);
-        setLoading(false);
     };
 
     const goToPrevPage = () => {
@@ -90,12 +88,6 @@ const PDFViewer = ({ pdfUrl, onDownload, fileName = 'cv.pdf' }) => {
 
             {/* PDF Display */}
             <div className="flex-1 overflow-auto p-4 flex justify-center">
-                {loading && (
-                    <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                        <span className="ml-2 text-gray-600">Đang tải PDF...</span>
-                    </div>
-                )}
                 <Document
                     file={pdfUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
@@ -103,6 +95,7 @@ const PDFViewer = ({ pdfUrl, onDownload, fileName = 'cv.pdf' }) => {
                     loading={
                         <div className="flex items-center justify-center h-full">
                             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                            <span className="ml-2 text-gray-600">Đang tải PDF...</span>
                         </div>
                     }
                 >

@@ -6,17 +6,10 @@ import UploadedCVManager from '@/components/cv/UploadedCVManager';
  */
 const UploadedCVPage = () => {
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-          CV đã tải lên
-        </h1>
-        <p className="text-gray-600">
-          Quản lý các CV bạn đã tải lên từ file PDF
-        </p>
+    <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">
+      <div className="h-full overflow-hidden rounded-xl border bg-background shadow-sm">
+        <UploadedCVManager />
       </div>
-
-      <UploadedCVManager />
     </div>
   );
 };

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Download, Trash2, Pencil, Eye, Star, AlertTriangle, Upload, Plus } from 'lucide-react';
 import apiClient from '@/services/apiClient';
 import PDFViewer from './PDFViewer';
+import { cn } from '@/lib/utils';
 
 /**
  * Component quản lý CV đã upload
@@ -101,19 +102,30 @@ const UploadedCVManager = () => {
     onSuccess: (data) => {
       toast.success('Tải lên CV thành công!');
       queryClient.invalidateQueries({ queryKey: ['uploaded-cvs'] });
-      
+
       // Set newly uploaded CV ID for highlighting
-      const uploadedCv = data?.data;
+      const responseData = data?.data;
+      let uploadedCv = null;
+
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        // Find the CV with the latest uploadedAt timestamp
+        uploadedCv = responseData.reduce((latest, current) => {
+          return new Date(current.uploadedAt) > new Date(latest.uploadedAt) ? current : latest;
+        }, responseData[0]);
+      } else if (responseData?._id) {
+        uploadedCv = responseData;
+      }
+
       if (uploadedCv?._id) {
         setNewlyUploadedCvId(uploadedCv._id);
         // Auto view the newly uploaded CV
         setViewingCv(uploadedCv);
-        // Remove highlight after 3 seconds
+        // Remove highlight after 5 seconds
         setTimeout(() => {
           setNewlyUploadedCvId(null);
-        }, 3000);
+        }, 5000);
       }
-      
+
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -175,7 +187,7 @@ const UploadedCVManager = () => {
         toast.error('Kích thước file không được vượt quá 10MB');
         return;
       }
-      
+
       // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -203,6 +215,13 @@ const UploadedCVManager = () => {
       fileInputRef.current.value = '';
     }
   };
+
+  // Auto-select first CV if none selected and data loaded
+  React.useEffect(() => {
+    if (cvsData?.data?.length > 0 && !viewingCv && !isLoading) {
+      setViewingCv(cvsData.data[0]);
+    }
+  }, [cvsData, viewingCv, isLoading]);
 
   if (isLoading) {
     return (
@@ -233,7 +252,7 @@ const UploadedCVManager = () => {
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-12rem)]">
+    <div className="flex h-full bg-background">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -242,186 +261,193 @@ const UploadedCVManager = () => {
         onChange={handleFileSelect}
         className="hidden"
       />
-      
+
       {/* Left Panel - CV List */}
-      <div className="w-full lg:w-96 flex-shrink-0 space-y-4 overflow-y-auto pr-2">
-        <div className="sticky top-0 bg-white pb-3 border-b z-10">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold text-gray-900">Danh sách CV</h2>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Tải lên
-            </Button>
+      <div className="w-80 flex-shrink-0 flex flex-col border-r bg-card">
+        <div className="p-4 border-b flex items-center justify-between bg-card sticky top-0 z-10">
+          <div>
+            <h2 className="font-semibold text-lg tracking-tight">CV đã tải lên</h2>
+            <p className="text-xs text-muted-foreground">{cvs.length} tài liệu</p>
           </div>
-          <span className="text-sm text-gray-500">{cvs.length} CV</span>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+            title="Tải lên CV mới"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
         </div>
 
-        {cvs.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Chưa có CV nào được tải lên
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Tải lên CV của bạn để dễ dàng ứng tuyển công việc
-              </p>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {cvs.length === 0 ? (
+            <div className="text-center py-8 px-4">
+              <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <Upload className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground mb-1">Chưa có CV nào</p>
+              <p className="text-xs text-muted-foreground mb-3">Tải lên CV để bắt đầu</p>
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                className="gap-2"
+                variant="outline"
+                size="sm"
+                className="w-full"
               >
-                <Upload className="h-4 w-4" />
-                Tải lên CV đầu tiên
+                Tải lên ngay
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {cvs.map((cv) => (
-              <Card
+            </div>
+          ) : (
+            cvs.map((cv) => (
+              <div
                 key={cv._id}
-                className={`transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  cv.isDefault ? 'border-2 border-blue-500' : ''
-                } ${viewingCv?._id === cv._id ? 'ring-2 ring-blue-500 bg-blue-50' : ''} ${
-                  newlyUploadedCvId === cv._id 
-                    ? 'animate-pulse ring-4 ring-green-400 shadow-lg shadow-green-200 border-2 border-green-500' 
-                    : ''
-                }`}
                 onClick={() => handleViewInPanel(cv)}
+                className={`group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border relative overflow-hidden ${newlyUploadedCvId === cv._id
+                  ? 'bg-green-50 border-green-500 ring-2 ring-green-400 ring-offset-1 shadow-[0_0_15px_rgba(74,222,128,0.3)] z-10'
+                  : viewingCv?._id === cv._id
+                    ? 'bg-primary/5 border-primary/20 shadow-sm ring-1 ring-primary/10'
+                    : 'hover:bg-accent/50 border-transparent hover:border-border'
+                  }`}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="truncate text-sm flex items-center gap-2">
-                        <FileText className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{cv.name}</span>
-                        {newlyUploadedCvId === cv._id && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 animate-bounce">
-                            MỚI
-                          </span>
-                        )}
-                      </CardTitle>
-                      {cv.isDefault && (
-                        <div className="flex items-center gap-1 text-xs text-blue-600 mt-1">
-                          <Star className="h-3 w-3 fill-current" />
-                          <span>CV mặc định</span>
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(cv.uploadedAt).toLocaleDateString('vi-VN')}
-                      </div>
+                <div className="mt-0.5 relative">
+                  <div className={`h-10 w-10 rounded flex items-center justify-center ${viewingCv?._id === cv._id ? 'bg-white text-primary shadow-sm' : 'bg-muted/50 text-muted-foreground'
+                    }`}>
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  {cv.isDefault && (
+                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border">
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenRenameDialog(cv);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </div>
-                </CardHeader>
+                  )}
+                </div>
 
-                <CardContent className="space-y-2">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(cv);
-                      }}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Tải
-                    </Button>
-                    {!cv.isDefault && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSetDefault(cv);
-                        }}
-                        disabled={setDefaultMutation.isPending}
-                      >
-                        <Star className="h-3 w-3 mr-1" />
-                        Mặc định
-                      </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDeleteDialog(cv);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={`font-medium text-sm truncate pr-2 ${viewingCv?._id === cv._id ? 'text-primary' : 'text-foreground'
+                      }`} title={cv.name}>
+                      {cv.name}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(cv.uploadedAt).toLocaleDateString('vi-VN')}
+                    </p>
+                    {newlyUploadedCvId === cv._id && (
+                      <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">
+                        MỚI
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Right Panel - PDF Viewer */}
-      <div className="flex-1 hidden lg:block">
+      {/* Right Panel - Preview */}
+      <div className="flex-1 flex flex-col min-w-0 bg-muted/30">
         {viewingCv ? (
-          <Card className="h-full flex flex-col">
-            <CardHeader className="border-b bg-white flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg truncate flex-1">
-                  {viewingCv.name}
-                </CardTitle>
+          <div className="flex flex-col h-full">
+            {/* Toolbar */}
+            <div className="h-16 border-b bg-card flex items-center justify-between px-6 flex-shrink-0 shadow-sm z-10">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/10">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-lg truncate text-gray-900">{viewingCv.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Đã tải lên {new Date(viewingCv.uploadedAt).toLocaleDateString('vi-VN', {
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}</span>
+                    {viewingCv.isDefault && (
+                      <>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-yellow-600 font-medium bg-yellow-50 px-1.5 py-0.5 rounded">
+                          <Star className="h-3 w-3 fill-current" /> CV Mặc định
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setViewingCv(null)}
-                  className="ml-2"
+                  onClick={() => handleOpenRenameDialog(viewingCv)}
+                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                  title="Đổi tên"
                 >
-                  <span className="text-xs">Đóng</span>
+                  <Pencil className="h-4 w-4 mr-1.5" />
+                  <span className="hidden sm:inline">Đổi tên</span>
+                </Button>
+                <div className="w-px h-4 bg-border mx-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(viewingCv)}
+                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                  title="Tải xuống"
+                >
+                  <Download className="h-4 w-4 mr-1.5" />
+                  <span className="hidden sm:inline">Tải về</span>
+                </Button>
+                <div className="w-px h-4 bg-border mx-1" />
+                {!viewingCv.isDefault && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSetDefault(viewingCv)}
+                      className="h-8 px-2 text-muted-foreground hover:text-yellow-600"
+                      title="Đặt làm mặc định"
+                    >
+                      <Star className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Mặc định</span>
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenDeleteDialog(viewingCv)}
+                  className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  title="Xóa"
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  <span className="hidden sm:inline">Xóa</span>
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Tải lên: {new Date(viewingCv.uploadedAt).toLocaleDateString('vi-VN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden">
+            </div>
+
+            {/* PDF Viewer Container */}
+            <div className="flex-1 overflow-hidden relative bg-gray-100/50">
               <PDFViewer
                 pdfUrl={viewingCv.path}
                 fileName={viewingCv.name}
                 onDownload={() => handleDownload(viewingCv)}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
-          <Card className="h-full flex items-center justify-center bg-gray-50">
-            <CardContent className="text-center">
-              <Eye className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Chọn CV để xem
-              </h3>
-              <p className="text-gray-600">
-                Click vào CV ở danh sách bên trái để xem nội dung
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
+            <div className="max-w-md text-center">
+              <div className="h-24 w-24 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FileText className="h-12 w-12 opacity-20" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Chọn CV để xem trước</h3>
+              <p className="text-gray-500 mb-8">
+                Chọn một CV từ danh sách bên trái để xem nội dung chi tiết, hoặc tải lên CV mới của bạn.
               </p>
-            </CardContent>
-          </Card>
+              <Button onClick={() => fileInputRef.current?.click()} size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all">
+                <Upload className="h-5 w-5" /> Tải lên CV mới
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
@@ -513,7 +539,7 @@ const UploadedCVManager = () => {
               <DialogTitle className="text-xl">Xác nhận tải lên CV</DialogTitle>
             </div>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-y-auto space-y-4 py-4">
             {selectedFile && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -530,7 +556,7 @@ const UploadedCVManager = () => {
                 </div>
               </div>
             )}
-            
+
             {/* PDF Preview */}
             {previewUrl && (
               <div className="border rounded-lg overflow-hidden bg-gray-50">
@@ -546,14 +572,14 @@ const UploadedCVManager = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
               <p className="text-xs text-gray-600">
                 <strong>Lưu ý:</strong> Vui lòng kiểm tra kỹ nội dung CV trước khi tải lên. File phải là PDF và không quá 10MB.
               </p>
             </div>
           </div>
-          
+
           <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button
               variant="outline"

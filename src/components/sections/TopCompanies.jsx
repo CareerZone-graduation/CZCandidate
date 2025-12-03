@@ -39,7 +39,6 @@ const TopCompanies = () => {
         console.log('📦 TOP COMPANIES API Response:', response.data);
 
         if (response.data.success) {
-          console.log('✅ Top Companies data:', response.data.data);
           setCompanies(response.data.data);
         } else {
           console.warn('⚠️ API returned success: false');

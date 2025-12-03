@@ -263,14 +263,11 @@ const CVBuilder = () => {
         />
       )}
 
-      <div className="min-h-screen bg-gray-50">
-
-
-
-        <div className="flex h-screen">
+      <div className="h-full bg-gray-50">
+        <div className="flex h-full">
           {/* Sidebar */}
-          <div className={`${isSidebarOpen ? 'w-80' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300`}>
-            <div className="p-4 border-b border-gray-200">
+          <div className={`${isSidebarOpen ? 'w-80' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}>
+            <div className="p-4 border-b border-gray-200 shrink-0">
               <div className="flex items-center justify-between">
                 {isSidebarOpen && (
                   <h2 className="text-lg font-semibold text-gray-800">CV Builder</h2>
@@ -284,99 +281,105 @@ const CVBuilder = () => {
               </div>
             </div>
 
-            {/* Sample Data Buttons */}
-            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                <Sparkles className="w-4 h-4 mr-1 text-blue-600" />
-                Dùng dữ liệu mẫu
-              </h3>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => loadSampleData('default')}
-                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  <Zap className="w-3 h-3 mr-1" />
-                  Kỹ sư phần mềm
-                </button>
-                <button
-                  onClick={() => loadSampleData('creative')}
-                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-purple-700 bg-purple-100 rounded-md hover:bg-purple-200 transition-colors"
-                >
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Nhà thiết kế
-                </button>
-                <button
-                  onClick={() => loadSampleData('minimal')}
-                  className="flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  <Coffee className="w-3 h-3 mr-1" />
-                  Marketing
-                </button>
-              </div>
-            </div>
+            {/* Scrollable Sidebar Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="p-4 space-y-4">
 
-            {/* Action Buttons */}
-            <div className="p-4 space-y-2">
-              <button
-                onClick={saveCv}
-                disabled={isSaving}
-                className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {isSidebarOpen && <span>{isSaving ? 'Đang lưu...' : 'Lưu CV'}</span>}
-              </button>
-
-              <button
-                onClick={exportPDF}
-                disabled={isExporting}
-                className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
-              >
-                <Download className="w-4 h-4" />
-                {isSidebarOpen && <span>{isExporting ? 'Đang export...' : '📄 Export PDF'}</span>}
-              </button>
-
-              <button
-                onClick={() => setShowPreview(!showPreview)}
-                className="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
-              >
-                <Eye className="w-4 h-4" />
-                {isSidebarOpen && <span>{showPreview ? 'Ẩn Preview' : 'Xem Preview'}</span>}
-              </button>
-            </div>
-
-            {/* Navigation Tabs */}
-            {isSidebarOpen && (
-              <div className="p-4">
-                <div className="space-y-1">
-                  {[
-                    { id: 'template', label: 'Mẫu CV', icon: Palette },
-                    { id: 'personal', label: 'Thông tin cá nhân', icon: User },
-                    { id: 'summary', label: 'Tóm tắt', icon: FileText },
-                    { id: 'work', label: 'Kinh nghiệm', icon: Briefcase },
-                    { id: 'education', label: 'Học vấn', icon: GraduationCap },
-                    { id: 'skills', label: 'Kỹ năng', icon: Award },
-                    { id: 'projects', label: 'Dự án', icon: FolderOpen },
-                    { id: 'certificates', label: 'Chứng chỉ', icon: Certificate },
-                    { id: 'layout', label: 'Bố cục & Thứ tự', icon: Settings },
-                  ].map((tab) => {
-                    const Icon = tab.icon;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
-                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span>{tab.label}</span>
-                      </button>
-                    );
-                  })}
+                {/* Sample Data Buttons */}
+                <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Sparkles className="w-4 h-4 mr-1 text-blue-600" />
+                    Dùng dữ liệu mẫu
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => loadSampleData('default')}
+                      className="flex items-center justify-center px-3 py-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      Kỹ sư phần mềm
+                    </button>
+                    <button
+                      onClick={() => loadSampleData('creative')}
+                      className="flex items-center justify-center px-3 py-2 text-xs font-medium text-purple-700 bg-purple-100 rounded-md hover:bg-purple-200 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Nhà thiết kế
+                    </button>
+                    <button
+                      onClick={() => loadSampleData('minimal')}
+                      className="flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      <Coffee className="w-3 h-3 mr-1" />
+                      Marketing
+                    </button>
+                  </div>
                 </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  <button
+                    onClick={saveCv}
+                    disabled={isSaving}
+                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSidebarOpen && <span>{isSaving ? 'Đang lưu...' : 'Lưu CV'}</span>}
+                  </button>
+
+                  <button
+                    onClick={exportPDF}
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    {isSidebarOpen && <span>{isExporting ? 'Đang export...' : '📄 Export PDF'}</span>}
+                  </button>
+
+                  <button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {isSidebarOpen && <span>{showPreview ? 'Ẩn Preview' : 'Xem Preview'}</span>}
+                  </button>
+                </div>
+
+                {/* Navigation Tabs */}
+                {isSidebarOpen && (
+                  <div className="">
+                    <div className="space-y-1">
+                      {[
+                        { id: 'template', label: 'Mẫu CV', icon: Palette },
+                        { id: 'personal', label: 'Thông tin cá nhân', icon: User },
+                        { id: 'summary', label: 'Tóm tắt', icon: FileText },
+                        { id: 'work', label: 'Kinh nghiệm', icon: Briefcase },
+                        { id: 'education', label: 'Học vấn', icon: GraduationCap },
+                        { id: 'skills', label: 'Kỹ năng', icon: Award },
+                        { id: 'projects', label: 'Dự án', icon: FolderOpen },
+                        { id: 'certificates', label: 'Chứng chỉ', icon: Certificate },
+                        { id: 'layout', label: 'Bố cục & Thứ tự', icon: Settings },
+                      ].map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
+                              ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -482,7 +485,7 @@ const CVBuilder = () => {
                     </button>
                   </div>
                 </div>
-                <div className="p-6 flex justify-center items-start min-h-screen">
+                <div className="p-6 flex justify-center items-start min-h-full">
                   <div
                     style={{
                       transform: `scale(${scale})`,

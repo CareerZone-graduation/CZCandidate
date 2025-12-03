@@ -31,12 +31,6 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
 
   const companies = data?.data || [];
 
-  // DEBUG: Log ra để xem data
-  console.log('🔥 TRENDING COMPANIES:', companies.map(c => ({
-    name: c.companyName,
-    apps: c.applicationCount,
-    jobs: c.activeJobCount
-  })));
 
   // Format số nhân viên
   const formatEmployees = (employees) => {

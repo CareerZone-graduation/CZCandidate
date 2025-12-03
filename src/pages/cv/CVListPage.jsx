@@ -82,10 +82,10 @@ const CVListPage = () => {
     onSuccess: (data) => {
       toast.success('CV đã được nhân bản thành công!');
       const newCvId = data.data._id;
-      
+
       // Highlight the newly cloned CV
       setHighlightedCvId(newCvId);
-      
+
       // Clear highlight after 5 seconds
       if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
@@ -93,11 +93,11 @@ const CVListPage = () => {
       highlightTimeoutRef.current = setTimeout(() => {
         setHighlightedCvId(null);
       }, 5000);
-      
+
       queryClient.invalidateQueries({ queryKey: ['my-cvs'] });
       setIsDuplicateDialogOpen(false);
       setNewCvName('');
-      
+
       // Scroll to the new CV after a short delay to ensure it's rendered
       setTimeout(() => {
         const cvElement = document.getElementById(`cv-card-${newCvId}`);
@@ -150,7 +150,7 @@ const CVListPage = () => {
 
   const handleOpenRenameDialog = (cv) => {
     setCvToRename(cv);
-    setNewCvName(cv.name || '');
+    setNewCvName(cv.title || cv.name || '');
     setIsRenameDialogOpen(true);
   };
 
@@ -268,90 +268,90 @@ const CVListPage = () => {
                     <div className="absolute inset-0 -m-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 rounded-lg blur-sm opacity-60 animate-pulse pointer-events-none z-0"></div>
                   </>
                 )}
-                
+
                 <Card className={`flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border-0 shadow-md relative ${highlightedCvId === cv._id ? 'ring-4 ring-blue-500 ring-offset-2' : ''}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="truncate text-lg flex-1">{cv.title || 'CV chưa có tên'}</CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenRenameDialog(cv);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </div>
-                </CardHeader>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="truncate text-lg flex-1">{cv.title || 'CV chưa có tên'}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenRenameDialog(cv);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </div>
+                  </CardHeader>
 
-                <CardContent className="flex-grow space-y-4">
-                  {/* CV Preview */}
-                  <CVPreview
-                    cv={cv}
-                    className="w-full"
-                  />
+                  <CardContent className="flex-grow space-y-4">
+                    {/* CV Preview */}
+                    <CVPreview
+                      cv={cv}
+                      className="w-full"
+                    />
 
-                  {/* CV Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>Cập nhật: {new Date(cv.updatedAt).toLocaleDateString('vi-VN')}</span>
-                      {cv.cvData?.personalInfo?.completionPercentage && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                          {cv.cvData.personalInfo.completionPercentage}% hoàn thành
-                        </span>
+                    {/* CV Info */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Cập nhật: {new Date(cv.updatedAt).toLocaleDateString('vi-VN')}</span>
+                        {cv.cvData?.personalInfo?.completionPercentage && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            {cv.cvData.personalInfo.completionPercentage}% hoàn thành
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Quick stats */}
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {cv.cvData?.experiences?.length > 0 && (
+                          <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
+                            {cv.cvData.experiences.length} kinh nghiệm
+                          </span>
+                        )}
+                        {cv.cvData?.skills?.length > 0 && (
+                          <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
+                            {cv.cvData.skills.length} kỹ năng
+                          </span>
+                        )}
+                      </div>
+
+                      {cv.templateId && (
+                        <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block">
+                          Template: {cv.templateId}
+                        </p>
                       )}
                     </div>
+                  </CardContent>
 
-                    {/* Quick stats */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      {cv.cvData?.experiences?.length > 0 && (
-                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
-                          {cv.cvData.experiences.length} kinh nghiệm
-                        </span>
-                      )}
-                      {cv.cvData?.skills?.length > 0 && (
-                        <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
-                          {cv.cvData.skills.length} kỹ năng
-                        </span>
-                      )}
+                  <CardFooter className="flex flex-col gap-2 pt-4">
+                    {/* Primary Actions */}
+                    <div className="flex w-full gap-2">
+                      <Button variant="default" size="sm" className="flex-1" asChild>
+                        <Link to={`/editor/${cv._id}`}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Chỉnh sửa
+                        </Link>
+                      </Button>
                     </div>
 
-                    {cv.templateId && (
-                      <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block">
-                        Template: {cv.templateId}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
+                    {/* Secondary Actions */}
+                    <div className="flex w-full gap-2">
 
-                <CardFooter className="flex flex-col gap-2 pt-4">
-                  {/* Primary Actions */}
-                  <div className="flex w-full gap-2">
-                    <Button variant="default" size="sm" className="flex-1" asChild>
-                      <Link to={`/editor/${cv._id}`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Chỉnh sửa
-                      </Link>
-                    </Button>
-                  </div>
-
-                  {/* Secondary Actions */}
-                  <div className="flex w-full gap-2">
-        
-                    <Button variant="outline" size="sm" onClick={() => handleOpenDuplicateDialog(cv)}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Nhân bản
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleOpenDeleteDialog(cv)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Xóa
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenDuplicateDialog(cv)}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Nhân bản
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleOpenDeleteDialog(cv)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Xóa
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
               </div>
             ))}
           </div>
@@ -521,7 +521,7 @@ const CVListPage = () => {
 
           <div className="space-y-4 py-4">
             <p className="text-sm text-gray-600">
-              Bạn có chắc chắn muốn xóa CV <span className="font-semibold text-gray-900">"{cvToDelete?.name}"</span> không?
+              Bạn có chắc chắn muốn xóa CV <span className="font-semibold text-gray-900">"{cvToDelete?.title || cvToDelete?.name}"</span> không?
             </p>
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-800">
