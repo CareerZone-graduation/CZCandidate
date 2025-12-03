@@ -246,7 +246,7 @@ const MinimalGrayTemplate = ({ cvData, showHeader = true, measureMode = false, p
       )}
 
       {/* Dynamic Content based on sectionOrder */}
-      <div className="px-8 pb-8">
+      <div className={`px-8 pb-8 ${!showHeader ? 'pt-8' : ''}`}>
         {sectionOrder && sectionOrder.map((sectionId) => {
           const renderFunction = sectionComponents[sectionId];
           return renderFunction ? renderFunction() : null;

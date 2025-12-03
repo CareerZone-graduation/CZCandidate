@@ -9,7 +9,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!professionalSummary) return null;
     return (
       <section data-section="summary" className="mb-8 break-inside-avoid">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           About
         </h2>
         <p className="text-gray-600 leading-relaxed text-base">{professionalSummary}</p>
@@ -21,7 +21,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!workExperience || workExperience.length === 0) return null;
     return (
       <section data-section="experience" className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           Experience
         </h2>
         <div className="space-y-6">
@@ -59,7 +59,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!education || education.length === 0) return null;
     return (
       <section data-section="education" className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           Education
         </h2>
         <div className="space-y-4">
@@ -88,7 +88,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!skills || skills.length === 0) return null;
     return (
       <section data-section="skills" className="mb-8 break-inside-avoid">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           Skills
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -131,7 +131,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!projects || projects.length === 0) return null;
     return (
       <section data-section="projects" className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           Projects
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -162,7 +162,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
     if (!certificates || certificates.length === 0) return null;
     return (
       <section data-section="certificates" className="mb-8">
-        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider break-after-avoid">
+        <h2 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-wider border-l-4 border-gray-800 pl-3 break-after-avoid">
           Certifications
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
