@@ -30,19 +30,25 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
         {personalInfo.website && (
           <div className="flex items-center text-gray-200">
             <Globe className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span className="break-all">{personalInfo.website}</span>
+            <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="break-all hover:text-white hover:underline">
+              {personalInfo.website}
+            </a>
           </div>
         )}
         {personalInfo.linkedin && (
           <div className="flex items-center text-gray-200">
             <Linkedin className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span>LinkedIn</span>
+            <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">
+              LinkedIn
+            </a>
           </div>
         )}
         {personalInfo.github && (
           <div className="flex items-center text-gray-200">
             <Github className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span>GitHub</span>
+            <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">
+              GitHub
+            </a>
           </div>
         )}
       </div>
@@ -58,7 +64,7 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-gray-300 mb-2">{category}</h3>
@@ -73,9 +79,9 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
                         <div
                           className="bg-blue-400 h-1 rounded-full"
                           style={{
-                            width: skill.level === 'Expert' ? '100%' : 
-                                   skill.level === 'Advanced' ? '80%' : 
-                                   skill.level === 'Intermediate' ? '60%' : '40%'
+                            width: skill.level === 'Expert' ? '100%' :
+                              skill.level === 'Advanced' ? '80%' :
+                                skill.level === 'Intermediate' ? '60%' : '40%'
                           }}
                         ></div>
                       </div>
@@ -217,35 +223,48 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
   };
 
   return (
-    <div className="w-full bg-white flex">
-      {/* Left Sidebar - only show when showHeader is true */}
-      {showHeader && (
-        <div className="w-1/3 bg-gray-800 p-6">
-          {/* Profile Image */}
-          {personalInfo.profileImage && (
-            <div className="text-center mb-6">
-              <img
-                src={personalInfo.profileImage}
-                alt={personalInfo.fullName}
-                className="w-24 h-24 rounded-full mx-auto border-4 border-gray-600 object-cover"
-              />
+    <div
+      className="w-full bg-white flex min-h-full flex-grow"
+      style={{
+        background: 'linear-gradient(to right, #1f2937 33.333333%, #ffffff 33.333333%)'
+      }}
+    >
+      {/* Left Sidebar - Always present for layout consistency */}
+      <div className="w-1/3 text-white p-6">
+        {showHeader && (
+          <>
+            {/* Profile Image */}
+            {personalInfo.profileImage && (
+              <div className="text-center mb-6 break-inside-avoid">
+                <img
+                  src={personalInfo.profileImage}
+                  alt={personalInfo.fullName}
+                  className="w-24 h-24 rounded-full mx-auto border-4 border-gray-600 object-cover"
+                />
+              </div>
+            )}
+
+            {/* Name */}
+            <div className="text-center mb-8 break-inside-avoid">
+              <h1 className="text-2xl font-bold text-white mb-2">{personalInfo.fullName}</h1>
             </div>
-          )}
-          
-          {/* Name */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">{personalInfo.fullName}</h1>
-          </div>
 
-          {/* Sidebar Content */}
-          {renderPersonalInfo()}
-          {renderSidebarSkills()}
-          {renderSidebarEducation()}
-        </div>
-      )}
+            {/* Sidebar Content */}
+            <div className="break-inside-avoid">
+              {renderPersonalInfo()}
+            </div>
+            <div className="break-inside-avoid">
+              {renderSidebarSkills()}
+            </div>
+            <div className="break-inside-avoid">
+              {renderSidebarEducation()}
+            </div>
+          </>
+        )}
+      </div>
 
-      {/* Main Content */}
-      <div className={showHeader ? "w-2/3 p-6" : "w-full p-6"}>
+      {/* Main Content - Always w-2/3 for consistent pagination measurement */}
+      <div className="w-2/3 p-6">
         {sectionOrder && sectionOrder.map((sectionId) => {
           const renderFunction = mainSectionComponents[sectionId];
           return renderFunction ? renderFunction() : null;

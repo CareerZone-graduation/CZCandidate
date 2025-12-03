@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Mail, Phone, MapPin, Globe, Linkedin, Github } from 'lucide-react';
+import ImageUploader from '../common/ImageUploader';
 
 const PersonalInfoForm = ({ personalInfo, onChange }) => {
   const handleChange = (field, value) => {
@@ -15,7 +16,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
         <User className="w-5 h-5 mr-2 text-blue-600" />
         Personal Information
       </h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -83,7 +84,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-                        value={personalInfo?.website || ''}
+            value={personalInfo?.website || ''}
             onChange={(e) => handleChange('website', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://yourwebsite.com"
@@ -97,7 +98,7 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
           </label>
           <input
             type="url"
-                        value={personalInfo?.linkedin || ''}
+            value={personalInfo?.linkedin || ''}
             onChange={(e) => handleChange('linkedin', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="https://linkedin.com/in/yourprofile"
@@ -119,18 +120,18 @@ const PersonalInfoForm = ({ personalInfo, onChange }) => {
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Profile Image URL
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Profile Image
           </label>
-          <input
-            type="url"
-            value={personalInfo?.profileImage || ''}
-            onChange={(e) => handleChange('profileImage', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="https://example.com/your-photo.jpg"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Add a URL to your profile photo (optional)
+          <div className="flex justify-start">
+            <ImageUploader
+              imageUrl={personalInfo?.profileImage}
+              onUploadSuccess={(url) => handleChange('profileImage', url)}
+              onClear={() => handleChange('profileImage', '')}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Upload a profile photo (JPG, PNG, WEBP - Max 5MB)
           </p>
         </div>
       </div>

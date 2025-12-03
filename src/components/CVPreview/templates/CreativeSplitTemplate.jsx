@@ -14,7 +14,7 @@ const CreativeSplitTemplate = ({ cvData, showHeader = true, measureMode = false,
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-pink-200 mb-3 uppercase tracking-wide">{category}</h3>
@@ -29,9 +29,9 @@ const CreativeSplitTemplate = ({ cvData, showHeader = true, measureMode = false,
                         <div
                           className="bg-gradient-to-r from-pink-300 to-yellow-300 h-2 rounded-full"
                           style={{
-                            width: skill.level === 'Expert' ? '100%' : 
-                                   skill.level === 'Advanced' ? '80%' : 
-                                   skill.level === 'Intermediate' ? '60%' : '40%'
+                            width: skill.level === 'Expert' ? '100%' :
+                              skill.level === 'Advanced' ? '80%' :
+                                skill.level === 'Intermediate' ? '60%' : '40%'
                           }}
                         ></div>
                       </div>
@@ -167,7 +167,7 @@ const CreativeSplitTemplate = ({ cvData, showHeader = true, measureMode = false,
   };
 
   return (
-    <div className="w-full bg-white flex">
+    <div className="w-full bg-white flex flex-grow">
       {/* Left Side - Colored Background - only show when showHeader is true */}
       {showHeader && (
         <div className="w-2/5 bg-gradient-to-br from-purple-600 via-pink-600 to-red-500 p-8 text-white">

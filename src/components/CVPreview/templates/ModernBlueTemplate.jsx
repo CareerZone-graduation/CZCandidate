@@ -92,7 +92,7 @@ const ModernBlueTemplate = ({ cvData, showHeader = true, measureMode = false }) 
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="font-semibold text-gray-800 mb-2">{category}</h3>
@@ -107,9 +107,9 @@ const ModernBlueTemplate = ({ cvData, showHeader = true, measureMode = false }) 
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{
-                            width: skill.level === 'Expert' ? '100%' : 
-                                   skill.level === 'Advanced' ? '80%' : 
-                                   skill.level === 'Intermediate' ? '60%' : '40%'
+                            width: skill.level === 'Expert' ? '100%' :
+                              skill.level === 'Advanced' ? '80%' :
+                                skill.level === 'Intermediate' ? '60%' : '40%'
                           }}
                         ></div>
                       </div>
@@ -198,58 +198,64 @@ const ModernBlueTemplate = ({ cvData, showHeader = true, measureMode = false }) 
     <div className="w-full bg-white">
       {/* Header */}
       {showHeader && (
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
-        <div className="flex items-center space-x-6">
-          {personalInfo.profileImage && (
-            <img
-              src={personalInfo.profileImage}
-              alt={personalInfo.fullName}
-              className="w-24 h-24 rounded-full border-4 border-white object-cover"
-            />
-          )}
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold mb-2">{personalInfo.fullName}</h1>
-            <div className="grid grid-cols-2 gap-2 text-sm opacity-90">
-              {personalInfo.email && (
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2" />
-                  {personalInfo.email}
-                </div>
-              )}
-              {personalInfo.phone && (
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2" />
-                  {personalInfo.phone}
-                </div>
-              )}
-              {personalInfo.address && (
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {personalInfo.address}
-                </div>
-              )}
-              {personalInfo.website && (
-                <div className="flex items-center">
-                  <Globe className="w-4 h-4 mr-2" />
-                  {personalInfo.website}
-                </div>
-              )}
-              {personalInfo.linkedin && (
-                <div className="flex items-center">
-                  <Linkedin className="w-4 h-4 mr-2" />
-                  LinkedIn
-                </div>
-              )}
-              {personalInfo.github && (
-                <div className="flex items-center">
-                  <Github className="w-4 h-4 mr-2" />
-                  GitHub
-                </div>
-              )}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
+          <div className="flex items-center space-x-6">
+            {personalInfo.profileImage && (
+              <img
+                src={personalInfo.profileImage}
+                alt={personalInfo.fullName}
+                className="w-24 h-24 rounded-full border-4 border-white object-cover"
+              />
+            )}
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold mb-2">{personalInfo.fullName}</h1>
+              <div className="grid grid-cols-2 gap-2 text-sm opacity-90">
+                {personalInfo.email && (
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    {personalInfo.email}
+                  </div>
+                )}
+                {personalInfo.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-2" />
+                    {personalInfo.phone}
+                  </div>
+                )}
+                {personalInfo.address && (
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    {personalInfo.address}
+                  </div>
+                )}
+                {personalInfo.website && (
+                  <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-2" />
+                    <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="text-white hover:underline">
+                      {personalInfo.website}
+                    </a>
+                  </div>
+                )}
+                {personalInfo.linkedin && (
+                  <div className="flex items-center">
+                    <Linkedin className="w-4 h-4 mr-2" />
+                    <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="text-white hover:underline">
+                      LinkedIn
+                    </a>
+                  </div>
+                )}
+                {personalInfo.github && (
+                  <div className="flex items-center">
+                    <Github className="w-4 h-4 mr-2" />
+                    <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="text-white hover:underline">
+                      GitHub
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* Dynamic Content based on sectionOrder */}

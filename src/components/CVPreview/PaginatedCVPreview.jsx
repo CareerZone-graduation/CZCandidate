@@ -8,7 +8,9 @@ import ElegantSerifTemplate from './templates/ElegantSerifTemplate';
 import ModernSansTemplate from './templates/ModernSansTemplate';
 import CompactDenseTemplate from './templates/CompactDenseTemplate';
 import CreativeSplitTemplate from './templates/CreativeSplitTemplate';
-import ExecutiveFormalTemplate from './templates/ExecutiveFormalTemplate';
+
+import CreativeGreenTemplate from './templates/CreativeGreenTemplate';
+import ProfessionalHexTemplate from './templates/ProfessionalHexTemplate';
 
 // A4 page constants
 const A4_HEIGHT_MM = 297;
@@ -50,7 +52,7 @@ const PaginatedCVPreview = React.forwardRef(({ cvData, className = '' }, ref) =>
   useEffect(() => {
     const measureAndPaginate = async () => {
       if (!measureRef.current) return;
-// Xóa tín hiệu cũ đi trước khi bắt đầu tính toán lại
+      // Xóa tín hiệu cũ đi trước khi bắt đầu tính toán lại
       document.body.removeAttribute('data-cv-ready');
       const tempContainer = measureRef.current;
       const sectionsData = [];
@@ -151,8 +153,11 @@ const PaginatedCVPreview = React.forwardRef(({ cvData, className = '' }, ref) =>
         return CompactDenseTemplate;
       case 'creative-split':
         return CreativeSplitTemplate;
-      case 'executive-formal':
-        return ExecutiveFormalTemplate;
+
+      case 'creative-green':
+        return CreativeGreenTemplate;
+      case 'professional-hex':
+        return ProfessionalHexTemplate;
       default:
         return ModernBlueTemplate;
     }
@@ -193,12 +198,12 @@ const PaginatedCVPreview = React.forwardRef(({ cvData, className = '' }, ref) =>
         <TemplateComponent cvData={cvData} showHeader={true} measureMode={true} />
       </div>
 
-      {/* Paginated CV output */}
+      {/* PaginatedCVPreview output */}
       <div ref={ref} className={`cv-preview ${className}`} id="cv-preview">
         {pages.map((pageData, pageIndex) => (
           <div
             key={pageIndex}
-            className="a4-page bg-white shadow-lg mb-6"
+            className="a4-page bg-white shadow-lg mb-6 flex flex-col"
             style={{
               width: `${A4_WIDTH_MM}mm`,
               minHeight: `${A4_HEIGHT_MM}mm`,

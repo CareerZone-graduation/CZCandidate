@@ -93,7 +93,7 @@ const ClassicWhiteTemplate = ({ cvData, showHeader = true, measureMode = false, 
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="font-bold text-gray-800 mb-3">{category}</h3>
@@ -220,19 +220,25 @@ const ClassicWhiteTemplate = ({ cvData, showHeader = true, measureMode = false, 
               {personalInfo.website && (
                 <div className="flex items-center">
                   <Globe className="w-4 h-4 mr-1" />
-                  {personalInfo.website}
+                  <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    {personalInfo.website}
+                  </a>
                 </div>
               )}
               {personalInfo.linkedin && (
                 <div className="flex items-center">
                   <Linkedin className="w-4 h-4 mr-1" />
-                  LinkedIn
+                  <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    LinkedIn
+                  </a>
                 </div>
               )}
               {personalInfo.github && (
                 <div className="flex items-center">
                   <Github className="w-4 h-4 mr-1" />
-                  GitHub
+                  <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    GitHub
+                  </a>
                 </div>
               )}
             </div>
