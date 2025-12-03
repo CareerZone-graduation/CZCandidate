@@ -30,19 +30,25 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
         {personalInfo.website && (
           <div className="flex items-center text-gray-200">
             <Globe className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span className="break-all">{personalInfo.website}</span>
+            <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="break-all hover:text-white hover:underline">
+              {personalInfo.website}
+            </a>
           </div>
         )}
         {personalInfo.linkedin && (
           <div className="flex items-center text-gray-200">
             <Linkedin className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span>LinkedIn</span>
+            <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">
+              LinkedIn
+            </a>
           </div>
         )}
         {personalInfo.github && (
           <div className="flex items-center text-gray-200">
             <Github className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span>GitHub</span>
+            <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">
+              GitHub
+            </a>
           </div>
         )}
       </div>
@@ -58,7 +64,7 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-gray-300 mb-2">{category}</h3>
@@ -73,9 +79,9 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
                         <div
                           className="bg-blue-400 h-1 rounded-full"
                           style={{
-                            width: skill.level === 'Expert' ? '100%' : 
-                                   skill.level === 'Advanced' ? '80%' : 
-                                   skill.level === 'Intermediate' ? '60%' : '40%'
+                            width: skill.level === 'Expert' ? '100%' :
+                              skill.level === 'Advanced' ? '80%' :
+                                skill.level === 'Intermediate' ? '60%' : '40%'
                           }}
                         ></div>
                       </div>
@@ -231,7 +237,7 @@ const TwoColumnSidebarTemplate = ({ cvData, showHeader = true, measureMode = fal
               />
             </div>
           )}
-          
+
           {/* Name */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white mb-2">{personalInfo.fullName}</h1>

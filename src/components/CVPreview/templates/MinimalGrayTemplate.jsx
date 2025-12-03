@@ -90,7 +90,7 @@ const MinimalGrayTemplate = ({ cvData, showHeader = true, measureMode = false, p
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">{category}</h3>
@@ -218,19 +218,25 @@ const MinimalGrayTemplate = ({ cvData, showHeader = true, measureMode = false, p
                 {personalInfo.website && (
                   <div className="flex items-center">
                     <Globe className="w-4 h-4 mr-3 text-gray-400" />
-                    {personalInfo.website}
+                    <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      {personalInfo.website}
+                    </a>
                   </div>
                 )}
                 {personalInfo.linkedin && (
                   <div className="flex items-center">
                     <Linkedin className="w-4 h-4 mr-3 text-gray-400" />
-                    LinkedIn Profile
+                    <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      LinkedIn Profile
+                    </a>
                   </div>
                 )}
                 {personalInfo.github && (
                   <div className="flex items-center">
                     <Github className="w-4 h-4 mr-3 text-gray-400" />
-                    GitHub Profile
+                    <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      GitHub Profile
+                    </a>
                   </div>
                 )}
               </div>

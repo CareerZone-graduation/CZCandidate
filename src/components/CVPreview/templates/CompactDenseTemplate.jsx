@@ -82,7 +82,7 @@ const CompactDenseTemplate = ({ cvData, showHeader = true, measureMode = false, 
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="text-xs font-semibold text-gray-700 mb-1">{category}</h3>
@@ -197,19 +197,25 @@ const CompactDenseTemplate = ({ cvData, showHeader = true, measureMode = false, 
                 {personalInfo.website && (
                   <div className="flex items-center">
                     <Globe className="w-3 h-3 mr-1" />
-                    Website
+                    <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      Website
+                    </a>
                   </div>
                 )}
                 {personalInfo.linkedin && (
                   <div className="flex items-center">
                     <Linkedin className="w-3 h-3 mr-1" />
-                    LinkedIn
+                    <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      LinkedIn
+                    </a>
                   </div>
                 )}
                 {personalInfo.github && (
                   <div className="flex items-center">
                     <Github className="w-3 h-3 mr-1" />
-                    GitHub
+                    <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      GitHub
+                    </a>
                   </div>
                 )}
               </div>

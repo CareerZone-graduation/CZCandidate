@@ -95,7 +95,7 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
           {['Technical', 'Soft Skills', 'Language'].map((category) => {
             const categorySkills = skills.filter(skill => skill.category === category);
             if (categorySkills.length === 0) return null;
-            
+
             return (
               <div key={category}>
                 <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">{category}</h3>
@@ -110,9 +110,9 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
                         <div
                           className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
                           style={{
-                            width: skill.level === 'Expert' ? '100%' : 
-                                   skill.level === 'Advanced' ? '80%' : 
-                                   skill.level === 'Intermediate' ? '60%' : '40%'
+                            width: skill.level === 'Expert' ? '100%' :
+                              skill.level === 'Advanced' ? '80%' :
+                                skill.level === 'Intermediate' ? '60%' : '40%'
                           }}
                         ></div>
                       </div>
@@ -228,19 +228,25 @@ const ModernSansTemplate = ({ cvData, showHeader = true, measureMode = false, pa
                 {personalInfo.website && (
                   <div className="flex items-center">
                     <Globe className="w-4 h-4 mr-2" />
-                    {personalInfo.website}
+                    <a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white hover:underline">
+                      {personalInfo.website}
+                    </a>
                   </div>
                 )}
                 {personalInfo.linkedin && (
                   <div className="flex items-center">
                     <Linkedin className="w-4 h-4 mr-2" />
-                    LinkedIn
+                    <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white hover:underline">
+                      LinkedIn
+                    </a>
                   </div>
                 )}
                 {personalInfo.github && (
                   <div className="flex items-center">
                     <Github className="w-4 h-4 mr-2" />
-                    GitHub
+                    <a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white hover:underline">
+                      GitHub
+                    </a>
                   </div>
                 )}
               </div>
