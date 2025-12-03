@@ -81,7 +81,6 @@ const RecommendedJobsPage = () => {
       console.log('📥 Recommendations response:', response);
       
       if (response?.data?.length > 0) {
-        console.log('✅ Found recommendations:', response.data.length); 
         
         // Filter out invalid recommendations and map to job format
         const recommendedJobs = response.data

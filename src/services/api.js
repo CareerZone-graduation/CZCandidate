@@ -123,16 +123,6 @@ export const exportPdf = async (cvId) => {
 };
 
 /**
- * Lấy URL để xem CV dạng PDF
- * @param {string} cvId - ID của CV
- * @returns {string} URL để xem PDF
- */
-export const getCvPdfUrl = (cvId) => {
-  const token = localStorage.getItem('token');
-  return `${import.meta.env.VITE_API_URL}/cvs/${cvId}/export-pdf?token=${token}`;
-};
-
-/**
  * Xóa một CV dựa trên ID.
  * @param {string} cvId - ID của CV cần xóa.
  * @returns {Promise<Object>} - Tin nhắn xác nhận từ backend.

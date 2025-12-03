@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
     server: {
       https: false,
       host: 'localhost',
-      open: true,
+      // open: true,
       port: 3000,
       // proxy: {
       //   '/api': {
