@@ -180,3 +180,22 @@ export const renameCv = async (cvId, name) => {
     throw error;
   }
 };
+
+/**
+ * Upload an image (e.g. for CV profile).
+ * @param {FormData} formData - FormData containing the 'image' file.
+ * @returns {Promise<Object>} The uploaded image data (url, publicId).
+ */
+export const uploadImage = async (formData) => {
+  try {
+    const response = await apiClient.post('/candidate/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
