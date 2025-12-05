@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import CVPreview from '../../components/CVPreview/CVPreview';
 // Đảm bảo bạn import hàm lấy CV từ API
-import { getCvById } from '../../services/api'; 
+import { getCvById } from '../../services/api';
 import { mapToFrontend } from '../../utils/dataMapper'; // Import hàm map dữ liệu
 
 const CVRenderOnlyPage = () => {
@@ -14,32 +14,49 @@ const CVRenderOnlyPage = () => {
 
   useEffect(() => {
     const fetchCvData = async () => {
+      // 1. Handle Token from URL if present (Critical for Puppeteer)
+      const token = searchParams.get('token');
+      if (token) {
+        localStorage.setItem('accessToken', token);
+      }
+
       if (!cvId) {
-        setError("CV ID is missing. Please ensure you are accessing this page with a 'cvId' query parameter, e.g., /render.html?cvId=your_cv_id_here");
+        setError("CV ID is missing. Please ensure you are accessing this page with a 'cvId' query parameter.");
         setLoading(false);
+        // Signal ready even on error so Puppeteer doesn't timeout
+        document.body.dataset.cvReady = 'true';
         return;
       }
+
       try {
         // Gọi API để lấy dữ liệu CV từ backend
         const dataFromApi = await getCvById(cvId);
         if (dataFromApi) {
           // Sử dụng dataMapper để chuyển đổi dữ liệu cho phù hợp với component Preview
           setCvData(mapToFrontend(dataFromApi.data));
-          // setCvData(mapToFrontend(dataFromApi));
+
+          // 3. Signal Puppeteer that we are ready
+          // Wait a bit for images/fonts to settle
+          setTimeout(() => {
+            document.body.dataset.cvReady = 'true';
+            console.log('CV Ready flag set!');
+          }, 1000);
+
         } else {
           throw new Error(`CV with ID "${cvId}" not found.`);
         }
       } catch (err) {
         console.error("Error fetching CV data:", err);
-        console.error(err);
         setError(err.message);
+        // Signal ready even on error so Puppeteer doesn't timeout
+        document.body.dataset.cvReady = 'true';
       } finally {
         setLoading(false);
       }
     };
 
     fetchCvData();
-  }, [cvId]);
+  }, [cvId, searchParams]);
 
   if (loading) {
     return <div>Loading Document...</div>;
