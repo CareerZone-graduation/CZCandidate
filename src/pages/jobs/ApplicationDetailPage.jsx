@@ -358,6 +358,38 @@ const ApplicationDetailPage = () => {
           );
         })()}
 
+        {/* Offer Letter Section */}
+        {(application.offerLetter || application.offerFile) && (
+          <Card className="mb-6 border-purple-200 bg-purple-50/30">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-lg text-purple-900">Thư mời làm việc</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {application.offerLetter && (
+                <div className="bg-white p-5 rounded-xl border border-purple-100 shadow-sm">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+                    {application.offerLetter}
+                  </p>
+                </div>
+              )}
+
+              {application.offerFile && (
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" className="border-purple-200 hover:bg-purple-50 text-purple-700" asChild>
+                    <a href={application.offerFile} target="_blank" rel="noopener noreferrer" download>
+                      <Download className="h-4 w-4 mr-2" />
+                      Tải xuống file đính kèm
+                    </a>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
