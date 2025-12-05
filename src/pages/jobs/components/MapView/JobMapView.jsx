@@ -14,7 +14,7 @@ import { searchJobsOnMap, getJobClusters } from '@/services/jobService';
 import { toast } from 'sonner';
 
 // Ngưỡng zoom để chuyển từ cluster sang marker chi tiết
-const ZOOM_THRESHOLD = 13;
+const ZOOM_THRESHOLD = 12;
 
 // Fix Leaflet default icon issue with Vite/Webpack
 delete L.Icon.Default.prototype._getIconUrl;
