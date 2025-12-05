@@ -3,9 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Filter, ArrowLeft, Map, List } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { SlidersHorizontal, ArrowLeft, Map, LayoutGrid, Briefcase, X, Sparkles, Filter } from 'lucide-react';
 import { searchJobsHybrid } from '@/services/jobService';
 import { validateSearchParams, validateHybridSearchRequest } from '@/schemas/searchSchemas';
 import { toast } from 'sonner';
@@ -20,14 +20,13 @@ import JobMapView from './components/MapView/JobMapView';
 import { cn } from '@/lib/utils';
 
 /**
- * Main JobSearch page component
- * Handles URL parameters, search state management, and layout
+ * Main JobSearch page component - Redesigned for professional job portal
  */
 const JobSearch = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [viewMode, setViewMode] = useState('list');
 
   // Extract and validate search parameters from URL
   const rawParams = {
@@ -47,18 +46,15 @@ const JobSearch = () => {
     distance: searchParams.get('distance') || ''
   };
 
-  // Validate URL parameters
   const paramValidation = validateSearchParams(rawParams);
 
   if (!paramValidation.success) {
     console.warn('Invalid search parameters:', paramValidation.errors);
-    // Show validation errors to user if needed
     paramValidation.errors?.forEach(error => {
       toast.error(`Lỗi tham số: ${error.message}`);
     });
   }
 
-  // Use validated parameters or defaults
   const validatedParams = paramValidation.data || {};
   const query = validatedParams.query || '';
   const page = validatedParams.page || 1;
@@ -75,13 +71,12 @@ const JobSearch = () => {
   const longitude = validatedParams.longitude || '';
   const distance = validatedParams.distance || '';
 
-  // Search parameters object for API calls
   const searchParameters = {
-    query: query || '', // Always include query, even if empty string
+    query: query || '',
     page,
     size,
-    textWeight: 0.4, // Default weight for text search
-    vectorWeight: 0.6, // Default weight for vector search
+    textWeight: 0.4,
+    vectorWeight: 0.6,
     ...(category && { category }),
     ...(type && { type }),
     ...(workType && { workType }),
@@ -95,19 +90,8 @@ const JobSearch = () => {
     ...(distance && { distance: parseFloat(distance) })
   };
 
-  // Debug: Log search parameters
-  console.log('Search Parameters:', searchParameters);
-
-  // Validate API request parameters - always use hybrid search now
   const apiValidation = validateHybridSearchRequest(searchParameters);
 
-  if (!apiValidation.success) {
-    console.warn('Invalid API parameters:', apiValidation.errors);
-  } else {
-    console.log('Validated API Parameters:', apiValidation.data);
-  }
-
-  // React Query for search results - always use hybrid search
   const {
     data: searchResults,
     isLoading,
@@ -118,47 +102,24 @@ const JobSearch = () => {
     queryKey: ['jobs', 'search', apiValidation.data || searchParameters],
     queryFn: async () => {
       const result = await searchJobsHybrid(apiValidation.data || searchParameters);
-      
-      // 🔍 DEBUG: Log API response để kiểm tra logo
-      console.log('🔍 API Response:', result);
-      if (result?.data?.length > 0) {
-        console.log('📊 First job sample:', {
-          title: result.data[0].title,
-          company: result.data[0].company,
-          hasLogo: !!result.data[0].company?.logo,
-          logoUrl: result.data[0].company?.logo
-        });
-      }
-      
       return result;
     },
-    enabled: apiValidation.success, // Always fetch when parameters are valid
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false, // Prevent refetch on window focus
-    keepPreviousData: true // Keep previous data while loading new data to prevent layout shift
+    enabled: apiValidation.success,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    keepPreviousData: true
   });
 
-  /**
-   * Handle search query changes
-   * @param {string} newQuery - New search query
-   */
   const handleSearch = (newQuery) => {
     const newParams = new URLSearchParams(searchParams);
-    // Always set query, even if empty string
     newParams.set('query', newQuery ? newQuery.trim() : '');
-    newParams.set('page', 1); // Reset to first page
+    newParams.set('page', 1);
     setSearchParams(newParams);
   };
 
-  /**
-   * Handle filter changes
-   * @param {Object} filters - Filter values object
-   */
   const handleFilterChange = (filters) => {
     const newParams = new URLSearchParams(searchParams);
-
-    // Update all filter parameters
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
         newParams.set(key, value);
@@ -166,28 +127,17 @@ const JobSearch = () => {
         newParams.delete(key);
       }
     });
-
-    // Reset to first page when filters change
     newParams.set('page', 1);
     setSearchParams(newParams);
   };
 
-  /**
-   * Handle pagination
-   * @param {number} newPage - New page number
-   */
   const handlePageChange = (newPage) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('page', newPage);
     setSearchParams(newParams);
-
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  /**
-   * Clear all filters
-   */
   const handleClearFilters = () => {
     const newParams = new URLSearchParams();
     if (query) newParams.set('query', query);
@@ -196,14 +146,10 @@ const JobSearch = () => {
     setSearchParams(newParams);
   };
 
-  /**
-   * Handle back navigation
-   */
   const handleBackNavigation = () => {
     navigate(-1);
   };
 
-  // Current filter values for the filter components
   const currentFilters = {
     category,
     type,
@@ -218,11 +164,38 @@ const JobSearch = () => {
     distance
   };
 
-  // Check if any filters are applied
   const hasActiveFilters = Object.values(currentFilters).some(value => value !== '');
-  
-  // User location for map view (if distance filter is active)
+  const activeFilterCount = Object.values(currentFilters).filter(value => value !== '').length;
   const userLocationForMap = (latitude && longitude) ? `[${longitude}, ${latitude}]` : null;
+
+  // Get active filter labels for display
+  const getActiveFilterLabels = () => {
+    const labels = [];
+    if (category) labels.push({ key: 'category', label: category });
+    if (type) labels.push({ key: 'type', label: type });
+    if (workType) labels.push({ key: 'workType', label: workType });
+    if (experience) labels.push({ key: 'experience', label: experience });
+    if (province) labels.push({ key: 'province', label: province });
+    if (district) labels.push({ key: 'district', label: district });
+    if (minSalary || maxSalary) labels.push({ key: 'salary', label: 'Mức lương' });
+    if (distance) labels.push({ key: 'distance', label: `${distance}km` });
+    return labels;
+  };
+
+  const removeFilter = (filterKey) => {
+    const newFilters = { ...currentFilters };
+    if (filterKey === 'salary') {
+      newFilters.minSalary = '';
+      newFilters.maxSalary = '';
+    } else if (filterKey === 'distance') {
+      newFilters.distance = '';
+      newFilters.latitude = '';
+      newFilters.longitude = '';
+    } else {
+      newFilters[filterKey] = '';
+    }
+    handleFilterChange(newFilters);
+  };
 
   return (
     <div className="min-h-screen bg-background/80 backdrop-blur-sm relative z-10">
@@ -262,39 +235,20 @@ const JobSearch = () => {
               />
             </div>
 
-            {/* Mobile Filter Button */}
-            <Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    "lg:hidden flex-shrink-0 rounded-xl",
-                    "border-2 border-primary/40 hover:border-primary",
-                    "hover:bg-primary/10 hover:scale-105",
-                    "transition-all duration-300",
-                    hasActiveFilters && "bg-primary/10 border-primary animate-pulse"
-                  )}
-                >
-                  <Filter className={cn(
-                    "h-5 w-5 transition-colors duration-300",
-                    hasActiveFilters ? "text-primary" : "text-muted-foreground"
-                  )} />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Bộ lọc tìm kiếm</h3>
-                  <SearchFilters
-                    filters={currentFilters}
-                    onFilterChange={handleFilterChange}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
+            {/* Quick Stats */}
+            {searchResults?.meta?.total > 0 && (
+              <div className="mt-6 flex items-center gap-2 text-white/80">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-sm">
+                  Tìm thấy <span className="font-semibold text-white">{searchResults.meta.total.toLocaleString()}</span> việc làm phù hợp
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+
 
       {/* Main Content */}
       <div className="container py-6">
@@ -311,7 +265,7 @@ const JobSearch = () => {
               )}>
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
-                
+
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -335,11 +289,12 @@ const JobSearch = () => {
                           "transition-all duration-300 hover:scale-105"
                         )}
                       >
-                        Xóa bộ lọc
+                        Xóa tất cả
                       </Button>
                     )}
                   </div>
-                  <Separator className="mb-4 bg-gradient-to-r from-transparent via-border to-transparent" />
+                </CardContent>
+                <CardContent className="p-4 relative z-10">
                   <SearchFilters
                     filters={currentFilters}
                     onFilterChange={handleFilterChange}
@@ -349,67 +304,23 @@ const JobSearch = () => {
             </div>
           </aside>
 
-          {/* Search Results - Main Content Area */}
+          {/* Main Results Area */}
           <main className="min-w-0">
-            {/* Results Header with View Mode Toggle */}
-            <div className="mb-8">
-              <Card className={cn(
-                "border-2 border-border/30 shadow-lg shadow-primary/5",
-                "bg-card/90 backdrop-blur-sm",
-                "transition-all duration-300"
-              )}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4">
-                    {/* Search Results Header */}
-                    <div className="flex-1">
-                      <SearchResultsHeader
-                        query={query}
-                        currentPage={page}
-                        totalPages={searchResults?.meta?.totalPages || 0}
-                        hasActiveFilters={hasActiveFilters}
-                        onClearFilters={handleClearFilters}
-                      />
-                    </div>
-                    
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center justify-center sm:justify-end gap-2">
-                      <span className="text-sm text-muted-foreground font-medium mr-2">
-                        Hiển thị:
-                      </span>
-                      <Button
-                        variant={viewMode === 'list' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className={cn(
-                          "transition-all duration-300",
-                          viewMode === 'list' && "btn-gradient text-white shadow-lg shadow-primary/20"
-                        )}
-                      >
-                        <List className="h-4 w-4 mr-2" />
-                        Danh sách
-                      </Button>
-                      <Button
-                        variant={viewMode === 'map' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('map')}
-                        className={cn(
-                          "transition-all duration-300",
-                          viewMode === 'map' && "btn-gradient text-white shadow-lg shadow-primary/20"
-                        )}
-                      >
-                        <Map className="h-4 w-4 mr-2" />
-                        Bản đồ
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Results Header */}
+            <SearchResultsHeader
+              query={query}
+              totalResults={searchResults?.meta?.total || 0}
+              currentPage={page}
+              totalPages={searchResults?.meta?.totalPages || 0}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={handleClearFilters}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
 
-            {/* Conditional View - List or Map */}
+            {/* Results Content */}
             {viewMode === 'list' ? (
-              /* Results List - Enhanced spacing */
-              <div className="min-h-[600px] space-y-4">
+              <div className="space-y-4">
                 <JobResultsList
                   jobs={searchResults?.data || []}
                   isLoading={isLoading}
@@ -420,27 +331,10 @@ const JobSearch = () => {
                   userLocation={userLocationForMap}
                   searchParameters={apiValidation.data || searchParameters}
                 />
-              </div>
-            ) : (
-              /* Map View - No Pagination Needed */
-              <div className="min-h-[600px]">
-                <JobMapView
-                  initialJobs={searchResults?.data || []}
-                  isLoading={isLoading}
-                  userLocation={userLocationForMap}
-                  searchFilters={searchParameters}
-                />
-              </div>
-            )}
 
-            {/* Pagination - Only for List View */}
-            {viewMode === 'list' && searchResults?.data?.length > 0 && (
-              <div className="mt-8 flex justify-center">
-                <Card className={cn(
-                  "border-2 border-border/30 shadow-lg shadow-primary/5",
-                  "bg-card/90 backdrop-blur-sm"
-                )}>
-                  <CardContent className="p-4">
+                {/* Pagination */}
+                {searchResults?.data?.length > 0 && (
+                  <div className="mt-8 flex justify-center">
                     <ResultsPagination
                       currentPage={page}
                       totalPages={searchResults?.meta?.totalPages || 0}
@@ -448,8 +342,17 @@ const JobSearch = () => {
                       pageSize={size}
                       onPageChange={handlePageChange}
                     />
-                  </CardContent>
-                </Card>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl overflow-hidden border shadow-lg">
+                <JobMapView
+                  initialJobs={searchResults?.data || []}
+                  isLoading={isLoading}
+                  userLocation={userLocationForMap}
+                  searchFilters={searchParameters}
+                />
               </div>
             )}
           </main>

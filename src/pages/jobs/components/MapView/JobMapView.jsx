@@ -194,10 +194,10 @@ const JobMapView = ({
 
     try {
       const { bounds, zoom } = mapState;
-      
+
       // ✅ DEBUG: Log zoom level
       console.log(`🔍 [DEBUG] Current Zoom Level: ${zoom}, Threshold: ${ZOOM_THRESHOLD}`);
-      
+
       // Chuẩn bị bounds cho API
       const boundsParams = {
         sw_lat: bounds.south,
@@ -216,9 +216,9 @@ const JobMapView = ({
         // ZOOM XA: Gọi API CHỈ LẤY CLUSTERS (không có singles)
         console.log(`🗺️ Zoom ${zoom} < ${ZOOM_THRESHOLD}: Fetching ONLY clusters...`);
         response = await getJobClusters(boundsParams, zoom);
-        
+
         console.log(`📦 [Clusters API] Response:`, response);
-        
+
         // Response CHỈ chứa clusters: [{ type: 'cluster', count, coordinates, jobIds }]
         if (response && Array.isArray(response)) {
           setClusters(response); // Backend CHỈ trả clusters
@@ -236,9 +236,9 @@ const JobMapView = ({
         console.log(`📍 Zoom ${zoom} >= ${ZOOM_THRESHOLD}: Fetching ONLY individual jobs...`);
         boundsParams.limit = 50; // Giới hạn 50 jobs
         response = await searchJobsOnMap(boundsParams);
-        
+
         console.log(`📦 [Jobs API] Response:`, response);
-        
+
         // Response CHỈ chứa jobs: { data: [...], meta: {...} }
         if (response && response.data) {
           setClusters([]); // KHÔNG có clusters ở zoom gần
@@ -333,15 +333,15 @@ const JobMapView = ({
   // Hỗ trợ 2 format: nested (location.coordinates.coordinates) hoặc flat (coordinates)
   const validJobs = jobs.filter((job) => {
     // Format 1: nested structure từ API thông thường
-    if (job.location?.coordinates?.coordinates && 
-        Array.isArray(job.location.coordinates.coordinates) &&
-        job.location.coordinates.coordinates.length === 2) {
+    if (job.location?.coordinates?.coordinates &&
+      Array.isArray(job.location.coordinates.coordinates) &&
+      job.location.coordinates.coordinates.length === 2) {
       return true;
     }
     // Format 2: flat structure từ map-search API
-    if (job.coordinates && 
-        Array.isArray(job.coordinates) && 
-        job.coordinates.length === 2) {
+    if (job.coordinates &&
+      Array.isArray(job.coordinates) &&
+      job.coordinates.length === 2) {
       return true;
     }
     return false;
@@ -403,7 +403,7 @@ const JobMapView = ({
           />
 
           {/* Map Event Handler for viewport-based loading */}
-          <MapEventHandler 
+          <MapEventHandler
             onMapMove={handleMapMove}
             searchFilters={searchFilters}
           />
@@ -428,7 +428,50 @@ const JobMapView = ({
           {/* Server-side clusters (when zoom < threshold) */}
           {clusters.length > 0 && clusters.map((cluster, idx) => {
             const [lng, lat] = cluster.coordinates;
-            
+
+            // Nếu cluster chỉ có 1 job, hiển thị như marker bình thường
+            if (cluster.count === 1) {
+              return (
+                <Marker
+                  key={`cluster-single-${idx}`}
+                  position={[lat, lng]}
+                  icon={createCustomIcon('#FF6B35')}
+                >
+                  <Popup
+                    maxWidth={340}
+                    minWidth={320}
+                    closeButton={true}
+                    className="job-marker-popup"
+                  >
+                    <div className="p-3 text-center">
+                      <div className="flex items-center gap-2 mb-2 justify-center">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <span className="font-bold text-lg">1 công việc</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Phóng to để xem chi tiết
+                      </p>
+                      <Button
+                        size="sm"
+                        className="btn-gradient text-white w-full"
+                        onClick={() => {
+                          const map = mapRef.current;
+                          if (map) {
+                            map.setView([lat, lng], Math.min(map.getZoom() + 2, 16), {
+                              animate: true,
+                              duration: 0.5
+                            });
+                          }
+                        }}
+                      >
+                        Phóng to
+                      </Button>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            }
+
             // ✅ THỐNG NHẤT: Áp dụng CÙNG logic size với client clusters
             let sizeClass = '';
             let colorClass = '';
@@ -451,7 +494,7 @@ const JobMapView = ({
               fontSize = 'text-sm'; // 14px
               iconSize = 40;
             }
-            
+
             // Tạo icon cho cluster với số lượng (THỐNG NHẤT với client clusters)
             const clusterIcon = L.divIcon({
               className: 'server-cluster-icon',
@@ -610,7 +653,7 @@ const JobMapView = ({
             >
               <Navigation className="h-5 w-5" />
             </Button>
-            
+
             <Button
               onClick={handleRefresh}
               size="icon"
@@ -638,13 +681,13 @@ const JobMapView = ({
               <MapPin className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  {clusters.length > 0 
+                  {clusters.length > 0
                     ? `${clusters.reduce((sum, c) => sum + c.count, 0) + validJobs.length} công việc`
                     : `${validJobs.length} công việc`
                   }
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {clusters.length > 0 
+                  {clusters.length > 0
                     ? `${clusters.length} cụm, ${validJobs.length} đơn lẻ`
                     : 'trong khu vực này'
                   }

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Separator } from '@/components/ui/separator';
 import {
   jobCategoryEnum,
   jobTypeEnum,
@@ -12,16 +11,14 @@ import LocationFilter from './LocationFilter';
 import DistanceFilter from './DistanceFilter';
 
 /**
- * Main SearchFilters component that combines all filter types
- * Manages the filter state and passes changes to parent component
+ * SearchFilters - Redesigned professional filter panel
  */
 const SearchFilters = ({
   filters = {},
   onFilterChange
 }) => {
-  // Filter configurations aligned with searchSchemas.js
   const categoryOptions = [
-    { value: '', label: 'Tất cả' },
+    { value: '', label: 'Tất cả ngành nghề' },
     ...jobCategoryEnum.map(value => ({
       value,
       label: {
@@ -74,7 +71,7 @@ const SearchFilters = ({
       value,
       label: {
         ON_SITE: 'Tại văn phòng',
-        REMOTE: 'Từ xa',
+        REMOTE: 'Làm từ xa',
         HYBRID: 'Linh hoạt'
       }[value] || value
     }))
@@ -89,18 +86,13 @@ const SearchFilters = ({
         MID_LEVEL: 'Trung cấp',
         SENIOR_LEVEL: 'Cao cấp',
         EXECUTIVE: 'Điều hành',
-        NO_EXPERIENCE: 'Không yêu cầu kinh nghiệm',
+        NO_EXPERIENCE: 'Không yêu cầu',
         INTERN: 'Thực tập sinh',
         FRESHER: 'Mới tốt nghiệp'
       }[value] || value
     }))
   ];
 
-  /**
-   * Handle individual filter changes
-   * @param {string} filterType - Type of filter (category, type, etc.)
-   * @param {string} value - New value for the filter
-   */
   const handleFilterChange = (filterType, value) => {
     onFilterChange({
       ...filters,
@@ -108,10 +100,6 @@ const SearchFilters = ({
     });
   };
 
-  /**
-   * Handle salary range changes
-   * @param {Object} salaryData - Object with minSalary and maxSalary
-   */
   const handleSalaryChange = (salaryData) => {
     onFilterChange({
       ...filters,
@@ -120,10 +108,6 @@ const SearchFilters = ({
     });
   };
 
-  /**
-   * Handle location changes
-   * @param {Object} locationData - Object with province and district
-   */
   const handleLocationChange = (locationData) => {
     onFilterChange({
       ...filters,
@@ -132,10 +116,6 @@ const SearchFilters = ({
     });
   };
 
-  /**
-   * Handle distance filter changes
-   * @param {Object} distanceData - Object with distance, latitude, longitude
-   */
   const handleDistanceChange = (distanceData) => {
     onFilterChange({
       ...filters,
@@ -146,67 +126,14 @@ const SearchFilters = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Distance Filter - New */}
+    <div className="space-y-1">
+      {/* Distance Filter */}
       <DistanceFilter
         distance={filters.distance || ''}
         latitude={filters.latitude || ''}
         longitude={filters.longitude || ''}
         onChange={handleDistanceChange}
       />
-      
-      <Separator />
-      {/* Job Category Filter */}
-      <FilterGroup
-        title="Lĩnh vực"
-        value={filters.category || ''}
-        options={categoryOptions}
-        onChange={(value) => handleFilterChange('category', value)}
-        collapsible={true}
-        defaultExpanded={false}
-        maxVisibleItems={6}
-      />
-
-      <Separator />
-
-      {/* Job Type Filter */}
-      <FilterGroup
-        title="Loại hình công việc"
-        value={filters.type || ''}
-        options={jobTypeOptions}
-        onChange={(value) => handleFilterChange('type', value)}
-        collapsible={true}
-        defaultExpanded={true}
-        maxVisibleItems={4}
-      />
-
-      <Separator />
-
-      {/* Work Type Filter */}
-      <FilterGroup
-        title="Hình thức làm việc"
-        value={filters.workType || ''}
-        options={workTypeOptions}
-        onChange={(value) => handleFilterChange('workType', value)}
-        collapsible={true}
-        defaultExpanded={true}
-        maxVisibleItems={3}
-      />
-
-      <Separator />
-
-      {/* Experience Level Filter */}
-      <FilterGroup
-        title="Kinh nghiệm"
-        value={filters.experience || ''}
-        options={experienceOptions}
-        onChange={(value) => handleFilterChange('experience', value)}
-        collapsible={true}
-        defaultExpanded={false}
-        maxVisibleItems={4}
-      />
-
-      <Separator />
 
       {/* Location Filter */}
       <LocationFilter
@@ -215,9 +142,55 @@ const SearchFilters = ({
         onChange={handleLocationChange}
       />
 
-      <Separator />
+      {/* Job Category */}
+      <FilterGroup
+        title="Ngành nghề"
+        icon="briefcase"
+        value={filters.category || ''}
+        options={categoryOptions}
+        onChange={(value) => handleFilterChange('category', value)}
+        collapsible={true}
+        defaultExpanded={false}
+        maxVisibleItems={6}
+      />
 
-      {/* Salary Range Slider - New Interactive Component */}
+      {/* Job Type */}
+      <FilterGroup
+        title="Loại hình"
+        icon="clock"
+        value={filters.type || ''}
+        options={jobTypeOptions}
+        onChange={(value) => handleFilterChange('type', value)}
+        collapsible={true}
+        defaultExpanded={true}
+        maxVisibleItems={6}
+      />
+
+      {/* Work Type */}
+      <FilterGroup
+        title="Hình thức"
+        icon="building"
+        value={filters.workType || ''}
+        options={workTypeOptions}
+        onChange={(value) => handleFilterChange('workType', value)}
+        collapsible={true}
+        defaultExpanded={true}
+        maxVisibleItems={4}
+      />
+
+      {/* Experience Level */}
+      <FilterGroup
+        title="Kinh nghiệm"
+        icon="award"
+        value={filters.experience || ''}
+        options={experienceOptions}
+        onChange={(value) => handleFilterChange('experience', value)}
+        collapsible={true}
+        defaultExpanded={false}
+        maxVisibleItems={5}
+      />
+
+      {/* Salary Range */}
       <SalaryRangeSlider
         minSalary={filters.minSalary || ''}
         maxSalary={filters.maxSalary || ''}
