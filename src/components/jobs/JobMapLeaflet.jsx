@@ -88,7 +88,7 @@ export function JobMapLeaflet({ filters = {}, initialCenter = [10.762622, 106.66
         center={initialCenter}
         zoom={initialZoom}
         style={{ height: '100%', width: '100%' }}
-        className="rounded-lg"
+        className="rounded-lg [&_.leaflet-tile-pane]:dark:filter [&_.leaflet-tile-pane]:dark:invert [&_.leaflet-tile-pane]:dark:hue-rotate-180 [&_.leaflet-tile-pane]:dark:brightness-95 [&_.leaflet-tile-pane]:dark:contrast-90 [&_.leaflet-popup-content-wrapper]:dark:!bg-card [&_.leaflet-popup-tip]:dark:!bg-card [&_.leaflet-popup-content-wrapper]:dark:!text-foreground"
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -132,8 +132,8 @@ export function JobMapLeaflet({ filters = {}, initialCenter = [10.762622, 106.66
                           {item.job.minSalary && item.job.maxSalary
                             ? `${parseInt(item.job.minSalary).toLocaleString('vi-VN')} - ${parseInt(item.job.maxSalary).toLocaleString('vi-VN')} VNĐ`
                             : item.job.minSalary
-                            ? `Từ ${parseInt(item.job.minSalary).toLocaleString('vi-VN')} VNĐ`
-                            : `Lên đến ${parseInt(item.job.maxSalary).toLocaleString('vi-VN')} VNĐ`}
+                              ? `Từ ${parseInt(item.job.minSalary).toLocaleString('vi-VN')} VNĐ`
+                              : `Lên đến ${parseInt(item.job.maxSalary).toLocaleString('vi-VN')} VNĐ`}
                         </p>
                       )}
                       <button

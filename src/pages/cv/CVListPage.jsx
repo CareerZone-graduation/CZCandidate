@@ -241,7 +241,7 @@ const CVListPage = () => {
     <div className="space-y-8">
       <section id="my-cvs">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">CV của tôi</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-foreground">CV của tôi</h2>
           <Button onClick={() => document.getElementById('templates')?.scrollIntoView({ behavior: 'smooth' })}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Tạo CV mới
@@ -299,7 +299,7 @@ const CVListPage = () => {
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>Cập nhật: {new Date(cv.updatedAt).toLocaleDateString('vi-VN')}</span>
                         {cv.cvData?.personalInfo?.completionPercentage && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
                             {cv.cvData.personalInfo.completionPercentage}% hoàn thành
                           </span>
                         )}
@@ -308,19 +308,19 @@ const CVListPage = () => {
                       {/* Quick stats */}
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         {cv.cvData?.experiences?.length > 0 && (
-                          <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
+                          <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">
                             {cv.cvData.experiences.length} kinh nghiệm
                           </span>
                         )}
                         {cv.cvData?.skills?.length > 0 && (
-                          <span className="bg-green-50 text-green-600 px-2 py-1 rounded">
+                          <span className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-1 rounded">
                             {cv.cvData.skills.length} kỹ năng
                           </span>
                         )}
                       </div>
 
                       {cv.templateId && (
-                        <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full inline-block">
                           Template: {cv.templateId}
                         </p>
                       )}
@@ -357,11 +357,11 @@ const CVListPage = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <PlusCircle className="h-12 w-12 text-gray-400" />
+            <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-muted rounded-full flex items-center justify-center mb-4">
+              <PlusCircle className="h-12 w-12 text-gray-400 dark:text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Chưa có CV nào</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground mb-2">Chưa có CV nào</h3>
+            <p className="text-gray-600 dark:text-muted-foreground mb-6 max-w-md mx-auto">
               Bạn chưa tạo CV nào. Hãy chọn một mẫu CV phù hợp bên dưới để bắt đầu tạo CV chuyên nghiệp của bạn!
             </p>
             <Button onClick={() => document.getElementById('templates')?.scrollIntoView({ behavior: 'smooth' })}>
@@ -373,7 +373,7 @@ const CVListPage = () => {
       </section>
 
       <section id="templates" className="mt-12">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Chọn mẫu CV</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-foreground mb-6">Chọn mẫu CV</h2>
         <TemplateGallery selectedTemplate={null} onSelectTemplate={(id) => {
           const template = cvTemplates.find(t => t.id === id);
           if (template) handleOpenCreateDialog(template);
@@ -390,19 +390,19 @@ const CVListPage = () => {
           {selectedTemplate && (
             <div className="space-y-4 py-2">
               {/* Template Info */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 space-y-2">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{selectedTemplate.name}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-foreground">{selectedTemplate.name}</h3>
                   <Badge variant="secondary">{selectedTemplate.category}</Badge>
                 </div>
-                <p className="text-sm text-gray-600">{selectedTemplate.description}</p>
+                <p className="text-sm text-gray-600 dark:text-muted-foreground">{selectedTemplate.description}</p>
                 {selectedTemplate.bestFor && (
                   <div className="flex flex-wrap gap-1 pt-1">
-                    <span className="text-xs text-gray-500">Phù hợp:</span>
+                    <span className="text-xs text-gray-500 dark:text-muted-foreground">Phù hợp:</span>
                     {selectedTemplate.bestFor.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="text-xs bg-white text-blue-700 px-2 py-1 rounded shadow-sm"
+                        className="text-xs bg-white dark:bg-card text-blue-700 dark:text-blue-400 px-2 py-1 rounded shadow-sm"
                       >
                         {tag}
                       </span>
@@ -520,11 +520,11 @@ const CVListPage = () => {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <p className="text-sm text-gray-600">
-              Bạn có chắc chắn muốn xóa CV <span className="font-semibold text-gray-900">"{cvToDelete?.title || cvToDelete?.name}"</span> không?
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">
+              Bạn có chắc chắn muốn xóa CV <span className="font-semibold text-gray-900 dark:text-foreground">"{cvToDelete?.title || cvToDelete?.name}"</span> không?
             </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-800">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <p className="text-sm text-red-800 dark:text-red-400">
                 <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác. CV sẽ bị xóa vĩnh viễn khỏi hệ thống.
               </p>
             </div>

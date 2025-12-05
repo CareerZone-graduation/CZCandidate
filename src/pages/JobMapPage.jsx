@@ -26,7 +26,7 @@ export default function JobMapPage() {
       </div>
 
       {/* Filters */}
-      <Card variant="glass">
+      <Card className="bg-white/90 dark:bg-card/90 backdrop-blur-sm border-0 shadow-sm">
         <CardHeader>
           <CardTitle>Bộ lọc</CardTitle>
         </CardHeader>
@@ -83,9 +83,9 @@ export default function JobMapPage() {
       </Card>
 
       {/* Map */}
-      <Card variant="glass" className="overflow-hidden">
+      <Card className="overflow-hidden bg-white/90 dark:bg-card/90 backdrop-blur-sm border-0 shadow-sm">
         <div className="h-[600px]">
-          <JobMapLeaflet 
+          <JobMapLeaflet
             filters={filters}
             initialCenter={[10.762622, 106.660172]}
             initialZoom={12}
@@ -94,7 +94,7 @@ export default function JobMapPage() {
       </Card>
 
       {/* Instructions */}
-      <Card variant="glass">
+      <Card className="bg-white/90 dark:bg-card/90 backdrop-blur-sm border-0 shadow-sm">
         <CardContent className="pt-6">
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>💡 <strong>Hướng dẫn sử dụng:</strong></p>

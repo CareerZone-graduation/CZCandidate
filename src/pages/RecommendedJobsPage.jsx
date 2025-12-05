@@ -79,9 +79,9 @@ const RecommendedJobsPage = () => {
       setIsLoading(true);
       const response = await getRecommendations({ page, limit: 20 });
       console.log('📥 Recommendations response:', response);
-      
+
       if (response?.data?.length > 0) {
-        
+
         // Filter out invalid recommendations and map to job format
         const recommendedJobs = response.data
           .filter(rec => {
@@ -101,9 +101,9 @@ const RecommendedJobsPage = () => {
             recommendationReasons: rec.reasons,
             recommendedAt: rec.generatedAt
           }));
-        
+
         console.log('✅ Valid recommended jobs:', recommendedJobs.length);
-        
+
         if (recommendedJobs.length === 0 && page === 1) {
           // All recommendations were invalid, regenerate
           console.log('🔄 All recommendations invalid, regenerating...');
@@ -179,7 +179,7 @@ const RecommendedJobsPage = () => {
           <Badge
             key={idx}
             variant="outline"
-            className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"
+            className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
           >
             {reason.value}
           </Badge>
@@ -235,13 +235,13 @@ const RecommendedJobsPage = () => {
       <div className="container py-8">
         {/* Profile incomplete alert */}
         {error === 'profile_incomplete' && (
-          <Alert className="mb-6 bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
+          <Alert className="mb-6 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-300">
               Hồ sơ của bạn đã hoàn thiện {profileCompleteness}%. Cần tối thiểu 60% để nhận gợi ý việc làm phù hợp.{' '}
               <Button
                 variant="link"
-                className="p-0 h-auto text-amber-700 font-semibold"
+                className="p-0 h-auto text-amber-700 dark:text-amber-400 font-semibold"
                 onClick={() => navigate('/profile')}
               >
                 Hoàn thiện ngay →

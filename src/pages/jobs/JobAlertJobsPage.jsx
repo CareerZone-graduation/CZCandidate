@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 const JobAlertJobsPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Get params from URL query (passed from notification)
   const keyword = searchParams.get('keyword') || '';
   const jobIdsParam = searchParams.get('jobIds') || '';
@@ -280,7 +280,7 @@ const JobAlertJobsPage = () => {
                           <Badge
                             key={idx}
                             variant="outline"
-                            className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                            className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
                           >
                             {skill}
                           </Badge>

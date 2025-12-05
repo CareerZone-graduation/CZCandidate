@@ -93,7 +93,7 @@ const Login = () => {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
         {/* Multi-layer background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950"></div>
 
         {/* Gradient orbs */}
         <div className="absolute inset-0 overflow-hidden">
@@ -106,7 +106,7 @@ const Login = () => {
         </div>
 
         {/* Overlay gradient for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10 dark:from-black/20 dark:to-black/10"></div>
 
         <div className="w-full max-w-md relative z-10">
           {/* Back to Landing Page Button */}

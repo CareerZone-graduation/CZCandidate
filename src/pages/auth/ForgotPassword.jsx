@@ -65,25 +65,25 @@ const ForgotPassword = () => {
     const resetLink = `${window.location.origin}/reset-password?token=${resetToken}`;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950 flex items-center justify-center p-4">
         <Card className="w-full max-w-lg shadow-xl border-0">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-blue-600" />
+            <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-foreground">
               Token đặt lại mật khẩu
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-gray-600 dark:text-muted-foreground">
               Chế độ phát triển - Sử dụng token dưới đây để đặt lại mật khẩu
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg space-y-3">
               <div>
-                <p className="text-sm font-medium text-blue-800 mb-1">Token:</p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Token:</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-white rounded text-sm font-mono text-blue-700 border">
+                  <code className="flex-1 p-2 bg-white dark:bg-muted rounded text-sm font-mono text-blue-700 dark:text-blue-400 border dark:border-border">
                     {resetToken}
                   </code>
                   <Button
@@ -98,9 +98,9 @@ const ForgotPassword = () => {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-blue-800 mb-1">Liên kết đặt lại:</p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Liên kết đặt lại:</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-white rounded text-xs font-mono text-blue-700 border break-all">
+                  <code className="flex-1 p-2 bg-white dark:bg-muted rounded text-xs font-mono text-blue-700 dark:text-blue-400 border dark:border-border break-all">
                     {resetLink}
                   </code>
                   <Button
@@ -141,25 +141,25 @@ const ForgotPassword = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-foreground">
               Email đã được gửi!
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-gray-600 dark:text-muted-foreground">
               Chúng tôi đã gửi liên kết đặt lại mật khẩu đến email của bạn.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>Email:</strong> {getValues('email')}
               </p>
-              <p className="text-sm text-blue-700 mt-2">
+              <p className="text-sm text-blue-700 dark:text-blue-400 mt-2">
                 Vui lòng kiểm tra hộp thư đến và thư rác. Liên kết sẽ hết hạn sau 15 phút.
               </p>
             </div>
@@ -186,18 +186,17 @@ const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <Mail className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-foreground">
             Quên mật khẩu
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-gray-600 dark:text-muted-foreground">
             Nhập email của bạn để nhận liên kết đặt lại mật khẩu
-
           </CardDescription>
         </CardHeader>
 
@@ -246,7 +245,7 @@ const ForgotPassword = () => {
           <div className="mt-6 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Quay lại đăng nhập

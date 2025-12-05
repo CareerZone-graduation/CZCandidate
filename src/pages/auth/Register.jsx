@@ -53,12 +53,12 @@ const Register = () => {
     try {
       const resp = await registerService(formData);
       console.log(resp);
-      
+
       // Check if registration returns access token (auto-login)
       if (resp.accessToken) {
         // Auto-login after registration
         dispatch(loginSuccess({ accessToken: resp.accessToken }));
-        
+
         setSuccess("Đăng ký thành công! Đang chuyển đến hoàn thiện hồ sơ...");
         toast.success("Đăng ký thành công!");
 
@@ -109,7 +109,7 @@ const Register = () => {
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
       {/* Multi-layer animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950"></div>
 
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden">
@@ -139,7 +139,7 @@ const Register = () => {
       </div>
 
       {/* Overlay gradient for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10 dark:from-black/20 dark:to-black/10"></div>
 
       <div className="w-full max-w-md relative z-10">
         <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-xl glass transition-all duration-500 hover:shadow-3xl hover:bg-card/98">
@@ -276,7 +276,7 @@ const Register = () => {
               </Button>
             </form>
 
-    
+
 
             {/* Link đăng nhập */}
             <div className="text-center text-sm">

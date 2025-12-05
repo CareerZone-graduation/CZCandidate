@@ -28,13 +28,13 @@ const SupportRequestsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-background py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Yêu cầu hỗ trợ</h1>
-            <p className="mt-2 text-gray-600">Quản lý các yêu cầu hỗ trợ của bạn</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Yêu cầu hỗ trợ</h1>
+            <p className="mt-2 text-gray-600 dark:text-muted-foreground">Quản lý các yêu cầu hỗ trợ của bạn</p>
           </div>
           <button
             onClick={() => navigate('/support/new')}
@@ -46,13 +46,13 @@ const SupportRequestsPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white dark:bg-card rounded-lg shadow-sm p-4 mb-6 border dark:border-border">
           <div className="flex items-center space-x-4">
-            <Filter className="w-5 h-5 text-gray-400" />
+            <Filter className="w-5 h-5 text-gray-400 dark:text-muted-foreground" />
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-background dark:text-foreground"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="pending">Đang chờ</option>
@@ -64,7 +64,7 @@ const SupportRequestsPage = () => {
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-background dark:text-foreground"
             >
               <option value="">Tất cả danh mục</option>
               <option value="technical-issue">Vấn đề kỹ thuật</option>
@@ -79,8 +79,8 @@ const SupportRequestsPage = () => {
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.</p>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <p className="text-red-800 dark:text-red-400">Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.</p>
           </div>
         )}
 
@@ -97,17 +97,17 @@ const SupportRequestsPage = () => {
             <button
               onClick={() => handleFilterChange('page', filters.page - 1)}
               disabled={filters.page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-accent dark:text-foreground"
             >
               Trước
             </button>
-            <span className="px-4 py-2 text-gray-700">
+            <span className="px-4 py-2 text-gray-700 dark:text-foreground">
               Trang {filters.page} / {data.meta.totalPages}
             </span>
             <button
               onClick={() => handleFilterChange('page', filters.page + 1)}
               disabled={filters.page === data.meta.totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-accent dark:text-foreground"
             >
               Sau
             </button>

@@ -25,25 +25,25 @@ const CreateSupportRequestPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-background py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/support')}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center space-x-2 text-gray-600 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Quay lại</span>
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Tạo Yêu cầu hỗ trợ</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Tạo Yêu cầu hỗ trợ</h1>
+          <p className="mt-2 text-gray-600 dark:text-muted-foreground">
             Mô tả chi tiết vấn đề bạn đang gặp phải để chúng tôi có thể hỗ trợ bạn tốt nhất
           </p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-card rounded-lg shadow-sm p-6 border dark:border-border">
           <SupportRequestForm
             onSubmit={handleSubmit}
             isLoading={mutation.isPending}

@@ -157,7 +157,7 @@ const Profile = () => {
         <div className="container mx-auto py-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-6">
-              <div className="bg-white rounded-lg p-6">
+              <div className="bg-white dark:bg-card rounded-lg p-6">
                 <div className="flex items-center space-x-4">
                   <div className="w-24 h-24 bg-skeleton rounded-full"></div>
                   <div className="space-y-2">
@@ -168,7 +168,7 @@ const Profile = () => {
                 </div>
               </div>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-lg p-6">
+                <div key={i} className="bg-white dark:bg-card rounded-lg p-6">
                   <div className="h-6 bg-skeleton rounded w-32 mb-4"></div>
                   <div className="space-y-2">
                     <div className="h-4 bg-skeleton rounded w-full"></div>
@@ -188,7 +188,7 @@ const Profile = () => {
       <div className="min-h-screen">
         <div className="container mx-auto py-8">
           <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-8 bg-white">
+            <Card className="text-center py-8 bg-white dark:bg-card">
               <CardContent>
                 <div className="text-destructive mb-4">
                   <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -507,7 +507,7 @@ const Profile = () => {
           />
 
           {/* Profile Header */}
-          <Card className="overflow-hidden bg-white">
+          <Card className="overflow-hidden bg-white dark:bg-card">
             <div className="bg-gradient-primary p-6 text-primary-foreground">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <Avatar className="w-24 h-24 border-4 border-primary-foreground shadow-lg">
@@ -549,7 +549,7 @@ const Profile = () => {
 
               {/* About */}
               {profile.bio && (
-                <Card className="bg-white">
+                <Card className="bg-white dark:bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -574,7 +574,7 @@ const Profile = () => {
 
               {/* Experience */}
               {profile.experiences && profile.experiences.length > 0 && (
-                <Card className="bg-white">
+                <Card className="bg-white dark:bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -617,7 +617,7 @@ const Profile = () => {
 
               {/* Education */}
               {profile.educations && profile.educations.length > 0 && (
-                <Card className="bg-white">
+                <Card className="bg-white dark:bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -662,7 +662,7 @@ const Profile = () => {
 
               {/* Skills */}
               {profile.skills && profile.skills.length > 0 && (
-                <Card className="bg-white">
+                <Card className="bg-white dark:bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -693,7 +693,7 @@ const Profile = () => {
 
               {/* CVs */}
               {profile.cvs && profile.cvs.length > 0 && (
-                <Card className="bg-white">
+                <Card className="bg-white dark:bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -719,16 +719,16 @@ const Profile = () => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {profile.cvs.map((cv) => (
-                      <div key={cv._id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div key={cv._id} className="border dark:border-border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-accent transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-gray-900 truncate">{cv.name}</h4>
+                              <h4 className="font-medium text-gray-900 dark:text-foreground truncate">{cv.name}</h4>
                               {cv.isDefault && (
                                 <Badge className="bg-primary text-primary-foreground">Mặc định</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-gray-500 dark:text-muted-foreground mt-1">
                               Tải lên: {formatDate(cv.uploadedAt)}
                             </p>
                           </div>
@@ -758,7 +758,7 @@ const Profile = () => {
               )}
 
               {/* Quick Actions */}
-              <Card className="bg-white">
+              <Card className="bg-white dark:bg-card">
                 <CardHeader>
                   <CardTitle>Hành động nhanh</CardTitle>
                 </CardHeader>

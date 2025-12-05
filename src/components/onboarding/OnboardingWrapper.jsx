@@ -387,7 +387,7 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
                   className={`flex-1 text-center text-xs font-medium transition-colors duration-300 ${step.id === localCurrentStep
                     ? 'text-primary'
                     : step.id < localCurrentStep
-                      ? 'text-emerald-600'
+                      ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-muted-foreground'
                     }`}
                 >

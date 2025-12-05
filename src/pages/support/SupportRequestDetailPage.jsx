@@ -13,17 +13,17 @@ import {
 } from '../../services/supportRequestService';
 
 const STATUS_CONFIG = {
-  pending: { label: 'Đang chờ', color: 'bg-yellow-100 text-yellow-800' },
-  'in-progress': { label: 'Đang xử lý', color: 'bg-blue-100 text-blue-800' },
-  resolved: { label: 'Đã giải quyết', color: 'bg-green-100 text-green-800' },
-  closed: { label: 'Đã đóng', color: 'bg-gray-100 text-gray-800' }
+  pending: { label: 'Đang chờ', color: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400' },
+  'in-progress': { label: 'Đang xử lý', color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400' },
+  resolved: { label: 'Đã giải quyết', color: 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' },
+  closed: { label: 'Đã đóng', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300' }
 };
 
 const PRIORITY_CONFIG = {
-  low: { label: 'Thấp', color: 'bg-gray-100 text-gray-800' },
-  medium: { label: 'Trung bình', color: 'bg-blue-100 text-blue-800' },
-  high: { label: 'Cao', color: 'bg-orange-100 text-orange-800' },
-  urgent: { label: 'Khẩn cấp', color: 'bg-red-100 text-red-800' }
+  low: { label: 'Thấp', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300' },
+  medium: { label: 'Trung bình', color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400' },
+  high: { label: 'Cao', color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-400' },
+  urgent: { label: 'Khẩn cấp', color: 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400' }
 };
 
 const CATEGORY_LABELS = {
@@ -74,7 +74,7 @@ const SupportRequestDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -83,23 +83,23 @@ const SupportRequestDetailPage = () => {
   const request = data?.data;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-background py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <button
           onClick={() => navigate('/support')}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-6"
+          className="flex items-center space-x-2 text-gray-600 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Quay lại danh sách</span>
         </button>
 
         {/* Request Info */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white dark:bg-card rounded-lg shadow-sm p-6 mb-6 border dark:border-border">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{request?.subject}</h1>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground mb-2">{request?.subject}</h1>
+              <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-muted-foreground">
                 <span>Danh mục: {CATEGORY_LABELS[request?.category] || request?.category}</span>
                 <span>•</span>
                 <span>Tạo lúc: {format(new Date(request?.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}</span>
@@ -115,14 +115,14 @@ const SupportRequestDetailPage = () => {
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="font-medium text-gray-900 mb-2">Mô tả:</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{request?.description}</p>
+          <div className="border-t dark:border-border pt-4">
+            <h3 className="font-medium text-gray-900 dark:text-foreground mb-2">Mô tả:</h3>
+            <p className="text-gray-700 dark:text-muted-foreground whitespace-pre-wrap">{request?.description}</p>
           </div>
 
           {request?.attachments && request.attachments.length > 0 && (
-            <div className="border-t pt-4 mt-4">
-              <h3 className="font-medium text-gray-900 mb-3">Tệp đính kèm ({request.attachments.length}):</h3>
+            <div className="border-t dark:border-border pt-4 mt-4">
+              <h3 className="font-medium text-gray-900 dark:text-foreground mb-3">Tệp đính kèm ({request.attachments.length}):</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {request.attachments.map((file, index) => {
                   const isImage = file.fileType?.startsWith('image/');
@@ -141,15 +141,15 @@ const SupportRequestDetailPage = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center h-48 bg-gray-100">
-                          <Paperclip className="w-12 h-12 text-gray-400" />
+                        <div className="flex items-center justify-center h-48 bg-gray-100 dark:bg-muted">
+                          <Paperclip className="w-12 h-12 text-gray-400 dark:text-muted-foreground" />
                         </div>
                       )}
-                      <div className="p-3 bg-white">
-                        <p className="text-sm font-medium text-gray-900 truncate">{file.filename}</p>
+                      <div className="p-3 bg-white dark:bg-card border-t dark:border-border">
+                        <p className="text-sm font-medium text-gray-900 dark:text-foreground truncate">{file.filename}</p>
                         <div className="flex items-center justify-between mt-1">
-                          <p className="text-xs text-gray-500">{(file.fileSize / 1024).toFixed(2)} KB</p>
-                          {!isImage && <a href={file.url} download={file.filename} className="text-blue-600 hover:text-blue-800"><Download className="w-4 h-4" /></a>}
+                          <p className="text-xs text-gray-500 dark:text-muted-foreground">{(file.fileSize / 1024).toFixed(2)} KB</p>
+                          {!isImage && <a href={file.url} download={file.filename} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"><Download className="w-4 h-4" /></a>}
                         </div>
                       </div>
                     </div>
@@ -161,12 +161,12 @@ const SupportRequestDetailPage = () => {
         </div>
 
         {/* Messages Thread */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4 pb-4 border-b">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white dark:bg-card rounded-lg shadow-sm p-6 mb-6 border dark:border-border">
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b dark:border-border">
+            <svg className="w-5 h-5 text-gray-600 dark:text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <h2 className="text-lg font-semibold text-gray-900">Lịch sử tin nhắn</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-foreground">Lịch sử tin nhắn</h2>
           </div>
           <MessageThread
             messages={request?.messages || []}
@@ -176,8 +176,8 @@ const SupportRequestDetailPage = () => {
 
         {/* Follow-up Form */}
         {(request?.status === 'pending' || request?.status === 'in-progress') && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-card rounded-lg shadow-sm p-6 border dark:border-border">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-foreground mb-4">
               Thêm tin nhắn
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -185,7 +185,7 @@ const SupportRequestDetailPage = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-background dark:text-foreground"
                 placeholder="Nhập tin nhắn của bạn..."
                 disabled={mutation.isPending}
               />
@@ -198,7 +198,7 @@ const SupportRequestDetailPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowAttachments(!showAttachments)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                  className="flex items-center space-x-2 text-gray-600 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground"
                 >
                   <Paperclip className="w-5 h-5" />
                   <span>{showAttachments ? 'Ẩn' : 'Đính kèm tệp'}</span>
@@ -220,7 +220,7 @@ const SupportRequestDetailPage = () => {
         )}
 
         {request?.status !== 'pending' && request?.status !== 'in-progress' && (
-          <div className="bg-gray-100 rounded-lg p-4 text-center text-gray-600">
+          <div className="bg-gray-100 dark:bg-muted rounded-lg p-4 text-center text-gray-600 dark:text-muted-foreground">
             Yêu cầu này đã được{' '}
             {request?.status === 'resolved' ? 'giải quyết' : 'đóng'}. Bạn không
             thể thêm tin nhắn mới.

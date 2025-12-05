@@ -68,7 +68,7 @@ const PrivacySettings = () => {
         toast.error('Bạn cần upload ít nhất 1 CV trước khi bật tìm việc');
         return;
       }
-      
+
       // Nếu đã có CV được chọn trước đó, dùng luôn
       if (selectedCvId) {
         setAllowSearch(true);
@@ -133,9 +133,9 @@ const PrivacySettings = () => {
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <Shield className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900">Cài đặt riêng tư</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Cài đặt riêng tư</h1>
         </div>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-muted-foreground">
           Quản lý quyền riêng tư và khả năng hiển thị hồ sơ của bạn
         </p>
       </div>
@@ -144,13 +144,13 @@ const PrivacySettings = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Eye className="h-5 w-5 text-gray-600" />
+            <Eye className="h-5 w-5 text-gray-600 dark:text-muted-foreground" />
             <h2 className="text-xl font-semibold">Khả năng tìm kiếm hồ sơ</h2>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Allow Search Toggle */}
-          <div className="flex items-start justify-between gap-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+          <div className="flex items-start justify-between gap-4 p-4 rounded-lg border border-gray-200 dark:border-border bg-gray-50 dark:bg-muted/50">
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
                 <Label
@@ -160,12 +160,12 @@ const PrivacySettings = () => {
                   Cho phép nhà tuyển dụng tìm thấy tôi
                 </Label>
                 {allowSearch ? (
-                  <Eye className="h-4 w-4 text-green-600" />
+                  <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
                 ) : (
-                  <EyeOff className="h-4 w-4 text-gray-400" />
+                  <EyeOff className="h-4 w-4 text-gray-400 dark:text-muted-foreground" />
                 )}
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground">
                 Khi bật, hồ sơ của bạn sẽ xuất hiện trong danh sách gợi ý ứng viên
                 phù hợp cho các nhà tuyển dụng dựa trên AI. Bạn cần chọn 1 CV để hiển thị.
                 Thông tin liên hệ trong CV sẽ được che cho đến khi nhà tuyển dụng mua quyền xem.
@@ -184,18 +184,18 @@ const PrivacySettings = () => {
 
           {/* Selected CV Display */}
           {allowSearch && selectedCv && !showCvSelector && (
-            <div className="p-4 rounded-lg border border-green-200 bg-green-50">
+            <div className="p-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1">
-                  <FileText className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <FileText className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-green-900">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">
                       CV đang sử dụng để tìm việc:
                     </p>
-                    <p className="text-sm text-green-700 font-semibold">
+                    <p className="text-sm text-green-700 dark:text-green-400 font-semibold">
                       {selectedCv.name}
                     </p>
-                    <p className="text-xs text-green-600">
+                    <p className="text-xs text-green-600 dark:text-green-500">
                       Tải lên: {new Date(selectedCv.uploadedAt).toLocaleDateString('vi-VN')}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ const PrivacySettings = () => {
                   size="sm"
                   onClick={handleChangeCv}
                   disabled={toggleMutation.isPending}
-                  className="border-green-300 text-green-700 hover:bg-green-100"
+                  className="border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30"
                 >
                   Đổi CV
                 </Button>
@@ -229,15 +229,15 @@ const PrivacySettings = () => {
                   Hủy
                 </Button>
               </div>
-              
+
               {cvsLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-20 w-full" />
                   <Skeleton className="h-20 w-full" />
                 </div>
               ) : cvs.length === 0 ? (
-                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 text-center">
-                  <p className="text-sm text-gray-600">
+                <div className="p-4 rounded-lg border border-gray-200 dark:border-border bg-gray-50 dark:bg-muted/50 text-center">
+                  <p className="text-sm text-gray-600 dark:text-muted-foreground">
                     Bạn chưa có CV nào. Vui lòng upload CV trước.
                   </p>
                   <Button
@@ -261,24 +261,24 @@ const PrivacySettings = () => {
                         'disabled:opacity-50 disabled:cursor-not-allowed',
                         selectedCvId === cv._id
                           ? 'border-primary bg-primary/10'
-                          : 'border-gray-200 bg-white'
+                          : 'border-gray-200 dark:border-border bg-white dark:bg-card'
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <FileText className={cn(
                           'h-5 w-5 flex-shrink-0 mt-0.5',
-                          selectedCvId === cv._id ? 'text-primary' : 'text-gray-400'
+                          selectedCvId === cv._id ? 'text-primary' : 'text-gray-400 dark:text-muted-foreground'
                         )} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900 truncate">
+                            <p className="font-medium text-gray-900 dark:text-foreground truncate">
                               {cv.name}
                             </p>
                             {selectedCvId === cv._id && (
                               <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                             Tải lên: {new Date(cv.uploadedAt).toLocaleDateString('vi-VN')}
                           </p>
                         </div>
@@ -291,9 +291,9 @@ const PrivacySettings = () => {
           )}
 
           {/* Information Box */}
-          <div className="flex gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
-            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="space-y-2 text-sm text-blue-900">
+          <div className="flex gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2 text-sm text-blue-900 dark:text-blue-300">
               <p className="font-medium">Thông tin quan trọng:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>
@@ -326,9 +326,9 @@ const PrivacySettings = () => {
                 allowSearch ? 'bg-green-500' : 'bg-gray-400'
               )}
             />
-            <span className="text-gray-600">
+            <span className="text-gray-600 dark:text-muted-foreground">
               Trạng thái:{' '}
-              <span className={cn('font-medium', allowSearch ? 'text-green-600' : 'text-gray-600')}>
+              <span className={cn('font-medium', allowSearch ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-muted-foreground')}>
                 {allowSearch ? 'Đang bật - Hồ sơ có thể được tìm thấy' : 'Đang tắt - Hồ sơ không hiển thị'}
               </span>
             </span>
