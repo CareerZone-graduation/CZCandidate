@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { BellRing, CheckCheck, BellPlus } from 'lucide-react';
+import { BellRing, CheckCheck, BellPlus, BellOff } from 'lucide-react';
 import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
 import NotificationPermissionGuide from '@/components/common/NotificationPermissionGuide';
 import NotificationPermissionAlert from '@/components/common/NotificationPermissionAlert';
@@ -110,7 +110,12 @@ const NotificationsPage = () => {
   const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const dispatch = useDispatch();
   const { notifications, pagination, loading, error } = useSelector((state) => state.notifications);
-  const { requestPermission, permissionDenied } = useFirebaseMessaging({
+  const {
+    requestPermission,
+    permissionDenied,
+    isPushEnabled,
+    disableNotifications
+  } = useFirebaseMessaging({
     onPermissionDenied: () => {
       setShowPermissionGuide(true);
     }
@@ -223,14 +228,26 @@ const NotificationsPage = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl">Thông báo của bạn</CardTitle>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={requestPermission}
-            >
-              <BellPlus className="mr-2 h-4 w-4" />
-              Bật thông báo đẩy
-            </Button>
+            {isPushEnabled ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={disableNotifications}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+              >
+                <BellOff className="mr-2 h-4 w-4" />
+                Tắt thông báo đẩy
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={requestPermission}
+              >
+                <BellPlus className="mr-2 h-4 w-4" />
+                Bật thông báo đẩy
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
