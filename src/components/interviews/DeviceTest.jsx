@@ -36,7 +36,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
   const navigate = useNavigate();
   const { interviewId: paramInterviewId } = useParams();
   const interviewId = propInterviewId || paramInterviewId;
-  
+
   const videoRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -47,30 +47,30 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
   const [videoDevices, setVideoDevices] = useState([]);
   const [audioDevices, setAudioDevices] = useState([]);
   const [audioOutputDevices, setAudioOutputDevices] = useState([]);
-  
+
   // Selected devices
   const [selectedVideoDevice, setSelectedVideoDevice] = useState(undefined);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState(undefined);
   const [selectedAudioOutput, setSelectedAudioOutput] = useState(undefined);
-  
+
   // Device states
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
-  
+
   // Speaker test
   const [isSpeakerTestPlaying, setIsSpeakerTestPlaying] = useState(false);
-  
+
   // Stream
   const [localStream, setLocalStream] = useState(null);
-  
+
   // Loading and error states
   const [isLoading, setIsLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState({
     camera: 'checking', // 'checking', 'granted', 'denied'
     microphone: 'checking'
   });
-  
+
   // Browser compatibility
   const [browserCompatibility, setBrowserCompatibility] = useState({
     isCompatible: true,
@@ -84,33 +84,33 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
 
   const checkBrowserCompatibility = () => {
     const issues = [];
-    
+
     // Check for getUserMedia support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       issues.push('Trình duyệt không hỗ trợ truy cập camera/microphone');
     }
-    
+
     // Check for WebRTC support
     if (!window.RTCPeerConnection) {
       issues.push('Trình duyệt không hỗ trợ WebRTC');
     }
-    
+
     // Check for secure context (HTTPS)
     if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
       issues.push('Yêu cầu kết nối HTTPS để sử dụng camera/microphone');
     }
-    
+
     // Browser recommendations
     const userAgent = navigator.userAgent.toLowerCase();
     const isChrome = userAgent.includes('chrome') && !userAgent.includes('edge');
     const isFirefox = userAgent.includes('firefox');
     const isEdge = userAgent.includes('edge');
     const isSafari = userAgent.includes('safari') && !userAgent.includes('chrome');
-    
+
     if (!isChrome && !isFirefox && !isEdge && !isSafari) {
       issues.push('Khuyến nghị sử dụng Chrome, Firefox, Edge hoặc Safari để có trải nghiệm tốt nhất');
     }
-    
+
     setBrowserCompatibility({
       isCompatible: issues.length === 0 || issues.length === 1 && issues[0].includes('Khuyến nghị'),
       issues
@@ -122,27 +122,27 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
     const requestPermissionsAndGetDevices = async () => {
       try {
         setIsLoading(true);
-        
+
         // Request permissions first to get full device list with labels
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true
         });
-        
+
         // Stop the temporary stream immediately
         stream.getTracks().forEach(track => track.stop());
-        
+
         // Now enumerate devices with permissions granted
         const devices = await navigator.mediaDevices.enumerateDevices();
-        
+
         const videoInputs = devices.filter(device => device.kind === 'videoinput');
         const audioInputs = devices.filter(device => device.kind === 'audioinput');
         const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
-        
+
         setVideoDevices(videoInputs);
         setAudioDevices(audioInputs);
         setAudioOutputDevices(audioOutputs);
-        
+
         // Set default devices
         if (videoInputs.length > 0 && !selectedVideoDevice) {
           setSelectedVideoDevice(videoInputs[0].deviceId);
@@ -153,16 +153,16 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
         if (audioOutputs.length > 0 && !selectedAudioOutput) {
           setSelectedAudioOutput(audioOutputs[0].deviceId);
         }
-        
+
         setPermissionStatus({
           camera: 'granted',
           microphone: 'granted'
         });
-        
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error requesting permissions or enumerating devices:', error);
-        
+
         // Handle specific errors
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
           setPermissionStatus({
@@ -179,7 +179,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
         } else {
           toast.error('Không thể truy cập thiết bị: ' + error.message);
         }
-        
+
         setIsLoading(false);
       }
     };
@@ -192,7 +192,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
     if (selectedVideoDevice && selectedAudioDevice) {
       startMediaStream();
     }
-    
+
     return () => {
       stopMediaStream();
     };
@@ -201,10 +201,10 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
   const startMediaStream = async () => {
     try {
       setIsLoading(true);
-      
+
       // Stop existing stream
       stopMediaStream();
-      
+
       const constraints = {
         video: isVideoEnabled ? {
           deviceId: selectedVideoDevice ? { exact: selectedVideoDevice } : undefined,
@@ -218,31 +218,31 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
           autoGainControl: true
         } : false
       };
-      
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+
       setLocalStream(stream);
-      
+
       // Set video element
       if (videoRef.current && isVideoEnabled) {
         videoRef.current.srcObject = stream;
       }
-      
+
       // Setup audio level monitoring
       if (isAudioEnabled) {
         setupAudioMonitoring(stream);
       }
-      
+
       // Update permission status
       setPermissionStatus({
         camera: isVideoEnabled ? 'granted' : 'checking',
         microphone: isAudioEnabled ? 'granted' : 'checking'
       });
-      
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      
+
       // Handle specific errors
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionStatus({
@@ -255,7 +255,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
       } else {
         toast.error('Không thể truy cập thiết bị: ' + error.message);
       }
-      
+
       setIsLoading(false);
     }
   };
@@ -265,12 +265,12 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
       localStream.getTracks().forEach(track => track.stop());
       setLocalStream(null);
     }
-    
+
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-    
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -282,13 +282,13 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
-      
+
       analyser.fftSize = 256;
       microphone.connect(analyser);
-      
+
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
-      
+
       updateAudioLevel();
     } catch (error) {
       console.error('Error setting up audio monitoring:', error);
@@ -297,16 +297,16 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
 
   const updateAudioLevel = () => {
     if (!analyserRef.current) return;
-    
+
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
-    
+
     // Calculate average volume
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
     const normalizedLevel = Math.min(100, (average / 255) * 100);
-    
+
     setAudioLevel(normalizedLevel);
-    
+
     animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
   };
 
@@ -320,7 +320,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
 
   const handleAudioOutputChange = async (deviceId) => {
     setSelectedAudioOutput(deviceId);
-    
+
     // Update audio output for test audio if supported
     if (testAudioRef.current && typeof testAudioRef.current.setSinkId === 'function') {
       try {
@@ -347,18 +347,18 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
       // Play test audio (simple tone or notification sound)
       const audio = new Audio('https://onlinetestcase.com/wp-content/uploads/2023/06/100-KB-MP3.mp3'); // You'll need to add a test audio file
       testAudioRef.current = audio;
-      
+
       // Set output device if supported
       if (selectedAudioOutput && typeof audio.setSinkId === 'function') {
         audio.setSinkId(selectedAudioOutput).catch(console.error);
       }
-      
+
       audio.play().then(() => {
         setIsSpeakerTestPlaying(true);
       }).catch(() => {
         toast.error('Không thể phát âm thanh kiểm tra');
       });
-      
+
       audio.onended = () => {
         setIsSpeakerTestPlaying(false);
       };
@@ -376,13 +376,14 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
     };
     localStorage.setItem('interviewDeviceSettings', JSON.stringify(deviceSettings));
     console.log('[DeviceTest] Saved device settings:', deviceSettings);
-    
+
     if (onComplete) {
       onComplete(deviceSettings);
     } else if (interviewId) {
       navigate(`/interviews/${interviewId}/room`);
     } else {
-      toast.error('Không tìm thấy ID phỏng vấn');
+      toast.success('Kiểm tra thiết bị hoàn tất');
+      navigate(-1);
     }
   };
 
@@ -397,8 +398,8 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
     }
   };
 
-  const canJoinInterview = 
-    permissionStatus.camera === 'granted' && 
+  const canJoinInterview =
+    permissionStatus.camera === 'granted' &&
     permissionStatus.microphone === 'granted' &&
     browserCompatibility.isCompatible;
 
@@ -424,7 +425,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
                 </ul>
               </AlertDescription>
             </Alert>
-            
+
             <div className="space-y-2">
               <p className="font-semibold">Khuyến nghị:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
@@ -467,7 +468,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
               </Badge>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mic className="h-5 w-5 text-muted-foreground" />
@@ -720,8 +721,17 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
             </>
           ) : (
             <>
-              <Video className="h-4 w-4 mr-2" />
-              Tham gia phỏng vấn
+              {interviewId ? (
+                <>
+                  <Video className="h-4 w-4 mr-2" />
+                  Tham gia phỏng vấn
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Hoàn tất kiểm tra
+                </>
+              )}
             </>
           )}
         </Button>

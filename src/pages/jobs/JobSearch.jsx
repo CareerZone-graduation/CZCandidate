@@ -201,7 +201,7 @@ const JobSearch = () => {
     <div className="min-h-screen bg-background/80 backdrop-blur-sm relative z-10">
       {/* Header with search bar */}
       <div className={cn(
-        "sticky top-0 z-40",
+        "sticky top-16 z-40",
         "bg-background/80 backdrop-blur-xl",
         "border-b-2 border-border/50",
         "shadow-lg shadow-primary/5",
@@ -223,6 +223,24 @@ const JobSearch = () => {
             >
               <ArrowLeft className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors duration-300" />
             </Button>
+
+            {/* Mobile Filter Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="lg:hidden shrink-0">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto pt-10">
+                <SheetHeader className="mb-4">
+                  <SheetTitle>Bộ lọc tìm kiếm</SheetTitle>
+                </SheetHeader>
+                <SearchFilters
+                  filters={currentFilters}
+                  onFilterChange={handleFilterChange}
+                />
+              </SheetContent>
+            </Sheet>
 
             {/* Search Bar */}
             <div className="flex-1">

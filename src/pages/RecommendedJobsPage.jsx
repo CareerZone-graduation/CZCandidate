@@ -205,7 +205,7 @@ const RecommendedJobsPage = () => {
             <ChevronLeft className="mr-2 h-4 w-4" />
             Về trang chủ
           </Button>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                 <Sparkles className="h-8 w-8" />

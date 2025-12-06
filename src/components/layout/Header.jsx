@@ -208,88 +208,138 @@ const Header = () => {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className={cn(
-                  "transition-colors",
-                  isHeaderWhite ? "text-white hover:bg-white/10" : ""
+                  "transition-colors hover:bg-transparent",
+                  isHeaderWhite ? "text-white hover:text-white/80" : "text-foreground"
                 )}>
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-full max-w-xs bg-white dark:bg-card">
-                <div className="flex items-center justify-between mb-8">
-                  <Link to="/" className="flex items-center space-x-2">
-                    <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
-                  </Link>
-                  <ThemeToggle variant="ghost" size="icon" />
-                </div>
-                <nav className="grid gap-3 text-lg font-medium">
-                  {/* Jobs Section */}
-                  <Link to="/jobs/search" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                    <Briefcase className="h-4 w-4" /> Tìm việc làm
-                  </Link>
-                  {isAuthenticated && (
-                    <>
-                      <button
-                        onClick={() => openChat()}
-                        className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4 w-full text-left"
+              <SheetContent side="left" className="w-[85vw] max-w-xs p-0 flex flex-col bg-background/95 backdrop-blur-xl border-r">
+                <div className="flex flex-col h-full">
+                  {/* Mobile Header Logo or User Profile */}
+                  <div className="p-4 border-b">
+                    {isAuthenticated ? (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10 border-2 border-primary/20">
+                          <AvatarImage src={user?.profile?.avatar} referrerPolicy="no-referrer" />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getUserInitials(user)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold truncate">{user?.profile?.fullname || 'Người dùng'}</div>
+                          <div className="text-xs text-muted-foreground truncate">{user?.user?.email}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link to="/" className="flex items-center gap-2" onClick={() => document.querySelector('[data-radix-collection-item]')?.click()}>
+                        <span className="font-bold text-xl text-foreground">Career<span className="text-primary">Zone</span></span>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Scrollable Nav Items */}
+                  <div className="flex-1 overflow-y-auto py-4 px-2">
+                    <nav className="grid gap-1">
+                      <div className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Công việc
+                      </div>
+                      <Link
+                        to="/jobs/search"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
-                        <MessageCircle className="h-4 w-4" /> Tin nhắn
-                        {unreadMessagesCount > 0 && (
-                          <Badge className="ml-auto h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs">
-                            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                          </Badge>
-                        )}
-                      </button>
-                      <Link to="/interviews" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <Video className="h-4 w-4" /> Lịch phỏng vấn
+                        <Briefcase className="h-4 w-4 text-primary" /> Tìm việc làm
                       </Link>
-                      <Link to="/dashboard/saved-jobs" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <Bookmark className="h-4 w-4" /> Việc làm đã lưu
-                      </Link>
-                      <Link to="/dashboard/applications" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <FileText className="h-4 w-4" /> Việc làm đã ứng tuyển
-                      </Link>
-                      <Link to="/dashboard/settings/job-alerts" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <Bell className="h-4 w-4" /> Quản lý thông báo
-                      </Link>
-                      <Link to="/dashboard/settings/privacy" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <Shield className="h-4 w-4" /> Cài đặt riêng tư
-                      </Link>
-                    </>
-                  )}
 
-                  {/* Other Links */}
-                  {navLinks.map((link) => (
-                    <Link key={link.to} to={link.to} className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                      {link.icon} {link.label}
-                    </Link>
-                  ))}
+                      {navLinks.map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          <div className="text-primary">{link.icon}</div>
+                          {link.label}
+                        </Link>
+                      ))}
 
-                  {/* CV Management Section */}
-                  {isAuthenticated && (
-                    <>
-                      <Link to="/my-cvs/builder" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                        <FileEdit className="h-4 w-4" /> CV Builder
-                      </Link>
-                      <Link to="/my-cvs/uploaded" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent ml-4">
-                        <Upload className="h-4 w-4" /> CV đã tải lên
-                      </Link>
-                    </>
-                  )}
+                      {isAuthenticated && (
+                        <>
+                          <div className="mt-4 px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Cá nhân
+                          </div>
+                          <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <Home className="h-4 w-4 text-primary" /> Dashboard
+                          </Link>
+                          <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <User className="h-4 w-4 text-primary" /> Hồ sơ của tôi
+                          </Link>
+                          <Link to="/my-cvs/uploaded" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <FileText className="h-4 w-4 text-primary" /> CV của tôi
+                          </Link>
+                          <button
+                            onClick={() => openChat()}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                          >
+                            <MessageCircle className="h-4 w-4 text-primary" />
+                            Tin nhắn
+                            {unreadMessagesCount > 0 && (
+                              <Badge variant="destructive" className="ml-auto h-5 px-1.5 min-w-[1.25rem] flex items-center justify-center">
+                                {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                              </Badge>
+                            )}
+                          </button>
+                          <Link to="/notifications" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <Bell className="h-4 w-4 text-primary" />
+                            Thông báo
+                            {notificationCount > 0 && (
+                              <Badge variant="destructive" className="ml-auto h-5 px-1.5 min-w-[1.25rem] flex items-center justify-center">
+                                {notificationCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </>
+                      )}
+                    </nav>
+                  </div>
 
-                  {isAuthenticated && (
-                    <div className="border-t pt-4 mt-4">
-                      <Link to="/dashboard" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                        <User className="h-4 w-4" /> Dashboard
-                      </Link>
-                      <Link to="/profile" className="flex items-center gap-4 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
-                        <Settings className="h-4 w-4" /> Hồ sơ của tôi
-                      </Link>
-                      <button onClick={handleLogout} className="flex items-center gap-4 px-3 py-2 rounded-lg text-destructive w-full text-left">
-                        <LogOut className="h-4 w-4" /> Đăng xuất
-                      </button>
+                  {/* Footer Actions */}
+                  <div className="p-4 border-t bg-muted/30">
+                    {isAuthenticated ? (
+                      <div className="space-y-3">
+                        <Link
+                          to="/dashboard/billing"
+                          className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Coins className="h-4 w-4 text-amber-600" />
+                            <span className="text-sm font-medium text-amber-900">Số dư</span>
+                          </div>
+                          <span className="text-sm font-bold text-amber-700">{user?.user?.coinBalance?.toLocaleString() || 0} xu</span>
+                        </Link>
+                        <Button
+                          variant="destructive"
+                          className="w-full justify-start gap-3"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Đăng xuất
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button variant="outline" asChild className="w-full">
+                          <Link to="/login">Đăng nhập</Link>
+                        </Button>
+                        <Button asChild className="w-full btn-gradient">
+                          <Link to="/register">Đăng ký</Link>
+                        </Button>
+                      </div>
+                    )}
+                    <div className="mt-4 flex items-center justify-between">
+                      <ThemeToggle variant="ghost" size="icon" className="w-full flex justify-center" />
                     </div>
-                  )}
-                </nav>
+                  </div>
+                </div>
               </SheetContent>
             </Sheet>
           </div>

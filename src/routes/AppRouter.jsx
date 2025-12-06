@@ -221,6 +221,7 @@ const AppRouter = () => {
             <Route index element={<MyInterviews />} />
           </Route>
           {/* Interview room routes - no layout for full-screen experience */}
+          <Route path="/interviews/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
         </Route>

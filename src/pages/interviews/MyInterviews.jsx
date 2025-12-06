@@ -37,9 +37,17 @@ import { toast } from 'sonner';
  */
 const MyInterviews = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchInput, setSearchInput] = useState('');
+  const [startDateInput, setStartDateInput] = useState('');
+  const [endDateInput, setEndDateInput] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
+
+  // State lưu trữ các điều kiện lọc thực tế (chỉ cập nhật khi nhấn tìm kiếm)
+  const [activeFilters, setActiveFilters] = useState({
+    search: '',
+    start: '',
+    end: ''
+  });
 
   // Fetch all interviews
   const {
@@ -74,18 +82,45 @@ const MyInterviews = () => {
   });
 
   // Filter interviews based on search term
+  // Filter interviews based on search term and date range
   const filterInterviews = (interviewList) => {
-    if (!searchTerm) return interviewList;
+    let filtered = interviewList;
 
-    const lowerSearch = searchTerm.toLowerCase();
-    return interviewList.filter((interview) => {
-      const jobSnapshot = interview.application?.jobSnapshot || {};
-      return (
-        jobSnapshot.title?.toLowerCase().includes(lowerSearch) ||
-        jobSnapshot.company?.toLowerCase().includes(lowerSearch) ||
-        interview.roomName?.toLowerCase().includes(lowerSearch)
-      );
-    });
+    // Filter by search term
+    if (activeFilters.search) {
+      const lowerSearch = activeFilters.search.toLowerCase();
+      filtered = filtered.filter((interview) => {
+        const jobSnapshot = interview.application?.jobSnapshot || {};
+        return (
+          jobSnapshot.title?.toLowerCase().includes(lowerSearch) ||
+          jobSnapshot.company?.toLowerCase().includes(lowerSearch) ||
+          interview.roomName?.toLowerCase().includes(lowerSearch)
+        );
+      });
+    }
+
+    // Filter by date range
+    if (activeFilters.start || activeFilters.end) {
+      filtered = filtered.filter((interview) => {
+        const interviewDate = new Date(interview.scheduledTime);
+        interviewDate.setHours(0, 0, 0, 0);
+
+        if (activeFilters.start) {
+          const start = new Date(activeFilters.start);
+          start.setHours(0, 0, 0, 0);
+          if (interviewDate < start) return false;
+        }
+
+        if (activeFilters.end) {
+          const end = new Date(activeFilters.end);
+          end.setHours(0, 0, 0, 0);
+          if (interviewDate > end) return false;
+        }
+        return true;
+      });
+    }
+
+    return filtered;
   };
 
   const filteredUpcoming = filterInterviews(upcomingInterviews);
@@ -107,6 +142,25 @@ const MyInterviews = () => {
 
   const handleDeviceTest = () => {
     navigate('/interviews/device-test');
+  };
+
+  const handleSearch = () => {
+    setActiveFilters({
+      search: searchInput,
+      start: startDateInput,
+      end: endDateInput
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setStartDateInput('');
+    setEndDateInput('');
+    setActiveFilters({
+      search: '',
+      start: '',
+      end: ''
+    });
   };
 
 
@@ -146,33 +200,71 @@ const MyInterviews = () => {
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          Quay lại
         </Button>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          My Interviews
+          Phỏng vấn của tôi
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage your interview invitations and scheduled interviews
+          Quản lý lịch phỏng vấn và thư mời phỏng vấn
         </p>
       </div>
 
       {/* Search and Filter */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                placeholder="Search by job title, company, or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  placeholder="Tìm kiếm theo công việc, công ty..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-10"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
+              <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
+                <Search className="w-4 h-4 mr-2" />
+                Tìm kiếm
+              </Button>
+              <Button variant="outline" onClick={handleDeviceTest}>
+                <Video className="w-4 h-4 mr-2" />
+                Kiểm tra thiết bị
+              </Button>
             </div>
-            <Button variant="outline" onClick={handleDeviceTest}>
-              <Video className="w-4 h-4 mr-2" />
-              Test Device
-            </Button>
+
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <span className="text-sm font-medium whitespace-nowrap">Từ ngày:</span>
+                <Input
+                  type="date"
+                  value={startDateInput}
+                  onChange={(e) => setStartDateInput(e.target.value)}
+                  className="w-full md:w-[150px]"
+                />
+              </div>
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <span className="text-sm font-medium whitespace-nowrap">Đến ngày:</span>
+                <Input
+                  type="date"
+                  value={endDateInput}
+                  onChange={(e) => setEndDateInput(e.target.value)}
+                  className="w-full md:w-[150px]"
+                />
+              </div>
+              {(searchInput || startDateInput || endDateInput || activeFilters.search || activeFilters.start || activeFilters.end) && (
+                <Button
+                  variant="ghost"
+                  onClick={handleClearFilters}
+                  className="ml-auto md:ml-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Xóa lọc
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -181,14 +273,14 @@ const MyInterviews = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upcoming" className="relative">
-            Upcoming
+            Sắp tới
             {filteredUpcoming.length > 0 && (
               <Badge variant="default" className="ml-2 px-1.5 min-w-[20px] h-5">
                 {filteredUpcoming.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
+          <TabsTrigger value="past">Lịch sử</TabsTrigger>
         </TabsList>
 
         {/* Upcoming Interviews Tab */}
@@ -196,8 +288,8 @@ const MyInterviews = () => {
           {filteredUpcoming.length === 0 ? (
             <EmptyState
               icon={Video}
-              title="No upcoming interviews"
-              description="Your accepted interviews will appear here."
+              title="Không có phỏng vấn sắp tới"
+              description="Các buổi phỏng vấn đã được xác nhận sẽ hiển thị ở đây."
             />
           ) : (
             <>
@@ -236,8 +328,8 @@ const MyInterviews = () => {
           {filteredPast.length === 0 ? (
             <EmptyState
               icon={CheckCircle}
-              title="No past interviews"
-              description="Your completed or cancelled interviews will appear here."
+              title="Không có lịch sử phỏng vấn"
+              description="Các buổi phỏng vấn đã hoàn thành hoặc bị hủy sẽ hiển thị ở đây."
             />
           ) : (
             <div className="grid gap-6">
@@ -268,17 +360,17 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest }) => {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="default" className={interview.status === 'RESCHEDULED' ? 'bg-amber-600' : 'bg-green-600'}>
-                {interview.status === 'RESCHEDULED' ? 'Rescheduled' : 'Scheduled'}
+                {interview.status === 'RESCHEDULED' ? 'Đã dời lịch' : 'Đã lên lịch'}
               </Badge>
               {isNow && (
                 <Badge variant="default" className="bg-red-600 animate-pulse">
-                  Happening Now
+                  Đang diễn ra
                 </Badge>
               )}
             </div>
-            <CardTitle className="text-xl">{jobSnapshot.title || 'Interview'}</CardTitle>
+            <CardTitle className="text-xl">{jobSnapshot.title || 'Phỏng vấn'}</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {jobSnapshot.company || 'Company'}
+              {jobSnapshot.company || 'Công ty'}
             </p>
           </div>
           <Video className="w-8 h-8 text-green-600" />
@@ -334,17 +426,17 @@ const PastInterviewCard = ({ interview }) => {
 
   const statusConfig = {
     COMPLETED: {
-      badge: { variant: 'default', className: 'bg-blue-600', text: 'Completed' },
+      badge: { variant: 'default', className: 'bg-blue-600', text: 'Đã hoàn thành' },
       icon: CheckCircle,
       iconColor: 'text-blue-600'
     },
     CANCELLED: {
-      badge: { variant: 'destructive', text: 'Cancelled' },
+      badge: { variant: 'destructive', text: 'Đã hủy' },
       icon: XCircle,
       iconColor: 'text-red-600'
     },
     RESCHEDULED: {
-      badge: { variant: 'default', className: 'bg-amber-600', text: 'Rescheduled (Past)' },
+      badge: { variant: 'default', className: 'bg-amber-600', text: 'Đã dời lịch' },
       icon: Clock,
       iconColor: 'text-amber-600'
     }
@@ -361,9 +453,9 @@ const PastInterviewCard = ({ interview }) => {
             <div className="mb-2">
               <Badge {...config.badge}>{config.badge.text}</Badge>
             </div>
-            <CardTitle className="text-xl">{jobSnapshot.title || 'Interview'}</CardTitle>
+            <CardTitle className="text-xl">{jobSnapshot.title || 'Phỏng vấn'}</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {jobSnapshot.company || 'Company'}
+              {jobSnapshot.company || 'Công ty'}
             </p>
           </div>
           <StatusIcon className={`w-8 h-8 ${config.iconColor}`} />

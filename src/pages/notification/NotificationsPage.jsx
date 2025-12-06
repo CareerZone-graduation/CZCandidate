@@ -52,6 +52,8 @@ const getNotificationLink = (notification) => {
       }
       // Fallback to job subscription settings if no job ids
       return `/dashboard/settings/job-alerts`;
+    case 'support_request':
+      return `/support/${entity?.id || metadata?.supportRequestId}`;
     default:
       return null;
   }
