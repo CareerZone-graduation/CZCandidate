@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import CVPreview from '../../components/CVPreview/CVPreview';
 // Đảm bảo bạn import hàm lấy CV từ API
 import { getCvById } from '../../services/api';
 import { mapToFrontend } from '../../utils/dataMapper'; // Import hàm map dữ liệu
 
 const CVRenderOnlyPage = () => {
+  const { cvId: paramCvId } = useParams();
   const [searchParams] = useSearchParams();
-  const cvId = searchParams.get('cvId');
+  const cvId = searchParams.get('cvId') || paramCvId;
   const [cvData, setCvData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,6 +59,31 @@ const CVRenderOnlyPage = () => {
     fetchCvData();
   }, [cvId, searchParams]);
 
+  // Scale logic for preview in small frames
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Standard A4 width in pixels at 96 DPI
+      const A4_WIDTH = 794;
+      // Add some padding/margin allowance if needed, or use exact window width
+      const availableWidth = window.innerWidth;
+
+      if (availableWidth < A4_WIDTH) {
+        const newScale = availableWidth / A4_WIDTH;
+        setScale(newScale);
+      } else {
+        setScale(1);
+      }
+    };
+
+    // Calculate initial scale
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (loading) {
     return <div>Loading Document...</div>;
   }
@@ -73,7 +99,8 @@ const CVRenderOnlyPage = () => {
       padding: 0,
       backgroundColor: 'white',
       width: '100%',
-      minHeight: '100vh'
+      minHeight: '100vh',
+      overflowX: 'hidden' // Prevent horizontal scroll
     }}>
       <style>{`
         * {
@@ -90,7 +117,14 @@ const CVRenderOnlyPage = () => {
           margin: 0;
         }
       `}</style>
-      <CVPreview cvData={cvData} />
+      <div style={{
+        width: '794px', // Force rendering at A4 width
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        marginBottom: `${(1 - scale) * 100}%` // Compensate for vertical space if needed, though usually not critical for preview
+      }}>
+        <CVPreview cvData={cvData} />
+      </div>
     </div>
   );
 };
