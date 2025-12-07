@@ -41,7 +41,8 @@ import {
   Shield,
   MessageCircle,
   Video,
-  Calendar
+  Calendar,
+  FileCheck
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { clearNotifications } from '@/redux/notificationSlice';
@@ -54,6 +55,12 @@ import CVDropdownMenu from './CVDropdownMenu';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import socketService from '@/services/socketService';
 import NotificationDropdown from './NotificationDropdown';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -241,16 +248,87 @@ const Header = () => {
                   {/* Scrollable Nav Items */}
                   <div className="flex-1 overflow-y-auto py-4 px-2">
                     <nav className="grid gap-1">
-                      <div className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Công việc
-                      </div>
-                      <Link
-                        to="/jobs/search"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-                      >
-                        <Briefcase className="h-4 w-4 text-primary" /> Tìm việc làm
-                      </Link>
 
+                      {/* Accordion Menu for Jobs and CV */}
+                      <Accordion type="multiple" collapsible className="w-full">
+                        {/* Jobs Dropdown */}
+                        <AccordionItem value="jobs" className="border-b-0">
+                          <AccordionTrigger className="px-3 py-2 text-sm font-semibold hover:no-underline hover:bg-accent rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Briefcase className="h-4 w-4 text-primary" />
+                              <span>Việc làm</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="pl-4 space-y-1 mt-1">
+                              <Link
+                                to="/jobs/search"
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary/50" /> Tìm việc làm
+                              </Link>
+                              {isAuthenticated && (
+                                <>
+                                  <Link
+                                    to="/dashboard/saved-jobs"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500/50" /> Việc làm đã lưu
+                                  </Link>
+                                  <Link
+                                    to="/dashboard/applications"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/50" /> Việc làm đã ứng tuyển
+                                  </Link>
+                                  <Link
+                                    to="/dashboard/settings/job-alerts"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500/50" /> Thông báo việc làm
+                                  </Link>
+                                  <Link
+                                    to="/dashboard/settings/privacy"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                  >
+                                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500/50" /> Cài đặt riêng tư
+                                  </Link>
+                                </>
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+
+                        {/* CV Dropdown - Auth Only */}
+                        {isAuthenticated && (
+                          <AccordionItem value="cv" className="border-b-0">
+                            <AccordionTrigger className="px-3 py-2 text-sm font-semibold hover:no-underline hover:bg-accent rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-4 w-4 text-primary" />
+                                <span>CV & Hồ sơ</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="pl-4 space-y-1 mt-1">
+                                <Link
+                                  to="/my-cvs/builder"
+                                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                >
+                                  <FileEdit className="h-3 w-3 text-primary" /> CV Builder
+                                </Link>
+                                <Link
+                                  to="/my-cvs/uploaded"
+                                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                                >
+                                  <Upload className="h-3 w-3 text-primary" /> CV đã tải lên
+                                </Link>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        )}
+                      </Accordion>
+
+                      {/* Standard Links */}
                       {navLinks.map((link) => (
                         <Link
                           key={link.to}
@@ -273,8 +351,14 @@ const Header = () => {
                           <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
                             <User className="h-4 w-4 text-primary" /> Hồ sơ của tôi
                           </Link>
-                          <Link to="/my-cvs/uploaded" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <FileText className="h-4 w-4 text-primary" /> CV của tôi
+                          <Link to="/dashboard/saved-jobs" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <Bookmark className="h-4 w-4 text-primary" /> Việc làm đã lưu
+                          </Link>
+                          <Link to="/dashboard/applications" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <FileText className="h-4 w-4 text-primary" /> Đơn ứng tuyển
+                          </Link>
+                          <Link to="/interviews" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <Video className="h-4 w-4 text-primary" /> Lịch phỏng vấn
                           </Link>
                           <button
                             onClick={() => openChat()}
