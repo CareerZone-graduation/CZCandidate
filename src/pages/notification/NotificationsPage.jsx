@@ -114,7 +114,8 @@ const NotificationsPage = () => {
     requestPermission,
     permissionDenied,
     isPushEnabled,
-    disableNotifications
+    disableNotifications,
+    isLoading: isPushLoading
   } = useFirebaseMessaging({
     onPermissionDenied: () => {
       setShowPermissionGuide(true);
@@ -234,8 +235,13 @@ const NotificationsPage = () => {
                 size="sm"
                 onClick={disableNotifications}
                 className="text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                disabled={isPushLoading}
               >
-                <BellOff className="mr-2 h-4 w-4" />
+                {isPushLoading ? (
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                ) : (
+                  <BellOff className="mr-2 h-4 w-4" />
+                )}
                 Tắt thông báo đẩy
               </Button>
             ) : (
@@ -243,8 +249,13 @@ const NotificationsPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={requestPermission}
+                disabled={isPushLoading}
               >
-                <BellPlus className="mr-2 h-4 w-4" />
+                {isPushLoading ? (
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : (
+                  <BellPlus className="mr-2 h-4 w-4" />
+                )}
                 Bật thông báo đẩy
               </Button>
             )}

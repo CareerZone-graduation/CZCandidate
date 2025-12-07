@@ -24,7 +24,7 @@ const contactFormSchema = z.object({
   category: z.string()
     .min(1, 'Vui lòng chọn chủ đề'),
   message: z.string()
-    .min(10, 'Tin nhắn phải có ít nhất 10 ký tự')
+    .min(20, 'Tin nhắn phải có ít nhất 20 ký tự')
     .max(500, 'Tin nhắn không được quá 500 ký tự')
 });
 
@@ -60,7 +60,7 @@ const ContactPage = () => {
   const [files, setFiles] = useState([]);
   const [supportHistory, setSupportHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  
+
   // Get user info from Redux store
   const { user: authData, isAuthenticated } = useSelector((state) => state.auth);
   const user = authData?.user;
@@ -70,7 +70,7 @@ const ContactPage = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       if (!isAuthenticated) return;
-      
+
       setIsLoadingHistory(true);
       try {
         const response = await getUserSupportRequests({ limit: 5 });
@@ -81,7 +81,7 @@ const ContactPage = () => {
         setIsLoadingHistory(false);
       }
     };
-    
+
     fetchHistory();
   }, [isAuthenticated]);
 
@@ -269,7 +269,7 @@ const ContactPage = () => {
                         </FormControl>
                         <FormMessage />
                         <p className="text-xs text-gray-500 mt-1">
-                          Tối thiểu 10 ký tự. Vui lòng mô tả chi tiết vấn đề của bạn.
+                          Tối thiểu 20 ký tự. Vui lòng mô tả chi tiết vấn đề của bạn.
                         </p>
                       </FormItem>
                     )}

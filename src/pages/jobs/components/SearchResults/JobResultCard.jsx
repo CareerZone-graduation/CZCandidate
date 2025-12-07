@@ -59,7 +59,7 @@ const JobResultCard = ({
     }
   };
 
-  const { mutate: toggleSaveJob } = useMutation({
+  const { mutate: toggleSaveJob, isPending: isSaving } = useMutation({
     mutationFn: () => {
       if (onSaveToggle) {
         onSaveToggle(job);
@@ -86,7 +86,7 @@ const JobResultCard = ({
     onSuccess: () => {
       if (onSaveToggle) return;
       toast.success(job.isSaved ? 'Đã bỏ lưu việc làm' : 'Đã lưu việc làm');
-      queryClient.invalidateQueries({queryKey: ['savedJobs']});
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
     },
     onError: (err, _vars, context) => {
       if (onSaveToggle) return;
@@ -197,21 +197,27 @@ const JobResultCard = ({
               )}>
                 {job.title}
               </h3>
-              
+
               {showSaveButton && (
                 <button
                   onClick={handleSaveJob}
+                  disabled={isSaving}
                   className={cn(
                     "flex-shrink-0 p-2 rounded-full transition-all",
-                    job.isSaved 
-                      ? "text-red-500 bg-red-50 hover:bg-red-100" 
-                      : "text-slate-400 hover:text-red-500 hover:bg-red-50"
+                    job.isSaved
+                      ? "text-red-500 bg-red-50 hover:bg-red-100"
+                      : "text-slate-400 hover:text-red-500 hover:bg-red-50",
+                    isSaving && "opacity-70 cursor-wait"
                   )}
                 >
-                  <Heart className={cn(
-                    "h-5 w-5",
-                    job.isSaved && "fill-current"
-                  )} />
+                  {isSaving ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Heart className={cn(
+                      "h-5 w-5",
+                      job.isSaved && "fill-current"
+                    )} />
+                  )}
                 </button>
               )}
             </div>
@@ -231,8 +237,8 @@ const JobResultCard = ({
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-3">
               {job.type && (
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn(
                     "text-xs font-medium px-2.5 py-0.5 rounded-full border",
                     typeStyle.bg, typeStyle.text, typeStyle.border
@@ -242,10 +248,10 @@ const JobResultCard = ({
                   {getJobTypeLabel(job.type)}
                 </Badge>
               )}
-              
+
               {job.workType && (
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn(
                     "text-xs font-medium px-2.5 py-0.5 rounded-full border-0",
                     workTypeStyle.bg, workTypeStyle.text
@@ -254,9 +260,9 @@ const JobResultCard = ({
                   {workTypeStyle.label}
                 </Badge>
               )}
-              
-              <Badge 
-                variant="outline" 
+
+              <Badge
+                variant="outline"
                 className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-0"
               >
                 <DollarSign className="h-3 w-3 mr-0.5" />
@@ -272,19 +278,19 @@ const JobResultCard = ({
                   {job.location.district ? `${job.location.district}, ` : ''}{job.location.province}
                 </span>
               )}
-              
+
               {distance && (
                 <span className="flex items-center gap-1 text-primary">
                   <MapPin className="h-3.5 w-3.5" />
                   {distance}
                 </span>
               )}
-              
+
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {formatTimeAgo(job.createdAt)}
               </span>
-              
+
               {job.applicantCount > 0 && (
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
@@ -297,8 +303,8 @@ const JobResultCard = ({
             {!compact && job.skills && job.skills.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {job.skills.slice(0, 4).map((skill, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded-md"
                   >
                     {skill}

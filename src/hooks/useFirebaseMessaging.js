@@ -16,6 +16,7 @@ const useFirebaseMessaging = (options = {}) => {
   const { pagination, initialized } = useSelector((state) => state.notifications);
 
   const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check initial status
   useEffect(() => {
@@ -52,6 +53,7 @@ const useFirebaseMessaging = (options = {}) => {
    */
   const requestPermission = async () => {
     try {
+      setIsLoading(true);
       // Reset permission denied state
       setPermissionDenied(false);
 
@@ -113,6 +115,8 @@ const useFirebaseMessaging = (options = {}) => {
       } else {
         toast.error('Đã xảy ra lỗi khi bật thông báo.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -175,6 +179,7 @@ const useFirebaseMessaging = (options = {}) => {
    */
   const disableNotifications = async () => {
     try {
+      setIsLoading(true);
       const { getFCMMessaging, unregisterDeviceToken } = await import('@/services/firebase');
       const { getToken, deleteToken } = await import('firebase/messaging');
 
@@ -197,6 +202,8 @@ const useFirebaseMessaging = (options = {}) => {
       console.error('Error disabling notifications:', error);
       toast.error('Không thể tắt thông báo.');
       checkPermission();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -231,7 +238,8 @@ const useFirebaseMessaging = (options = {}) => {
     requestPermission,
     disableNotifications,
     isPushEnabled,
-    permissionDenied
+    permissionDenied,
+    isLoading
   };
 };
 

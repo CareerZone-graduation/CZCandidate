@@ -46,6 +46,7 @@ const Profile = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -336,6 +337,7 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     try {
+      setIsSaving(true);
       if (editForm.avatarFile) {
         const formData = new FormData();
         formData.append('avatar', editForm.avatarFile);
@@ -352,6 +354,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Update failed:', err);
       toast.error('Cập nhật thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -362,6 +366,7 @@ const Profile = () => {
 
   const handleSaveBio = async () => {
     try {
+      setIsSaving(true);
       const updateData = {
         bio: editBio,
       };
@@ -371,6 +376,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Update bio failed:', err);
       toast.error('Cập nhật giới thiệu thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -381,6 +388,7 @@ const Profile = () => {
 
   const handleSaveExperience = async () => {
     try {
+      setIsSaving(true);
       const updateData = {
         experiences: editExperiences,
       };
@@ -390,6 +398,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Update experience failed:', err);
       toast.error('Cập nhật kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -400,6 +410,7 @@ const Profile = () => {
 
   const handleSaveEducation = async () => {
     try {
+      setIsSaving(true);
       const updateData = {
         educations: editEducations,
       };
@@ -409,6 +420,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Update education failed:', err);
       toast.error('Cập nhật học vấn thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -422,6 +435,7 @@ const Profile = () => {
 
   const handleSaveSkills = async () => {
     try {
+      setIsSaving(true);
       const updateData = {
         skills: editSkills.skills,
       };
@@ -431,6 +445,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Update skills failed:', err);
       toast.error('Cập nhật kỹ năng thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -448,6 +464,7 @@ const Profile = () => {
 
   const handleSaveAddExperience = async () => {
     try {
+      setIsSaving(true);
       const updatedExperiences = [...(profile.experiences || []), newExperience];
       const updateData = {
         experiences: updatedExperiences,
@@ -458,6 +475,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Add experience failed:', err);
       toast.error('Thêm kinh nghiệm thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -477,6 +496,7 @@ const Profile = () => {
 
   const handleSaveAddEducation = async () => {
     try {
+      setIsSaving(true);
       const updatedEducations = [...(profile.educations || []), newEducation];
       const updateData = {
         educations: updatedEducations,
@@ -487,6 +507,8 @@ const Profile = () => {
     } catch (err) {
       console.error('Add education failed:', err);
       toast.error('Thêm học vấn thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -844,8 +866,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveProfile} disabled={!editForm.fullname.trim()}>
-                  Lưu thay đổi
+                <Button type="button" onClick={handleSaveProfile} disabled={!editForm.fullname.trim() || isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Lưu thay đổi'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -873,8 +900,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsEditBioOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveBio}>
-                  Lưu thay đổi
+                <Button type="button" onClick={handleSaveBio} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Lưu thay đổi'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -952,8 +984,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsEditSkillsOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveSkills}>
-                  Lưu thay đổi
+                <Button type="button" onClick={handleSaveSkills} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Lưu thay đổi'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -999,8 +1036,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsEditExperienceOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveExperience}>
-                  Lưu thay đổi
+                <Button type="button" onClick={handleSaveExperience} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Lưu thay đổi'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1048,8 +1090,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsEditEducationOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveEducation}>
-                  Lưu thay đổi
+                <Button type="button" onClick={handleSaveEducation} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Lưu thay đổi'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1119,8 +1166,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsAddExperienceOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveAddExperience} disabled={!newExperience.company.trim() || !newExperience.position.trim()}>
-                  Thêm kinh nghiệm
+                <Button type="button" onClick={handleSaveAddExperience} disabled={!newExperience.company.trim() || !newExperience.position.trim() || isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Thêm kinh nghiệm'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1205,8 +1257,13 @@ const Profile = () => {
                 <Button type="button" variant="outline" onClick={() => setIsAddEducationOpen(false)}>
                   Hủy
                 </Button>
-                <Button type="button" onClick={handleSaveAddEducation} disabled={!newEducation.school.trim() || !newEducation.major.trim()}>
-                  Thêm học vấn
+                <Button type="button" onClick={handleSaveAddEducation} disabled={!newEducation.school.trim() || !newEducation.major.trim() || isSaving}>
+                  {isSaving ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Đang lưu...
+                    </>
+                  ) : 'Thêm học vấn'}
                 </Button>
               </DialogFooter>
             </DialogContent>

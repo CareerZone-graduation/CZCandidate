@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Mail,
   Smartphone,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -277,8 +278,8 @@ const JobAlertSettings = () => {
                     <div className="flex items-center gap-2.5 mb-3">
                       <div className={cn(
                         "p-2 rounded-lg transition-colors",
-                        alert.active 
-                          ? "bg-emerald-100 text-emerald-700" 
+                        alert.active
+                          ? "bg-emerald-100 text-emerald-700"
                           : "bg-muted text-muted-foreground"
                       )}>
                         <Briefcase className="h-4 w-4" />
@@ -287,7 +288,7 @@ const JobAlertSettings = () => {
                         {alert.keyword || 'Tất cả công việc'}
                       </h3>
                     </div>
-                    
+
                     {/* Location */}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground pl-0.5">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
@@ -303,9 +304,9 @@ const JobAlertSettings = () => {
                   {/* Actions Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-9 w-9 p-0 hover:bg-muted"
                       >
                         <MoreVertical className="h-4 w-4" />
@@ -350,16 +351,16 @@ const JobAlertSettings = () => {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {alert.category !== 'ALL' && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs font-medium border-primary/30 bg-primary/5 text-primary"
                       >
                         {getCategoryLabel(alert.category)}
                       </Badge>
                     )}
                     {alert.experience !== 'ALL' && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs font-medium border-blue-300 bg-blue-50 text-blue-700 flex items-center gap-1"
                       >
                         <GraduationCap className="h-3 w-3" />
@@ -367,8 +368,8 @@ const JobAlertSettings = () => {
                       </Badge>
                     )}
                     {alert.salaryRange !== 'ALL' && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs font-medium border-amber-300 bg-amber-50 text-amber-700 flex items-center gap-1"
                       >
                         <DollarSign className="h-3 w-3" />
@@ -376,8 +377,8 @@ const JobAlertSettings = () => {
                       </Badge>
                     )}
                     {alert.workType !== 'ALL' && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs font-medium border-purple-300 bg-purple-50 text-purple-700 flex items-center gap-1"
                       >
                         <Laptop className="h-3 w-3" />
@@ -446,13 +447,24 @@ const JobAlertSettings = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Hủy</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleteMutation.isPending}
             >
-              Xóa
-            </AlertDialogAction>
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                'Xóa'
+              )}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

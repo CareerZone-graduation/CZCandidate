@@ -12,6 +12,7 @@ import {
   Loader2,
   HelpCircle
 } from 'lucide-react';
+import DevicePermissionGuide from '@/components/common/DevicePermissionGuide';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -70,6 +71,7 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
     camera: 'checking', // 'checking', 'granted', 'denied'
     microphone: 'checking'
   });
+  const [isPermissionGuideOpen, setIsPermissionGuideOpen] = useState(false);
 
   // Browser compatibility
   const [browserCompatibility, setBrowserCompatibility] = useState({
@@ -489,9 +491,13 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
               <AlertDescription>
                 Vui lòng cấp quyền truy cập camera và microphone trong cài đặt trình duyệt để tham gia phỏng vấn.
                 <br />
-                <span className="text-sm">
-                  Thường ở thanh địa chỉ, click vào biểu tượng khóa và chọn &quot;Cho phép&quot; cho camera và microphone.
-                </span>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-destructive underline font-semibold mt-2"
+                  onClick={() => setIsPermissionGuideOpen(true)}
+                >
+                  Xem hướng dẫn khắc phục chi tiết
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -736,6 +742,12 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
           )}
         </Button>
       </div>
+
+      <DevicePermissionGuide
+        isOpen={isPermissionGuideOpen}
+        onClose={() => setIsPermissionGuideOpen(false)}
+        onRetry={() => window.location.reload()}
+      />
     </div>
   );
 };

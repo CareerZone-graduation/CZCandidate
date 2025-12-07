@@ -73,6 +73,7 @@ const Header = () => {
 
   // User dropdown state
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Messages states
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -182,6 +183,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await logoutService();
     } catch (error) {
       console.error("Logout failed", error);
@@ -191,6 +193,7 @@ const Header = () => {
       dispatch(clearNotifications());
       dispatch(logoutSuccess());
       setShowUserDropdown(false);
+      setIsLoggingOut(false);
       navigate('/');
     }
   };
@@ -404,9 +407,14 @@ const Header = () => {
                           variant="destructive"
                           className="w-full justify-start gap-3"
                           onClick={handleLogout}
+                          disabled={isLoggingOut}
                         >
-                          <LogOut className="h-4 w-4" />
-                          Đăng xuất
+                          {isLoggingOut ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          ) : (
+                            <LogOut className="h-4 w-4" />
+                          )}
+                          {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
                         </Button>
                       </div>
                     ) : (
@@ -747,13 +755,19 @@ const Header = () => {
                         className={cn(
                           "flex items-center w-full px-3 py-2.5 text-sm text-destructive rounded-xl transition-all duration-300 group",
                           "hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5",
-                          "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          "hover:shadow-md hover:scale-105 hover:translate-x-1",
+                          isLoggingOut && "opacity-70 pointer-events-none"
                         )}
+                        disabled={isLoggingOut}
                       >
                         <div className="mr-3 p-1.5 rounded-lg bg-destructive/10 group-hover:bg-destructive/20 transition-colors">
-                          <LogOut className="h-4 w-4" />
+                          {isLoggingOut ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-destructive border-t-transparent" />
+                          ) : (
+                            <LogOut className="h-4 w-4" />
+                          )}
                         </div>
-                        <span className="font-medium">Đăng xuất</span>
+                        <span className="font-medium">{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</span>
                       </button>
                     </div>
                   </div>
