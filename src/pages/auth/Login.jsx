@@ -151,7 +151,6 @@ const Login = () => {
                       placeholder="email@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
                       disabled={isLoading}
                       className="pl-10 h-10"
                     />
@@ -173,7 +172,6 @@ const Login = () => {
                       placeholder="••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
                       disabled={isLoading}
                       className="pl-10 pr-10 h-10"
                     />

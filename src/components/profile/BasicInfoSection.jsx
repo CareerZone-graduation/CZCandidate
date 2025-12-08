@@ -188,6 +188,7 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                     <div className="space-y-2">
                       <Label>Họ và tên</Label>
                       <Input
+                        id="fullname"
                         value={formData.fullname}
                         onChange={(e) => handleFormChange('fullname', e.target.value)}
                         placeholder="Họ và tên"
@@ -270,6 +271,7 @@ export const BasicInfoSection = ({ profile, onUpdate, onAvatarUpdate }) => {
                     <div>
                       <Label className="text-xs text-muted-foreground">Số điện thoại</Label>
                       <Input
+                        id="phone"
                         value={formData.phone}
                         onChange={(e) => handleFormChange('phone', e.target.value)}
                         placeholder="Số điện thoại"
