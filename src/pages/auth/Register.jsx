@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Turnstile } from '@marsidev/react-turnstile';
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
@@ -21,6 +22,8 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -46,12 +49,17 @@ const Register = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("Vui lòng hoàn thành xác thực bạn không phải là robot.");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      const resp = await registerService(formData);
+      const resp = await registerService({ ...formData, turnstileToken });
       console.log(resp);
 
       // Check if registration returns access token (auto-login)
@@ -97,6 +105,8 @@ const Register = () => {
       console.log(err);
       const errorMessage = err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
       setError(errorMessage);
+      setTurnstileToken("");
+      setTurnstileKey(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +168,7 @@ const Register = () => {
                 Tạo tài khoản mới 🚀
               </h1>
               <p className="text-muted-foreground text-lg leading-relaxed">
-                Điền thông tin dưới đây để bắt đầu hành trình sự nghiệp của bạn
+                Bắt đầu hành trình sự nghiệp của bạn
               </p>
             </div>
           </CardHeader>
@@ -256,11 +266,24 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Turnstile Captcha */}
+              <div className="flex justify-center w-full my-4">
+                <Turnstile
+                  key={turnstileKey}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAAA1VN-QDsgdhQAiP"}
+                  onSuccess={(token) => setTurnstileToken(token)}
+                  options={{
+                    theme: 'auto',
+                    size: 'normal',
+                  }}
+                />
+              </div>
+
               {/* Nút đăng ký */}
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full h-11 bg-gradient-primary hover:opacity-90 text-white font-medium transition-all duration-300"
+                disabled={isLoading || !turnstileToken}
+                className={`w-full h-11 bg-gradient-primary hover:opacity-90 text-white font-medium transition-all duration-300 ${(isLoading || !turnstileToken) ? 'bg-gray-400 cursor-not-allowed opacity-70' : ''}`}
               >
                 {isLoading ? (
                   <div className="flex items-center">

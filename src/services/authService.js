@@ -8,7 +8,7 @@ const authClient = axios.create({
 
 export const login = async (credentials) => {
   const response = await apiClient.post('/auth/login', credentials, {
-     withCredentials: true
+    withCredentials: true
   });
   return response.data;
 };
@@ -18,9 +18,9 @@ export const googleLogin = async (token) => {
     token,
     role: 'candidate'
   },
-{
-    withCredentials: true
-});
+    {
+      withCredentials: true
+    });
   return response.data;
 };
 
@@ -47,8 +47,8 @@ export const logout = async () => {
   return response.data;
 };
 
-export const forgotPassword = async (email) => {
-  const response = await authClient.post('/auth/forgot-password', { email });
+export const forgotPassword = async (email, turnstileToken) => {
+  const response = await authClient.post('/auth/forgot-password', { email, turnstileToken });
   return response.data;
 };
 

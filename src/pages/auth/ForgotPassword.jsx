@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +25,8 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [showDevMode, setShowDevMode] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const {
     register,
@@ -35,11 +38,15 @@ const ForgotPassword = () => {
   });
 
   const onSubmit = async (data) => {
+    if (!turnstileToken) {
+      setError("Vui lòng hoàn thành xác thực bạn không phải là robot.");
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
 
-      const response = await forgotPassword(data.email);
+      const response = await forgotPassword(data.email, turnstileToken);
 
       if (response.success) {
         // Check if response contains a reset token (for development/testing)
@@ -56,6 +63,8 @@ const ForgotPassword = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi gửi email';
       setError(errorMessage);
+      setTurnstileToken("");
+      setTurnstileKey(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }
@@ -223,10 +232,23 @@ const ForgotPassword = () => {
               )}
             </div>
 
+            {/* Turnstile Captcha */}
+            <div className="flex justify-center w-full my-4">
+              <Turnstile
+                key={turnstileKey}
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAAA1VN-QDsgdhQAiP"}
+                onSuccess={(token) => setTurnstileToken(token)}
+                options={{
+                  theme: 'auto',
+                  size: 'normal',
+                }}
+              />
+            </div>
+
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              disabled={isLoading}
+              className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 ${(isLoading || !turnstileToken) ? 'opacity-70 cursor-not-allowed' : ''}`}
+              disabled={isLoading || !turnstileToken}
             >
               {isLoading ? (
                 <>
