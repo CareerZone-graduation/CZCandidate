@@ -43,11 +43,20 @@ const getNotificationLink = (notification) => {
       return '/profile';
     case 'job_alert':
       // Navigate to job alert jobs page with jobIds from metadata
-      if (metadata?.jobIds && metadata.jobIds.length > 0) {
+      if (metadata?.jobIds && Array.isArray(metadata.jobIds) && metadata.jobIds.length > 0) {
         // Get keyword from notification title for display
         const keywordMatch = notification.title?.match(/"([^"]+)"/);
         const keyword = keywordMatch ? keywordMatch[1] : '';
-        const jobIdsParam = metadata.jobIds.join(',');
+
+        // Ensure jobIds is a list of strings even if objects are passed
+        const ids = metadata.jobIds.map(item => {
+          if (typeof item === 'object' && item !== null) {
+            return item._id || item.id;
+          }
+          return item;
+        }).filter(Boolean);
+
+        const jobIdsParam = ids.join(',');
         return `/jobs/alert?jobIds=${jobIdsParam}${keyword ? `&keyword=${encodeURIComponent(keyword)}` : ''}`;
       }
       // Fallback to job subscription settings if no job ids

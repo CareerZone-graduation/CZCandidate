@@ -134,6 +134,7 @@ const AppRouter = () => {
           <Route path="/jobs" element={<Navigate to="/jobs/search" replace />} />
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/recommended" element={<RecommendedJobsPage />} />
+          <Route path="/jobs/alert" element={<JobAlertJobsPage />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
