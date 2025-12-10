@@ -15,6 +15,8 @@ import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import ResetPassword from '../pages/auth/ResetPassword';
+import VerifyEmail from '../pages/auth/VerifyEmail';
+import VerifyEmailPrompt from '../pages/auth/VerifyEmailPrompt';
 import Dashboard from '../pages/dashboard/Dashboard';
 import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobDetail from '../pages/jobs/JobDetail';
@@ -63,9 +65,17 @@ import ContactPage from '../pages/contact/ContactPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
+  const { isEmailVerified } = useSelector((state) => state.auth);
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  // If authenticated but email is not verified, redirect to verify-prompt
+  if (!isEmailVerified) {
+    return <Navigate to="/verify-prompt" replace />;
+  }
+
   return <Outlet />;
 };
 
@@ -76,7 +86,7 @@ import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 
 // This component will perform the onboarding check globally using Redux
 const GlobalOnboardingChecker = () => {
-  const { isAuthenticated, isInitializing } = useSelector((state) => state.auth);
+  const { isAuthenticated, isInitializing, isEmailVerified } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -86,6 +96,9 @@ const GlobalOnboardingChecker = () => {
   useEffect(() => {
     // Check only when authentication is resolved and user is logged in
     if (isAuthenticated && !isInitializing && !isLoading) {
+      // If email is not verified, do not redirect to onboarding (let ProtectedRoute handle it)
+      if (!isEmailVerified) return;
+
       // Avoid redirect loops or redirecting away from the onboarding process itself
       if (location.pathname.startsWith('/onboarding')) return;
 
@@ -97,6 +110,28 @@ const GlobalOnboardingChecker = () => {
   }, [isAuthenticated, isInitializing, needsOnboarding, isLoading, navigate, location.pathname]);
 
   return null; // This component does not render anything
+};
+
+const GlobalVerificationChecker = () => {
+  const { isAuthenticated, isEmailVerified, isInitializing } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Only check when fully initialized and authenticated
+    if (!isInitializing && isAuthenticated) {
+      // If user is NOT verified
+      if (!isEmailVerified) {
+        // Allow access to verification pages and logout
+        const allowedPaths = ['/verify-prompt', '/verify-email', '/logout'];
+        if (!allowedPaths.includes(location.pathname)) {
+          navigate('/verify-prompt', { replace: true });
+        }
+      }
+    }
+  }, [isAuthenticated, isEmailVerified, isInitializing, navigate, location.pathname]);
+
+  return null;
 };
 
 const AppRouter = () => {
@@ -127,6 +162,7 @@ const AppRouter = () => {
     >
       <ScrollToTopOnRouteChange />
       <GlobalOnboardingChecker />
+      <GlobalVerificationChecker />
       <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
@@ -167,6 +203,9 @@ const AppRouter = () => {
         <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPassword />} />
         <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/" /> : <ResetPassword />} />
+
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-prompt" element={<VerifyEmailPrompt />} />
 
         {/* Protected onboarding route - no onboarding check needed */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>

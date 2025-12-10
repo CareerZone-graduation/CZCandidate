@@ -24,6 +24,7 @@ export const fetchUser = createAsyncThunk('auth/fetchUser', async (_, { rejectWi
 const initialState = {
   user: null,
   isAuthenticated: !!getAccessToken(),
+  isEmailVerified: false, // NEW: Track email verification status
   isInitializing: !!getAccessToken(), // Only initialize if a token exists
   error: null,
 };
@@ -46,6 +47,7 @@ const authSlice = createSlice({
       clearAccessToken();
       state.user = null;
       state.isAuthenticated = false;
+      state.isEmailVerified = false;
       state.error = null;
       state.isInitializing = false; // On logout, we are also in a stable state
     },
@@ -64,6 +66,7 @@ const authSlice = createSlice({
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.user = action.payload; // The payload is the user object
         state.isAuthenticated = true;
+        state.isEmailVerified = action.payload?.user?.isEmailVerified || false;
         state.isInitializing = false;
         state.error = null;
       })

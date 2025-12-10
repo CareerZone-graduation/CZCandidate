@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { getCvById, createCvFromTemplate, updateCv, exportPdf as exportPdfApi } from '../../services/api';
+import { getMyProfile } from '../../services/profileService';
 import { mapToFrontend, mapToBackend } from '../../utils/dataMapper';
 import { sampleCVData, creativeSampleData, minimalSampleData } from '../../data/sampleData';
 import CVPreview from '../CVPreview/CVPreview';
@@ -33,7 +34,8 @@ import {
   Sparkles,
   Zap,
   Coffee,
-  Settings
+  Settings,
+  UserCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,7 +43,7 @@ const CVBuilder = () => {
   const { cvId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, user: currentUser } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('template');
   const [selectedTemplate, setSelectedTemplate] = useState('modern-blue');
   const [showPreview, setShowPreview] = useState(true);
@@ -174,6 +176,106 @@ const CVBuilder = () => {
     setShowSampleSuggestion(false);
     setActiveTab('personal');
     toast.info('Bạn có thể tải dữ liệu mẫu bất cứ lúc nào từ sidebar!');
+  };
+
+  const handleAutoFillFromProfile = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng này.');
+      return;
+    }
+
+    if (!window.confirm('Hành động này sẽ ghi đè dữ liệu hiện tại của CV bằng thông tin từ hồ sơ cá nhân. Bạn có chắc chắn muốn tiếp tục không?')) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await getMyProfile();
+      // Service returns response.data, so response is the profile data directly or { success, data }
+      // The profileService.js: returns response.data.
+      // Candidate.controller.js returns { success: true, data: profile }
+      const profile = response.data || response;
+
+      if (!profile) {
+        toast.error('Không tìm thấy thông tin hồ sơ.');
+        return;
+      }
+
+      console.log('Fetching profile data:', profile);
+
+      // Map profile data to CV format
+      const newCvData = {
+        ...cvData,
+        personalInfo: {
+          ...cvData.personalInfo,
+          fullName: profile.fullname || currentUser?.user?.name || cvData.personalInfo.fullName || '',
+          email: currentUser?.user?.email || cvData.personalInfo.email || '', // Email usually refers from User model
+          phone: profile.phone || '',
+          address: profile.address || '',
+          website: profile.website || '',
+          linkedin: profile.linkedin || '',
+          github: profile.github || '',
+          profileImage: profile.avatar || '',
+        },
+        professionalSummary: profile.bio || '',
+        workExperience: profile.experiences?.map(exp => ({
+          id: exp._id || 'exp-' + Math.random().toString(36).substr(2, 9),
+          position: exp.position,
+          company: exp.company,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          isCurrentJob: exp.isCurrentJob,
+          description: exp.description || '',
+          achievements: exp.achievements || []
+        })) || [],
+        education: profile.educations?.map(edu => ({
+          id: edu._id || 'edu-' + Math.random().toString(36).substr(2, 9),
+          institution: edu.school,
+          degree: edu.degree,
+          fieldOfStudy: edu.major,
+          startDate: edu.startDate,
+          endDate: edu.endDate,
+          gpa: edu.gpa || '',
+          honors: edu.honors || ''
+        })) || [],
+        skills: profile.skills?.map(skill => ({
+          id: skill._id || 'skill-' + Math.random().toString(36).substr(2, 9),
+          name: skill.name,
+          level: skill.level || 'Intermediate',
+          category: skill.category || 'Technical'
+        })) || [],
+        projects: profile.projects?.map(proj => ({
+          id: proj._id || 'proj-' + Math.random().toString(36).substr(2, 9),
+          name: proj.name,
+          description: proj.description || '',
+          url: proj.url || '',
+          github: '',
+          technologies: Array.isArray(proj.technologies) ? proj.technologies : [],
+          startDate: proj.startDate || '',
+          endDate: proj.endDate || ''
+        })) || [],
+        certificates: profile.certificates?.map(cert => ({
+          id: cert._id || 'cert-' + Math.random().toString(36).substr(2, 9),
+          name: cert.name,
+          issuer: cert.issuer,
+          issueDate: cert.issueDate,
+          expiryDate: cert.expiryDate || '',
+          credentialId: cert.credentialId || '',
+          url: cert.url || ''
+        })) || []
+      };
+
+      setCVData(newCvData);
+      toast.success('Đã điền dữ liệu từ hồ sơ thành công!');
+      setActiveTab('personal');
+      setShowSampleSuggestion(false);
+
+    } catch (err) {
+      console.error('Error auto-filling from profile:', err);
+      toast.error('Có lỗi xảy ra khi lấy dữ liệu hồ sơ.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const exportPDF = async () => {
@@ -315,6 +417,23 @@ const CVBuilder = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Auto-fill from Profile Button */}
+                {isAuthenticated && (
+                  <div className="p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-lg border border-green-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <UserCircle className="w-4 h-4 mr-1 text-green-600" />
+                      Dữ liệu cá nhân
+                    </h3>
+                    <button
+                      onClick={handleAutoFillFromProfile}
+                      className="w-full flex items-center justify-center px-3 py-2 text-xs font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Điền tự động từ hồ sơ
+                    </button>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="space-y-2">

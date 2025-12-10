@@ -106,3 +106,8 @@ export const resetPassword = async (token, newPassword) => {
     throw error;
   }
 };
+
+export const resendVerificationEmail = async (payload) => {
+  const response = await apiClient.post('/auth/resend-verification', payload);
+  return response.data;
+};
