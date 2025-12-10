@@ -19,7 +19,10 @@ export const CertificatesProjectsStep = ({ initialData = {}, onNext, isLoading, 
     resolver: zodResolver(certificatesProjectsSchema),
     defaultValues: {
       certificates: initialData.certificates || [],
-      projects: initialData.projects || [],
+      projects: (initialData.projects || []).map(p => ({
+        ...p,
+        technologies: Array.isArray(p.technologies) ? p.technologies.join(', ') : (p.technologies || '')
+      })),
       linkedin: initialData.linkedin || '',
       github: initialData.github || '',
       website: initialData.website || ''
@@ -37,7 +40,16 @@ export const CertificatesProjectsStep = ({ initialData = {}, onNext, isLoading, 
   });
 
   const onSubmit = (data) => {
-    onNext(data);
+    const transformedData = {
+      ...data,
+      projects: data.projects.map(p => ({
+        ...p,
+        technologies: typeof p.technologies === 'string'
+          ? p.technologies.split(',').map(t => t.trim()).filter(Boolean)
+          : (Array.isArray(p.technologies) ? p.technologies : [])
+      }))
+    };
+    onNext(transformedData);
   };
 
   return (
@@ -248,7 +260,7 @@ export const CertificatesProjectsStep = ({ initialData = {}, onNext, isLoading, 
               url: '',
               startDate: '',
               endDate: '',
-              technologies: []
+              technologies: ''
             })}
             className="w-full"
           >

@@ -23,7 +23,8 @@ import {
   UserCheck,
   Coins,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  Tag
 } from 'lucide-react';
 import { getJobApplicantCount, getJobById, getJobsByCompany } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
@@ -104,6 +105,36 @@ const JobDetail = () => {
       'DIRECTOR_LEVEL': 'Giám đốc'
     };
     return levelMap[level] || level;
+  };
+
+  const formatCategory = (category) => {
+    const categoryMap = {
+      'IT': 'Công nghệ thông tin',
+      'SOFTWARE_DEVELOPMENT': 'Phát triển phần mềm',
+      'DATA_SCIENCE': 'Khoa học dữ liệu',
+      'MACHINE_LEARNING': 'Machine Learning',
+      'WEB_DEVELOPMENT': 'Phát triển Web',
+      'SALES': 'Kinh doanh / Bán hàng',
+      'MARKETING': 'Marketing',
+      'ACCOUNTING': 'Kế toán / Kiểm toán',
+      'GRAPHIC_DESIGN': 'Thiết kế đồ họa',
+      'CONTENT_WRITING': 'Viết nội dung',
+      'MEDICAL': 'Y tế / Dược',
+      'TEACHING': 'Giáo dục / Đào tạo',
+      'ENGINEERING': 'Kỹ thuật',
+      'PRODUCTION': 'Sản xuất',
+      'LOGISTICS': 'Vận chuyển / Logistics',
+      'HOSPITALITY': 'Nhà hàng / Khách sạn',
+      'REAL_ESTATE': 'Bất động sản',
+      'LAW': 'Luật / Pháp lý',
+      'FINANCE': 'Tài chính / Ngân hàng',
+      'HUMAN_RESOURCES': 'Nhân sự',
+      'CUSTOMER_SERVICE': 'Chăm sóc khách hàng',
+      'ADMINISTRATION': 'Hành chính / Văn phòng',
+      'MANAGEMENT': 'Quản lý điều hành',
+      'OTHER': 'Khác'
+    };
+    return categoryMap[category] || category;
   };
 
   // Pagination logic for related jobs
@@ -398,6 +429,13 @@ const JobDetail = () => {
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
                         <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Tag className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Ngành nghề</p>
+                        <p className="text-foreground font-semibold">{formatCategory(job.category)}</p>
                       </div>
                     </div>
                   </CardContent>

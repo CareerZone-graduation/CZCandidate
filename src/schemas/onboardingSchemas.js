@@ -2,25 +2,29 @@ import { z } from 'zod';
 
 // Experience level enum
 export const experienceLevelEnum = [
+  'Intern',
   'Fresher',
   'Junior',
   'Mid-level',
-  'Senior'
+  'Senior',
+  'Executive'
 ];
 
 // Work type enum
 export const workTypeEnum = [
-  'Full-time',
-  'Part-time',
-  'Remote',
-  'Hybrid'
+  'Tại văn phòng',
+  'Từ xa',
+  'Kết hợp'
 ];
 
 // Contract type enum
 export const contractTypeEnum = [
-  'Chính thức',
+  'Toàn thời gian',
+  'Bán thời gian',
   'Thực tập',
-  'Freelance'
+  'Freelance',
+  'Hợp đồng',
+  'Thời vụ'
 ];
 
 // Custom error messages for better UX
@@ -107,25 +111,19 @@ export const salaryPreferencesSchema = z.object({
       required_error: errorMessages.required,
       invalid_type_error: errorMessages.invalidNumber
     })
-      .min(1000000, { message: 'Mức lương tối thiểu phải từ 1 triệu VNĐ trở lên' })
+      .min(0, { message: 'Mức lương tối thiểu không được là số âm' })
       .max(1000000000, { message: errorMessages.maxValue('1 tỷ VNĐ') })
       .int('Mức lương phải là số nguyên'),
     max: z.coerce.number({
       required_error: errorMessages.required,
       invalid_type_error: errorMessages.invalidNumber
     })
-      .min(1000000, { message: 'Mức lương tối đa phải từ 1 triệu VNĐ trở lên' })
+      .min(0, { message: 'Mức lương tối đa không được là số âm' })
       .max(1000000000, { message: errorMessages.maxValue('1 tỷ VNĐ') })
       .int('Mức lương phải là số nguyên'),
     currency: z.string().default('VND')
   }).refine(data => data.max >= data.min, {
     message: 'Mức lương tối đa phải lớn hơn hoặc bằng mức lương tối thiểu',
-    path: ['max']
-  }).refine(data => {
-    // Check if salary range is reasonable (max should not be more than 10x min)
-    return data.max <= data.min * 10;
-  }, {
-    message: 'Khoảng lương quá rộng. Mức tối đa không nên vượt quá 10 lần mức tối thiểu',
     path: ['max']
   }),
   workTypes: z.array(z.enum(workTypeEnum), {
@@ -144,10 +142,10 @@ export const salaryPreferencesSchema = z.object({
 
 // Experience & Education Step Schema (Bước 4 - Optional)
 export const experienceEducationSchema = z.object({
-  experienceLevel: z.enum(experienceLevelEnum, {
-    required_error: 'Vui lòng chọn mức độ kinh nghiệm',
+  experienceLevel: z.array(z.enum(experienceLevelEnum), {
+    required_error: 'Vui lòng chọn ít nhất 1 mức độ kinh nghiệm',
     invalid_type_error: 'Mức độ kinh nghiệm không hợp lệ'
-  }).optional(),
+  }).min(1, 'Vui lòng chọn ít nhất 1 mức độ kinh nghiệm').optional(),
   experiences: z.array(z.object({
     company: z.string().min(1, 'Tên công ty là bắt buộc'),
     position: z.string().min(1, 'Vị trí là bắt buộc'),
@@ -182,7 +180,7 @@ export const certificatesProjectsSchema = z.object({
     url: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     startDate: z.string().optional(),
     endDate: z.string().optional(),
-    technologies: z.array(z.string()).optional()
+    technologies: z.string().optional()
   })).optional(),
   linkedin: z.string().url('URL LinkedIn không hợp lệ').optional().or(z.literal('')),
   github: z.string().url('URL Github không hợp lệ').optional().or(z.literal('')),

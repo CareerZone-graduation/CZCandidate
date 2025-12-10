@@ -5,10 +5,7 @@ export const getMyProfile = async () => {
   const response = await apiClient.get('/candidate/my-profile');
   return response.data;
 };
-export const getMe = async () => {
-  const response = await apiClient.get('/users/me');
-  return response.data;
-};
+
 
 // Cập nhật thông tin profile
 export const updateProfile = async (profileData) => {

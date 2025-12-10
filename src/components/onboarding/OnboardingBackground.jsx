@@ -20,7 +20,7 @@ export const OnboardingBackground = () => {
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
-      
+
       {/* Animated Particles */}
       {particles.map((particle) => (
         <div
@@ -42,7 +42,7 @@ export const OnboardingBackground = () => {
       <div className="absolute bottom-20 right-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-accent/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
 
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%, 100% {
             transform: translateY(0) translateX(0);

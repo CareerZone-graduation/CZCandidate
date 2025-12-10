@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
-import { getMe } from '@/services/profileService';
+import { getMe } from '@/services/authService';
 import { updatePrivacySettings, getAllowSearchSettings, toggleAllowSearch } from '@/services/profileService';
 import { getCVs } from '@/services/cvService';
 import { cn } from '@/lib/utils';
@@ -67,7 +67,7 @@ const ProfilePrivacySettings = () => {
         toast.error('Bạn cần upload ít nhất 1 CV trước khi bật tìm việc');
         return;
       }
-      
+
       if (selectedCvId) {
         setAllowSearch(true);
         toggleMutation.mutate({ allowSearch: true, selectedCvId });
@@ -231,7 +231,7 @@ const ProfilePrivacySettings = () => {
                   Hủy
                 </Button>
               </div>
-              
+
               {cvsLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-20 w-full" />

@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Phone, MapPin, Upload, X, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { User, Phone, MapPin, Upload, X, AlertCircle, Wifi, WifiOff, Check, ChevronsUpDown } from 'lucide-react';
 import { basicInfoSchema } from '@/schemas/onboardingSchemas';
 import { InlineError } from '../ErrorState';
 import locationData from '@/data/oldtree.json';
 import { isOnline } from '@/utils/errorHandling';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 // Process location data từ oldtree.json - CHỈ 1 LẦN khi module load
 const processLocationData = () => {
@@ -31,6 +34,86 @@ const processLocationData = () => {
 
 const { provinceNames, districtMap: locationMap } = processLocationData();
 
+// Component riêng cho việc chọn Quận/Huyện để quản lý state popover riêng biệt
+const DistrictSelector = memo(({ province, value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const districts = useMemo(() => {
+    return locationMap.get(province)?.districts || [];
+  }, [province]);
+
+  const selectedValue = value === 'all' ? null : value;
+
+  return (
+    <div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-9 font-normal px-3"
+          >
+            <span className="truncate text-sm">
+              {selectedValue || "Tất cả quận/huyện"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Tìm quận/huyện..." />
+            <CommandList>
+              <CommandEmpty>Không tìm thấy quận/huyện.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="all"
+                  onSelect={() => {
+                    onChange(null); // null means all
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      !selectedValue ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  Tất cả quận/huyện
+                </CommandItem>
+                {districts.map((district) => (
+                  <CommandItem
+                    key={district.name}
+                    value={district.name}
+                    onSelect={(currentValue) => {
+                      // Note: CommandItem value is often lowercased for search. 
+                      // We should capture the original name or map it back if needed.
+                      // But often CommandItem provides the value prop as is or lowercased.
+                      // To be safe, we use the original district.name
+                      onChange(district.name);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedValue === district.name ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {district.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {/* {!selectedValue && (
+        <p className="text-xs text-muted-foreground mt-1">Tất cả quận/huyện</p>
+      )} */}
+    </div>
+  );
+});
+
 // Memoize component để tránh re-render không cần thiết
 export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error: externalError, onLoadingChange }) => {
   const [avatarPreview, setAvatarPreview] = useState(initialData.avatar || null);
@@ -39,6 +122,7 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
   const [avatarError, setAvatarError] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [openCombobox, setOpenCombobox] = useState(false);
 
   const {
     register,
@@ -47,7 +131,8 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
     formState: { errors, isValidating, touchedFields },
     setValue,
     watch,
-    trigger
+    trigger,
+    reset
   } = useForm({
     resolver: zodResolver(basicInfoSchema),
     mode: 'onBlur', // Validate on blur for better UX
@@ -58,6 +143,26 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
       preferredLocations: initialData.preferredLocations || []
     }
   });
+
+  // Update form data if initialData changes (e.g., fetched from backend)
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        fullName: initialData.fullName || '',
+        phone: initialData.phone || '',
+        avatar: initialData.avatar || null,
+        preferredLocations: initialData.preferredLocations || []
+      });
+
+      // Also update local state for custom inputs
+      if (initialData.avatar) {
+        setAvatarPreview(initialData.avatar);
+      }
+      if (initialData.preferredLocations) {
+        setSelectedLocations(initialData.preferredLocations);
+      }
+    }
+  }, [initialData, reset]);
 
   // Monitor online status
   useEffect(() => {
@@ -94,7 +199,7 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
 
       // Lưu file để upload sau
       setAvatarFile(file);
-      
+
       // Preview ảnh
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -110,7 +215,7 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
   // Memoize handlers để tránh tái tạo
   const addLocation = useCallback((province) => {
     if (selectedLocations.length >= 5) return;
-    
+
     // Chỉ lưu province và district (null = tất cả quận/huyện)
     const newLocation = { province, district: null };
     const updated = [...selectedLocations, newLocation];
@@ -118,6 +223,7 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
     setValue('preferredLocations', updated, { shouldValidate: true });
     // Trigger validation after adding location
     trigger('preferredLocations');
+    setOpenCombobox(false);
   }, [selectedLocations, setValue, trigger]);
 
   const removeLocation = useCallback((index) => {
@@ -321,27 +427,11 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
                       <p className="text-sm font-medium">{location.province}</p>
                     </div>
                     <div>
-                      <Select
-                        value={location.district || 'all'}
-                        onValueChange={(value) => updateLocationDistrict(index, value === 'all' ? null : value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Chọn quận/huyện" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">
-                            <span className="font-medium">Tất cả quận/huyện</span>
-                          </SelectItem>
-                          {locationMap.get(location.province)?.districts.map((district) => (
-                            <SelectItem key={district.name} value={district.name}>
-                              {district.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {!location.district && (
-                        <p className="text-xs text-muted-foreground mt-1">Tất cả quận/huyện</p>
-                      )}
+                      <DistrictSelector
+                        province={location.province}
+                        value={location.district}
+                        onChange={(district) => updateLocationDistrict(index, district)}
+                      />
                     </div>
                   </div>
                   <Button
@@ -356,20 +446,48 @@ export const BasicInfoStep = memo(({ initialData = {}, onNext, isLoading, error:
               ))}
             </div>
 
-            {/* Add Location */}
+            {/* Add Location Searchable Combobox */}
             {selectedLocations.length < 5 && (
-              <Select onValueChange={addLocation}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Thêm địa điểm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableProvinces.map((province) => (
-                    <SelectItem key={province} value={province}>
-                      {province}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className="w-full justify-between font-normal"
+                  >
+                    Thêm địa điểm
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Tìm tỉnh/thành phố..." />
+                    <CommandList>
+                      <CommandEmpty>Không tìm thấy tỉnh/thành phố.</CommandEmpty>
+                      <CommandGroup>
+                        {availableProvinces.map((province) => (
+                          <CommandItem
+                            key={province}
+                            value={province}
+                            onSelect={(currentValue) => {
+                              addLocation(currentValue);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedLocations.some(l => l.province === province) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {province}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
             <InlineError message={errors.preferredLocations?.message} />
           </div>

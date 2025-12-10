@@ -9,19 +9,43 @@ const COMPLETENESS_ITEMS = [
     key: 'hasBasicInfo',
     label: 'Thông tin cơ bản',
     description: 'Họ tên, số điện thoại, địa điểm làm việc',
-    weight: 30
+    weight: 20
   },
   {
     key: 'hasSkills',
     label: 'Kỹ năng',
     description: 'Ít nhất 3 kỹ năng',
-    weight: 30
+    weight: 20
   },
   {
-    key: 'hasPreferences',
-    label: 'Điều kiện làm việc',
-    description: 'Mức lương và hình thức làm việc',
-    weight: 20
+    key: 'hasCategories',
+    label: 'Ngành nghề',
+    description: 'Ngành nghề mong muốn',
+    weight: 10
+  },
+  {
+    key: 'hasSalary',
+    label: 'Mức lương',
+    description: 'Mức lương mong muốn',
+    weight: 5
+  },
+  {
+    key: 'hasWorkTypes',
+    label: 'Hình thức làm việc',
+    description: 'On-site, Remote, Hybrid',
+    weight: 5
+  },
+  {
+    key: 'hasContractTypes',
+    label: 'Loại hợp đồng',
+    description: 'Full-time, Part-time,...',
+    weight: 5
+  },
+  {
+    key: 'hasExperienceLevel',
+    label: 'Cấp bậc',
+    description: 'Junior, Senior, Lead,...',
+    weight: 5
   },
   {
     key: 'hasBio',
@@ -50,6 +74,20 @@ const COMPLETENESS_ITEMS = [
     description: 'Tùy chọn - thêm thông tin học vấn',
     weight: 5,
     optional: true
+  },
+  {
+    key: 'hasCertificates',
+    label: 'Chứng chỉ',
+    description: 'Tùy chọn - thêm chứng chỉ',
+    weight: 5,
+    optional: true
+  },
+  {
+    key: 'hasProjects',
+    label: 'Dự án',
+    description: 'Tùy chọn - thêm dự án',
+    weight: 5,
+    optional: true
   }
 ];
 
@@ -66,45 +104,72 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
     // Match backend logic
     const hasBasicInfo = !!(profile.fullname && profile.phone && profile.preferredLocations?.length > 0);
     const hasSkills = (profile.skills || []).length >= 3;
-    const hasPreferences = !!(
-      profile.expectedSalary?.min > 0 &&
-      profile.workPreferences?.workTypes?.length > 0
-    );
+    const hasCategories = (profile.preferredCategories || []).length >= 1;
+
+    // Allow 0 as valid salary
+    const hasSalary = profile.expectedSalary &&
+      profile.expectedSalary.min !== undefined &&
+      profile.expectedSalary.min !== null;
+
+    const hasWorkTypes = (profile.workPreferences?.workTypes || []).length > 0;
+    const hasContractTypes = (profile.workPreferences?.contractTypes || []).length > 0;
+    const hasExperienceLevel = (profile.workPreferences?.experienceLevel || []).length > 0;
+
     const hasBio = !!profile.bio;
     const hasAvatar = !!profile.avatar;
     const hasExperience = (profile.experiences || []).length > 0;
     const hasEducation = (profile.educations || []).length > 0;
+    const hasCertificates = (profile.certificates || []).length > 0;
+    const hasProjects = (profile.projects || []).length > 0;
 
     data = {
       hasBasicInfo,
       hasSkills,
-      hasPreferences,
+      hasCategories,
+      hasSalary,
+      hasWorkTypes,
+      hasContractTypes,
+      hasExperienceLevel,
       hasBio,
       hasAvatar,
       hasExperience,
       hasEducation,
+      hasCertificates,
+      hasProjects,
       percentage: 0
     };
 
     // Calculate percentage matching backend weights
     const weights = {
-      hasBasicInfo: 30,
-      hasSkills: 30,
-      hasPreferences: 20,
+      hasBasicInfo: 20,
+      hasSkills: 20,
+      hasCategories: 10,
+      hasSalary: 5,
+      hasWorkTypes: 5,
+      hasContractTypes: 5,
+      hasExperienceLevel: 5,
       hasBio: 5,
       hasAvatar: 5,
       hasExperience: 5,
-      hasEducation: 5
+      hasEducation: 5,
+      hasCertificates: 5,
+      hasProjects: 5
     };
 
     data.percentage = Math.round(
       (data.hasBasicInfo ? weights.hasBasicInfo : 0) +
       (data.hasSkills ? weights.hasSkills : 0) +
-      (data.hasPreferences ? weights.hasPreferences : 0) +
+      (data.hasCategories ? weights.hasCategories : 0) +
+      (data.hasSalary ? weights.hasSalary : 0) +
+      (data.hasWorkTypes ? weights.hasWorkTypes : 0) +
+      (data.hasContractTypes ? weights.hasContractTypes : 0) +
+      (data.hasExperienceLevel ? weights.hasExperienceLevel : 0) +
       (data.hasBio ? weights.hasBio : 0) +
       (data.hasAvatar ? weights.hasAvatar : 0) +
       (data.hasExperience ? weights.hasExperience : 0) +
-      (data.hasEducation ? weights.hasEducation : 0)
+      (data.hasEducation ? weights.hasEducation : 0) +
+      (data.hasCertificates ? weights.hasCertificates : 0) +
+      (data.hasProjects ? weights.hasProjects : 0)
     );
   }
 
@@ -270,8 +335,17 @@ export const ProfileCompletenessCard = ({ profileCompleteness, profile }) => {
                       {!data.hasSkills && (
                         <li>• Thêm ít nhất 3 kỹ năng của bạn</li>
                       )}
-                      {!data.hasPreferences && (
-                        <li>• Thiết lập mức lương và hình thức làm việc mong muốn</li>
+                      {!data.hasCategories && (
+                        <li>• Chọn ngành nghề mong muốn</li>
+                      )}
+                      {!data.hasSalary && (
+                        <li>• Thiết lập mức lương mong muốn</li>
+                      )}
+                      {!data.hasWorkTypes && (
+                        <li>• Chọn hình thức làm việc</li>
+                      )}
+                      {!data.hasContractTypes && (
+                        <li>• Chọn loại hợp đồng</li>
                       )}
                       {!data.hasBio && (
                         <li>• Viết giới thiệu ngắn về bản thân</li>

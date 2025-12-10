@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, X, LogOut } from 'lucide-react';
 import { updateProfileData, dismissOnboarding, completeOnboarding } from '@/services/onboardingService';
+import { getMyProfile } from '@/services/profileService';
 import { logout } from '@/services/authService';
 import { logoutSuccess } from '@/redux/authSlice';
 import { InlineErrorAlert } from '@/components/common/FallbackUI';
@@ -32,6 +33,16 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   const [stepData, setStepData] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [isStepLoading, setIsStepLoading] = useState(false);
+
+  // Fetch current profile data from backend
+  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: getMyProfile,
+    refetchOnWindowFocus: false,
+    staleTime: 0 // Always fetch fresh data for onboarding
+  });
+
+  const profile = profileResponse?.data;
 
   // Sử dụng ref để track lần cuối save localStorage (tránh save quá nhiều)
   const lastSaveTimeRef = useRef(0);
@@ -65,23 +76,73 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
   // Sử dụng local state cho currentStep để tránh re-render khi Redux thay đổi
   const [localCurrentStep, setLocalCurrentStep] = useState(getInitialStep);
 
-  // Load saved progress from localStorage on mount
+  // Load saved progress from localStorage on mount AND merge with Profile Data
   useEffect(() => {
     const savedProgress = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    let localData = {};
+
     if (savedProgress) {
       try {
-        const { step, data } = JSON.parse(savedProgress);
-        if (step && step !== localCurrentStep) {
-          setLocalCurrentStep(step);
+        const parsed = JSON.parse(savedProgress);
+        if (parsed.step && parsed.step !== localCurrentStep) {
+          setLocalCurrentStep(parsed.step);
         }
-        if (data) {
-          setStepData(data);
+        if (parsed.data) {
+          localData = parsed.data;
         }
       } catch (error) {
         console.error('Failed to load onboarding progress:', error);
       }
     }
-  }, []); // CHỈ chạy 1 lần khi mount
+
+    if (profile) {
+      // Map Profile Data to Steps
+      const dbData = {
+        1: { // Basic Info
+          fullName: profile.fullname,
+          email: profile.email,
+          phone: profile.phone,
+          dob: profile.dob,
+          gender: profile.gender,
+          bio: profile.bio,
+          preferredLocations: profile.preferredLocations,
+          avatar: profile.avatar,
+          address: profile.address,
+          ...localData[1]
+        },
+        2: { // Skills
+          skills: profile.skills,
+          preferredCategories: profile.preferredCategories,
+          ...localData[2]
+        },
+        3: { // Salary & Prefs
+          expectedSalary: profile.expectedSalary,
+          workPreferences: profile.workPreferences,
+          ...localData[3]
+        },
+        4: { // Exp & Edu
+          experienceLevel: profile.workPreferences?.experienceLevel?.map(l => typeof l === 'object' ? l.type : l),
+          experiences: profile.experiences,
+          educations: profile.educations,
+          ...localData[4]
+        },
+        5: { // Certificates & Projects
+          certificates: profile.certificates,
+          projects: profile.projects,
+          linkedin: profile.linkedin,
+          github: profile.github,
+          website: profile.website,
+          ...localData[5]
+        }
+      };
+
+      setStepData(dbData);
+    } else if (savedProgress) {
+      // Fallback if profile fetch fails or not ready yet (but handled by isProfileLoading below)
+      // But this useEffect runs when 'profile' changes.
+      setStepData(localData);
+    }
+  }, [profile]); // Run when profile loads. LocalStorage is sync accessed.
 
   // Debounced save to localStorage - CHỈ save sau 500ms không có thay đổi
   useEffect(() => {
@@ -92,7 +153,8 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
 
     // Đặt timeout mới
     saveTimeoutRef.current = setTimeout(() => {
-      if (localCurrentStep > 0) {
+      // Only save if we have data to save
+      if (localCurrentStep > 0 && Object.keys(stepData).length > 0) {
         const progress = {
           step: localCurrentStep,
           data: stepData,
@@ -286,21 +348,32 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
 
   const currentStepInfo = STEPS.find(s => s.id === localCurrentStep);
 
-  if (!currentStepInfo) {
-    // Trạng thái khởi tạo hoặc lỗi, có thể hiển thị loading hoặc lỗi
-    return null;
-  }
-
   // Memoize child props để tránh tái tạo object mỗi lần render
   // CHỈ phụ thuộc vào localCurrentStep và các handlers (đã được memoize)
   const childProps = useMemo(() => ({
     currentStep: localCurrentStep,
-    stepData: stepDataRef.current[localCurrentStep] || {},
+    stepData: stepData[localCurrentStep] || {},
     onNext: handleNext,
     isLoading,
     error: submitError,
     onLoadingChange: handleStepLoadingChange
-  }), [localCurrentStep, handleNext, isLoading, submitError, handleStepLoadingChange]);
+  }), [localCurrentStep, stepData, handleNext, isLoading, submitError, handleStepLoadingChange]);
+
+  if (isProfileLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground font-medium">Đang đồng bộ dữ liệu hồ sơ...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentStepInfo) {
+    // Trạng thái khởi tạo hoặc lỗi, có thể hiển thị loading hoặc lỗi
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -450,19 +523,21 @@ export const OnboardingWrapper = ({ children, onComplete }) => {
           </div>
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
+          width: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: hsl(var(--muted));
+          border-radius: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: hsl(var(--muted-foreground) / 0.3);
-          border-radius: 4px;
+          background: hsl(var(--muted-foreground) / 0.5);
+          border-radius: 5px;
+          border: 2px solid hsl(var(--muted));
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--muted-foreground) / 0.5);
+          background: hsl(var(--muted-foreground) / 0.8);
         }
       `}</style>
     </div>

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getMe, getMyProfile } from '../services/profileService';
+import { getMe } from '../services/authService';
 import { saveAccessToken, clearAccessToken, getAccessToken } from '../utils/token';
 import { fetchOnboardingStatus } from './slices/onboardingThunks';
 

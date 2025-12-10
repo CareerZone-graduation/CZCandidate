@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,19 @@ import { popularSkills } from '@/constants/skills';
 import { JOB_CATEGORIES, POPULAR_CATEGORIES } from '@/constants/jobCategories';
 
 export const SkillsStep = ({ initialData = {}, onNext, isLoading, onLoadingChange }) => {
-  const [selectedSkills, setSelectedSkills] = useState(initialData.skills || []);
-  const [selectedCategories, setSelectedCategories] = useState(initialData.preferredCategories || []);
+  // Helper to normalize data (handle legacy objects vs strings)
+  const getInitialSkills = () => {
+    const data = initialData.skills || [];
+    return data.map(s => (typeof s === 'object' ? s.name : s)).filter(Boolean);
+  };
+
+  const getInitialCategories = () => {
+    const data = initialData.preferredCategories || [];
+    return data.map(c => (typeof c === 'object' ? c.name : c)).filter(Boolean);
+  };
+
+  const [selectedSkills, setSelectedSkills] = useState(getInitialSkills());
+  const [selectedCategories, setSelectedCategories] = useState(getInitialCategories());
   const [customSkill, setCustomSkill] = useState('');
 
   const {
@@ -24,11 +35,24 @@ export const SkillsStep = ({ initialData = {}, onNext, isLoading, onLoadingChang
   } = useForm({
     resolver: zodResolver(skillsSchema),
     defaultValues: {
-      skills: initialData.skills || [],
-      preferredCategories: initialData.preferredCategories || [],
+      skills: getInitialSkills(),
+      preferredCategories: getInitialCategories(),
       customSkills: initialData.customSkills || []
     }
   });
+
+  useEffect(() => {
+    const skills = getInitialSkills();
+    const categories = getInitialCategories();
+
+    setSelectedSkills(skills);
+    setSelectedCategories(categories);
+
+    setValue('skills', skills);
+    setValue('preferredCategories', categories);
+    setValue('customSkills', initialData.customSkills || []);
+    // eslint-disable-next-line
+  }, [initialData, setValue]);
 
   const toggleSkill = (skill) => {
     let updated;
@@ -39,7 +63,7 @@ export const SkillsStep = ({ initialData = {}, onNext, isLoading, onLoadingChang
       updated = [...selectedSkills, skill];
     }
     setSelectedSkills(updated);
-    setValue('skills', updated);
+    setValue('skills', updated, { shouldValidate: true, shouldDirty: true });
   };
 
   const toggleCategory = (categoryValue) => {
@@ -51,7 +75,7 @@ export const SkillsStep = ({ initialData = {}, onNext, isLoading, onLoadingChang
       updated = [...selectedCategories, categoryValue];
     }
     setSelectedCategories(updated);
-    setValue('preferredCategories', updated);
+    setValue('preferredCategories', updated, { shouldValidate: true, shouldDirty: true });
   };
 
   const addCustomSkill = () => {
@@ -61,7 +85,7 @@ export const SkillsStep = ({ initialData = {}, onNext, isLoading, onLoadingChang
 
     const updated = [...selectedSkills, customSkill.trim()];
     setSelectedSkills(updated);
-    setValue('skills', updated);
+    setValue('skills', updated, { shouldValidate: true, shouldDirty: true });
     setCustomSkill('');
   };
 

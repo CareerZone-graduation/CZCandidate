@@ -1,6 +1,6 @@
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,21 +12,62 @@ import { Plus, X, Briefcase, GraduationCap } from 'lucide-react';
 import { experienceEducationSchema, experienceLevelEnum } from '@/schemas/onboardingSchemas';
 import { InlineError } from '../ErrorState';
 
+const BACKEND_TO_FRONTEND_EXP = {
+  'FRESHER': 'Fresher',
+  'ENTRY_LEVEL': 'Junior',
+  'MID_LEVEL': 'Mid-level',
+  'SENIOR_LEVEL': 'Senior',
+  'EXECUTIVE': 'Executive',
+  'NO_EXPERIENCE': 'Fresher',
+  'INTERN': 'Intern'
+};
+
+const FRONTEND_TO_BACKEND_EXP = {
+  'Intern': 'INTERN',
+  'Fresher': 'FRESHER',
+  'Junior': 'ENTRY_LEVEL',
+  'Mid-level': 'MID_LEVEL',
+  'Senior': 'SENIOR_LEVEL',
+  'Executive': 'EXECUTIVE'
+};
+
 export const ExperienceEducationStep = ({ initialData = {}, onNext, isLoading, onLoadingChange }) => {
+  const mapInitialExperienceLevel = (level) => {
+    if (Array.isArray(level)) {
+      // Remove duplicates after mapping
+      return [...new Set(level.map(l => BACKEND_TO_FRONTEND_EXP[l] || l))];
+    }
+    if (typeof level === 'string') {
+      const mapped = BACKEND_TO_FRONTEND_EXP[level] || level;
+      return [mapped];
+    }
+    return [];
+  };
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
-    watch
+    watch,
+    setValue
   } = useForm({
     resolver: zodResolver(experienceEducationSchema),
     defaultValues: {
-      experienceLevel: initialData.experienceLevel || '',
+      experienceLevel: mapInitialExperienceLevel(initialData.experienceLevel),
       experiences: initialData.experiences || [],
       educations: initialData.educations || []
     }
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setValue('experiences', initialData.experiences || []);
+      setValue('educations', initialData.educations || []);
+      setValue('experienceLevel', mapInitialExperienceLevel(initialData.experienceLevel));
+    }
+    // eslint-disable-next-line
+  }, [initialData, setValue]);
 
   const { fields: experienceFields, append: appendExperience, remove: removeExperience } = useFieldArray({
     control,
@@ -39,14 +80,23 @@ export const ExperienceEducationStep = ({ initialData = {}, onNext, isLoading, o
   });
 
   const onSubmit = (data) => {
-    onNext(data);
+    const transformedData = {
+      experiences: data.experiences,
+      educations: data.educations,
+      workPreferences: {
+        experienceLevel: data.experienceLevel.map(l => FRONTEND_TO_BACKEND_EXP[l] || l)
+      }
+    };
+    onNext(transformedData);
   };
 
   const experienceLevelDescriptions = {
+    'Intern': 'Thực tập sinh, sinh viên chưa tốt nghiệp',
     'Fresher': 'Mới tốt nghiệp, chưa có kinh nghiệm làm việc',
     'Junior': '1-2 năm kinh nghiệm',
     'Mid-level': '3-5 năm kinh nghiệm',
-    'Senior': 'Trên 5 năm kinh nghiệm'
+    'Senior': 'Trên 5 năm kinh nghiệm',
+    'Executive': 'Quản lý, điều hành cấp cao'
   };
 
   return (
@@ -56,7 +106,7 @@ export const ExperienceEducationStep = ({ initialData = {}, onNext, isLoading, o
         <CardHeader>
           <CardTitle>Mức độ kinh nghiệm</CardTitle>
           <CardDescription>
-            Chọn mức độ kinh nghiệm phù hợp với bạn (không bắt buộc)
+            Chọn mức độ kinh nghiệm phù hợp với bạn (có thể chọn nhiều)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -64,33 +114,42 @@ export const ExperienceEducationStep = ({ initialData = {}, onNext, isLoading, o
             name="experienceLevel"
             control={control}
             render={({ field }) => (
-              <RadioGroup
-                value={field.value}
-                onValueChange={field.onChange}
-                className="space-y-3"
-              >
-                {experienceLevelEnum.map((level) => (
-                  <div
-                    key={level}
-                    className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      field.value === level 
-                        ? 'border-primary bg-primary/5' 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {experienceLevelEnum.map((level) => {
+                  const isSelected = Array.isArray(field.value) && field.value.includes(level);
+                  return (
+                    <label
+                      key={level}
+                      htmlFor={`exp-${level}`}
+                      className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected
+                        ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted'
-                    }`}
-                    onClick={() => field.onChange(level)}
-                  >
-                    <RadioGroupItem value={level} id={level} />
-                    <div className="flex-1">
-                      <Label htmlFor={level} className="cursor-pointer font-medium">
-                        {level}
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {experienceLevelDescriptions[level]}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </RadioGroup>
+                        }`}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          const currentValue = Array.isArray(field.value) ? field.value : [];
+                          if (checked) {
+                            field.onChange([...currentValue, level]);
+                          } else {
+                            field.onChange(currentValue.filter(v => v !== level));
+                          }
+                        }}
+                        id={`exp-${level}`}
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium block">
+                          {level}
+                        </span>
+                        <p className="text-sm text-muted-foreground">
+                          {experienceLevelDescriptions[level]}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             )}
           />
           {errors.experienceLevel && (

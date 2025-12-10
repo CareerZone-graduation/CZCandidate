@@ -67,10 +67,18 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
+    const normalizeWorkPreferences = (prefs) => ({
+        workTypes: prefs?.workTypes || [],
+        contractTypes: prefs?.contractTypes || [],
+        experienceLevel: Array.isArray(prefs?.experienceLevel)
+            ? prefs.experienceLevel
+            : (prefs?.experienceLevel ? [prefs.experienceLevel] : [])
+    });
+
     const [formData, setFormData] = useState({
         preferredLocations: profile?.preferredLocations || [],
         expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-        workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [], experienceLevel: '' },
+        workPreferences: normalizeWorkPreferences(profile?.workPreferences),
         preferredCategories: profile?.preferredCategories || []
     });
 
@@ -82,7 +90,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
             setFormData({
                 preferredLocations: profile?.preferredLocations || [],
                 expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-                workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] },
+                workPreferences: normalizeWorkPreferences(profile?.workPreferences),
                 preferredCategories: profile?.preferredCategories || []
             });
         }
@@ -92,7 +100,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
         setFormData({
             preferredLocations: profile?.preferredLocations || [],
             expectedSalary: profile?.expectedSalary || { min: 0, max: 0, currency: 'VND' },
-            workPreferences: profile?.workPreferences || { workTypes: [], contractTypes: [] },
+            workPreferences: normalizeWorkPreferences(profile?.workPreferences),
             preferredCategories: profile?.preferredCategories || []
         });
         setIsEditing(true);
@@ -549,32 +557,59 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
                 <div>
                     <Label className="text-base font-semibold mb-3">Mức độ kinh nghiệm</Label>
                     {isEditing ? (
-                        <Select
-                            value={formData.workPreferences?.experienceLevel || ''}
-                            onValueChange={(value) => setFormData(prev => ({
-                                ...prev,
-                                workPreferences: { ...prev.workPreferences, experienceLevel: value }
-                            }))}
-                        >
-                            <SelectTrigger className="w-[240px]">
-                                <SelectValue placeholder="Chọn mức độ kinh nghiệm" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {EXPERIENCE_LEVELS.map((level) => (
-                                    <SelectItem key={level.value} value={level.value}>
-                                        {level.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap gap-2">
+                            {EXPERIENCE_LEVELS.map((level) => (
+                                <Button
+                                    key={level.value}
+                                    type="button"
+                                    variant={
+                                        (Array.isArray(formData.workPreferences?.experienceLevel)
+                                            ? formData.workPreferences.experienceLevel
+                                            : [formData.workPreferences?.experienceLevel])
+                                            .includes(level.value)
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => {
+                                        setFormData(prev => {
+                                            const currentLevels = Array.isArray(prev.workPreferences?.experienceLevel)
+                                                ? prev.workPreferences.experienceLevel
+                                                : [prev.workPreferences?.experienceLevel].filter(Boolean);
+
+                                            const newLevels = currentLevels.includes(level.value)
+                                                ? currentLevels.filter(l => l !== level.value)
+                                                : [...currentLevels, level.value];
+
+                                            return {
+                                                ...prev,
+                                                workPreferences: { ...prev.workPreferences, experienceLevel: newLevels }
+                                            };
+                                        });
+                                    }}
+                                >
+                                    {level.label}
+                                </Button>
+                            ))}
+                        </div>
                     ) : (
-                        <p className="text-foreground">
-                            {profile?.workPreferences?.experienceLevel ? (
-                                EXPERIENCE_LEVELS.find(level => level.value === profile.workPreferences.experienceLevel)?.label
+                        <div className="flex flex-wrap gap-2">
+                            {profile?.workPreferences?.experienceLevel && (Array.isArray(profile.workPreferences.experienceLevel)
+                                ? profile.workPreferences.experienceLevel
+                                : [profile.workPreferences.experienceLevel]
+                            ).length > 0 ? (
+                                (Array.isArray(profile.workPreferences.experienceLevel)
+                                    ? profile.workPreferences.experienceLevel
+                                    : [profile.workPreferences.experienceLevel]
+                                ).map((val) => (
+                                    <Badge key={val} variant="secondary" className="px-3 py-1">
+                                        {EXPERIENCE_LEVELS.find(level => level.value === val)?.label || val}
+                                    </Badge>
+                                ))
                             ) : (
-                                <span className="text-muted-foreground text-sm">Chưa cập nhật mức độ kinh nghiệm</span>
+                                <p className="text-muted-foreground text-sm">Chưa cập nhật mức độ kinh nghiệm</p>
                             )}
-                        </p>
+                        </div>
                     )}
                 </div>
 

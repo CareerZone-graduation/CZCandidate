@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { DollarSign, Briefcase, FileText } from 'lucide-react';
 import { salaryPreferencesSchema, workTypeEnum, contractTypeEnum } from '@/schemas/onboardingSchemas';
 import { InlineError } from '../ErrorState';
+import { useEffect } from 'react';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -19,9 +20,91 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+// Mappings between Frontend Display Values and Backend Enum Values
+const WORK_TYPE_MAPPING = {
+  // FE (Location) -> BE (WorkType)
+  'Tại văn phòng': 'ON_SITE',
+  'Từ xa': 'REMOTE',
+  'Kết hợp': 'HYBRID'
+};
+
+const CONTRACT_TYPE_MAPPING = {
+  // FE (Employment) -> BE (Type)
+  'Toàn thời gian': 'FULL_TIME',
+  'Bán thời gian': 'PART_TIME',
+  'Thực tập': 'INTERNSHIP',
+  'Freelance': 'FREELANCE',
+  'Hợp đồng': 'CONTRACT',
+  'Thời vụ': 'TEMPORARY'
+};
+
+// Reverse Mappings for loading data from Backend to Frontend
+// Note: We need to handle potential legacy values if any, but mainly map standard BE enums
+const BE_TO_FE_WORK_TYPE = {
+  'ON_SITE': 'Tại văn phòng',
+  'REMOTE': 'Từ xa',
+  'HYBRID': 'Kết hợp'
+};
+
+const BE_TO_FE_CONTRACT_TYPE = {
+  'FULL_TIME': 'Toàn thời gian',
+  'PART_TIME': 'Bán thời gian',
+  'INTERNSHIP': 'Thực tập',
+  'FREELANCE': 'Freelance',
+  'CONTRACT': 'Hợp đồng',
+  'TEMPORARY': 'Thời vụ',
+  'VOLUNTEER': 'Thời vụ' // Mapping VOLUNTEER to Temporary as closest match if needed
+};
+
 export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onLoadingChange }) => {
-  const [selectedWorkTypes, setSelectedWorkTypes] = useState(initialData.workTypes || []);
-  const [selectedContractTypes, setSelectedContractTypes] = useState(initialData.contractTypes || []);
+  // Handle initial data which might be nested or flat depending on where it comes from
+  // Handle initial data which might be nested or flat depending on where it comes from
+  const getInitialWorkTypes = () => {
+    let types = [];
+    if (initialData.workPreferences?.workTypes) {
+      // Data from Backend or persisted clean payload
+      types = initialData.workPreferences.workTypes.map(item => {
+        const type = typeof item === 'object' ? item.type : item;
+        return BE_TO_FE_WORK_TYPE[type];
+      }).filter(Boolean);
+    } else if (initialData.workTypes) {
+      // Data from LocalStorage/Old State (Flat strings)
+      types = initialData.workTypes.map(t => {
+        if (workTypeEnum.includes(t)) return t;
+        // Legacy support
+        if (t === 'Full-time') return 'Tại văn phòng';
+        if (t === 'Remote') return 'Từ xa';
+        if (t === 'Hybrid') return 'Kết hợp';
+        return null; // or keep t if it makes sense?
+      }).filter(Boolean);
+    }
+    return [...new Set(types)];
+  };
+
+  const getInitialContractTypes = () => {
+    let types = [];
+    if (initialData.workPreferences?.contractTypes) {
+      // Data from Backend or persisted clean payload
+      types = initialData.workPreferences.contractTypes.map(item => {
+        const type = typeof item === 'object' ? item.type : item;
+        return BE_TO_FE_CONTRACT_TYPE[type];
+      }).filter(Boolean);
+    } else if (initialData.contractTypes) {
+      // Data from LocalStorage/Old State
+      types = initialData.contractTypes.map(t => {
+        if (contractTypeEnum.includes(t)) return t;
+        // Legacy support
+        if (t === 'Chính thức') return 'Toàn thời gian';
+        if (t === 'Thực tập') return 'Thực tập';
+        if (t === 'Freelance') return 'Freelance';
+        return null;
+      }).filter(Boolean);
+    }
+    return [...new Set(types)];
+  };
+
+  const [selectedWorkTypes, setSelectedWorkTypes] = useState(getInitialWorkTypes());
+  const [selectedContractTypes, setSelectedContractTypes] = useState(getInitialContractTypes());
 
   const {
     register,
@@ -34,14 +117,33 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onL
     resolver: zodResolver(salaryPreferencesSchema),
     defaultValues: {
       expectedSalary: {
-        min: initialData.expectedSalary?.min || 5000000,
-        max: initialData.expectedSalary?.max || 20000000,
+        min: initialData.expectedSalary?.min ?? 5000000,
+        max: initialData.expectedSalary?.max ?? 20000000,
         currency: 'VND'
       },
-      workTypes: initialData.workTypes || [],
-      contractTypes: initialData.contractTypes || []
+      workTypes: getInitialWorkTypes(),
+      contractTypes: getInitialContractTypes()
     }
   });
+
+  // Update state when initialData changes (async load)
+  useEffect(() => {
+    const workTypes = getInitialWorkTypes();
+    const contractTypes = getInitialContractTypes();
+
+    setSelectedWorkTypes(workTypes);
+    setSelectedContractTypes(contractTypes);
+
+    // Update form values
+    setValue('workTypes', workTypes);
+    setValue('contractTypes', contractTypes);
+
+    if (initialData.expectedSalary) {
+      setValue('expectedSalary.min', initialData.expectedSalary.min ?? 5000000);
+      setValue('expectedSalary.max', initialData.expectedSalary.max ?? 20000000);
+    }
+    // eslint-disable-next-line
+  }, [initialData, setValue]);
 
   const minSalary = watch('expectedSalary.min');
   const maxSalary = watch('expectedSalary.max');
@@ -54,7 +156,7 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onL
       updated = [...selectedWorkTypes, type];
     }
     setSelectedWorkTypes(updated);
-    setValue('workTypes', updated);
+    setValue('workTypes', updated, { shouldValidate: true });
   };
 
   const toggleContractType = (type) => {
@@ -65,24 +167,55 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onL
       updated = [...selectedContractTypes, type];
     }
     setSelectedContractTypes(updated);
-    setValue('contractTypes', updated);
+    setValue('contractTypes', updated, { shouldValidate: true });
   };
 
   const onSubmit = (data) => {
-    onNext(data);
+    // Construct clean payload first by removing form-specific fields
+    const { workTypes, contractTypes, ...restData } = data;
+
+    // Transform Work Types for Backend
+    const backendWorkTypes = data.workTypes
+      .map(t => WORK_TYPE_MAPPING[t])
+      .filter(Boolean);
+
+    // Send as simple array of strings
+    const uniqueWorkTypes = [...new Set(backendWorkTypes)];
+
+    // Transform Contract Types for Backend
+    const backendContractTypes = data.contractTypes
+      .map(t => CONTRACT_TYPE_MAPPING[t])
+      .filter(Boolean);
+
+    // Send as simple array of strings
+    const uniqueContractTypes = [...new Set(backendContractTypes)];
+
+    const payload = {
+      ...restData,
+      workPreferences: {
+        workTypes: uniqueWorkTypes,
+        contractTypes: uniqueContractTypes,
+        // Preserve experienceLevel if exists
+        experienceLevel: initialData.workPreferences?.experienceLevel
+      }
+    };
+
+    onNext(payload);
   };
 
   const workTypeDescriptions = {
-    'Full-time': 'Làm việc toàn thời gian, 8 giờ/ngày',
-    'Part-time': 'Làm việc bán thời gian, linh hoạt giờ giấc',
-    'Remote': 'Làm việc từ xa, không cần đến văn phòng',
-    'Hybrid': 'Kết hợp làm việc tại văn phòng và từ xa'
+    'Tại văn phòng': 'Làm việc trực tiếp tại văn phòng công ty',
+    'Từ xa': 'Làm việc online từ bất cứ đâu',
+    'Kết hợp': 'Linh hoạt giữa làm việc tại văn phòng và từ xa'
   };
 
   const contractTypeDescriptions = {
-    'Chính thức': 'Hợp đồng lao động chính thức, đầy đủ quyền lợi',
-    'Thực tập': 'Hợp đồng thực tập sinh',
-    'Freelance': 'Làm việc tự do, theo dự án'
+    'Toàn thời gian': 'Làm việc 8 giờ/ngày, 5-6 ngày/tuần',
+    'Bán thời gian': 'Làm việc theo ca hoặc số giờ linh hoạt',
+    'Thực tập': 'Dành cho sinh viên hoặc người mới ra trường',
+    'Freelance': 'Làm việc tự do theo dự án',
+    'Hợp đồng': 'Làm việc theo hợp đồng có thời hạn',
+    'Thời vụ': 'Làm việc ngắn hạn, thời vụ'
   };
 
   const salaryRanges = [
@@ -180,35 +313,33 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onL
         </CardContent>
       </Card>
 
-      {/* Work Types */}
+      {/* Work Types (Location) */}
       <Card>
         <CardHeader>
-          <CardTitle>Hình thức làm việc</CardTitle>
+          <CardTitle>Hình thức làm việc (Địa điểm)</CardTitle>
           <CardDescription>
-            Chọn các hình thức làm việc bạn quan tâm
+            Bạn muốn làm việc ở đâu?
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {workTypeEnum.map((type) => (
               <div
                 key={type}
-                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                  selectedWorkTypes.includes(type)
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'hover:bg-muted'
-                }`}
+                className={`p-4 rounded-lg border cursor-pointer transition-colors ${selectedWorkTypes.includes(type)
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'hover:bg-muted'
+                  }`}
                 onClick={() => toggleWorkType(type)}
               >
                 <div className="flex items-start gap-3">
                   <Briefcase className="w-5 h-5 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{type}</p>
-                    <p className={`text-xs mt-1 ${
-                      selectedWorkTypes.includes(type)
-                        ? 'text-primary-foreground/80'
-                        : 'text-muted-foreground'
-                    }`}>
+                    <p className={`text-xs mt-1 ${selectedWorkTypes.includes(type)
+                      ? 'text-primary-foreground/80'
+                      : 'text-muted-foreground'
+                      }`}>
                       {workTypeDescriptions[type]}
                     </p>
                   </div>
@@ -220,35 +351,33 @@ export const SalaryPreferencesStep = ({ initialData = {}, onNext, isLoading, onL
         </CardContent>
       </Card>
 
-      {/* Contract Types */}
+      {/* Contract Types (Employment) */}
       <Card>
         <CardHeader>
-          <CardTitle>Loại hợp đồng</CardTitle>
+          <CardTitle>Loại hình công việc</CardTitle>
           <CardDescription>
-            Chọn các loại hợp đồng bạn quan tâm
+            Bạn tìm kiếm loại hợp đồng nào?
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {contractTypeEnum.map((type) => (
               <div
                 key={type}
-                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                  selectedContractTypes.includes(type)
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'hover:bg-muted'
-                }`}
+                className={`p-4 rounded-lg border cursor-pointer transition-colors ${selectedContractTypes.includes(type)
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'hover:bg-muted'
+                  }`}
                 onClick={() => toggleContractType(type)}
               >
                 <div className="flex items-start gap-3">
                   <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{type}</p>
-                    <p className={`text-xs mt-1 ${
-                      selectedContractTypes.includes(type)
-                        ? 'text-primary-foreground/80'
-                        : 'text-muted-foreground'
-                    }`}>
+                    <p className={`text-xs mt-1 ${selectedContractTypes.includes(type)
+                      ? 'text-primary-foreground/80'
+                      : 'text-muted-foreground'
+                      }`}>
                       {contractTypeDescriptions[type]}
                     </p>
                   </div>
