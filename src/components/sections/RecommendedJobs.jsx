@@ -1,160 +1,109 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Heart, Building, Calendar, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Skeleton } from '../ui/skeleton';
-import { Alert, AlertDescription } from '../ui/alert';
-import { SectionHeader } from '../common/SectionHeader';
-import { getRecommendations, generateRecommendations } from '../../services/recommendationService';
-import { getOnboardingStatus } from '../../services/onboardingService';
-import { getAllJobs } from '../../services/jobService';
-import { formatSalaryVND, formatWorkType, formatExperience } from '../../utils/formatters';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Building, Calendar, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { getRecommendations, generateRecommendations } from '@/services/recommendationService';
+import { getOnboardingStatus } from '@/services/onboardingService';
+import { getAllJobs } from '@/services/jobService';
+import { formatSalaryVND, formatWorkType, formatExperience } from '@/utils/formatters';
 
 const RecommendedJobs = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  
-  const [jobs, setJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isRecommendationsMode, setIsRecommendationsMode] = useState(false);
-  const [profileCompleteness, setProfileCompleteness] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
 
+  // 1. Fetch Onboarding Status
+  const {
+    data: statusData,
+    isLoading: isStatusLoading
+  } = useQuery({
+    queryKey: ['onboardingStatus'],
+    queryFn: getOnboardingStatus,
+    enabled: !!isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const completeness = statusData?.data?.profileCompleteness?.percentage || 0;
+  const isProfileComplete = completeness >= 60;
+
+  // 2. Fetch Featured Jobs (Always needed as fallback)
+  const {
+    data: featuredJobsData,
+    isLoading: isFeaturedLoading
+  } = useQuery({
+    queryKey: ['jobs', 'featured'],
+    queryFn: () => getAllJobs({ page: 1, limit: 6, sortBy: 'newest' }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const featuredJobs = Array.isArray(featuredJobsData?.data?.data) ? featuredJobsData.data.data : [];
+
+  // 3. Fetch Recommendations (Enabled only if profile complete)
+  const {
+    data: recResponse,
+    isLoading: isRecLoading,
+    refetch: refetchRecommendations
+  } = useQuery({
+    queryKey: ['recommendations', 'home'],
+    queryFn: () => getRecommendations({ page: 1, limit: 6 }),
+    enabled: !!isAuthenticated && isProfileComplete,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Recommendation Generation Mutation
+  const generateMutation = useMutation({
+    mutationFn: generateRecommendations,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+      refetchRecommendations();
+    },
+  });
+
+  // Extract recommended jobs
+  const recommendedJobs = recResponse?.data
+    ?.filter(rec => rec.jobId)
+    .map(rec => ({
+      ...rec.jobId,
+      recommendationScore: rec.score,
+      recommendationReasons: rec.reasons
+    })) || [];
+
+  // Determine what to display
+  // Logic: 
+  // - If IsAuthenticated AND ProfileComplete AND Have Recommendations -> Show Recommendations
+  // - Else -> Show Featured Jobs
+  const shouldShowRecommendations = isAuthenticated && isProfileComplete && recommendedJobs.length > 0;
+  const displayJobs = shouldShowRecommendations ? recommendedJobs : featuredJobs;
+
+  // Loading state: complex because we might be waiting for recommendation check
+  // If Authenticated and Profile Complete -> Wait for Rec Loading. 
+  // If Rec Loading finishes and empty -> we might trigger generate -> Wait? 
+  // Simplification: display loading if critical data is missing.
+
+  const isGlobalLoading = isFeaturedLoading || (isAuthenticated && isStatusLoading) || (isAuthenticated && isProfileComplete && isRecLoading);
+
+  // Auto-generate effect
   useEffect(() => {
-    fetchJobs();
-  }, [isAuthenticated]);
-
-  const fetchJobs = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Nếu user chưa đăng nhập, hiển thị featured jobs
-      if (!isAuthenticated) {
-        await fetchFeaturedJobs();
-        return;
-      }
-
-      // Check profile completeness
-      const statusResponse = await getOnboardingStatus();
-      const completeness = statusResponse?.data?.profileCompleteness?.percentage || 0;
-      setProfileCompleteness(completeness);
-
-      console.log('📊 Profile completeness:', completeness);
-
-      // Nếu profile >= 60%, thử lấy recommendations
-      if (completeness >= 60) {
-        try {
-          console.log('🎯 Fetching recommendations...');
-          const recResponse = await getRecommendations({ page: 1, limit: 6 });
-          
-          console.log('✅ Recommendations response:', recResponse);
-
-          // Nếu có recommendations
-          if (recResponse?.data?.length > 0) {
-            const recommendedJobs = recResponse.data
-              .filter(rec => rec.jobId) // Lọc những recommendation có job
-              .map(rec => ({
-                ...rec.jobId,
-                recommendationScore: rec.score,
-                recommendationReasons: rec.reasons
-              }));
-
-            if (recommendedJobs.length > 0) {
-              console.log('✅ Using recommendations:', recommendedJobs.length);
-              setJobs(recommendedJobs);
-              setIsRecommendationsMode(true);
-              return;
-            }
-          }
-
-          // Nếu chưa có recommendations, tự động generate
-          console.log('🔄 No recommendations found, auto-generating...');
-          await autoGenerateRecommendations();
-          
-        } catch (err) {
-          console.warn('⚠️ Failed to fetch recommendations, falling back to featured jobs:', err);
-          await fetchFeaturedJobs();
-        }
-      } else {
-        // Profile chưa đủ 60%, hiển thị featured jobs
-        console.log('📝 Profile not complete enough (<60%), showing featured jobs');
-        await fetchFeaturedJobs();
-      }
-
-    } catch (err) {
-      console.error('❌ Error in fetchJobs:', err);
-      setError('Không thể tải danh sách việc làm');
-      setJobs([]);
-    } finally {
-      setIsLoading(false);
+    if (isAuthenticated && isProfileComplete && !isRecLoading && recommendedJobs.length === 0 && !generateMutation.isPending) {
+      // Debounce generation to avoid loops
+      const timer = setTimeout(() => {
+        generateMutation.mutate({ limit: 20 });
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isAuthenticated, isProfileComplete, isRecLoading, recommendedJobs.length]);
 
-  const autoGenerateRecommendations = async () => {
-    try {
-      setIsGenerating(true);
-      console.log('🚀 Generating recommendations...');
-      
-      const genResponse = await generateRecommendations({ limit: 20 });
-      
-      if (genResponse?.data?.recommendations?.length > 0) {
-        const recommendedJobs = genResponse.data.recommendations
-          .slice(0, 6)
-          .map(rec => ({
-            ...rec.job,
-            recommendationScore: rec.score,
-            recommendationReasons: rec.reasons
-          }));
 
-        console.log('✅ Generated and loaded recommendations:', recommendedJobs.length);
-        setJobs(recommendedJobs);
-        setIsRecommendationsMode(true);
-      } else {
-        console.log('⚠️ No recommendations generated, showing featured jobs');
-        await fetchFeaturedJobs();
-      }
-    } catch (err) {
-      console.error('❌ Error generating recommendations:', err);
-      await fetchFeaturedJobs();
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const fetchFeaturedJobs = async () => {
-    try {
-      console.log('🔄 Fetching featured jobs...');
-      const response = await getAllJobs({ page: 1, limit: 6, sortBy: 'newest' });
-
-      if (response.data && response.data.success) {
-        const jobsData = Array.isArray(response.data.data) ? response.data.data : [];
-        console.log('✅ Featured jobs loaded:', jobsData.length);
-        setJobs(jobsData);
-        setIsRecommendationsMode(false);
-      }
-    } catch (err) {
-      console.error('❌ Error fetching featured jobs:', err);
-      throw err;
-    }
-  };
-
-  const handleRefreshRecommendations = async () => {
-    try {
-      setIsGenerating(true);
-      await autoGenerateRecommendations();
-    } catch (err) {
-      console.error('❌ Error refreshing:', err);
-    }
-  };
-
-  const handleViewAll = () => {
-    navigate(isRecommendationsMode ? '/jobs/recommended' : '/jobs/search');
+  const handleRefreshRecommendations = () => {
+    generateMutation.mutate({ limit: 20 });
   };
 
   const handleJobClick = (jobId) => {
@@ -163,7 +112,6 @@ const RecommendedJobs = () => {
 
   const renderReasonBadges = (reasons) => {
     if (!reasons || reasons.length === 0) return null;
-
     return (
       <div className="flex flex-wrap gap-2 mt-2">
         {reasons.slice(0, 2).map((reason, idx) => (
@@ -183,9 +131,9 @@ const RecommendedJobs = () => {
     <section className="py-20 bg-background">
       <div className="container">
         <SectionHeader
-          badgeText={isRecommendationsMode ? '✨ Dành riêng cho bạn' : '⭐ Việc làm nổi bật'}
+          badgeText={shouldShowRecommendations ? '✨ Dành riêng cho bạn' : '⭐ Việc làm nổi bật'}
           title={
-            isRecommendationsMode ? (
+            shouldShowRecommendations ? (
               <>
                 Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">phù hợp với bạn</span>
               </>
@@ -196,50 +144,54 @@ const RecommendedJobs = () => {
             )
           }
           description={
-            isRecommendationsMode
+            shouldShowRecommendations
               ? 'Những công việc được gợi ý dựa trên kỹ năng, kinh nghiệm và mong muốn của bạn.'
               : 'Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp.'
           }
         />
 
-        {/* Alert for profile completeness if not recommendations mode */}
-        {isAuthenticated && !isRecommendationsMode && profileCompleteness < 60 && (
-          <Alert className="mb-6 bg-amber-50 border-amber-200">
+        {/* Alert for incomplete profile (Only if authenticated, not loading, and profile incomplete) */}
+        {!isGlobalLoading && isAuthenticated && !isProfileComplete && (
+          <Alert className="mb-8 bg-amber-50 border-amber-200/50 shadow-sm animate-in fade-in slide-in-from-top-2">
             <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              Hoàn thiện hồ sơ đến {profileCompleteness}%. Cần tối thiểu 60% để nhận gợi ý việc làm phù hợp với bạn.{' '}
+            <AlertDescription className="text-amber-800 flex items-center gap-2 justify-between flex-wrap">
+              <span>
+                Hồ sơ của bạn mới hoàn thiện <span className="font-bold">{completeness}%</span>.
+                Cần tối thiểu <span className="font-bold">60%</span> để nhận được gợi ý việc làm tốt nhất.
+              </span>
               <Button
-                variant="link"
-                className="p-0 h-auto text-amber-700 font-semibold"
+                variant="outline"
+                size="sm"
+                className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20"
                 onClick={() => navigate('/profile')}
               >
-                Hoàn thiện ngay →
+                Hoàn thiện ngay <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Refresh button for recommendations */}
-        {isRecommendationsMode && (
-          <div className="flex justify-end mb-4">
+        {/* Refresh button */}
+        {shouldShowRecommendations && (
+          <div className="flex justify-end mb-6">
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefreshRecommendations}
-              disabled={isGenerating}
-              className="gap-2"
+              disabled={generateMutation.isPending}
+              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
             >
-              <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              {isGenerating ? 'Đang cập nhật...' : 'Làm mới gợi ý'}
+              <RefreshCw className={`h-4 w-4 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
+              {generateMutation.isPending ? 'Đang phân tích...' : 'Làm mới gợi ý'}
             </Button>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {isLoading ? (
+          {(isGlobalLoading || generateMutation.isPending) ? (
             // Loading skeletons
             [...Array(6)].map((_, i) => (
-              <Card key={i} className="h-80 shadow-lg">
+              <Card key={i} className="h-80 shadow-md border-muted">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
@@ -258,36 +210,39 @@ const RecommendedJobs = () => {
                 </CardContent>
               </Card>
             ))
-          ) : jobs.length > 0 ? (
-            jobs.map((job) => (
+          ) : displayJobs.length > 0 ? (
+            displayJobs.map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border shadow-lg hover:shadow-2xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
+                className="group relative overflow-hidden border border-muted shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                 {/* Recommendation score badge */}
-                {isRecommendationsMode && job.recommendationScore && (
+                {shouldShowRecommendations && job.recommendationScore && (
                   <div className="absolute top-3 right-3 z-10">
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold">
+                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold border-0 shadow-sm">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      {job.recommendationScore}% phù hợp
+                      {job.recommendationScore}%
                     </Badge>
                   </div>
                 )}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start space-x-4">
-                    <Avatar className="w-16 h-16 flex-shrink-0">
+                    <Avatar className="w-16 h-16 flex-shrink-0 border-2 border-white shadow-sm rounded-xl">
                       <AvatarImage
                         src={job.recruiterProfileId?.company?.logo || job.company?.logo || ''}
                         alt={job.recruiterProfileId?.company?.name || job.company?.name || 'Logo'}
+                        className="object-contain bg-white"
                       />
-                      <AvatarFallback>
+                      <AvatarFallback className="rounded-xl">
                         {(job.recruiterProfileId?.company?.name || job.company?.name || 'C')[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="line-clamp-2 mb-1">{job.title || 'Không có tiêu đề'}</CardTitle>
+                      <CardTitle className="line-clamp-2 mb-1 text-lg group-hover:text-primary transition-colors">
+                        {job.title || 'Không có tiêu đề'}
+                      </CardTitle>
                       <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Building className="w-3 h-3 flex-shrink-0" />
@@ -309,41 +264,39 @@ const RecommendedJobs = () => {
                 </CardHeader>
 
                 <CardContent className="pt-0 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="flex items-center gap-1">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
                       <DollarSign className="w-3 h-3" />
                       {formatSalaryVND(job.minSalary, job.maxSalary)}
                     </Badge>
-                    <Badge variant="secondary" className="flex items-center gap-1">
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
                       <Clock className="w-3 h-3" />
                       {formatWorkType(job.workType)}
                     </Badge>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Briefcase className="w-3 h-3" />
-                      {formatExperience(job.experience)}
-                    </Badge>
-                    {job.deadline && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(job.deadline).toLocaleDateString('vi-VN')}
+                    {(shouldShowRecommendations ? job.recommendationReasons : [1]).length > 0 ? null : (
+                      <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
+                        <Briefcase className="w-3 h-3" />
+                        {formatExperience(job.experience)}
                       </Badge>
                     )}
                   </div>
 
-                  {/* Recommendation reasons */}
-                  {isRecommendationsMode && renderReasonBadges(job.recommendationReasons)}
+                  {shouldShowRecommendations && renderReasonBadges(job.recommendationReasons)}
                 </CardContent>
 
-                <CardFooter className="border-t pt-3 flex justify-end items-center bg-transparent">
+                <CardFooter className="border-t pt-3 flex justify-between items-center bg-muted/30">
+                  <div className="text-xs text-muted-foreground">
+                    {job.deadline ? `Hạn nộp: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : ''}
+                  </div>
                   <Button
                     variant="ghost"
-                    className="p-0 h-auto font-semibold text-green-700 group-hover:translate-x-1 transition-all duration-300 hover:text-green-800"
+                    className="p-0 h-auto font-medium text-primary hover:text-primary/80"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJobClick(job._id || job.id);
                     }}
                   >
-                    Xem chi tiết <ArrowRight className="ml-1 h-4 w-4" />
+                    Chi tiết <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </CardFooter>
               </Card>
@@ -358,10 +311,10 @@ const RecommendedJobs = () => {
         <div className="text-center">
           <Button
             size="lg"
-            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-semibold"
-            onClick={handleViewAll}
+            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-bold"
+            onClick={() => navigate(shouldShowRecommendations ? '/jobs/recommended' : '/jobs/search')}
           >
-            {isRecommendationsMode ? 'Xem tất cả gợi ý' : 'Xem tất cả việc làm'}
+            {shouldShowRecommendations ? 'Xem tất cả gợi ý' : 'Khám phá thêm việc làm'}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

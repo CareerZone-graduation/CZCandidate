@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, MapPin, X } from 'lucide-react';
+import { MapPin, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import locationData from '@/data/oldtree.json';
+import SearchableSelect from '@/components/ui/searchable-select';
 
 const LocationFilter = ({
   province = '',
@@ -68,6 +69,9 @@ const LocationFilter = ({
     return null;
   };
 
+  const provinceOptions = locationHierarchy.provinces.map(p => ({ label: p, value: p }));
+  const districtOptions = availableDistricts.map(d => ({ label: d, value: d }));
+
   return (
     <div className={cn("border-b border-slate-100", className)}>
       {/* Header */}
@@ -92,7 +96,7 @@ const LocationFilter = ({
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {hasActiveFilter && (
             <button
@@ -103,7 +107,7 @@ const LocationFilter = ({
               <X className="h-3.5 w-3.5 text-slate-400" />
             </button>
           )}
-          <ChevronDown 
+          <ChevronDown
             className={cn(
               "h-4 w-4 text-slate-400 transition-transform duration-200",
               isExpanded && "rotate-180"
@@ -120,29 +124,14 @@ const LocationFilter = ({
             <label className="text-xs font-medium text-slate-500 px-1">
               Tỉnh/Thành phố
             </label>
-            <div className="relative">
-              <select
-                value={selectedProvince || 'ALL_PROVINCES'}
-                onChange={(e) => handleProvinceChange(e.target.value)}
-                className={cn(
-                  "w-full h-10 px-3 pr-8 rounded-lg border text-sm",
-                  "bg-white appearance-none cursor-pointer",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-                  "transition-all duration-150",
-                  selectedProvince 
-                    ? "border-primary/30 text-slate-800" 
-                    : "border-slate-200 text-slate-500"
-                )}
-              >
-                <option value="ALL_PROVINCES">Tất cả tỉnh/thành</option>
-                {locationHierarchy.provinces.map((provinceName) => (
-                  <option key={provinceName} value={provinceName}>
-                    {provinceName}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            </div>
+            <SearchableSelect
+              options={provinceOptions}
+              value={selectedProvince}
+              onChange={handleProvinceChange}
+              placeholder="Tất cả tỉnh/thành"
+              searchPlaceholder="Tìm tỉnh/thành..."
+              className="w-full bg-white"
+            />
           </div>
 
           {/* District Select */}
@@ -150,33 +139,18 @@ const LocationFilter = ({
             <label className="text-xs font-medium text-slate-500 px-1">
               Quận/Huyện
             </label>
-            <div className="relative">
-              <select
-                value={selectedDistrict || 'ALL_DISTRICTS'}
-                onChange={(e) => handleDistrictChange(e.target.value)}
-                disabled={!selectedProvince}
-                className={cn(
-                  "w-full h-10 px-3 pr-8 rounded-lg border text-sm",
-                  "bg-white appearance-none cursor-pointer",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-                  "transition-all duration-150",
-                  !selectedProvince && "opacity-50 cursor-not-allowed bg-slate-50",
-                  selectedDistrict 
-                    ? "border-primary/30 text-slate-800" 
-                    : "border-slate-200 text-slate-500"
-                )}
-              >
-                <option value="ALL_DISTRICTS">
-                  {selectedProvince ? 'Tất cả quận/huyện' : 'Chọn tỉnh/thành trước'}
-                </option>
-                {availableDistricts.map((districtName) => (
-                  <option key={districtName} value={districtName}>
-                    {districtName}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            </div>
+            <SearchableSelect
+              options={districtOptions}
+              value={selectedDistrict}
+              onChange={handleDistrictChange}
+              disabled={!selectedProvince}
+              placeholder={selectedProvince ? 'Tất cả quận/huyện' : 'Chọn tỉnh/thành trước'}
+              searchPlaceholder="Tìm quận/huyện..."
+              className={cn(
+                "w-full bg-white",
+                !selectedProvince && "opacity-50 cursor-not-allowed bg-slate-50"
+              )}
+            />
           </div>
 
           {/* Selected Location Display */}

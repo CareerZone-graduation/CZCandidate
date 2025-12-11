@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   jobCategoryEnum,
   jobTypeEnum,
@@ -9,6 +9,9 @@ import FilterGroup from './FilterGroup';
 import SalaryRangeSlider from './SalaryRangeSlider';
 import LocationFilter from './LocationFilter';
 import DistanceFilter from './DistanceFilter';
+import SearchableSelect from '@/components/ui/searchable-select';
+import { Briefcase, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * SearchFilters - Redesigned professional filter panel
@@ -17,6 +20,7 @@ const SearchFilters = ({
   filters = {},
   onFilterChange
 }) => {
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
   const categoryOptions = [
     { value: '', label: 'Tất cả ngành nghề' },
     ...jobCategoryEnum.map(value => ({
@@ -143,16 +147,49 @@ const SearchFilters = ({
       />
 
       {/* Job Category */}
-      <FilterGroup
-        title="Ngành nghề"
-        icon="briefcase"
-        value={filters.category || ''}
-        options={categoryOptions}
-        onChange={(value) => handleFilterChange('category', value)}
-        collapsible={true}
-        defaultExpanded={false}
-        maxVisibleItems={6}
-      />
+      <div className="border-b border-slate-100">
+        <button
+          type="button"
+          onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+          className={cn(
+            "w-full flex items-center justify-between py-3 px-1",
+            "text-left transition-colors hover:bg-slate-50 rounded-lg -mx-1"
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary">
+              <Briefcase className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="font-medium text-slate-800 text-sm">Ngành nghề</span>
+              {!isCategoryExpanded && filters.category && (
+                <p className="text-xs text-primary font-medium mt-0.5 truncate max-w-[150px]">
+                  {categoryOptions.find(opt => opt.value === filters.category)?.label || filters.category}
+                </p>
+              )}
+            </div>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-slate-400 transition-transform duration-200",
+              isCategoryExpanded && "rotate-180"
+            )}
+          />
+        </button>
+
+        {isCategoryExpanded && (
+          <div className="pb-4 pt-1 animate-in slide-in-from-top-2 duration-200">
+            <SearchableSelect
+              options={categoryOptions}
+              value={filters.category || ''}
+              onChange={(value) => handleFilterChange('category', value)}
+              placeholder="Tất cả ngành nghề"
+              searchPlaceholder="Tìm ngành nghề..."
+              className="w-full bg-white"
+            />
+          </div>
+        )}
+      </div>
 
       {/* Job Type */}
       <FilterGroup
