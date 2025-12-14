@@ -13,9 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, BellRing } from 'lucide-react';
+import { Bell, BellRing, BellPlus, BellOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
+import NotificationPermissionGuide from '@/components/common/NotificationPermissionGuide';
 
 const getNotificationLink = (notification) => {
   const { type, entity, metadata } = notification;
@@ -104,6 +106,22 @@ const NotificationDropdown = () => {
   const { recentNotifications, unreadCount, loading } = useSelector((state) => state.notifications);
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
+  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
+
+  // Hook xử lý Push Notification
+  const {
+    requestPermission,
+    disableNotifications,
+    isPushEnabled,
+    isLoading: isPushLoading
+  } = useFirebaseMessaging({
+    onPermissionDenied: () => {
+      setShowPermissionGuide(true);
+      // Giữ dropdown mở khi hiện hướng dẫn để người dùng không bị mất ngữ cảnh
+      setOpen(true);
+    }
+  });
+
 
   // Load notifications lần đầu khi component mount
   useEffect(() => {
@@ -147,43 +165,87 @@ const NotificationDropdown = () => {
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 transition-colors">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-sm border-2 border-background"
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="relative hover:bg-muted/50 transition-colors">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold rounded-full shadow-sm border-2 border-background"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-80 sm:w-96" align="end">
+          <DropdownMenuLabel className="flex justify-between items-center py-3">
+            <div className="flex items-center gap-2">
+              <span className="font-bold">Thông báo</span>
+              {unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{unreadCount} chưa đọc</span>}
+            </div>
+
+            {/* Push Notification Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs gap-1.5"
+              onClick={(e) => {
+                e.preventDefault();
+                if (isPushEnabled) {
+                  disableNotifications();
+                } else {
+                  requestPermission();
+                }
+              }}
+              disabled={isPushLoading}
+              title={isPushEnabled ? "Tắt thông báo đẩy" : "Bật thông báo đẩy"}
             >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 sm:w-96" align="end">
-        <DropdownMenuLabel className="flex justify-between items-center py-3">
-          <span className="font-bold">Thông báo</span>
-          {unreadCount > 0 && <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{unreadCount} chưa đọc</span>}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+              {isPushLoading ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              ) : isPushEnabled ? (
+                <>
+                  <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground hidden sm:inline">Tắt</span>
+                </>
+              ) : (
+                <>
+                  <BellRing className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-primary font-medium hidden sm:inline">Bật thông báo</span>
+                </>
+              )}
+            </Button>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
 
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-          {renderContent()}
-        </div>
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+            {renderContent()}
+          </div>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link
-            to="/notifications"
-            className="flex items-center justify-center py-3 text-sm font-medium text-primary hover:text-primary/80 cursor-pointer w-full"
-            onClick={() => setOpen(false)}
-          >
-            Xem tất cả thông báo
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link
+              to="/notifications"
+              className="flex items-center justify-center py-3 text-sm font-medium text-primary hover:text-primary/80 cursor-pointer w-full"
+              onClick={() => setOpen(false)}
+            >
+              Xem tất cả thông báo
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <NotificationPermissionGuide
+        isOpen={showPermissionGuide}
+        onClose={() => setShowPermissionGuide(false)}
+        onRetry={() => {
+          setShowPermissionGuide(false);
+          requestPermission();
+        }}
+      />
+    </>
   );
 };
 
