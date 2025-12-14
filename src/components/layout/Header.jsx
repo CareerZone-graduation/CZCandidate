@@ -42,8 +42,7 @@ import {
   MessageCircle,
   Video,
   Calendar,
-  FileCheck,
-  ChevronRight
+  FileCheck
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { clearNotifications } from '@/redux/notificationSlice';
@@ -84,7 +83,7 @@ const Header = () => {
   const navLinks = [
     { to: "/companies", label: "Công ty", title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
     { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> },
-    ...(isAuthenticated ? [{ to: "/contact", label: "Liên hệ", title: 'Liên hệ', href: '/contact', icon: <Newspaper className="h-5 w-5" /> }] : [])
+    ...(isAuthenticated ? [{ to: "/contact", label: "Liên hệ hỗ trợ", title: 'Liên hệ hỗ trợ', href: '/contact', icon: <Newspaper className="h-5 w-5" /> }] : [])
   ];
 
   // Logic lấy tên viết tắt cho Avatar
@@ -205,45 +204,12 @@ const Header = () => {
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500 shadow-sm relative", // Added relative
+      "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500 shadow-sm",
       isHeaderWhite
         ? "bg-white/10 border-white/20 shadow-white/10"
         : "bg-background/50 border-border shadow-md"
     )}>
-      <div className="container flex h-16 items-center justify-between">
-        {/* Recruiter CTA - Absolute Positioned to Header (Viewport) */}
-        <a
-          href={import.meta.env.VITE_RECRUITER_FE_URL || 'http://localhost:4000'}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "absolute right-6 top-1/2 -translate-y-1/2 z-20", // Moved further right (right-6), higher Z
-            "hidden 2xl:flex transition-all duration-300 group whitespace-nowrap", // Only visible on 2xl+ screens
-            isAuthenticated
-              ? "flex-col items-end leading-none justify-center h-10 px-2 rounded-lg hover:bg-primary/5 border border-transparent" // Reduced horizontal padding
-              : "items-center px-4 py-2 rounded-full font-bold text-sm bg-muted/50 hover:bg-muted/80 text-foreground border border-transparent hover:border-border"
-          )}
-        >
-          {isAuthenticated ? (
-            <>
-              <span className={cn(
-                "text-[10px] font-medium mb-0.5",
-                isHeaderWhite ? "text-foreground/70" : "text-muted-foreground"
-              )}>
-                Bạn là nhà tuyển dụng?
-              </span>
-              <span className={cn(
-                "text-xs font-bold flex items-center gap-1 group-hover:underline",
-                "text-primary"
-              )}>
-                Đăng tuyển ngay <ChevronRight className="h-3 w-3" />
-              </span>
-            </>
-          ) : (
-            "Đăng tuyển"
-          )}
-        </a>
-
+      <div className="container flex h-16 items-center justify-between relative">
         {/* Gradient accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-center gap-6">
@@ -285,19 +251,6 @@ const Header = () => {
                   {/* Scrollable Nav Items */}
                   <div className="flex-1 overflow-y-auto py-4 px-2">
                     <nav className="grid gap-1">
-                      {/* Recruiter CTA - Mobile */}
-                      <a
-                        href={import.meta.env.VITE_RECRUITER_FE_URL || 'http://localhost:4000'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between mx-1 mb-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-blue-600/10 border border-primary/10 hover:border-primary/30 transition-all"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-muted-foreground">Bạn là nhà tuyển dụng?</span>
-                          <span className="text-sm font-bold text-primary">Đăng tuyển ngay</span>
-                        </div>
-                        <ExternalLink className="h-4 w-4 text-primary" />
-                      </a>
 
                       {/* Accordion Menu for Jobs and CV */}
                       <Accordion type="multiple" collapsible className="w-full">
@@ -513,7 +466,7 @@ const Header = () => {
                   key={link.title}
                   to={link.href}
                   className={cn(
-                    "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group whitespace-nowrap",
+                    "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group",
                     "hover:bg-primary/5 hover:scale-105",
                     isHeaderWhite
                       ? "text-foreground hover:text-primary"
@@ -535,9 +488,7 @@ const Header = () => {
         </div>
 
         {/* Auth Buttons */}
-        <div className="hidden md:flex items-center gap-4">
-
-
+        <div className="hidden md:flex items-center space-x-2">
           {isAuthenticated ? (
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
@@ -824,7 +775,7 @@ const Header = () => {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <>
               {/* Theme Toggle for non-authenticated users */}
               <ThemeToggle />
 
@@ -857,12 +808,8 @@ const Header = () => {
                   <span>Đăng ký</span>
                 </Link>
               </Button>
-            </div>
+            </>
           )}
-
-
-
-
         </div>
       </div>
     </header>
