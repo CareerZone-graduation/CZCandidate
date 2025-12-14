@@ -144,6 +144,10 @@ const MyInterviews = () => {
     navigate('/interviews/device-test');
   };
 
+  const handleViewDetail = (interviewId) => {
+    navigate(`/interviews/${interviewId}`);
+  };
+
   const handleSearch = () => {
     setActiveFilters({
       search: searchInput,
@@ -316,6 +320,7 @@ const MyInterviews = () => {
                     interview={interview}
                     onJoin={handleJoinInterview}
                     onDeviceTest={handleDeviceTest}
+                    onDetail={handleViewDetail}
                   />
                 ))}
               </div>
@@ -334,7 +339,11 @@ const MyInterviews = () => {
           ) : (
             <div className="grid gap-6">
               {filteredPast.map((interview) => (
-                <PastInterviewCard key={interview.id} interview={interview} />
+                <PastInterviewCard
+                  key={interview.id}
+                  interview={interview}
+                  onDetail={handleViewDetail}
+                />
               ))}
             </div>
           )}
@@ -348,7 +357,7 @@ const MyInterviews = () => {
  * InterviewCard Component
  * Displays upcoming interview details with join button
  */
-const InterviewCard = ({ interview, onJoin, onDeviceTest }) => {
+const InterviewCard = ({ interview, onJoin, onDeviceTest, onDetail }) => {
   const jobSnapshot = interview.application?.jobSnapshot || {};
   const { date, time, relative, isNow } = formatInterviewTime(interview.scheduledTime);
   const { canJoin, reason, minutesUntilStart } = checkCanJoinInterview(interview.scheduledTime);
@@ -402,13 +411,20 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest }) => {
 
         <div className="flex gap-3">
           <Button
+            variant="outline"
+            onClick={() => onDetail(interview._id || interview.id)}
+            className="flex-1"
+          >
+            Xem chi tiết
+          </Button>
+          <Button
             variant="default"
             onClick={() => onJoin(interview.id, interview.scheduledTime)}
             disabled={!canJoin}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
             <Video className="w-4 h-4 mr-2" />
-            Tham gia phỏng vấn
+            Tham gia
           </Button>
         </div>
       </CardContent>
@@ -420,7 +436,7 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest }) => {
  * PastInterviewCard Component
  * Displays completed or cancelled interview details
  */
-const PastInterviewCard = ({ interview }) => {
+const PastInterviewCard = ({ interview, onDetail }) => {
   const jobSnapshot = interview.application?.jobSnapshot || {};
   const { date, time } = formatInterviewTime(interview.scheduledTime);
 
@@ -474,6 +490,14 @@ const PastInterviewCard = ({ interview }) => {
             <span>{time}</span>
           </div>
         </div>
+
+        <Button
+          variant="outline"
+          className="w-full mt-4"
+          onClick={() => onDetail(interview._id || interview.id)}
+        >
+          Xem chi tiết
+        </Button>
       </CardContent>
     </Card>
   );

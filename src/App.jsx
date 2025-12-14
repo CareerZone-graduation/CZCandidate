@@ -5,7 +5,7 @@ import AnimatedBackground from '@/components/background/AnimatedBackground';
 import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ChatProvider } from '@/contexts/ChatContext';
-import useFirebaseMessaging from './hooks/useFirebaseMessaging';
+import { FirebaseProvider } from '@/contexts/FirebaseContext';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import TikTokPreloader from '@/components/common/TikTokPreloader';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -35,7 +35,6 @@ function AppContent() {
 }
 
 function App() {
-  useFirebaseMessaging();
   // The logic for fetching the user on initial load has been moved to AppRouter.jsx
   // to better handle the initialization state and prevent race conditions with routing.
   // This keeps the App component clean and focused on rendering the router.
@@ -45,10 +44,13 @@ function App() {
       <ThemeProvider>
         <BackgroundProvider>
           <ChatProvider>
-            <AppContent />
+            <FirebaseProvider>
+              <AppContent />
+            </FirebaseProvider>
           </ChatProvider>
         </BackgroundProvider>
       </ThemeProvider>
+
 
     </>
   );

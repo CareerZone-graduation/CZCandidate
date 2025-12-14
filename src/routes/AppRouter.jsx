@@ -37,6 +37,7 @@ import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
 import MessagesPage from '../pages/messages/MessagesPage.jsx';
 import News from '../pages/news/News';
 import MyInterviews from '../pages/interviews/MyInterviews';
+import InterviewDetail from '../pages/interviews/InterviewDetail';
 import InterviewRoom from '../pages/interviews/InterviewRoom';
 import DeviceTest from '../components/interviews/DeviceTest';
 import NotFound from '../pages/NotFound';
@@ -259,6 +260,7 @@ const AppRouter = () => {
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/interviews" element={<MainLayout />}>
             <Route index element={<MyInterviews />} />
+            <Route path=":interviewId" element={<InterviewDetail />} />
           </Route>
           {/* Interview room routes - no layout for full-screen experience */}
           <Route path="/interviews/device-test" element={<DeviceTest />} />

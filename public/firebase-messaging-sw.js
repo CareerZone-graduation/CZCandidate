@@ -16,20 +16,29 @@ firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
+// Force the SW to take control immediately
+self.addEventListener('install', function (event) {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil(self.clients.claim());
+});
+
 // Nhận background message
 messaging.onBackgroundMessage(function (payload) {
   console.log("Received background message ", payload);
 
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.data.title;
   const notificationOptions = {
-    body: payload.notification.body,
+    body: payload.data.body,
     data: payload.data, // gắn data.url để xử lý khi click
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Lắng nghe sự kiện click vào notification (phải khai báo ngay khi SW khởi tạo)
+// Lắng nghe sự kiện click vào notification
 self.addEventListener("notificationclick", function (event) {
   console.log("On notification click: ", event.notification);
   event.notification.close();
@@ -38,17 +47,42 @@ self.addEventListener("notificationclick", function (event) {
   if (event.notification.data && event.notification.data.url) {
     url = event.notification.data.url;
   }
+
+  // Ensure we have a valid absolute URL
   const targetUrl = new URL(url, self.location.origin).href;
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then(windowClients => {
-      for (let client of windowClients) {
-        if (client.url.includes(self.location.origin)) {
-          client.navigate(targetUrl);
-          return client.focus();
+    (async function () {
+      try {
+        // Step 1: Look for an existing key controlled client
+        const windowClients = await clients.matchAll({
+          type: "window",
+          includeUncontrolled: false // Only look for clients we can validly control
+        });
+
+        console.log("[SW] Found controlled clients:", windowClients.length);
+
+        for (let client of windowClients) {
+          console.log("[SW] Checking controlled client:", client.url);
+          if (client.url.includes(self.location.origin)) {
+            console.log("[SW] Focusing and navigating existing client...");
+
+            // Focus first
+            await client.focus();
+            // Then navigate
+            await client.navigate(targetUrl);
+            return;
+          }
         }
+
+        // Step 2: If no controllable client is found, open a new window
+        console.log("[SW] No controlled client found, opening new window:", targetUrl);
+        if (clients.openWindow) {
+          await clients.openWindow(targetUrl);
+        }
+      } catch (error) {
+        console.error("[SW] Error in notification click handler:", error);
       }
-      return clients.openWindow(targetUrl);
-    })
+    })()
   );
 });
