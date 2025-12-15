@@ -1,331 +1,389 @@
-import { useState } from "react";
+import { useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { register as registerService } from "@/services/authService";
+import { register as registerService } from '@/services/authService';
 import { loginSuccess } from '@/redux/authSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import * as authService from '@/services/authService';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowLeft,
+  UserPlus,
+  Briefcase,
+  Shield,
+  Zap,
+} from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    password: "",
-    role: "candidate"
+    fullname: '',
+    email: '',
+    password: '',
+    role: 'candidate',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileKey, setTurnstileKey] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "role") return;
+    if (name === 'role') return;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (error) setError("");
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!formData.fullname || !formData.email || !formData.password) {
-      setError("Vui lòng điền đầy đủ thông tin.");
+      setError('Vui lòng điền đầy đủ thông tin.');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự.");
+      setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
     }
 
     if (!turnstileToken) {
-      setError("Vui lòng hoàn thành xác thực bạn không phải là robot.");
+      setError('Vui lòng hoàn thành xác thực bạn không phải là robot.');
       return;
     }
 
     setIsLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     try {
       const resp = await registerService({ ...formData, turnstileToken });
-      console.log(resp);
 
-      // Check if registration returns access token (auto-login)
       if (resp.accessToken) {
-        // Auto-login after registration
         dispatch(loginSuccess({ accessToken: resp.accessToken }));
-
-        setSuccess("Đăng ký thành công! Đang chuyển đến hoàn thiện hồ sơ...");
-        toast.success("Đăng ký thành công!");
-
-        // Reset form
-        setFormData({
-          fullname: "",
-          email: "",
-          password: "",
-          role: "candidate"
-        });
-
-        // Redirect to onboarding for new users
-        setTimeout(() => {
-          navigate('/onboarding');
-        }, 1500);
+        setSuccess('Đăng ký thành công! Đang chuyển đến hoàn thiện hồ sơ...');
+        toast.success('Đăng ký thành công!');
+        setFormData({ fullname: '', email: '', password: '', role: 'candidate' });
+        setTimeout(() => navigate('/onboarding'), 1500);
       } else {
-        // Email verification required
-        setSuccess(resp.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
-        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.");
-
-        // Reset form
-        setFormData({
-          fullname: "",
-          email: "",
-          password: "",
-          role: "candidate"
-        });
-
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        setSuccess(resp.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
+        toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
+        setFormData({ fullname: '', email: '', password: '', role: 'candidate' });
+        setTimeout(() => navigate('/login'), 2000);
       }
-
     } catch (err) {
-      console.log(err);
-      const errorMessage = err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
       setError(errorMessage);
-      setTurnstileToken("");
-      setTurnstileKey(prev => prev + 1);
+      setTurnstileToken('');
+      setTurnstileKey((prev) => prev + 1);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBackHome = () => {
-    navigate('/');
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    try {
+      const loginData = await authService.googleLogin(credentialResponse.credential);
+      if (loginData && loginData.data && loginData.data.accessToken) {
+        if (loginData.data.role !== 'candidate') {
+          toast.error('Tài khoản này là tài khoản nhà tuyển dụng, không thể đăng nhập vào trang ứng viên.');
+          return;
+        }
+        dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
+        toast.success('Đăng ký thành công!');
+        navigate('/onboarding');
+      } else {
+        throw new Error('Phản hồi đăng nhập không hợp lệ từ máy chủ.');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Đăng ký Google thất bại. Vui lòng thử lại.';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const handleGoogleLoginError = () => {
+    toast.error('Đăng ký Google thất bại. Vui lòng thử lại.');
+  };
+
+  const features = [
+    { icon: Briefcase, title: 'Hàng nghìn việc làm', desc: 'Cơ hội từ các công ty hàng đầu Việt Nam' },
+    { icon: Shield, title: 'Bảo mật thông tin', desc: 'Dữ liệu của bạn được bảo vệ an toàn' },
+    { icon: Zap, title: 'Ứng tuyển nhanh chóng', desc: 'Chỉ cần vài click để ứng tuyển' },
+  ];
+
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      {/* Multi-layer animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-zinc-950"></div>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0px)',
+              backgroundSize: '30px 30px',
+            }}
+          />
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        </div>
 
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Large gradient orbs */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-400/30 via-teal-400/20 to-cyan-400/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-blue-400/25 via-indigo-400/20 to-purple-400/25 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-
-        {/* Medium gradient orbs */}
-        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-bl from-cyan-400/20 via-sky-400/15 to-blue-400/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-20 left-20 w-72 h-72 bg-gradient-to-tr from-green-400/20 via-emerald-400/15 to-teal-400/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '3s' }}></div>
-
-        {/* Small accent orbs */}
-        <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-gradient-to-r from-teal-400/25 to-cyan-400/25 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-gradient-to-l from-indigo-400/25 to-blue-400/25 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-
-        {/* Floating geometric shapes */}
-        <div className="absolute top-32 left-32 w-4 h-4 bg-gradient-to-r from-emerald-500/40 to-teal-500/40 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute top-48 right-48 w-3 h-3 bg-gradient-to-r from-cyan-500/40 to-blue-500/40 rounded-full animate-bounce" style={{ animationDelay: '1.2s' }}></div>
-        <div className="absolute bottom-48 left-24 w-5 h-5 bg-gradient-to-r from-teal-500/40 to-emerald-500/40 rounded-full animate-bounce" style={{ animationDelay: '2.1s' }}></div>
-        <div className="absolute bottom-32 right-32 w-2 h-2 bg-gradient-to-r from-sky-500/40 to-cyan-500/40 rounded-full animate-bounce" style={{ animationDelay: '3.3s' }}></div>
-
-        {/* Additional small particles */}
-        <div className="absolute top-64 left-64 w-1 h-1 bg-teal-500/50 rounded-full animate-ping" style={{ animationDelay: '0.8s' }}></div>
-        <div className="absolute top-80 right-80 w-1 h-1 bg-cyan-500/50 rounded-full animate-ping" style={{ animationDelay: '1.6s' }}></div>
-        <div className="absolute bottom-64 left-80 w-1 h-1 bg-emerald-500/50 rounded-full animate-ping" style={{ animationDelay: '2.4s' }}></div>
-        <div className="absolute bottom-80 right-64 w-1 h-1 bg-blue-500/50 rounded-full animate-ping" style={{ animationDelay: '3.2s' }}></div>
-      </div>
-
-      {/* Overlay gradient for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-white/10 dark:from-black/20 dark:to-black/10"></div>
-
-      <div className="w-full max-w-md relative z-10">
-        <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur-xl glass transition-all duration-500 hover:shadow-3xl hover:bg-card/98">
-          <CardHeader className="text-center pb-8 pt-10">
-            <div className="mb-10">
-              <Link to="/" className="inline-flex items-center gap-3 text-3xl font-bold text-foreground hover:opacity-80 transition-all duration-300 hover:scale-105">
-                <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:rotate-3">
-                  <span className="text-white text-2xl">💼</span>
-                </div>
-                Career<span className="text-gradient-primary">Zone</span>
-              </Link>
+        {/* Main Content */}
+        <div className="relative z-10 min-h-screen flex">
+          {/* Left Panel - Info */}
+          <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 xl:px-20 text-white">
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-10">
+              <div className="w-14 h-14 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-3xl">💼</span>
+              </div>
+              <div>
+                <span className="text-3xl font-bold">CareerZone</span>
+                <p className="text-sm text-white/60">Nền tảng tìm việc hàng đầu</p>
+              </div>
             </div>
 
-            <div className="space-y-4" style={{ animationDelay: '0.4s' }}>
-              <h1 className="text-4xl font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                Tạo tài khoản mới 🚀
-              </h1>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                Bắt đầu hành trình sự nghiệp của bạn
-              </p>
-            </div>
-          </CardHeader>
+            {/* Headline */}
+            <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-6">
+              Bắt đầu hành trình<br />
+              <span className="text-emerald-400">sự nghiệp của bạn</span>
+            </h1>
+            <p className="text-lg text-white/70 mb-10 max-w-md">
+              Tạo tài khoản miễn phí để tiếp cận hàng nghìn cơ hội việc làm hấp dẫn
+              và xây dựng CV chuyên nghiệp.
+            </p>
 
-          <CardContent className="space-y-6">
-            {/* Thông báo lỗi */}
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Thông báo thành công */}
-            {success && (
-              <div className="bg-success/10 border border-success/20 text-success px-4 py-3 rounded-lg text-sm">
-                {success}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Họ và tên */}
-              <div className="space-y-2">
-                <label htmlFor="fullname" className="text-sm font-medium text-foreground">
-                  Họ và tên
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="fullname"
-                    name="fullname"
-                    type="text"
-                    placeholder="r1@gmail.com"
-                    value={formData.fullname}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoading}
-                    className="pl-10 h-11"
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-foreground">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="r1@gmail.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoading}
-                    className="pl-10 h-11"
-                  />
-                </div>
-              </div>
-
-              {/* Mật khẩu */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Mật khẩu
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoading}
-                    className="pl-10 pr-10 h-11"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Turnstile Captcha */}
-              <div className="flex justify-center w-full my-4">
-                <Turnstile
-                  key={turnstileKey}
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAAA1VN-QDsgdhQAiP"}
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  options={{
-                    theme: 'auto',
-                    size: 'normal',
-                  }}
-                />
-              </div>
-
-              {/* Nút đăng ký */}
-              <Button
-                type="submit"
-                disabled={isLoading || !turnstileToken}
-                className={`w-full h-11 bg-gradient-primary hover:opacity-90 text-white font-medium transition-all duration-300 ${(isLoading || !turnstileToken) ? 'bg-gray-400 cursor-not-allowed opacity-70' : ''}`}
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang tạo tài khoản...
+            {/* Features */}
+            <div className="space-y-5 mb-10">
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <feature.icon className="w-6 h-6 text-emerald-400" />
                   </div>
-                ) : (
-                  <div className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    Tạo tài khoản
+                  <div>
+                    <h3 className="font-semibold text-white text-lg">{feature.title}</h3>
+                    <p className="text-white/60">{feature.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 max-w-md">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-emerald-400">100K+</p>
+                <p className="text-sm text-white/60">Việc làm</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-emerald-400">50K+</p>
+                <p className="text-sm text-white/60">Ứng viên</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-emerald-400">5K+</p>
+                <p className="text-sm text-white/60">Công ty</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Panel - Form */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8">
+            <div className="w-full max-w-md">
+              {/* Mobile Logo */}
+              <div className="lg:hidden flex justify-center mb-8">
+                <Link to="/" className="inline-flex items-center gap-3">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl">💼</span>
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    Career<span className="text-emerald-400">Zone</span>
+                  </span>
+                </Link>
+              </div>
+
+              {/* Back Button */}
+              <div className="mb-4">
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors group"
+                >
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span className="text-sm font-medium">Quay lại trang chủ</span>
+                </Link>
+              </div>
+
+              {/* Form Card */}
+              <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
+                {/* Header */}
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                    Tạo tài khoản mới
+                  </h2>
+                  <p className="text-gray-500">Đăng ký để bắt đầu tìm việc ngay</p>
+                </div>
+
+                {/* Error/Success Messages */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4">
+                    {error}
                   </div>
                 )}
-              </Button>
-            </form>
+                {success && (
+                  <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm mb-4">
+                    {success}
+                  </div>
+                )}
 
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="fullname" className="text-sm font-medium text-gray-700">
+                      Họ và tên
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="fullname"
+                        name="fullname"
+                        type="text"
+                        placeholder="Nguyễn Văn A"
+                        value={formData.fullname}
+                        onChange={handleChange}
+                        required
+                        disabled={isLoading}
+                        className="pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
 
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      Địa chỉ email
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="email@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        disabled={isLoading}
+                        className="pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
 
-            {/* Link đăng nhập */}
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Đã có tài khoản? </span>
-              <Link
-                to="/login"
-                className="text-primary hover:text-primary/80 font-medium transition-colors"
-              >
-                Đăng nhập ngay
-              </Link>
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                      Mật khẩu
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                        disabled={isLoading}
+                        className="pl-12 pr-12 h-12 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">Mật khẩu phải có ít nhất 6 ký tự</p>
+                  </div>
+
+                  {/* Turnstile Captcha */}
+                  <div className="flex justify-center py-2">
+                    <Turnstile
+                      key={turnstileKey}
+                      siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAA1VN-QDsgdhQAiP'}
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      options={{ theme: 'light', size: 'normal' }}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !turnstileToken}
+                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Đang tạo tài khoản...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="w-5 h-5" />
+                        Tạo tài khoản
+                      </div>
+                    )}
+                  </Button>
+                </form>
+
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-4 text-sm text-gray-400">Hoặc</span>
+                  </div>
+                </div>
+
+                {/* Google Login */}
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleLoginSuccess}
+                    onError={handleGoogleLoginError}
+                    disabled={isLoading}
+                    theme="outline"
+                    size="large"
+                    text="signup_with"
+                    shape="rectangular"
+                    logo_alignment="center"
+                  />
+                </div>
+
+                {/* Login link */}
+                <p className="text-center text-gray-500 mt-6">
+                  Đã có tài khoản?{' '}
+                  <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+                    Đăng nhập ngay
+                  </Link>
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Nút quay về trang chủ */}
-        <div className="mt-6 text-center">
-          <Button
-            variant="ghost"
-            onClick={handleBackHome}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Quay về trang chủ
-          </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </GoogleOAuthProvider>
   );
 };
 

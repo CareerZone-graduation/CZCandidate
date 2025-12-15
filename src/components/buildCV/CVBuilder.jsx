@@ -577,11 +577,19 @@ const CVBuilder = () => {
                         currentTemplate={cvData.template || selectedTemplate}
                         onChange={(newOrder) => {
                           console.log('Section order changed:', newOrder);
-                          setCVData({ ...cvData, sectionOrder: newOrder });
+                          setCVData(prev => ({ ...prev, sectionOrder: newOrder }));
                         }}
                         onHiddenChange={(newHidden) => {
                           console.log('Hidden sections changed:', newHidden);
-                          setCVData({ ...cvData, hiddenSections: newHidden });
+                          setCVData(prev => ({ ...prev, hiddenSections: newHidden }));
+                        }}
+                        onReset={(defaultOrder) => {
+                          console.log('Reset to default:', defaultOrder);
+                          setCVData(prev => ({ 
+                            ...prev, 
+                            sectionOrder: defaultOrder,
+                            hiddenSections: []
+                          }));
                         }}
                       />
                     )}

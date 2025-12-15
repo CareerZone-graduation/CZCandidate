@@ -21,7 +21,8 @@ const SimpleSectionOrderManager = ({
   onChange, 
   hiddenSections, 
   onHiddenChange, 
-  currentTemplate 
+  currentTemplate,
+  onReset 
 }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -115,8 +116,13 @@ const SimpleSectionOrderManager = ({
   // Reset to default
   const handleReset = () => {
     const defaultOrder = getDefaultSectionOrder(currentTemplate);
-    onChange(defaultOrder);
-    onHiddenChange([]);
+    // Use onReset if available (handles both in single state update), otherwise fallback
+    if (onReset) {
+      onReset(defaultOrder);
+    } else {
+      onChange(defaultOrder);
+      onHiddenChange([]);
+    }
   };
 
   // Drag & Drop handlers

@@ -160,7 +160,7 @@ const ContactPage = () => {
     {
       icon: Clock,
       title: 'Thời gian phản hồi',
-      content: 'Trong vòng 24 giờ',
+      content: 'Trong vòng 48 giờ',
       description: 'Cam kết phản hồi nhanh chóng trong giờ hành chính'
     }
   ];
