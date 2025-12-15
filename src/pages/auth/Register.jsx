@@ -347,29 +347,7 @@ const Register = () => {
                   </Button>
                 </form>
 
-                {/* Divider */}
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="bg-white px-4 text-sm text-gray-400">Hoặc</span>
-                  </div>
-                </div>
-
-                {/* Google Login */}
-                <div className="flex justify-center">
-                  <GoogleLogin
-                    onSuccess={handleGoogleLoginSuccess}
-                    onError={handleGoogleLoginError}
-                    disabled={isLoading}
-                    theme="outline"
-                    size="large"
-                    text="signup_with"
-                    shape="rectangular"
-                    logo_alignment="center"
-                  />
-                </div>
+               
 
                 {/* Login link */}
                 <p className="text-center text-gray-500 mt-6">
