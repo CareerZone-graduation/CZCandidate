@@ -62,10 +62,35 @@ export const declineInterview = async (interviewId, data = {}) => {
  * @param {string} scheduledTime - ISO string of interview scheduled time
  * @returns {Object} { canJoin: boolean, reason: string, minutesUntilStart: number }
  */
-export const checkCanJoinInterview = (scheduledTime) => {
+export const checkCanJoinInterview = (scheduledTime, status, duration = 60) => {
   const now = new Date();
   const interviewTime = new Date(scheduledTime);
-  const diffMinutes = Math.floor((interviewTime - now) / 1000 / 60);
+  const diffMinutes = Math.floor((interviewTime - now) / 1000 / 60); // postive if future, negative if past
+  const endDiffMinutes = Math.floor((now - interviewTime) / 1000 / 60); // positive if past
+
+  if (status === 'ENDED' || status === 'COMPLETED' || status === 'CANCELLED') {
+    return {
+      canJoin: false, // Override logic: if ended/completed/cancelled, explicitly NO.
+      reason: 'Buổi phỏng vấn đã kết thúc.',
+      minutesUntilStart: diffMinutes
+    };
+  }
+
+  if (status === 'STARTED') {
+    // Even if started, check if it exceeded duration
+    if (endDiffMinutes > duration) {
+      return {
+        canJoin: false,
+        reason: `Buổi phỏng vấn đã diễn ra quá ${duration} phút.`,
+        minutesUntilStart: diffMinutes
+      };
+    }
+    return {
+      canJoin: true,
+      reason: 'Buổi phỏng vấn đang diễn ra.',
+      minutesUntilStart: diffMinutes
+    };
+  }
 
   if (diffMinutes > 15) {
     return {
@@ -75,10 +100,11 @@ export const checkCanJoinInterview = (scheduledTime) => {
     };
   }
 
-  if (diffMinutes < -30) {
+  // Allow joining until scheduledTime + duration
+  if (endDiffMinutes > duration) {
     return {
       canJoin: false,
-      reason: 'Thời gian phỏng vấn đã kết thúc. Bạn chỉ có thể tham gia trong vòng 30 phút sau khi bắt đầu.',
+      reason: `Thời gian phỏng vấn đã kết thúc (quá ${duration} phút).`,
       minutesUntilStart: diffMinutes
     };
   }

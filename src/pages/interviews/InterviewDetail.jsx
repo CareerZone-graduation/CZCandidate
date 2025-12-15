@@ -54,7 +54,7 @@ const InterviewDetail = () => {
     const handleJoinInterview = () => {
         if (!interview) return;
 
-        const { canJoin, reason } = checkCanJoinInterview(interview.scheduledTime);
+        const { canJoin, reason } = checkCanJoinInterview(interview.scheduledTime, interview.status);
 
         if (!canJoin) {
             toast.error('Không thể tham gia phỏng vấn', {
@@ -64,7 +64,7 @@ const InterviewDetail = () => {
         }
 
         // Go to device test first
-        navigate(`/interviews/${interview.id}/device-test`); // Use interview.id or interview._id check data
+        navigate(`/interviews/${interviewId}/device-test`); // Use interviewId from params which is guaranteed to exist
     };
 
     const handleDeviceTest = () => {
@@ -118,6 +118,8 @@ const InterviewDetail = () => {
                 return { label: 'Đã hoàn thành', className: 'bg-green-600', icon: CheckCircle };
             case 'CANCELLED':
                 return { label: 'Đã hủy', className: 'bg-red-600', icon: XCircle };
+            case 'ENDED':
+                return { label: 'Đã kết thúc', className: 'bg-gray-500', icon: Clock };
             default:
                 return { label: status, className: 'bg-gray-600', icon: AlertCircle };
         }
@@ -127,7 +129,7 @@ const InterviewDetail = () => {
     const StatusIcon = statusConfig.icon;
 
     const { date, time, isNow, isPast } = formatInterviewTime(interview.scheduledTime);
-    const { canJoin, reason } = checkCanJoinInterview(interview.scheduledTime);
+    const { canJoin, reason } = checkCanJoinInterview(interview.scheduledTime, interview.status, interview.duration);
 
     // Extract data handling inconsistency between 'application' and 'applicationId'
     const application = interview.application || interview.applicationId || {};

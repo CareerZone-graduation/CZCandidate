@@ -294,6 +294,17 @@ const InterviewRoom = () => {
       toast.info('Phỏng vấn đã kết thúc');
       setTimeout(() => navigate('/interviews'), 3000);
     });
+
+    // Interview started
+    interviewSocketService.on('onInterviewStarted', (data) => {
+      console.log('[InterviewRoom] Interview started:', data);
+      toast.success('Buổi phỏng vấn đã bắt đầu');
+      setInterviewData(prev => ({
+        ...prev,
+        status: 'STARTED',
+        startTime: data.startTime
+      }));
+    });
   };
 
   const setupWebRTC = async () => {

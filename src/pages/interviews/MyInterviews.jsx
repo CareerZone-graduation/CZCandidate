@@ -62,10 +62,12 @@ const MyInterviews = () => {
     refetchInterval: 60000, // Refetch every minute to update join buttons
   });
   const interviews = interviewsData?.data || [];
+  console.log(interviews);
 
   // Categorize interviews - Backend uses uppercase status values
   const upcomingInterviews = interviews.filter((interview) => {
-    // SCHEDULED or RESCHEDULED interviews that haven't passed yet
+    // STARTED, SCHEDULED or RESCHEDULED interviews that haven't passed yet
+    if (interview.status === 'STARTED') return true;
     if (interview.status !== 'SCHEDULED' && interview.status !== 'RESCHEDULED') return false;
     const { isPast } = formatInterviewTime(interview.scheduledTime);
     return !isPast;
@@ -74,6 +76,7 @@ const MyInterviews = () => {
   const pastInterviews = interviews.filter((interview) => {
     if (interview.status === 'CANCELLED') return true;
     if (interview.status === 'COMPLETED') return true;
+    if (interview.status === 'ENDED') return true;
     if (interview.status === 'SCHEDULED' || interview.status === 'RESCHEDULED') {
       const { isPast } = formatInterviewTime(interview.scheduledTime);
       return isPast;
@@ -126,8 +129,8 @@ const MyInterviews = () => {
   const filteredUpcoming = filterInterviews(upcomingInterviews);
   const filteredPast = filterInterviews(pastInterviews);
 
-  const handleJoinInterview = (interviewId, scheduledTime) => {
-    const { canJoin, reason } = checkCanJoinInterview(scheduledTime);
+  const handleJoinInterview = (interviewId, scheduledTime, status) => {
+    const { canJoin, reason } = checkCanJoinInterview(scheduledTime, status);
 
     if (!canJoin) {
       toast.error('Không thể tham gia phỏng vấn', {
@@ -360,7 +363,7 @@ const MyInterviews = () => {
 const InterviewCard = ({ interview, onJoin, onDeviceTest, onDetail }) => {
   const jobSnapshot = interview.application?.jobSnapshot || {};
   const { date, time, relative, isNow } = formatInterviewTime(interview.scheduledTime);
-  const { canJoin, reason, minutesUntilStart } = checkCanJoinInterview(interview.scheduledTime);
+  const { canJoin, reason, minutesUntilStart } = checkCanJoinInterview(interview.scheduledTime, interview.status, interview.duration);
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -368,9 +371,15 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest, onDetail }) => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="default" className={interview.status === 'RESCHEDULED' ? 'bg-amber-600' : 'bg-green-600'}>
-                {interview.status === 'RESCHEDULED' ? 'Đã dời lịch' : 'Đã lên lịch'}
-              </Badge>
+              {interview.status === 'STARTED' ? (
+                <Badge variant="default" className="bg-green-600 animate-pulse">
+                  Đang diễn ra
+                </Badge>
+              ) : (
+                <Badge variant="default" className={interview.status === 'RESCHEDULED' ? 'bg-amber-600' : 'bg-green-600'}>
+                  {interview.status === 'RESCHEDULED' ? 'Đã dời lịch' : 'Đã lên lịch'}
+                </Badge>
+              )}
               {isNow && (
                 <Badge variant="default" className="bg-red-600 animate-pulse">
                   Đang diễn ra
@@ -419,7 +428,7 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest, onDetail }) => {
           </Button>
           <Button
             variant="default"
-            onClick={() => onJoin(interview.id, interview.scheduledTime)}
+            onClick={() => onJoin(interview.id, interview.scheduledTime, interview.status)}
             disabled={!canJoin}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
@@ -455,6 +464,11 @@ const PastInterviewCard = ({ interview, onDetail }) => {
       badge: { variant: 'default', className: 'bg-amber-600', text: 'Đã dời lịch' },
       icon: Clock,
       iconColor: 'text-amber-600'
+    },
+    ENDED: {
+      badge: { variant: 'default', className: 'bg-gray-500', text: 'Đã kết thúc' },
+      icon: Clock,
+      iconColor: 'text-gray-500'
     }
   };
 

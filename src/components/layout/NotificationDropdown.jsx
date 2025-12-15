@@ -27,7 +27,7 @@ const getNotificationLink = (notification) => {
       return `/dashboard/applications/${entity?.id || metadata?.applicationId}`;
     case 'interview':
       // Candidate chỉ có trang danh sách phỏng vấn, không có trang chi tiết
-      return '/interviews';
+      return `/interviews/${metadata?.interviewId}`;
     case 'recommendation':
       return '/jobs/recommended';
     case 'profile_view':

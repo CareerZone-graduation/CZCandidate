@@ -36,7 +36,7 @@ const getNotificationLink = (notification) => {
     case 'application':
       return `/dashboard/applications/${entity?.id || metadata?.applicationId}`;
     case 'interview':
-      return '/interviews';
+      return `/interviews/${metadata?.interviewId}`;
     case 'recommendation':
       return '/jobs/recommended';
     case 'profile_view':

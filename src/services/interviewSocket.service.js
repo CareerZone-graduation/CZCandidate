@@ -277,6 +277,12 @@ class InterviewSocketService {
       this._triggerHandler('onInterviewEnded', data);
     });
 
+    // Interview started
+    this.socket.on('interview:started', (data) => {
+      console.log('[InterviewSocket] Interview started');
+      this._triggerHandler('onInterviewStarted', data);
+    });
+
     // Error
     this.socket.on('interview:error', (data) => {
       console.error('[InterviewSocket] Interview error:', data);
