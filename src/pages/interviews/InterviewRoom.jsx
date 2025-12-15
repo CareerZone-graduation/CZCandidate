@@ -50,14 +50,18 @@ const InterviewRoom = () => {
   const [hasReceivedRemoteStream, setHasReceivedRemoteStream] = useState(false);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [confirmEndCallOpen, setConfirmEndCallOpen] = useState(false);
 
   // Remote peer state (for UI)
   const [remotePeerState, setRemotePeerState] = useState({
     isMuted: false,
     isCameraOff: false,
-    name: 'Nhà tuyển dụng'
+    name: 'Nhà tuyển dụng',
+    avatar: null
   });
+  const [remoteScreenStream, setRemoteScreenStream] = useState(null);
+  const [localScreenPreview, setLocalScreenPreview] = useState(null); // For previewing own screen
   const [floatingEmojis, setFloatingEmojis] = useState([]);
 
   // Helper to add floating emoji
@@ -146,12 +150,24 @@ const InterviewRoom = () => {
         const joinResponse = await interviewSocketService.joinInterview(interviewId, {
           role: 'candidate'
         });
+
+        if (joinResponse.interview) {
+          setInterviewData(joinResponse.interview);
+        }
         console.log('[InterviewRoom] Joined interview room, response:', joinResponse);
 
         // Check if there are existing users in the room
         if (joinResponse.existingUsers && joinResponse.existingUsers.length > 0) {
           console.log('[InterviewRoom] Found existing users:', joinResponse.existingUsers);
           setIsRemoteUserJoined(true);
+          const remoteUser = joinResponse.existingUsers.find(u => u.userRole !== 'candidate');
+          if (remoteUser) {
+            setRemotePeerState(prev => ({
+              ...prev,
+              name: remoteUser.userName || 'Nhà tuyển dụng',
+              avatar: remoteUser.userAvatar || null
+            }));
+          }
         }
 
         setIsConnected(true);
@@ -177,8 +193,11 @@ const InterviewRoom = () => {
     interviewSocketService.on('onUserJoined', (data) => {
       console.log('[InterviewRoom] User joined:', data);
       setIsRemoteUserJoined(true);
-      setRemotePeerState(prev => ({ ...prev, name: data.userName || 'Nhà tuyển dụng' }));
-      toast.success(`${data.userName || 'Nhà tuyển dụng'} đã tham gia phỏng vấn`);
+      setRemotePeerState(prev => ({
+        ...prev,
+        name: data.userName || 'Nhà tuyển dụng',
+        avatar: data.userAvatar || null
+      }));
     });
 
     // User left
@@ -278,6 +297,12 @@ const InterviewRoom = () => {
       }
     });
 
+    // Remote screen share stopped
+    interviewSocketService.on('onRemoteScreenShareStopped', () => {
+      setRemoteScreenStream(null);
+      toast.info('Nhà tuyển dụng đã dừng chia sẻ màn hình');
+    });
+
     // Recording notifications
     interviewSocketService.on('onRecordingStarted', () => {
       setIsRecording(true);
@@ -353,6 +378,15 @@ const InterviewRoom = () => {
         setHasReceivedRemoteStream(true);
       });
 
+      webrtcService.on('onRemoteScreenStream', (stream) => {
+        console.log('[InterviewRoom] Remote SCREEN stream received');
+        setRemoteScreenStream(stream);
+      });
+
+      webrtcService.on('onLocalScreenShareStarted', (stream) => {
+        setLocalScreenPreview(stream);
+      });
+
       webrtcService.on('onQualityUpdate', ({ metrics }) => {
         setConnectionQuality(metrics.quality);
         setQualityDetails(metrics.details);
@@ -361,6 +395,15 @@ const InterviewRoom = () => {
       webrtcService.on('onLocalStreamUpdate', (stream) => {
         setLocalStream(stream);
       });
+
+      webrtcService.on('onScreenShareStopped', () => {
+        setIsScreenSharing(false);
+        setLocalScreenPreview(null);
+        toast.info('Đã dừng chia sẻ màn hình');
+        interviewSocketService.notifyScreenShareStopped(interviewId);
+      });
+
+      // Let's add a listener for generally refreshing streams if needed.
 
     } catch (error) {
       console.error('WebRTC setup failed:', error);
@@ -400,6 +443,25 @@ const InterviewRoom = () => {
     interviewSocketService.notifyMediaStateChanged(interviewId, isAudioEnabled, enabled);
   };
 
+  const handleToggleScreenShare = async () => {
+    if (remoteScreenStream) {
+      toast.warning('Người khác đang chia sẻ màn hình. Vui lòng đợi họ kết thúc.');
+      return;
+    }
+    if (isScreenSharing) {
+      const success = await webrtcService.stopScreenShare();
+      if (success) {
+        setIsScreenSharing(false);
+      }
+    } else {
+      const success = await webrtcService.startScreenShare();
+      if (success) {
+        setIsScreenSharing(true);
+        toast.success('Đang chia sẻ màn hình');
+      }
+    }
+  };
+
   const handleEndCall = () => {
     setConfirmEndCallOpen(true);
   };
@@ -429,19 +491,21 @@ const InterviewRoom = () => {
   const participants = [
     {
       id: 'local',
-      name: 'Bạn',
+      name: interviewData?.candidateId?.fullName || 'Bạn',
       isLocal: true,
       isMuted: !isAudioEnabled,
       isCameraOff: !isVideoEnabled,
-      isActiveSpeaker: false // TODO: Implement active speaker detection
+      isActiveSpeaker: false, // TODO: Implement active speaker detection
+      avatar: interviewData?.candidateId?.avatar || null
     },
     ...(isRemoteUserJoined ? [{
       id: 'remote',
       name: remotePeerState.name,
       isLocal: false,
       isMuted: remotePeerState.isMuted,
-      isCameraOff: remotePeerState.isCameraOff,
-      isActiveSpeaker: false // TODO
+      isCameraOff: remotePeerState.isCameraOff || !remoteStream,
+      isActiveSpeaker: false, // TODO
+      avatar: remotePeerState.avatar
     }] : [])
   ];
 
@@ -493,50 +557,90 @@ const InterviewRoom = () => {
 
         {/* Video Grid */}
         <div className={cn(
-          "flex-1 transition-all duration-300 ease-in-out flex items-center justify-center",
+          "flex-1 transition-all duration-300 ease-in-out flex items-center justify-center overflow-auto", // overflow-auto for smaller screens
           (isChatOpen || isParticipantsOpen) ? "p-2" : "p-4"
         )}>
 
           <div className={cn(
             "w-full h-full transition-all duration-500",
-            isRemoteUserJoined
-              ? "grid grid-cols-1 md:grid-cols-2 gap-4 items-center content-center"
-              : "flex justify-center items-center",
-            (isRemoteUserJoined && !isChatOpen && !isParticipantsOpen) && "max-w-6xl mx-auto"
+            // Dynamic Grid Layout
+            (remoteScreenStream || localScreenPreview)
+              ? "grid grid-cols-1 md:grid-cols-3 gap-4 p-4" // 3 columns when screen share active? Or specific layout
+              : isRemoteUserJoined
+                ? "grid grid-cols-1 md:grid-cols-2 gap-4 items-center content-center"
+                : "flex justify-center items-center",
+            // Layout for screen share: Main screen share + small list of cameras?
+            // Or just a grid. Let's try a grid where screen share takes priority if possible, or just standard grid.
+            // If we use grid-cols-3, it might be too small.
+            // Better: If screen sharing, use a specialized layout.
+            (remoteScreenStream || localScreenPreview)
+              ? "flex flex-col md:flex-row gap-4 h-full"
+              : "",
+            (isRemoteUserJoined && !isChatOpen && !isParticipantsOpen && !remoteScreenStream && !localScreenPreview) && "max-w-6xl mx-auto"
           )}>
 
-            {/* Remote Video */}
-            {isRemoteUserJoined && (
-              <VideoFrame
-                stream={remoteStream}
-                isMuted={remotePeerState.isMuted}
-                isCameraOff={remotePeerState.isCameraOff}
-                userName={remotePeerState.name}
-                isLocal={false}
-                connectionQuality={connectionQuality}
-                className="w-full h-full max-h-[calc(100vh-100px)] object-cover rounded-xl"
-              />
+            {/* Screen Share View (Dominant if active) */}
+            {(remoteScreenStream || localScreenPreview) && (
+              <div className="flex-1 min-h-0 bg-black rounded-xl overflow-hidden shadow-xl border border-white/10 relative order-first md:order-none">
+                <VideoFrame
+                  stream={remoteScreenStream || localScreenPreview}
+                  isMuted={true} // Screen share audio usually muted or separate
+                  isCameraOff={false}
+                  userName={remoteScreenStream ? remotePeerState.name + " (Màn hình)" : "Bạn (Màn hình)"}
+                  isLocal={!!localScreenPreview}
+                  connectionQuality="good"
+                  className="w-full h-full object-contain"
+                  isScreenShare={true}
+                />
+              </div>
             )}
 
-            {/* Local Video */}
-            <VideoFrame
-              stream={localStream}
-              isMuted={!isAudioEnabled}
-              isCameraOff={!isVideoEnabled}
-              userName="Bạn"
-              isLocal={true}
-              className={cn(
-                "transition-all duration-500 rounded-xl overflow-hidden bg-[#3c4043]",
-                !isRemoteUserJoined
-                  ? cn(
-                    "aspect-video shadow-lg",
-                    (isChatOpen || isParticipantsOpen)
-                      ? "w-full max-h-[calc(100vh-100px)]"
-                      : "w-full max-w-4xl max-h-[calc(100vh-100px)]"
-                  )
-                  : "w-full h-full max-h-[calc(100vh-100px)] object-cover"
+            {/* Camera Grid (Sidebar or Bottom bar when screen sharing) */}
+            <div className={cn(
+              "flex gap-4 transition-all",
+              (remoteScreenStream || localScreenPreview)
+                ? "flex-row md:flex-col w-full md:w-64 h-32 md:h-full justify-center"
+                : "w-full h-full contents" // Use contents to let grid take over
+            )}>
+
+              {/* Remote Video */}
+              {isRemoteUserJoined && (
+                <VideoFrame
+                  stream={remoteStream}
+                  isMuted={remotePeerState.isMuted}
+                  isCameraOff={remotePeerState.isCameraOff}
+                  userName={remotePeerState.name}
+                  isLocal={false}
+                  connectionQuality={connectionQuality}
+                  className={cn(
+                    "rounded-xl video-frame",
+                    (remoteScreenStream || localScreenPreview) ? "w-full h-full object-cover" : "w-full h-full max-h-[calc(100vh-100px)] object-cover"
+                  )}
+                />
               )}
-            />
+
+              {/* Local Video */}
+              <VideoFrame
+                stream={localStream}
+                isMuted={!isAudioEnabled}
+                isCameraOff={!isVideoEnabled}
+                userName="Bạn"
+                isLocal={true}
+                className={cn(
+                  "transition-all duration-500 rounded-xl overflow-hidden bg-[#3c4043]",
+                  !isRemoteUserJoined && !(remoteScreenStream || localScreenPreview)
+                    ? cn(
+                      "aspect-video shadow-lg",
+                      (isChatOpen || isParticipantsOpen)
+                        ? "w-full max-h-[calc(100vh-100px)]"
+                        : "w-full max-w-4xl max-h-[calc(100vh-100px)]"
+                    )
+                    : (remoteScreenStream || localScreenPreview)
+                      ? "w-full h-full object-cover"
+                      : "w-full h-full max-h-[calc(100vh-100px)] object-cover"
+                )}
+              />
+            </div>
 
             {/* Waiting State Overlay */}
             {!isRemoteUserJoined && (
@@ -574,12 +678,12 @@ const InterviewRoom = () => {
         <ControlBar
           isAudioEnabled={isAudioEnabled}
           isVideoEnabled={isVideoEnabled}
-          isScreenSharing={false}
+          isScreenSharing={isScreenSharing}
           isChatOpen={isChatOpen}
           isParticipantsOpen={isParticipantsOpen}
           onToggleAudio={toggleAudio}
           onToggleVideo={toggleVideo}
-          onToggleScreenShare={() => toast.info('Tính năng chia sẻ màn hình đang phát triển')}
+          onToggleScreenShare={handleToggleScreenShare}
           onToggleChat={() => {
             setIsChatOpen(!isChatOpen);
             if (isParticipantsOpen) setIsParticipantsOpen(false);
@@ -592,6 +696,7 @@ const InterviewRoom = () => {
           interviewId={interviewId}
           interviewTitle={interviewData?.jobTitle}
           onSendEmoji={handleSendEmoji}
+          disableScreenShare={!!remoteScreenStream}
         />
       </div>
 

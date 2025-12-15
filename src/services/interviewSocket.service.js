@@ -259,6 +259,12 @@ class InterviewSocketService {
       this._triggerHandler('onMediaStateChanged', data);
     });
 
+    // Screen share stopped
+    this.socket.on('interview:screen-share-stopped', (data) => {
+      console.log('[InterviewSocket] Screen share stopped:', data);
+      this._triggerHandler('onRemoteScreenShareStopped', data);
+    });
+
     // Recording started
     this.socket.on('interview:recording-started', (data) => {
       console.log('[InterviewSocket] Recording started');
@@ -457,6 +463,17 @@ class InterviewSocketService {
       roomId: interviewId,
       isAudioEnabled,
       isVideoEnabled
+    });
+  }
+
+  /**
+   * Notify screen share stopped
+   */
+  notifyScreenShareStopped(interviewId) {
+    if (!this.socket || !this.isConnected) return;
+    this.socket.emit('interview:screen-share-stopped', {
+      roomId: interviewId,
+      interviewId
     });
   }
 
