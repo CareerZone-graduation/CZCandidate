@@ -5,6 +5,8 @@ import CVPreview from '../../components/CVPreview/CVPreview';
 import { getCvById } from '../../services/api';
 import { mapToFrontend } from '../../utils/dataMapper'; // Import hàm map dữ liệu
 
+import { Skeleton } from '../../components/ui/skeleton';
+
 const CVRenderOnlyPage = () => {
   const { cvId: paramCvId } = useParams();
   const [searchParams] = useSearchParams();
@@ -85,7 +87,90 @@ const CVRenderOnlyPage = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading Document...</div>;
+    return (
+      <div className="flex justify-center items-start min-h-screen bg-gray-100 p-4">
+        {/* A4 Skeleton Container */}
+        <div
+          className="bg-white shadow-xl p-8 box-border space-y-8"
+          style={{ width: '794px', minHeight: '1123px' }}
+        >
+          {/* Header Section */}
+          <div className="flex items-center space-x-6 border-b pb-8">
+            <Skeleton className="h-24 w-24 rounded-full" />
+            <div className="space-y-4 flex-1">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-5 w-1/2" />
+              <div className="flex gap-4 pt-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-8">
+            {/* Left Sidebar */}
+            <div className="col-span-4 space-y-8 border-r pr-6">
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-1/2" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-14 rounded-full" />
+                  <Skeleton className="h-6 w-18 rounded-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content */}
+            <div className="col-span-8 space-y-8">
+              {/* Summary */}
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+
+              {/* Experience */}
+              <div className="space-y-6">
+                <Skeleton className="h-6 w-1/3" />
+
+                {[1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-5 w-1/2" />
+                      <Skeleton className="h-5 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Education */}
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-1/3" />
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-5 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-1/3" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
