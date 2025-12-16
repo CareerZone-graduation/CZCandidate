@@ -43,15 +43,23 @@ export const transcribeAudio = async (audioData) => {
  * @param {string} sessionId - Unique session identifier
  * @param {string} message - User message (optional if isStart is true)
  * @param {boolean} isStart - Whether this is the start of the interview
+ * @param {string} topic - Interview topic for focused questions (optional)
  * @returns {Promise<{response: string}>}
  */
-export const sendChatMessage = async (sessionId, message = '', isStart = false) => {
+export const sendChatMessage = async (sessionId, message = '', isStart = false, topic = null) => {
   try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/chat`, { 
+    const payload = { 
       sessionId, 
       message, 
       isStart 
-    });
+    };
+    
+    // Only include topic when starting the interview
+    if (isStart && topic) {
+      payload.topic = topic;
+    }
+    
+    const response = await apiClient.post(`${PYTHON_API_PATH}/api/chat`, payload);
     return response.data;
   } catch (error) {
     console.error('Chat error:', error);

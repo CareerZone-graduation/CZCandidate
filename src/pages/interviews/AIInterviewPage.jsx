@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Mic,
   MicOff,
@@ -16,7 +18,8 @@ import {
   Loader2,
   MessageSquare,
   Sparkles,
-  CircleDot
+  CircleDot,
+  Target
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -52,6 +55,7 @@ const AIInterviewPage = () => {
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [didStatus, setDidStatus] = useState('idle');
   const [pendingAIMessage, setPendingAIMessage] = useState(null); // Chờ video bắt đầu nói mới hiện text
+  const [interviewTopic, setInterviewTopic] = useState('Frontend Developer (React, JavaScript)'); // Default topic
 
   // Helper function to remove text in square brackets like [haha], [friendly], etc.
   const cleanMessageContent = (text) => {
@@ -120,7 +124,7 @@ const AIInterviewPage = () => {
   const initializeDIDStream = async () => {
     try {
       setDidStatus('connecting');
-      setStatus('Đang kết nối với AI Avatar...');
+      setStatus('Đang kết nối với AI...');
       setIsVideoReady(false);
       mediaStreamRef.current = new MediaStream();
 
@@ -327,7 +331,8 @@ const AIInterviewPage = () => {
     setStatus('AI đang chuẩn bị...');
 
     try {
-      const data = await sendChatMessage(sessionIdRef.current, '', true);
+      // Send topic when starting interview
+      const data = await sendChatMessage(sessionIdRef.current, '', true, interviewTopic);
       if (data.error) throw new Error(data.error);
 
       const cleanedResponse = cleanMessageContent(data.response);
@@ -635,6 +640,33 @@ const AIInterviewPage = () => {
               </div>
             </Card>
 
+            {/* Topic Input Card - Only show when not connected */}
+            {!isConnected && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="py-4 px-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      <Label htmlFor="interview-topic" className="text-sm font-medium">
+                        Chủ đề phỏng vấn
+                      </Label>
+                    </div>
+                    <Input
+                      id="interview-topic"
+                      type="text"
+                      placeholder="Ví dụ: Backend Developer, Data Analyst, Marketing..."
+                      value={interviewTopic}
+                      onChange={(e) => setInterviewTopic(e.target.value)}
+                      className="bg-background"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Nhập vị trí hoặc lĩnh vực bạn muốn phỏng vấn để AI đưa ra câu hỏi phù hợp hơn
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Status Card */}
             <Card className={cn(
               "transition-colors",
@@ -755,12 +787,21 @@ const AIInterviewPage = () => {
       {/* Controls Footer */}
       <footer className="sticky bottom-0 border-t bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-4">
+          {/* Show current topic when interview is active */}
+          {isConnected && interviewTopic && (
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Target className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                Chủ đề: <span className="font-medium text-foreground">{interviewTopic}</span>
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-center gap-4">
             {!isConnected ? (
               <Button
                 size="lg"
                 onClick={startInterview}
-                disabled={isStarting}
+                disabled={isStarting || !interviewTopic.trim()}
                 className="gap-2 px-8 shadow-lg"
               >
                 {isStarting ? (
