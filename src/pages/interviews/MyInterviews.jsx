@@ -11,7 +11,8 @@ import {
   Search,
   Filter,
   ArrowLeft,
-  Lightbulb
+  Lightbulb,
+  Bot
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -239,6 +240,14 @@ const MyInterviews = () => {
               <Button variant="outline" onClick={handleDeviceTest}>
                 <Video className="w-4 h-4 mr-2" />
                 Kiểm tra thiết bị
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/interviews/ai')}
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Phỏng vấn với AI
               </Button>
             </div>
 
