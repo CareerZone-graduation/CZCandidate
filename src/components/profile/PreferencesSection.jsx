@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown, MapPin, DollarSign, Edit3, Save, X, Plus, Trash2, Briefcase, Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, DollarSign, Edit3, Save, X, Plus, Trash2, Briefcase, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import locationData from '@/data/oldtree.json';
 import { JOB_CATEGORIES, getCategoryLabel, getCategoryIcon } from '@/constants/jobCategories';
@@ -62,10 +65,83 @@ const EXPERIENCE_LEVELS = [
     { value: 'EXECUTIVE', label: 'Quản lý/Điều hành' }
 ];
 
+const DistrictSelector = ({ province, value, onChange }) => {
+    const [open, setOpen] = useState(false);
+
+    // In PreferencesSection, DISTRICT_MAP returns the array directly
+    const districts = DISTRICT_MAP.get(province) || [];
+
+    const selectedValue = value === 'ALL_DISTRICTS' || value === '' ? null : value;
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between font-normal"
+                >
+                    <span className="truncate">
+                        {selectedValue || "Tất cả quận/huyện"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0" align="start">
+                <Command>
+                    <CommandInput placeholder="Tìm quận/huyện..." />
+                    <CommandList>
+                        <CommandEmpty>Không tìm thấy quận/huyện.</CommandEmpty>
+                        <CommandGroup>
+                            <CommandItem
+                                value="ALL_DISTRICTS"
+                                onSelect={() => {
+                                    onChange('ALL_DISTRICTS');
+                                    setOpen(false);
+                                }}
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        !selectedValue ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                Tất cả quận/huyện
+                            </CommandItem>
+                            {districts.map((district) => (
+                                <CommandItem
+                                    key={district.name}
+                                    value={district.name}
+                                    onSelect={(currentValue) => {
+                                        // Use the original name to ensure casing matches if needed,
+                                        // though district.name is usually what we want.
+                                        onChange(district.name);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedValue === district.name ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {district.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
 export const PreferencesSection = ({ profile, onUpdate }) => {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [openProvince, setOpenProvince] = useState(false);
 
     const normalizeWorkPreferences = (prefs) => ({
         workTypes: prefs?.workTypes || [],
@@ -234,7 +310,7 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
         return provinceName;
     };
 
-    const selectedDistricts = newLocation.province ? DISTRICT_MAP.get(newLocation.province) || [] : [];
+
 
     return (
         <Card className="card-hover">
@@ -317,42 +393,65 @@ export const PreferencesSection = ({ profile, onUpdate }) => {
                     {isEditing ? (
                         <div className="space-y-3">
                             <div className="flex gap-2">
-                                <Select
-                                    value={newLocation.province}
-                                    onValueChange={(value) => setNewLocation({ province: value, district: '' })}
-                                >
-                                    <SelectTrigger className="flex-1">
-                                        <SelectValue placeholder="Chọn tỉnh/thành phố" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PROVINCES.map((province) => (
-                                            <SelectItem key={province.name} value={province.name}>
-                                                {province.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+
+                                {/* Province Selector */}
+                                <div className="flex-1">
+                                    <Popover open={openProvince} onOpenChange={setOpenProvince}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={openProvince}
+                                                className="w-full justify-between font-normal"
+                                            >
+                                                <span className="truncate">
+                                                    {newLocation.province || "Chọn tỉnh/thành phố"}
+                                                </span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[280px] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Tìm tỉnh/thành phố..." />
+                                                <CommandList>
+                                                    <CommandEmpty>Không tìm thấy.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {PROVINCES.map((province) => (
+                                                            <CommandItem
+                                                                key={province.name}
+                                                                value={province.name}
+                                                                onSelect={(currentValue) => {
+                                                                    setNewLocation(prev => ({ province: province.name, district: '' }));
+                                                                    setOpenProvince(false);
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        newLocation.province === province.name ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {province.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
 
                                 {newLocation.province && (
-                                    <Select
-                                        value={newLocation.district || 'ALL_DISTRICTS'}
-                                        onValueChange={(value) => setNewLocation(prev => ({
-                                            ...prev,
-                                            district: value === 'ALL_DISTRICTS' ? '' : value
-                                        }))}
-                                    >
-                                        <SelectTrigger className="flex-1">
-                                            <SelectValue placeholder="Tất cả quận/huyện" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="ALL_DISTRICTS">Tất cả quận/huyện</SelectItem>
-                                            {selectedDistricts.map((district) => (
-                                                <SelectItem key={district.name} value={district.name}>
-                                                    {district.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="flex-1">
+                                        <DistrictSelector
+                                            province={newLocation.province}
+                                            value={newLocation.district || 'ALL_DISTRICTS'}
+                                            onChange={(value) => setNewLocation(prev => ({
+                                                ...prev,
+                                                district: value === 'ALL_DISTRICTS' ? '' : value
+                                            }))}
+                                        />
+                                    </div>
                                 )}
 
                                 <Button type="button" onClick={addLocation} size="icon">
