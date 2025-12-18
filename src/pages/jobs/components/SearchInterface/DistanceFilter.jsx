@@ -10,11 +10,11 @@ import LocationPermissionAlert from '@/components/common/LocationPermissionAlert
 /**
  * DistanceFilter - Professional distance filter component
  */
-const DistanceFilter = ({ 
-  distance = '', 
+const DistanceFilter = ({
+  distance = '',
   latitude = '',
   longitude = '',
-  onChange 
+  onChange
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
@@ -49,14 +49,14 @@ const DistanceFilter = ({
 
     setIsGettingLocation(true);
     setPermissionDenied(false);
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { longitude, latitude } = position.coords;
         setUserCoords([longitude, latitude]);
         setIsGettingLocation(false);
         toast.success('Đã lấy vị trí của bạn!');
-        
+
         setIsEnabled(true);
         onChange({
           distance: distanceValue,
@@ -65,8 +65,9 @@ const DistanceFilter = ({
         });
       },
       (error) => {
+        console.log(error);
         setIsGettingLocation(false);
-        
+
         if (error.code === error.PERMISSION_DENIED) {
           setPermissionDenied(true);
           toast.error('Quyền vị trí bị từ chối', {
@@ -79,14 +80,14 @@ const DistanceFilter = ({
           toast.error('Không thể lấy vị trí. Vui lòng thử lại.');
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
   };
 
   const handleDistanceChange = (value) => {
     const newDistance = value[0];
     setDistanceValue(newDistance);
-    
+
     if (isEnabled && userCoords) {
       onChange({
         distance: newDistance,
@@ -98,7 +99,7 @@ const DistanceFilter = ({
 
   const handlePresetClick = (presetValue) => {
     setDistanceValue(presetValue);
-    
+
     if (isEnabled && userCoords) {
       onChange({
         distance: presetValue,
@@ -148,8 +149,8 @@ const DistanceFilter = ({
           <div className="flex items-center gap-2.5">
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center",
-              isEnabled 
-                ? "bg-primary text-white" 
+              isEnabled
+                ? "bg-primary text-white"
                 : "bg-orange-500/10 text-orange-600"
             )}>
               <Navigation className="h-4 w-4" />
@@ -163,7 +164,7 @@ const DistanceFilter = ({
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {isEnabled && (
               <button
@@ -174,7 +175,7 @@ const DistanceFilter = ({
                 <X className="h-3.5 w-3.5 text-slate-400" />
               </button>
             )}
-            <ChevronDown 
+            <ChevronDown
               className={cn(
                 "h-4 w-4 text-slate-400 transition-transform duration-200",
                 isExpanded && "rotate-180"
@@ -188,7 +189,7 @@ const DistanceFilter = ({
           <div className="pb-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
             {/* Permission Denied Alert */}
             {!isEnabled && permissionDenied && (
-              <LocationPermissionAlert 
+              <LocationPermissionAlert
                 onShowGuide={() => setShowPermissionGuide(true)}
               />
             )}
