@@ -39,7 +39,7 @@ import News from '../pages/news/News';
 import MyInterviews from '../pages/interviews/MyInterviews';
 import InterviewDetail from '../pages/interviews/InterviewDetail';
 import InterviewRoom from '../pages/interviews/InterviewRoom';
-import AIInterviewPage from '../pages/interviews/AIInterviewPage';
+
 import DeviceTest from '../components/interviews/DeviceTest';
 import NotFound from '../pages/NotFound';
 import BillingPage from '../pages/billing/Billing';
@@ -268,7 +268,7 @@ const AppRouter = () => {
           <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
           {/* AI Interview route - full-screen experience */}
-          <Route path="/interviews/ai" element={<AIInterviewPage />} />
+
         </Route>
 
         {/* Protected support request routes */}

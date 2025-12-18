@@ -137,7 +137,7 @@ export const salaryPreferencesSchema = z.object({
     invalid_type_error: errorMessages.invalidFormat
   })
     .min(1, { message: errorMessages.minItems(1) + ' loại hợp đồng' })
-    .max(3, { message: 'Không nên chọn quá nhiều loại hợp đồng' })
+    .max(6, { message: 'Không nên chọn quá nhiều loại hợp đồng' })
 });
 
 // Experience & Education Step Schema (Bước 4 - Optional)
