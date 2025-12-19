@@ -44,8 +44,7 @@ const CVDropdownMenu = ({ isHeaderWhite }) => {
       {/* Trigger Button */}
       <button
         className={cn(
-          "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group flex items-center gap-1",
-          "hover:bg-primary/5 hover:scale-105",
+          "relative px-4 py-2 rounded-lg transition-colors duration-300 font-semibold group flex items-center gap-1",
           isHeaderWhite
             ? "text-foreground hover:text-primary"
             : "text-muted-foreground hover:text-primary"
@@ -58,8 +57,6 @@ const CVDropdownMenu = ({ isHeaderWhite }) => {
             isOpen && "rotate-180"
           )}
         />
-        {/* Hover effect background */}
-        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         {/* Bottom border animation */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-3/4 transition-all duration-300" />
       </button>
@@ -69,7 +66,7 @@ const CVDropdownMenu = ({ isHeaderWhite }) => {
         <div
           className={cn(
             "absolute top-full left-0 pt-2 w-72 z-50",
-            "animate-in slide-in-from-top-2 fade-in-0 duration-300"
+            "animate-in fade-in-0 duration-300"
           )}
         >
           <div className={cn(

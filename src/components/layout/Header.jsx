@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -422,7 +422,7 @@ const Header = () => {
                         <Button variant="outline" asChild className="w-full">
                           <Link to="/login">Đăng nhập</Link>
                         </Button>
-                        <Button asChild className="w-full btn-gradient">
+                        <Button asChild variant="gradient" className="w-full">
                           <Link to="/register">Đăng ký</Link>
                         </Button>
                       </div>
@@ -441,7 +441,7 @@ const Header = () => {
             <Link to="/" className="flex items-center space-x-2 group">
               <div className="relative">
                 <span className={cn(
-                  "font-bold text-2xl transition-all duration-300 group-hover:scale-105",
+                  "font-bold text-2xl transition-colors duration-300",
                   "bg-gradient-to-r from-foreground to-foreground bg-clip-text"
                 )}>
                   Career<span className={cn(
@@ -462,23 +462,25 @@ const Header = () => {
 
               {/* Other Navigation Links */}
               {navLinks.map((link) => (
-                <Link
+                <NavLink
                   key={link.title}
                   to={link.href}
-                  className={cn(
-                    "relative px-4 py-2 rounded-lg transition-all duration-300 font-semibold group",
-                    "hover:bg-primary/5 hover:scale-105",
-                    isHeaderWhite
-                      ? "text-foreground hover:text-primary"
-                      : "text-muted-foreground hover:text-primary"
+                  className={({ isActive }) => cn(
+                    "relative px-4 py-2 rounded-lg transition-colors duration-300 font-semibold group",
+                    isActive ? "text-primary" : (isHeaderWhite ? "text-foreground hover:text-primary" : "text-muted-foreground hover:text-primary")
                   )}
                 >
-                  <span className="relative z-10">{link.title}</span>
-                  {/* Hover effect background */}
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {/* Bottom border animation */}
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-3/4 transition-all duration-300" />
-                </Link>
+                  {({ isActive }) => (
+                    <>
+                      <span className="relative z-10">{link.title}</span>
+                      {/* Bottom border animation */}
+                      <div className={cn(
+                        "absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-primary to-blue-600 transition-all duration-300",
+                        isActive ? "w-3/4" : "w-0 group-hover:w-3/4"
+                      )} />
+                    </>
+                  )}
+                </NavLink>
               ))}
 
               {/* CV Dropdown Menu - Only show when authenticated */}
@@ -503,14 +505,12 @@ const Header = () => {
                   className={cn(
                     "h-10 w-10 rounded-full relative transition-all duration-300 group",
                     "hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100/50",
-                    "hover:shadow-lg hover:shadow-blue-500/20 hover:scale-110"
+                    "hover:shadow-lg hover:shadow-blue-500/20"
                   )}
                 >
                   <MessageCircle className={cn(
-                    "h-5 w-5 transition-all",
-                    unreadMessagesCount > 0
-                      ? "text-blue-600 group-hover:scale-110"
-                      : "text-muted-foreground group-hover:text-blue-600 group-hover:scale-110"
+                    "h-5 w-5 transition-all text-muted-foreground group-hover:text-blue-600",
+                    unreadMessagesCount > 0 && "text-blue-600"
                   )} />
                 </Button>
 
@@ -538,7 +538,7 @@ const Header = () => {
                   className={cn(
                     "flex items-center space-x-3 p-2 rounded-xl transition-all duration-300 group",
                     "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
-                    "hover:shadow-lg hover:shadow-primary/10 hover:scale-105"
+                    "hover:shadow-lg hover:shadow-primary/10"
                   )}
                 >
                   <div className="relative">
@@ -783,7 +783,7 @@ const Header = () => {
                 variant="ghost"
                 asChild
                 className={cn(
-                  "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
+                  "rounded-xl font-semibold transition-all duration-300",
                   "hover:bg-muted hover:shadow-md",
                   isHeaderWhite ? "text-foreground" : ""
                 )}
@@ -795,12 +795,9 @@ const Header = () => {
               </Button>
               <Button
                 asChild
+                variant="gradient"
                 className={cn(
-                  "rounded-xl font-semibold transition-all duration-300 hover:scale-105",
-                  "bg-gradient-to-r from-primary via-primary to-blue-600",
-                  "hover:from-blue-600 hover:via-primary hover:to-primary",
-                  "hover:shadow-lg hover:shadow-primary/30",
-                  isHeaderWhite ? "text-white" : ""
+                  "rounded-xl font-semibold transition-all duration-300"
                 )}
               >
                 <Link to="/register" className="flex items-center gap-2">

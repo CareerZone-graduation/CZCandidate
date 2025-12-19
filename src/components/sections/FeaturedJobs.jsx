@@ -79,7 +79,7 @@ const FeaturedJobs = () => {
 
     fetchFeaturedJobs();
   }, []);
-// ====== Format dữ liệu =======
+  // ====== Format dữ liệu =======
   // Removed local format functions - now using utils/formatters.js
 
   const handleViewAll = () => {
@@ -126,63 +126,63 @@ const FeaturedJobs = () => {
             jobs.slice(0, 6).map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border shadow-lg hover:shadow-2xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
+                className="group relative overflow-hidden border border-border/50 shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
-               <CardHeader>
-  <div className="flex items-center space-x-4">
-    <Avatar className="w-16 h-16">
-      <AvatarImage src={job.company?.logo || ''} alt={job.company?.name || 'Logo'} />
-      <AvatarFallback>{job.company?.name?.[0] || 'C'}</AvatarFallback>
-    </Avatar>
-    <div>
-      <CardTitle>{job.title || 'Không có tiêu đề'}</CardTitle>
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <Building className="w-4 h-4" />
-        <span>{job.company?.name || 'Không rõ công ty'}</span>
-        <MapPin className="w-4 h-4" />
-        <span>{
-          job.location?.province 
-            ? `${job.location.district ? job.location.district + ', ' : ''}${job.location.province}`
-            : 'Không rõ địa điểm'
-        }</span>
-      </div>
-    </div>
-  </div>
-</CardHeader>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative group-hover:scale-110 transition-transform duration-300">
+                      <Avatar className="w-14 h-14 border border-border/50 shadow-sm">
+                        <AvatarImage src={job.company?.logo || ''} alt={job.company?.name || 'Logo'} />
+                        <AvatarFallback>{job.company?.name?.[0] || 'C'}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors duration-300">{job.title || 'Không có tiêu đề'}</CardTitle>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
+                        <Building className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{job.company?.name || 'Không rõ công ty'}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-0.5">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{
+                          job.location?.province
+                            ? `${job.location.district ? job.location.district + ', ' : ''}${job.location.province}`
+                            : 'Không rõ địa điểm'
+                        }</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
 
-                <CardContent className="pt-2">
-                 <div className="flex flex-wrap gap-4">
-  <Badge variant="secondary" className="flex items-center gap-1">
-    <DollarSign className="w-3 h-3" />
-    {formatSalaryVND(job.minSalary, job.maxSalary)}
-  </Badge>
-  <Badge variant="secondary" className="flex items-center gap-1">
-    <Clock className="w-3 h-3" />
-    {formatWorkType(job.workType)}
-  </Badge>
-  <Badge variant="secondary" className="flex items-center gap-1">
-    <Briefcase className="w-3 h-3" />
-    {formatExperience(job.experience)}
-  </Badge>
-  <Badge variant="secondary" className="flex items-center gap-1">
-    <Calendar className="w-3 h-3" />
-    {job.deadline ? `Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : 'N/A'}
-  </Badge>
-</div>
-              
+                <CardContent className="pt-0 pb-3">
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none">
+                      <DollarSign className="w-3 h-3 mr-1" />
+                      {formatSalaryVND(job.minSalary, job.maxSalary)}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs font-normal">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {formatWorkType(job.workType)}
+                    </Badge>
+                  </div>
+
                 </CardContent>
 
-                <CardFooter className="border-t pt-3 flex justify-end items-center bg-transparent">
+                <CardFooter className="border-t bg-muted/20 py-3 flex justify-between items-center">
+                  <div className="text-xs text-muted-foreground font-medium">
+                    {job.deadline ? `Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : 'N/A'}
+                  </div>
                   <Button
                     variant="ghost"
-                    className="p-0 h-auto font-semibold text-green-700 group-hover:translate-x-1 transition-all duration-300 hover:text-green-800"
+                    size="sm"
+                    className="p-0 h-auto font-semibold text-primary hover:bg-transparent hover:text-primary/80 group-hover:translate-x-1 transition-all duration-300"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJobClick(job._id || job.id);
                     }}
                   >
-                    Xem chi tiết <ArrowRight className="ml-1 h-4 w-4" />
+                    Xem chi tiết <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </CardFooter>
               </Card>
@@ -192,8 +192,9 @@ const FeaturedJobs = () => {
 
         <div className="text-center">
           <Button
+            variant="gradient"
             size="lg"
-            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-semibold"
+            className="px-8 py-6 rounded-2xl text-base shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
             onClick={handleViewAll}
           >
             Xem tất cả việc làm

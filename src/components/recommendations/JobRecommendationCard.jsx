@@ -89,7 +89,7 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
 
   const handleApplyJob = (event) => {
     event.stopPropagation();
-    
+
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để ứng tuyển');
       navigate('/login');
@@ -110,21 +110,21 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
   return (
     <Card
       className={cn(
-        "group cursor-pointer border-2 border-primary/30",
-        "hover:border-primary hover:shadow-2xl hover:shadow-primary/20",
-        "transition-all duration-500",
-        "bg-gradient-to-br from-primary/5 via-card to-card",
+        "group cursor-pointer border border-primary/20",
+        "hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1",
+        "transition-all duration-300",
+        "bg-gradient-to-br from-card via-card to-primary/5",
         "overflow-hidden relative"
       )}
       onClick={handleCardClick}
     >
       {/* Recommendation Badge */}
       <div className="absolute top-4 right-4 z-20">
-        <Badge 
+        <Badge
           className={cn(
-            "px-3 py-1.5 rounded-full font-bold text-sm border-2",
+            "px-3 py-1.5 rounded-full font-bold text-sm border shadow-sm",
             getScoreColor(job.recommendationScore || 0),
-            "shadow-lg animate-pulse"
+            "backdrop-blur-md bg-opacity-90"
           )}
         >
           <Sparkles className="h-4 w-4 mr-1" />
@@ -132,28 +132,27 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
         </Badge>
       </div>
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
+      {/* Gradient overlay - simplified and faster */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
       <CardContent className="p-6 relative z-10">
         <div className="flex gap-4">
           {/* Company Logo */}
           <div className="flex-shrink-0">
             <div className={cn(
-              "rounded-2xl border-2 border-primary/40 bg-white shadow-lg",
-              "group-hover:shadow-2xl group-hover:border-primary group-hover:scale-105",
-              "transition-all duration-500 overflow-hidden",
-              "h-32 w-32"
+              "rounded-xl border border-border bg-white shadow-sm",
+              "group-hover:shadow-md group-hover:border-primary/30",
+              "transition-all duration-300 overflow-hidden",
+              "h-24 w-24 flex items-center justify-center p-2"
             )}>
-              <Avatar className="h-full w-full rounded-2xl">
+              <Avatar className="h-full w-full rounded-lg">
                 <AvatarImage
                   src={job.recruiterProfileId?.company?.logo}
                   alt={job.recruiterProfileId?.company}
-                  className="object-cover"
+                  className="object-contain"
                 />
                 <AvatarFallback className={cn(
-                  "bg-gradient-to-br from-primary/30 via-primary/20 to-transparent",
-                  "text-primary font-bold rounded-2xl text-3xl"
+                  "bg-primary/5 text-primary/80 font-bold rounded-lg text-2xl"
                 )}>
                   {job.recruiterProfileId?.company?.charAt(0) || job.title?.charAt(0) || 'J'}
                 </AvatarFallback>
@@ -166,49 +165,49 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex-1 min-w-0">
                 <h3 className={cn(
-                  "font-bold text-foreground line-clamp-2 mb-2 text-2xl",
-                  "group-hover:text-primary transition-all duration-300"
+                  "font-bold text-foreground line-clamp-2 mb-1 text-xl",
+                  "group-hover:text-primary transition-colors duration-300"
                 )}>
                   {job.title}
                 </h3>
-                <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary/80 transition-all duration-300">
+                <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   <Building className="h-4 w-4 flex-shrink-0" />
-                  <span className="font-semibold truncate">{job.recruiterProfileId?.company || 'Công ty'}</span>
+                  <span className="font-medium truncate text-sm">{job.recruiterProfileId?.company || 'Công ty'}</span>
                 </div>
               </div>
-              
+
               {/* Save Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleSaveJob}
                 className={cn(
-                  "flex-shrink-0 rounded-xl transition-all duration-300",
-                  "hover:bg-red-50/20 hover:scale-110",
-                  job.isSaved 
-                    ? "text-red-500 hover:text-red-600" 
+                  "flex-shrink-0 rounded-full h-10 w-10 transition-all duration-300",
+                  "hover:bg-red-50 hover:scale-110",
+                  job.isSaved
+                    ? "text-red-500 hover:text-red-600 bg-red-50"
                     : "text-muted-foreground hover:text-red-500"
                 )}
               >
                 <Heart className={cn(
-                  "h-6 w-6 transition-all duration-300",
-                  job.isSaved && "fill-red-500 animate-pulse"
+                  "h-5 w-5 transition-transform duration-300",
+                  job.isSaved && "fill-red-500 scale-110"
                 )} />
               </Button>
             </div>
 
             {/* Recommendation Reasons */}
             {job.recommendationReasons && job.recommendationReasons.length > 0 && (
-              <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10 group-hover:border-primary/20 transition-colors duration-300">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold text-primary">Lý do gợi ý:</span>
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-bold text-primary uppercase tracking-wide">Điểm nổi bật</span>
                 </div>
                 <div className="space-y-1">
                   {job.recommendationReasons.slice(0, 3).map((reason, index) => (
                     <div key={index} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{reason.value}</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground leading-tight">{reason.value}</span>
                     </div>
                   ))}
                 </div>
@@ -218,36 +217,36 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
             {/* Job Info Badges */}
             <div className="flex flex-wrap gap-2 mb-4">
               {job.type && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-600 border border-blue-500/20"
+                <Badge
+                  variant="secondary"
+                  className="px-2.5 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100"
                 >
                   <Briefcase className="h-3 w-3 mr-1" />
                   {job.type}
                 </Badge>
               )}
-              
+
               {job.workType && (
-                <Badge 
-                  variant="outline" 
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-indigo-500/10 to-blue-500/10 text-indigo-600 border-2 border-indigo-500/30"
+                <Badge
+                  variant="outline"
+                  className="px-2.5 py-0.5 text-xs font-medium border-indigo-200 text-indigo-700 bg-indigo-50/50"
                 >
                   {job.workType}
                 </Badge>
               )}
-              
-              <Badge 
-                variant="outline" 
-                className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-500/10 to-green-500/10 text-emerald-600 border-2 border-emerald-500/30"
+
+              <Badge
+                variant="outline"
+                className="px-2.5 py-0.5 text-xs font-medium border-emerald-200 text-emerald-700 bg-emerald-50/50"
               >
                 <DollarSign className="h-3 w-3 mr-1" />
                 {formatSalary(job.minSalary, job.maxSalary)}
               </Badge>
-              
+
               {job.location?.province && (
-                <Badge 
-                  variant="outline" 
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-600 border-2 border-blue-500/30"
+                <Badge
+                  variant="outline"
+                  className="px-2.5 py-0.5 text-xs font-medium border-slate-200 text-slate-700 bg-slate-50/50"
                 >
                   <MapPin className="h-3 w-3 mr-1" />
                   {job.location.province}
@@ -255,67 +254,58 @@ const JobRecommendationCard = ({ job, onSaveToggle }) => {
               )}
             </div>
 
-            {/* Job Description */}
-            {job.description && (
-              <p className="text-muted-foreground text-sm line-clamp-2 mb-4 group-hover:text-foreground transition-colors duration-300">
-                {job.description}
-              </p>
-            )}
+            {/* Job Description - Optional */}
 
             {/* Job Skills */}
             {job.skills && job.skills.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {job.skills.slice(0, 4).map((skill, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="text-xs font-medium px-3 py-1 rounded-full bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/30"
+                  <span
+                    key={index}
+                    className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
                   >
                     {skill}
-                  </Badge>
+                  </span>
                 ))}
                 {job.skills.length > 4 && (
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-2 border-primary/40"
-                  >
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
                     +{job.skills.length - 4}
-                  </Badge>
+                  </span>
                 )}
               </div>
             )}
 
             {/* Footer */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between mt-auto pt-2 border-t border-dashed border-border/60">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1" title={`Đăng ${formatTimeAgo(job.createdAt)}`}>
                   <Clock className="h-3 w-3" />
                   {formatTimeAgo(job.createdAt)}
                 </div>
                 {job.recommendedAt && (
-                  <div className="flex items-center gap-1 text-primary">
+                  <div className="flex items-center gap-1 text-primary/80 font-medium">
                     <Sparkles className="h-3 w-3" />
-                    Gợi ý {formatTimeAgo(job.recommendedAt)}
+                    Gợi ý mới
                   </div>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleCardClick}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg border-2 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary hover:scale-105 transition-all duration-300"
+                  className="text-xs h-8 px-3 font-medium text-foreground hover:text-primary hover:bg-primary/5"
                 >
-                  Xem chi tiết
-                  <ArrowRight className="h-3 w-3 ml-1" />
+                  Chi tiết
                 </Button>
-                
+
                 <Button
+                  variant="gradient"
                   size="sm"
                   onClick={handleApplyJob}
-                  className="btn-gradient text-primary-foreground text-xs font-bold px-5 py-2 rounded-lg hover:scale-110 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300"
+                  className="text-xs h-8 px-4 font-bold shadow-none hover:shadow-lg"
                 >
                   Ứng tuyển
                 </Button>

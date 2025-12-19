@@ -167,7 +167,7 @@ const PrivacySettings = () => {
               </div>
               <p className="text-sm text-gray-600 dark:text-muted-foreground">
                 Khi bật, hồ sơ của bạn sẽ xuất hiện trong danh sách gợi ý ứng viên
-                phù hợp cho các nhà tuyển dụng dựa trên AI. Bạn cần chọn 1 CV để hiển thị.
+                phù hợp cho các nhà tuyển dụng. Bạn cần chọn 1 CV để hiển thị.
                 Thông tin liên hệ trong CV sẽ được che cho đến khi nhà tuyển dụng mua quyền xem.
               </p>
             </div>

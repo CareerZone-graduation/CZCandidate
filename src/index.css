@@ -273,19 +273,6 @@ a:active,
   animation: click-ripple 0.3s ease-out;
 }
 
-/* Smooth theme transitions */
-*,
-*::before,
-*::after {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 0.2s;
-  transition-timing-function: ease-in-out;
-}
-
-/* Exclude animations and transforms from theme transition */
-* {
-  transition-property: background-color, border-color, color, fill, stroke !important;
-}
 
 /* Container utility */
 .container {
@@ -515,7 +502,7 @@ a:active,
 
 .card-hover:hover {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .dark .card-hover:hover {

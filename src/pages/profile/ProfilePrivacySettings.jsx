@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 const ProfilePrivacySettings = () => {
   const queryClient = useQueryClient();
   const [allowSearch, setAllowSearch] = useState(false);
-  const [selectedCvId, setSelectedCvId] = useState(null);
+  const [selectedCvIds, setSelectedCvIds] = useState([]);
   const [showCvSelector, setShowCvSelector] = useState(false);
 
   // Fetch current allow search settings
@@ -41,7 +41,14 @@ const ProfilePrivacySettings = () => {
   useEffect(() => {
     if (settingsData?.data) {
       setAllowSearch(settingsData.data.allowSearch);
-      setSelectedCvId(settingsData.data.selectedCvId);
+      // Handle both array and legacy single ID
+      let ids = [];
+      if (settingsData.data.selectedCvIds && Array.isArray(settingsData.data.selectedCvIds)) {
+        ids = settingsData.data.selectedCvIds;
+      } else if (settingsData.data.selectedCvId) {
+        ids = [settingsData.data.selectedCvId];
+      }
+      setSelectedCvIds(ids);
     }
   }, [settingsData]);
 
@@ -68,9 +75,9 @@ const ProfilePrivacySettings = () => {
         return;
       }
 
-      if (selectedCvId) {
+      if (selectedCvIds.length > 0) {
         setAllowSearch(true);
-        toggleMutation.mutate({ allowSearch: true, selectedCvId });
+        toggleMutation.mutate({ allowSearch: true, selectedCvIds });
       } else {
         setShowCvSelector(true);
       }
@@ -81,9 +88,24 @@ const ProfilePrivacySettings = () => {
   };
 
   const handleSelectCv = (cvId) => {
-    setSelectedCvId(cvId);
+    if (selectedCvIds.includes(cvId)) {
+      setSelectedCvIds(prev => prev.filter(id => id !== cvId));
+    } else {
+      if (selectedCvIds.length >= 3) {
+        toast.error('Bạn chỉ có thể chọn tối đa 3 CV');
+        return;
+      }
+      setSelectedCvIds(prev => [...prev, cvId]);
+    }
+  };
+
+  const handleSaveSelection = () => {
+    if (selectedCvIds.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 CV');
+      return;
+    }
     setAllowSearch(true);
-    toggleMutation.mutate({ allowSearch: true, selectedCvId: cvId });
+    toggleMutation.mutate({ allowSearch: true, selectedCvIds });
   };
 
   const handleChangeCv = () => {
@@ -91,7 +113,7 @@ const ProfilePrivacySettings = () => {
   };
 
   const cvs = cvsData?.data || [];
-  const selectedCv = cvs.find(cv => cv._id === selectedCvId);
+  const selectedCvs = cvs.filter(cv => selectedCvIds.includes(cv._id));
 
   if (isLoading || settingsLoading) {
     return (
@@ -169,7 +191,7 @@ const ProfilePrivacySettings = () => {
               </div>
               <p className="text-sm text-muted-foreground">
                 Khi bật, hồ sơ của bạn sẽ xuất hiện trong danh sách gợi ý ứng viên
-                phù hợp cho các nhà tuyển dụng dựa trên AI. Bạn cần chọn 1 CV để hiển thị.
+                phù hợp cho các nhà tuyển dụng dựa trên AI. Bạn có thể chọn tới 3 CV để hiển thị.
                 Thông tin liên hệ trong CV sẽ được che cho đến khi nhà tuyển dụng mua quyền xem.
               </p>
             </div>
@@ -184,24 +206,11 @@ const ProfilePrivacySettings = () => {
             />
           </div>
 
-          {/* Selected CV Display */}
-          {allowSearch && selectedCv && !showCvSelector && (
-            <div className="p-4 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <FileText className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                      CV đang sử dụng để tìm việc:
-                    </p>
-                    <p className="text-sm text-green-700 dark:text-green-300 font-semibold">
-                      {selectedCv.name}
-                    </p>
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      Tải lên: {new Date(selectedCv.uploadedAt).toLocaleDateString('vi-VN')}
-                    </p>
-                  </div>
-                </div>
+          {/* Selected CVs Display */}
+          {allowSearch && selectedCvs.length > 0 && !showCvSelector && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">CV đang hiển thị ({selectedCvs.length}/3):</Label>
                 <Button
                   variant="outline"
                   size="sm"
@@ -209,9 +218,27 @@ const ProfilePrivacySettings = () => {
                   disabled={toggleMutation.isPending}
                   className="border-green-300 text-green-700 hover:bg-green-100 dark:border-green-700 dark:text-green-300"
                 >
-                  Đổi CV
+                  Thay đổi CV
                 </Button>
               </div>
+
+              {selectedCvs.map(cv => (
+                <div key={cv._id} className="p-4 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <FileText className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                          {cv.name}
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Tải lên: {new Date(cv.uploadedAt).toLocaleDateString('vi-VN')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -220,16 +247,25 @@ const ProfilePrivacySettings = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">
-                  Chọn CV để hiển thị cho nhà tuyển dụng:
+                  Chọn tối đa 3 CV để hiển thị ({selectedCvIds.length}/3):
                 </Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCvSelector(false)}
-                  disabled={toggleMutation.isPending}
-                >
-                  Hủy
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCvSelector(false)}
+                    disabled={toggleMutation.isPending}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveSelection}
+                    disabled={toggleMutation.isPending || selectedCvIds.length === 0}
+                  >
+                    Lưu lại
+                  </Button>
+                </div>
               </div>
 
               {cvsLoading ? (
@@ -261,24 +297,27 @@ const ProfilePrivacySettings = () => {
                         'w-full p-4 rounded-lg border-2 text-left transition-all',
                         'hover:border-primary hover:bg-primary/5',
                         'disabled:opacity-50 disabled:cursor-not-allowed',
-                        selectedCvId === cv._id
+                        selectedCvIds.includes(cv._id)
                           ? 'border-primary bg-primary/10'
                           : 'border-border bg-card'
                       )}
                     >
                       <div className="flex items-start gap-3">
+                        <div className={cn(
+                          "flex items-center justify-center w-5 h-5 rounded border mt-0.5",
+                          selectedCvIds.includes(cv._id) ? "bg-primary border-primary" : "border-muted-foreground"
+                        )}>
+                          {selectedCvIds.includes(cv._id) && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
+                        </div>
                         <FileText className={cn(
                           'h-5 w-5 flex-shrink-0 mt-0.5',
-                          selectedCvId === cv._id ? 'text-primary' : 'text-muted-foreground'
+                          selectedCvIds.includes(cv._id) ? 'text-primary' : 'text-muted-foreground'
                         )} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-foreground truncate">
                               {cv.name}
                             </p>
-                            {selectedCvId === cv._id && (
-                              <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-                            )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             Tải lên: {new Date(cv.uploadedAt).toLocaleDateString('vi-VN')}
