@@ -31,6 +31,7 @@ const JobSearchBar = forwardRef(({
   const [isActive, setIsActive] = useState(false);
   const dispatch = useDispatch();
   const searchHistory = useSelector(selectSearchHistory);
+  const { isAuthenticated } = useSelector(state => state.auth);
 
   // --- THAY ĐỔI 2: State management cho search history ---
   const [query, setQuery] = useState(initialQuery || '');
@@ -83,9 +84,12 @@ const JobSearchBar = forwardRef(({
   }, [fullTranscript, isListening]);
 
   // Load search history on mount
+  // Load search history on mount
   useEffect(() => {
-    dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Sync with initialQuery
   useEffect(() => {
@@ -483,7 +487,7 @@ const JobSearchBar = forwardRef(({
       {/* Microphone Permission Alert */}
       {micPermissionDenied && !isListening && (
         <div className="mt-4">
-          <MicrophonePermissionAlert 
+          <MicrophonePermissionAlert
             onShowGuide={() => setShowMicPermissionGuide(true)}
           />
         </div>

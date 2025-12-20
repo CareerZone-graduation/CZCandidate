@@ -12,6 +12,7 @@ export const FirebaseProvider = ({ children }) => {
     const [permissionDenied, setPermissionDenied] = useState(false);
     const dispatch = useDispatch();
     const { pagination, initialized } = useSelector((state) => state.notifications);
+    const { isAuthenticated } = useSelector((state) => state.auth);
 
     // Refs to hold latest state values for the listener without triggering re-subscription
     const paginationRef = useRef(pagination);
@@ -34,6 +35,11 @@ export const FirebaseProvider = ({ children }) => {
     useEffect(() => {
         const checkStatus = async () => {
             if ('Notification' in window && Notification.permission === 'granted') {
+                if (!isAuthenticated) {
+                    setIsPushEnabled(false);
+                    return;
+                }
+
                 const { getFCMMessaging, checkDeviceRegistration } = await import('@/services/firebase');
                 const { getToken } = await import('firebase/messaging');
                 try {
@@ -52,7 +58,7 @@ export const FirebaseProvider = ({ children }) => {
             }
         };
         checkStatus();
-    }, []);
+    }, [isAuthenticated]);
 
     const checkPermission = () => {
         if ('Notification' in window && Notification.permission !== 'granted') {
@@ -228,14 +234,17 @@ export const FirebaseProvider = ({ children }) => {
             if (document.visibilityState === 'visible' && 'Notification' in window && Notification.permission === 'granted') {
                 console.log('Tab became visible, refreshing notifications...');
 
-                dispatch(fetchRecentNotifications());
-                dispatch(fetchUnreadCount());
+                // Only fetch if authenticated
+                if (isAuthenticated) {
+                    dispatch(fetchRecentNotifications());
+                    dispatch(fetchUnreadCount());
 
-                if (initializedRef.current) {
-                    dispatch(fetchNotifications({
-                        page: paginationRef.current.page,
-                        limit: paginationRef.current.limit
-                    }));
+                    if (initializedRef.current) {
+                        dispatch(fetchNotifications({
+                            page: paginationRef.current.page,
+                            limit: paginationRef.current.limit
+                        }));
+                    }
                 }
             }
         };

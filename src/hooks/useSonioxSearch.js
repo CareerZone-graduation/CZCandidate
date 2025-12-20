@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import { SonioxClient } from '@soniox/speech-to-text-web';
 import { toast } from 'sonner';
 import { getTemporarySonioxApiKey, refreshSonioxApiKeyIfNeeded } from '@/services/sonioxService';
@@ -13,23 +14,29 @@ import { getTemporarySonioxApiKey, refreshSonioxApiKeyIfNeeded } from '@/service
 export const useSonioxSearch = ({ lang = 'vi', onResult, onPermissionDenied }) => {
   const sonioxClient = useRef(null);
   const [state, setState] = useState("Idle");
-  
+
   // Transcript for real-time display in the input
   const [displayTranscript, setDisplayTranscript] = useState('');
-  
+
   // Ref to accumulate final text parts
   const finalTranscriptRef = useRef('');
 
   const [error, setError] = useState(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  
+
   // Store API key and expiration
   const apiKeyRef = useRef(null);
   const expiresAtRef = useRef(null);
 
+  // Check authentication status
+  const { isAuthenticated } = useSelector(state => state.auth);
+
   // Initialize SonioxClient with API key from backend
   useEffect(() => {
     const initializeSoniox = async () => {
+      // If not authenticated, do not initialize
+      if (!isAuthenticated) return;
+
       try {
         // Get API key from backend
         const { apiKey, expiresAt } = await getTemporarySonioxApiKey();
@@ -49,15 +56,22 @@ export const useSonioxSearch = ({ lang = 'vi', onResult, onPermissionDenied }) =
       }
     };
 
-    initializeSoniox();
+    if (isAuthenticated) {
+      initializeSoniox();
+    }
 
     // Cleanup on unmount
     return () => {
       sonioxClient.current?.cancel();
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const startSearch = useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để sử dụng tính năng tìm kiếm bằng giọng nói");
+      return;
+    }
+
     // Reset states for a new search
     setDisplayTranscript('');
     finalTranscriptRef.current = '';
@@ -72,12 +86,12 @@ export const useSonioxSearch = ({ lang = 'vi', onResult, onPermissionDenied }) =
       if (refreshedKey) {
         apiKeyRef.current = refreshedKey.apiKey;
         expiresAtRef.current = refreshedKey.expiresAt;
-        
+
         // Reinitialize client with new key
         sonioxClient.current = new SonioxClient({
           apiKey: refreshedKey.apiKey,
         });
-        
+
         console.log('Soniox API key refreshed');
       }
     } catch (error) {
@@ -90,9 +104,9 @@ export const useSonioxSearch = ({ lang = 'vi', onResult, onPermissionDenied }) =
       model: 'stt-rt-v3',
       // language_hints: [lang],
       enableLanguageIdentification: true,
-enableSpeakerDiarization: true,
+      enableSpeakerDiarization: true,
       enableEndpointDetection: true,
-      
+
       onStarted: () => {
         toast.info('Hãy nói từ khóa tìm kiếm...');
       },
@@ -103,17 +117,17 @@ enableSpeakerDiarization: true,
 
       onError: (status, message) => {
         console.error(`Lỗi Soniox: ${message}`);
-        
+
         // Check if it's a permission error
-        const isPermissionError = message.toLowerCase().includes('permission') || 
-                                  message.toLowerCase().includes('denied') ||
-                                  message.toLowerCase().includes('notallowed');
-        
+        const isPermissionError = message.toLowerCase().includes('permission') ||
+          message.toLowerCase().includes('denied') ||
+          message.toLowerCase().includes('notallowed');
+
         if (isPermissionError) {
           const errorMessage = 'Quyền truy cập microphone bị từ chối. Nhấn "Xem hướng dẫn" để biết cách bật.';
           setError(errorMessage);
           setPermissionDenied(true);
-          
+
           toast.error(errorMessage, {
             duration: 5000,
             action: {
@@ -125,7 +139,7 @@ enableSpeakerDiarization: true,
               }
             }
           });
-          
+
           // Auto trigger permission guide callback after delay
           if (onPermissionDenied) {
             setTimeout(() => onPermissionDenied(), 1500);
@@ -140,19 +154,19 @@ enableSpeakerDiarization: true,
       onPartialResult: (result) => {
         // Append new final text to our ref
         const newFinalText = result.tokens
-            .filter(t => t.is_final)
-            .map(t => t.text)
-            .join("");
-        
+          .filter(t => t.is_final)
+          .map(t => t.text)
+          .join("");
+
         if (newFinalText) {
-            finalTranscriptRef.current += newFinalText;
+          finalTranscriptRef.current += newFinalText;
         }
 
         // Get current non-final text for display
         const nonFinalText = result.tokens
-            .filter(t => !t.is_final)
-            .map(t => t.text)
-            .join("");
+          .filter(t => !t.is_final)
+          .map(t => t.text)
+          .join("");
         console.log('Non-final text:', nonFinalText);
         console.log(result);
         // Update the display transcript, filtering out the <end> token
@@ -162,7 +176,7 @@ enableSpeakerDiarization: true,
       onFinished: () => {
         // Use the accumulated final transcript as the definitive result
         const finalTranscript = finalTranscriptRef.current.replace(/<end>/g, '').trim();
-        
+
         // Final update for display
         setDisplayTranscript(finalTranscript);
 

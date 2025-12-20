@@ -9,9 +9,9 @@ import { toast } from 'react-toastify';
  * @param {boolean} options.autoFetch - Tự động fetch khi mount
  * @param {number} options.refreshInterval - Thời gian refresh tự động (ms)
  */
-export const useNotifications = ({ 
-  autoFetch = true, 
-  refreshInterval = null 
+export const useNotifications = ({
+  autoFetch = true,
+  refreshInterval = null
 } = {}) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -34,13 +34,13 @@ export const useNotifications = ({
         limit: pagination.limit,
         ...params
       });
-      
+
       setNotifications(response.data);
       setPagination(prev => ({
         ...prev,
-        total: response.meta.total,
-        pages: response.meta.pages,
-        page: response.meta.page
+        total: response.meta.totalItems,
+        pages: response.meta.totalPages,
+        page: response.meta.currentPage
       }));
     } catch (err) {
       setError(err.message || 'Không thể tải thông báo');
@@ -64,14 +64,14 @@ export const useNotifications = ({
   const markAsRead = useCallback(async (notificationId) => {
     try {
       await notificationService.markNotificationAsRead(notificationId);
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
+      setNotifications(prev =>
+        prev.map(n =>
           n._id === notificationId ? { ...n, read: true } : n
         )
       );
-      
+
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
@@ -83,12 +83,12 @@ export const useNotifications = ({
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationService.markAllAsRead();
-      
+
       // Update local state
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, read: true }))
       );
-      
+
       setUnreadCount(0);
       toast.success('Đã đánh dấu tất cả là đã đọc');
     } catch (err) {
@@ -121,7 +121,7 @@ export const useNotifications = ({
       const interval = setInterval(() => {
         fetchUnreadCount();
       }, refreshInterval);
-      
+
       return () => clearInterval(interval);
     }
   }, [refreshInterval, fetchUnreadCount]);

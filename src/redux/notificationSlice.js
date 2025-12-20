@@ -90,7 +90,7 @@ const notificationSlice = createSlice({
     // Action để thêm notification mới (khi nhận từ Firebase push)
     addNewNotification: (state, action) => {
       const newNotification = action.payload;
-      
+
       // Thêm vào recent notifications nếu chưa có
       const existsInRecent = state.recentNotifications.some(n => n._id === newNotification._id);
       if (!existsInRecent) {
@@ -100,7 +100,7 @@ const notificationSlice = createSlice({
           state.recentNotifications.pop();
         }
       }
-      
+
       // Thêm vào list notifications nếu đang ở trang 1
       if (state.pagination.page === 1) {
         const existsInList = state.notifications.some(n => n._id === newNotification._id);
@@ -108,13 +108,13 @@ const notificationSlice = createSlice({
           state.notifications.unshift(newNotification);
         }
       }
-      
+
       // Tăng unread count nếu notification chưa đọc
       if (!newNotification.isRead) {
         state.unreadCount += 1;
       }
     },
-    
+
     // Action để clear notifications khi logout
     clearNotifications: (state) => {
       state.notifications = [];
@@ -130,11 +130,11 @@ const notificationSlice = createSlice({
       state.error = null;
       state.initialized = false;
     },
-    
+
     // Action để update notification locally
     updateNotification: (state, action) => {
       const { id, updates } = action.payload;
-      
+
       // Update in notifications list
       const notifIndex = state.notifications.findIndex(n => n._id === id);
       if (notifIndex !== -1) {
@@ -143,7 +143,7 @@ const notificationSlice = createSlice({
           ...updates
         };
       }
-      
+
       // Update in recent notifications
       const recentIndex = state.recentNotifications.findIndex(n => n._id === id);
       if (recentIndex !== -1) {
@@ -165,10 +165,10 @@ const notificationSlice = createSlice({
         state.loading = false;
         state.notifications = action.payload.data;
         state.pagination = {
-          page: action.payload.meta.page,
+          page: action.payload.meta.currentPage,
           limit: action.payload.meta.limit,
-          total: action.payload.meta.total,
-          pages: action.payload.meta.pages
+          total: action.payload.meta.totalItems,
+          pages: action.payload.meta.totalPages
         };
         state.initialized = true;
       })
@@ -176,35 +176,35 @@ const notificationSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch unread count
       .addCase(fetchUnreadCount.fulfilled, (state, action) => {
         state.unreadCount = action.payload;
       })
-      
+
       // Fetch recent notifications
       .addCase(fetchRecentNotifications.fulfilled, (state, action) => {
         state.recentNotifications = action.payload;
       })
-      
+
       // Mark as read
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
         const notificationId = action.payload;
-        
+
         // Update in notifications list
         const notifIndex = state.notifications.findIndex(n => n._id === notificationId);
         if (notifIndex !== -1 && !state.notifications[notifIndex].isRead) {
           state.notifications[notifIndex].isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
-        
+
         // Update in recent notifications
         const recentIndex = state.recentNotifications.findIndex(n => n._id === notificationId);
         if (recentIndex !== -1 && !state.recentNotifications[recentIndex].isRead) {
           state.recentNotifications[recentIndex].isRead = true;
         }
       })
-      
+
       // Mark all as read
       .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
         state.notifications = state.notifications.map(n => ({ ...n, isRead: true }));

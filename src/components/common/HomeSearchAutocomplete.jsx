@@ -38,6 +38,7 @@ const HomeSearchAutocomplete = forwardRef(({
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const searchHistory = useSelector(selectSearchHistory);
+  const { isAuthenticated } = useSelector(state => state.auth);
 
   // State management
   const [query, setQuery] = useState(initialValue || '');
@@ -51,8 +52,10 @@ const HomeSearchAutocomplete = forwardRef(({
 
   // Load search history on mount
   useEffect(() => {
-    dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchSearchHistory({ limit: 10, page: 1 }));
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Set initial value if provided
   useEffect(() => {
@@ -203,16 +206,16 @@ const HomeSearchAutocomplete = forwardRef(({
    */
   const handleDeleteHistory = useCallback(async (e, entryId) => {
     e.stopPropagation();
-    
+
     // Optimistic update: Xóa ngay trên UI
     setSuggestions(prev => ({
       ...prev,
       history: prev.history.filter(h => h._id !== entryId)
     }));
-    
+
     // Hiển thị toast ngay lập tức
     toast.success('Đã xóa lịch sử tìm kiếm');
-    
+
     try {
       // Gọi API ở background (không cần await)
       dispatch(deleteSearchHistory(entryId));
@@ -369,7 +372,7 @@ const HomeSearchAutocomplete = forwardRef(({
             "border-t-0 rounded-t-none rounded-b-xl",
             "border-2 border-primary focus-within:border-primary",
             "shadow-lg shadow-primary/20",
-             // Make dropdown span to align with search button
+            // Make dropdown span to align with search button
             // Input is 6/12 cols (50%), location is 3/12 (25%), button is 3/12 (25%)
             // Total: 200% width + 2 gaps (1rem each) = calc(200% + 2rem)
             "w-[calc(200%)]",
