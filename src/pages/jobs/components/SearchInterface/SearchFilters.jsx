@@ -86,7 +86,7 @@ const SearchFilters = ({
     ...experienceEnum.map(value => ({
       value,
       label: {
-        ENTRY_LEVEL: 'Nhân viên',
+        ENTRY_LEVEL: 'Nhân viên mới',
         MID_LEVEL: 'Trung cấp',
         SENIOR_LEVEL: 'Cao cấp',
         EXECUTIVE: 'Điều hành',

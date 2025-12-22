@@ -85,54 +85,65 @@ const JobDetail = () => {
 
   const formatWorkType = (type) => {
     const typeMap = {
-      'FULL_TIME': 'Toàn thời gian',
-      'PART_TIME': 'Bán thời gian',
-      'CONTRACT': 'Hợp đồng',
-      'FREELANCE': 'Tự do',
-      'INTERNSHIP': 'Thực tập'
+      'FULL_TIME': 'FULL_TIME - Toàn thời gian',
+      'PART_TIME': 'PART_TIME - Bán thời gian',
+      'CONTRACT': 'CONTRACT - Hợp đồng',
+      'FREELANCE': 'FREELANCE - Tự do',
+      'INTERNSHIP': 'INTERNSHIP - Thực tập',
+      'TEMPORARY': 'TEMPORARY - Tạm thời',
+      'VOLUNTEER': 'VOLUNTEER - Tình nguyện'
     };
     return typeMap[type] || type;
   };
 
   const formatExperience = (level) => {
     const levelMap = {
-      'INTERN': 'Thực tập sinh',
-      'FRESHER': 'Fresher',
-      'JUNIOR_LEVEL': 'Junior',
-      'MID_LEVEL': 'Middle',
-      'SENIOR_LEVEL': 'Senior',
-      'MANAGER_LEVEL': 'Quản lý',
-      'DIRECTOR_LEVEL': 'Giám đốc'
+      'INTERN': 'INTERN - Thực tập sinh',
+      'FRESHER': 'FRESHER - Mới tốt nghiệp',
+      'ENTRY_LEVEL': 'ENTRY_LEVEL - Nhân viên mới',
+      'MID_LEVEL': 'MID_LEVEL - Trung cấp',
+      'SENIOR_LEVEL': 'SENIOR_LEVEL - Cao cấp',
+      'EXECUTIVE': 'EXECUTIVE - Điều hành',
+      'NO_EXPERIENCE': 'NO_EXPERIENCE - Không yêu cầu kinh nghiệm'
     };
     return levelMap[level] || level;
   };
 
+  const formatWorkMode = (mode) => {
+    const modeMap = {
+      'ON_SITE': 'ON_SITE - Tại văn phòng',
+      'REMOTE': 'REMOTE - Làm việc từ xa',
+      'HYBRID': 'HYBRID - Linh hoạt'
+    };
+    return modeMap[mode] || mode;
+  };
+
   const formatCategory = (category) => {
     const categoryMap = {
-      'IT': 'Công nghệ thông tin',
-      'SOFTWARE_DEVELOPMENT': 'Phát triển phần mềm',
-      'DATA_SCIENCE': 'Khoa học dữ liệu',
-      'MACHINE_LEARNING': 'Machine Learning',
-      'WEB_DEVELOPMENT': 'Phát triển Web',
-      'SALES': 'Kinh doanh / Bán hàng',
-      'MARKETING': 'Marketing',
-      'ACCOUNTING': 'Kế toán / Kiểm toán',
-      'GRAPHIC_DESIGN': 'Thiết kế đồ họa',
-      'CONTENT_WRITING': 'Viết nội dung',
-      'MEDICAL': 'Y tế / Dược',
-      'TEACHING': 'Giáo dục / Đào tạo',
-      'ENGINEERING': 'Kỹ thuật',
-      'PRODUCTION': 'Sản xuất',
-      'LOGISTICS': 'Vận chuyển / Logistics',
-      'HOSPITALITY': 'Nhà hàng / Khách sạn',
-      'REAL_ESTATE': 'Bất động sản',
-      'LAW': 'Luật / Pháp lý',
-      'FINANCE': 'Tài chính / Ngân hàng',
-      'HUMAN_RESOURCES': 'Nhân sự',
-      'CUSTOMER_SERVICE': 'Chăm sóc khách hàng',
-      'ADMINISTRATION': 'Hành chính / Văn phòng',
-      'MANAGEMENT': 'Quản lý điều hành',
-      'OTHER': 'Khác'
+      'IT': 'IT - Công nghệ thông tin',
+      'SOFTWARE_DEVELOPMENT': 'SOFTWARE_DEVELOPMENT - Phát triển phần mềm',
+      'DATA_SCIENCE': 'DATA_SCIENCE - Khoa học dữ liệu',
+      'MACHINE_LEARNING': 'MACHINE_LEARNING - Machine Learning',
+      'WEB_DEVELOPMENT': 'WEB_DEVELOPMENT - Phát triển Web',
+      'SALES': 'SALES - Kinh doanh / Bán hàng',
+      'MARKETING': 'MARKETING - Marketing',
+      'ACCOUNTING': 'ACCOUNTING - Kế toán / Kiểm toán',
+      'GRAPHIC_DESIGN': 'GRAPHIC_DESIGN - Thiết kế đồ họa',
+      'CONTENT_WRITING': 'CONTENT_WRITING - Viết nội dung',
+      'MEDICAL': 'MEDICAL - Y tế / Dược',
+      'TEACHING': 'TEACHING - Giáo dục / Đào tạo',
+      'ENGINEERING': 'ENGINEERING - Kỹ thuật',
+      'PRODUCTION': 'PRODUCTION - Sản xuất',
+      'LOGISTICS': 'LOGISTICS - Vận chuyển / Logistics',
+      'HOSPITALITY': 'HOSPITALITY - Nhà hàng / Khách sạn',
+      'REAL_ESTATE': 'REAL_ESTATE - Bất động sản',
+      'LAW': 'LAW - Pháp lý',
+      'FINANCE': 'FINANCE - Tài chính / Ngân hàng',
+      'HUMAN_RESOURCES': 'HUMAN_RESOURCES - Nhân sự',
+      'CUSTOMER_SERVICE': 'CUSTOMER_SERVICE - Chăm sóc khách hàng',
+      'ADMINISTRATION': 'ADMINISTRATION - Hành chính / Văn phòng',
+      'MANAGEMENT': 'MANAGEMENT - Quản lý điều hành',
+      'OTHER': 'OTHER - Khác'
     };
     return categoryMap[category] || category;
   };
@@ -413,8 +424,15 @@ const JobDetail = () => {
                     <div className="flex items-center gap-3">
                       <Briefcase className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-sm font-medium text-muted-foreground">Loại hình</p>
                         <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Building className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-foreground font-semibold">{formatWorkMode(job.workType)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -429,6 +447,13 @@ const JobDetail = () => {
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
                         <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hạn nộp</p>
+                        <p className="text-orange-600 font-semibold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">

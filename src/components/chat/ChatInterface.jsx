@@ -67,9 +67,8 @@ const ChatInterface = ({
       return;
     }
 
-    // Disconnect any stale instance
-    console.log('[ChatInterface] Disconnecting any stale socket instance...');
-    socketService.disconnect();
+    // Don't disconnect here, we want to share the connection
+    // socketService.disconnect();
 
     // Start connection once
     console.log('[ChatInterface] Establishing Socket connection...');

@@ -207,6 +207,12 @@ class SocketService {
       this._triggerHandler('onOnlineUsers', users);
     });
 
+    // Real-time Notification
+    this.socket.on('notification:new', (data) => {
+      console.log('[SocketService] New notification:', data);
+      this._triggerHandler('onNotificationReceived', data);
+    });
+
     // Error events
     this.socket.on('chat:error', (error) => {
       console.error('[SocketService] Chat error:', error);
@@ -437,6 +443,10 @@ class SocketService {
 
   onOnlineUsers(callback) {
     this.on('onOnlineUsers', callback);
+  }
+
+  onNotificationReceived(callback) {
+    this.on('onNotificationReceived', callback);
   }
 
   onConnect(callback) {

@@ -40,7 +40,7 @@ function App() {
   // This keeps the App component clean and focused on rendering the router.
   return (
     <>
-      <TikTokPreloader minLoadTime={1500} />
+      <TikTokPreloader minLoadTime={1400} />
       <ThemeProvider>
         <BackgroundProvider>
           <ChatProvider>

@@ -41,6 +41,11 @@ const ACTION_MAP = {
         color: 'text-red-500',
         label: 'Hồ sơ bị từ chối',
     },
+    INTERVIEW_FAILED: {
+        icon: XCircle,
+        color: 'text-gray-500',
+        label: 'Phỏng vấn không đạt',
+    },
     DEFAULT: {
         icon: GitCommit,
         color: 'text-gray-500',

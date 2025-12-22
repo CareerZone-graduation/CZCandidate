@@ -2,6 +2,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { requestForToken, setupOnMessageListener } from '@/services/firebase';
+import socketService from '@/services/socketService';
+import { getAccessToken } from '@/utils/token';
 import { fetchRecentNotifications, fetchUnreadCount, fetchNotifications } from '@/redux/notificationSlice';
 import { toast } from 'sonner';
 
@@ -229,9 +231,25 @@ export const FirebaseProvider = ({ children }) => {
         }
     }, []);
 
+    // Socket Connection Management
+    useEffect(() => {
+        if (isAuthenticated) {
+            const token = getAccessToken();
+            if (token) {
+                console.log('[FirebaseContext] Initializing global socket connection...');
+                // Ensure we don't connect if already connected (socketService handles this check internally too)
+                socketService.connect(token).catch(err => {
+                    console.error('[FirebaseContext] Failed to connect socket:', err);
+                });
+            }
+        }
+    }, [isAuthenticated]);
+
+    // Handle visibility change to refresh notifications
     useEffect(() => {
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && 'Notification' in window && Notification.permission === 'granted') {
+            // Check visibility state only - remove permission check to ensure updates happen
+            if (document.visibilityState === 'visible') {
                 console.log('Tab became visible, refreshing notifications...');
 
                 // Only fetch if authenticated
@@ -254,7 +272,39 @@ export const FirebaseProvider = ({ children }) => {
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [dispatch]);
+    }, [dispatch, isAuthenticated]);
+
+    // Socket Notification Listener
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const handleSocketNotification = (data) => {
+            console.log('Socket notification received:', data);
+
+            // Show toast if desired (could be redundant if FCM also shows toast, but usually FCM is blocked in foreground or silent)
+            // But let's check if we want to show toast here.
+            // FCM listener already shows toast if data.title is present.
+            // If FCM works, we might duplicate toasts. 
+            // Ideally, disable FCM foreground toast if socket is active, OR checks deduplication.
+            // For now, let's just Refresh Data.
+
+            dispatch(fetchRecentNotifications());
+            dispatch(fetchUnreadCount());
+
+            if (initializedRef.current) {
+                dispatch(fetchNotifications({
+                    page: paginationRef.current.page,
+                    limit: paginationRef.current.limit
+                }));
+            }
+        };
+
+        socketService.onNotificationReceived(handleSocketNotification);
+
+        return () => {
+            socketService.off('onNotificationReceived', handleSocketNotification);
+        };
+    }, [dispatch, isAuthenticated]);
 
     const value = {
         notification,

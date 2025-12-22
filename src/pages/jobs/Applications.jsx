@@ -117,6 +117,13 @@ const Applications = () => {
         bgColor: 'bg-gray-50 dark:bg-gray-800',
         textColor: 'text-gray-700 dark:text-gray-300',
         borderColor: 'border-gray-200 dark:border-gray-700'
+      },
+      'INTERVIEW_FAILED': {
+        label: 'Phỏng vấn không đạt',
+        icon: <XCircle className="h-3.5 w-3.5" />,
+        bgColor: 'bg-gray-100 dark:bg-gray-800',
+        textColor: 'text-gray-600 dark:text-gray-400',
+        borderColor: 'border-gray-300 dark:border-gray-700'
       }
     };
     return statusMap[status] || statusMap['PENDING'];
@@ -295,6 +302,14 @@ const Applications = () => {
               icon: XCircle,
               color: 'text-red-600 dark:text-red-400',
               bg: 'bg-red-50 dark:bg-red-900/20'
+            },
+            {
+              label: 'Phỏng vấn không đạt',
+              value: 'INTERVIEW_FAILED',
+              count: stats.INTERVIEW_FAILED || 0,
+              icon: XCircle,
+              color: 'text-gray-600 dark:text-gray-400',
+              bg: 'bg-gray-100 dark:bg-gray-800'
             }
           ].map((stat, index) => (
             <Card

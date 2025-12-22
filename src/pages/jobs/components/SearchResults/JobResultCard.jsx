@@ -15,7 +15,8 @@ import {
   Building2,
   Heart,
   Users,
-  Bookmark
+  Bookmark,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -341,10 +342,17 @@ const JobResultCard = ({
           <Button
             size="sm"
             onClick={handleApplyJob}
-            className="rounded-full px-5 bg-primary hover:bg-primary/90"
+            className={cn(
+              "rounded-full px-5",
+              job.isApplied ? "bg-orange-600 hover:bg-orange-700 text-white" : "bg-primary hover:bg-primary/90"
+            )}
           >
-            <Bookmark className="h-4 w-4 mr-1.5" />
-            Ứng tuyển
+            {job.isApplied ? (
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+            ) : (
+              <Bookmark className="h-4 w-4 mr-1.5" />
+            )}
+            {job.isApplied ? "Ứng tuyển lại" : "Ứng tuyển"}
           </Button>
         </div>
       </div>

@@ -116,9 +116,9 @@ const JobDetailHeader = ({
                             </div>
                         )}
 
-                        <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                             {job.isApplied ? (
-                                <div className="flex flex-wrap gap-2">
+                                <>
                                     <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 px-4 py-2 text-sm font-medium justify-center">
                                         <CheckCircle className="w-4 h-4 mr-2" />
                                         Đã ứng tuyển
@@ -139,7 +139,7 @@ const JobDetailHeader = ({
                                         <MessageCircle className="w-4 h-4 mr-2" />
                                         Nhắn tin
                                     </Button>
-                                </div>
+                                </>
                             ) : (
                                 <Button
                                     onClick={handleApply}
@@ -160,7 +160,7 @@ const JobDetailHeader = ({
                                     }`}
                             >
                                 <Bookmark className={`w-4 h-4 mr-2 ${job.isSaved ? "fill-current" : ""}`} />
-                                {job.isSaved ? "Đã lưu" : "Lưu việc làm"}
+                                {job.isSaved ? "Đã lưu" : "Lưu tin"}
                             </Button>
 
                             {/* Share Button with Dropdown - truyền jobId để tạo preview URL */}

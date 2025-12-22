@@ -109,7 +109,8 @@ export const formatWorkType = (type) => {
     'CONTRACT': 'Hợp đồng',
     'FREELANCE': 'Tự do',
     'INTERNSHIP': 'Thực tập',
-    'TEMPORARY': 'Tạm thời'
+    'TEMPORARY': 'Tạm thời',
+    'VOLUNTEER': 'Tình nguyện'
   };
   return typeMap[type] || type || 'Linh hoạt';
 };
@@ -122,18 +123,12 @@ export const formatWorkType = (type) => {
 export const formatExperience = (level) => {
   const levelMap = {
     'INTERN': 'Thực tập sinh',
-    'FRESHER': 'Fresher',
-    'JUNIOR_LEVEL': 'Junior',
-    'MID_LEVEL': 'Middle',
-    'SENIOR_LEVEL': 'Senior',
-    'MANAGER_LEVEL': 'Quản lý',
-    'DIRECTOR_LEVEL': 'Giám đốc',
-    'FRESH': 'Sinh viên mới tốt nghiệp',
-    'JUNIOR': 'Dưới 1 năm',
-    'SENIOR': '3-5 năm',
-    'EXPERT': 'Trên 5 năm',
-    'MANAGER': 'Quản lý',
-    'DIRECTOR': 'Giám đốc'
+    'FRESHER': 'Mới tốt nghiệp',
+    'ENTRY_LEVEL': 'Nhân viên mới',
+    'MID_LEVEL': 'Trung cấp',
+    'SENIOR_LEVEL': 'Cao cấp',
+    'EXECUTIVE': 'Điều hành',
+    'NO_EXPERIENCE': 'Không yêu cầu kinh nghiệm'
   };
   return levelMap[level] || level || 'Không yêu cầu';
 };
@@ -145,21 +140,21 @@ export const formatExperience = (level) => {
  */
 export const formatLocation = (location) => {
   if (!location) return 'Chưa xác định';
-  
+
   if (typeof location === 'string') return location;
-  
+
   if (typeof location === 'object') {
     const provinceName = location.province?.name || location.province;
     const districtName = location.district?.name || location.district;
-    
+
     if (provinceName && districtName) {
       return `${districtName}, ${provinceName}`;
     }
-    
+
     if (provinceName) return provinceName;
     if (districtName) return districtName;
   }
-  
+
   return 'Chưa xác định';
 };
 
@@ -173,7 +168,7 @@ export const formatTimeAgo = (dateString) => {
   const date = new Date(dateString);
   const diffTime = now - date;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return 'Hôm nay';
   if (diffDays === 1) return 'Hôm qua';
   if (diffDays < 7) return `${diffDays} ngày trước`;

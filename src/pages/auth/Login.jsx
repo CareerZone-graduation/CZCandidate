@@ -33,6 +33,11 @@ const Login = () => {
     try {
       const loginData = await authService.login({ email, password });
       if (loginData && loginData.data.accessToken) {
+        if (loginData.data.role && loginData.data.role !== 'candidate') {
+          toast.info('Trang này chỉ dành cho ứng viên đăng nhập');
+          return;
+        }
+
         dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
         await dispatch(fetchUser());
       } else {

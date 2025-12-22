@@ -48,6 +48,8 @@ import {
   MessageCircle,
   Briefcase,
   Link as LinkIcon,
+  Video,
+
 } from 'lucide-react';
 
 const getStatusInfo = (status) => {
@@ -100,6 +102,13 @@ const getStatusInfo = (status) => {
       textColor: 'text-gray-700',
       borderColor: 'border-gray-200',
       bgColor: 'bg-gray-50',
+    },
+    INTERVIEW_FAILED: {
+      label: 'Phỏng vấn không đạt',
+      icon: <XCircle className="h-4 w-4" />,
+      textColor: 'text-gray-700',
+      borderColor: 'border-gray-200',
+      bgColor: 'bg-gray-100',
     },
   };
   return statusMap[status] || statusMap['PENDING'];
@@ -279,6 +288,22 @@ const ApplicationDetailPage = () => {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Nhắn tin nhà tuyển dụng
                 </Button>
+                {application.interview && (
+                  <Button
+                    className={cn(
+                      "text-white border-0",
+                      application.interview.isEnded
+                        ? "bg-stone-600 hover:bg-stone-700"
+                        : "bg-emerald-600 hover:bg-emerald-700 animate-pulse hover:animate-none"
+                    )}
+                    asChild
+                  >
+                    <Link to={`/interviews/${application.interview._id}`}>
+                      <Video className="h-4 w-4 mr-2" />
+                      {application.interview.isEnded ? 'Chi tiết phỏng vấn' : 'Vào phòng phỏng vấn'}
+                    </Link>
+                  </Button>
+                )}
                 <Button variant="outline" asChild>
                   <Link to={`/jobs/${application.jobId}`}>
                     <ExternalLink className="h-4 w-4 mr-2" />
@@ -353,6 +378,38 @@ const ApplicationDetailPage = () => {
                     Từ chối
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
+        {/* Interview Failed Alert */}
+        {(() => {
+          if (application.status !== 'INTERVIEW_FAILED') return null;
+
+          const sortedHistory = [...(application.activityHistory || [])].sort((a, b) =>
+            new Date(b.timestamp) - new Date(a.timestamp)
+          );
+          const failedAction = sortedHistory.find(item => item.action === 'INTERVIEW_FAILED');
+
+          return (
+            <Card className="mb-6 border-gray-200 bg-gray-50">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <XCircle className="h-5 w-5" />
+                  <CardTitle className="text-lg">Phỏng vấn không đạt</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700 mb-3">
+                  Rất tiếc, kết quả phỏng vấn của bạn chưa đáp ứng được yêu cầu của công việc này.
+                </p>
+                {failedAction?.detail && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 text-sm text-gray-800 shadow-sm">
+                    <span className="font-semibold block mb-1 text-gray-900">Phản hồi từ nhà tuyển dụng:</span>
+                    <p className="italic text-gray-600">"{failedAction.detail}"</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

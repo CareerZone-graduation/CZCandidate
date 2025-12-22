@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Building2, 
-  Users, 
-  Briefcase, 
+import {
+  Building2,
+  Users,
+  Briefcase,
   ArrowRight,
   Target
 } from 'lucide-react';
@@ -22,11 +22,10 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
     queryKey: ['trending-companies', limit],
     queryFn: async () => {
       const response = await apiClient.get(`/analytics/most-applied-companies?limit=${limit}`);
-      console.log('🔥 TRENDING API Response:', response.data); // DEBUG LOG
       return response.data;
     },
-    staleTime: 0, // TẮT CACHE TẠM THỜI ĐỂ DEBUG
-    cacheTime: 0, // TẮT CACHE TẠM THỜI ĐỂ DEBUG
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus
   });
 
   const companies = data?.data || [];
@@ -76,8 +75,8 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {companies.map((company, index) => (
-              <Card 
-                key={company._id} 
+              <Card
+                key={company._id}
                 className="group flex flex-col text-center relative border shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-2xl bg-card cursor-pointer"
                 onClick={() => handleCompanyClick(company._id)}
               >
@@ -108,17 +107,17 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
                 <CardContent className="grow">
                   <div className="space-y-3 text-sm text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
-                      <Users className="h-4 w-4 text-primary" /> 
+                      <Users className="h-4 w-4 text-primary" />
                       <span className="font-medium">{formatEmployees(company.employees)}</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
-                      <Target className="h-4 w-4 text-orange-600" /> 
+                      <Target className="h-4 w-4 text-orange-600" />
                       <span className="font-medium text-orange-600 font-semibold">
                         {company.applicationCount || 0} CV nhận được
                       </span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
-                      <Briefcase className="h-4 w-4 text-emerald-600" /> 
+                      <Briefcase className="h-4 w-4 text-emerald-600" />
                       <span className="font-medium text-emerald-600">
                         {company.activeJobCount} tin tuyển dụng
                       </span>
@@ -131,8 +130,8 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full border-2 border-orange-200 text-orange-600 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all duration-300 rounded-xl font-semibold"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -148,8 +147,8 @@ export const TrendingCompanies = ({ limit = 6, showHeader = true }) => {
         )}
 
         <div className="text-center mt-12">
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="px-8 py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             onClick={handleViewAllCompanies}
           >
