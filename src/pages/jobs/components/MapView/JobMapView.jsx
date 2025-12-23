@@ -107,8 +107,8 @@ const MapEventHandler = ({ onMapMove, searchFilters }) => {
           bounds: {
             north: bounds.getNorth(),
             south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
+            east: L.Util.wrapNum(bounds.getEast(), [-180, 180], true),
+            west: L.Util.wrapNum(bounds.getWest(), [-180, 180], true),
           },
           center: {
             lat: center.lat,
@@ -234,7 +234,7 @@ const JobMapView = ({
       } else {
         // ZOOM GẦN: Gọi API CHỈ LẤY JOBS (không có clusters)
         console.log(`📍 Zoom ${zoom} >= ${ZOOM_THRESHOLD}: Fetching ONLY individual jobs...`);
-        boundsParams.limit = 50; // Giới hạn 50 jobs
+        boundsParams.limit = 200; // Tăng giới hạn lên 200 jobs để khớp tốt hơn với danh sách
         response = await searchJobsOnMap(boundsParams);
 
         console.log(`📦 [Jobs API] Response:`, response);
@@ -397,8 +397,8 @@ const JobMapView = ({
         >
           {/* OpenStreetMap Tile Layer */}
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             maxZoom={19}
           />
 

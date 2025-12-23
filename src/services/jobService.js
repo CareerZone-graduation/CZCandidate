@@ -321,12 +321,15 @@ export const searchJobsOnMap = async (bounds) => {
     }
 
     // Thêm các filters bổ sung
+    if (bounds.query) queryParams.append('query', bounds.query);
     if (bounds.category) queryParams.append('category', bounds.category);
     if (bounds.experience) queryParams.append('experience', bounds.experience);
-    if (bounds.jobType) queryParams.append('jobType', bounds.jobType);
+    if (bounds.type) queryParams.append('type', bounds.type);
     if (bounds.workType) queryParams.append('workType', bounds.workType);
     if (bounds.province) queryParams.append('province', bounds.province);
     if (bounds.district) queryParams.append('district', bounds.district);
+    if (bounds.minSalary) queryParams.append('minSalary', bounds.minSalary);
+    if (bounds.maxSalary) queryParams.append('maxSalary', bounds.maxSalary);
 
     const url = `/jobs/map-search?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -351,12 +354,15 @@ export const getJobClusters = async (bounds, zoom) => {
     queryParams.append('zoom', zoom);
 
     // Thêm các filters bổ sung
+    if (bounds.query) queryParams.append('query', bounds.query);
     if (bounds.category) queryParams.append('category', bounds.category);
     if (bounds.experience) queryParams.append('experience', bounds.experience);
-    if (bounds.jobType) queryParams.append('jobType', bounds.jobType);
+    if (bounds.type) queryParams.append('type', bounds.type);
     if (bounds.workType) queryParams.append('workType', bounds.workType);
     if (bounds.province) queryParams.append('province', bounds.province);
     if (bounds.district) queryParams.append('district', bounds.district);
+    if (bounds.minSalary) queryParams.append('minSalary', bounds.minSalary);
+    if (bounds.maxSalary) queryParams.append('maxSalary', bounds.maxSalary);
 
     const url = `/jobs/map-clusters?${queryParams.toString()}`;
     const response = await apiClient.get(url);
