@@ -469,7 +469,7 @@ const JobSearchBar = forwardRef(({
       )}
 
       {/* Custom styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes pulse-glow {
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 0.8; transform: scale(1.05); }

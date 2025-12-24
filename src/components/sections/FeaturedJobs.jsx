@@ -1,86 +1,30 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Star, Heart, Building, Calendar } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Skeleton } from '../ui/skeleton';
-import { SectionHeader } from '../common/SectionHeader';
-import { getAllJobs } from '../../services/jobService';
-import { formatSalary, formatSalaryVND, formatLocation, formatWorkType, formatTimeAgo, formatExperience } from '../../utils/formatters';
+import { useQuery } from '@tanstack/react-query';
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Building } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { getAllJobs } from '@/services/jobService';
+import { formatSalaryVND, formatWorkType, formatExperience } from '@/utils/formatters';
 
 const FeaturedJobs = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Only fetch jobs if user is authenticated
+  const {
+    data: jobsResponse,
+    isLoading,
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['jobs', 'featured-home'],
+    queryFn: () => getAllJobs({ page: 1, limit: 6, sortBy: 'createdAt:desc' }),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-    const fetchFeaturedJobs = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        console.log('🔄 Fetching featured jobs...');
-
-        const response = await getAllJobs({
-          page: 1,
-          limit: 6,
-          sortBy: 'newest'
-        });
-
-        console.log('✅ Featured jobs API response:', response);
-
-        // Check if the API response indicates success
-        if (response.data && response.data.success) {
-          // Extract jobs data from the response
-          let jobsData = [];
-          if (Array.isArray(response.data.data)) {
-            jobsData = response.data.data;
-          } else if (response.data.data && Array.isArray(response.data.data)) {
-            jobsData = response.data.data;
-          } else {
-            jobsData = [];
-          }
-
-          console.log('📋 Jobs data extracted:', jobsData);
-          setJobs(jobsData);
-        } else {
-          throw new Error(response.data?.message || 'Không thể tải danh sách việc làm nổi bật');
-        }
-      } catch (err) {
-        console.error('❌ Error fetching featured jobs:', err);
-        console.error('❌ Error details:', {
-          message: err.message,
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data
-        });
-
-        // For network errors or auth issues, show a user-friendly message
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
-        } else if (err.response?.status >= 500) {
-          setError('Máy chủ đang gặp sự cố. Vui lòng thử lại sau');
-        } else {
-          setError(err.response?.data?.message || err.message || 'Không thể tải danh sách việc làm');
-        }
-
-        // Set empty array instead of leaving it undefined
-        setJobs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeaturedJobs();
-  }, []);
-  // ====== Format dữ liệu =======
-  // Removed local format functions - now using utils/formatters.js
+  const jobs = Array.isArray(jobsResponse?.data?.data) ? jobsResponse.data.data : [];
 
   const handleViewAll = () => {
     navigate('/jobs/search');
@@ -94,16 +38,20 @@ const FeaturedJobs = () => {
     <section className="py-20 bg-background">
       <div className="container">
         <SectionHeader
-          badgeText="⭐ Việc làm nổi bật"
-          title={<>Cơ hội nghề nghiệp <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span></>}
-          description="Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp."
+          badgeText="⭐ Mới nhất"
+          title={
+            <>
+              Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">mới nhất</span>
+            </>
+          }
+          description="Cập nhật những cơ hội nghề nghiệp mới nhất từ các doanh nghiệp hàng đầu, giúp bạn bắt kịp xu hướng thị trường."
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {isLoading ? (
             // Loading skeletons
             [...Array(6)].map((_, i) => (
-              <Card key={i} className="h-80 shadow-lg">
+              <Card key={i} className="h-80 shadow-md border-muted">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
@@ -122,82 +70,104 @@ const FeaturedJobs = () => {
                 </CardContent>
               </Card>
             ))
-          ) : (
-            jobs.slice(0, 6).map((job) => (
+          ) : isError ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-destructive">Đã xảy ra lỗi: {error.message}</p>
+              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                Thử lại
+              </Button>
+            </div>
+          ) : jobs.length > 0 ? (
+            jobs.map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border border-border/50 shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
+                className="group relative overflow-hidden border border-muted shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative group-hover:scale-110 transition-transform duration-300">
-                      <Avatar className="w-14 h-14 border border-border/50 shadow-sm">
-                        <AvatarImage src={job.company?.logo || ''} alt={job.company?.name || 'Logo'} />
-                        <AvatarFallback>{job.company?.name?.[0] || 'C'}</AvatarFallback>
-                      </Avatar>
-                    </div>
+                  <div className="flex items-start space-x-4">
+                    <Avatar className="w-16 h-16 flex-shrink-0 border-2 border-white shadow-sm rounded-xl text-primary font-bold">
+                      <AvatarImage
+                        src={job.recruiterProfileId?.company?.logo || job.company?.logo || ''}
+                        alt={job.recruiterProfileId?.company?.name || job.company?.name || 'Logo'}
+                        className="object-contain bg-white"
+                      />
+                      <AvatarFallback className="rounded-xl">
+                        {(job.recruiterProfileId?.company?.name || job.company?.name || 'C')[0]}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg line-clamp-1 group-hover:text-primary transition-colors duration-300">{job.title || 'Không có tiêu đề'}</CardTitle>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
-                        <Building className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{job.company?.name || 'Không rõ công ty'}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{
-                          job.location?.province
-                            ? `${job.location.district ? job.location.district + ', ' : ''}${job.location.province}`
-                            : 'Không rõ địa điểm'
-                        }</span>
+                      <CardTitle className="line-clamp-2 mb-1 text-lg group-hover:text-primary transition-colors font-bold">
+                        {job.title || 'Không có tiêu đề'}
+                      </CardTitle>
+                      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 font-medium">
+                          <Building className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">
+                            {job.recruiterProfileId?.company?.name || job.company?.name || 'Không rõ công ty'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">
+                            {job.location?.province
+                              ? `${job.location.district ? job.location.district + ', ' : ''}${job.location.province}`
+                              : 'Không rõ địa điểm'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="pt-0 pb-3">
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none">
-                      <DollarSign className="w-3 h-3 mr-1" />
+                <CardContent className="pt-0 pb-4">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
+                      <DollarSign className="w-3 h-3" />
                       {formatSalaryVND(job.minSalary, job.maxSalary)}
                     </Badge>
-                    <Badge variant="outline" className="text-xs font-normal">
-                      <Clock className="w-3 h-3 mr-1" />
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
+                      <Clock className="w-3 h-3" />
                       {formatWorkType(job.workType)}
                     </Badge>
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
+                      <Briefcase className="w-3 h-3" />
+                      {formatExperience(job.experience)}
+                    </Badge>
                   </div>
-
                 </CardContent>
 
-                <CardFooter className="border-t bg-muted/20 py-3 flex justify-between items-center">
-                  <div className="text-xs text-muted-foreground font-medium">
-                    {job.deadline ? `Hạn: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : 'N/A'}
+                <CardFooter className="border-t pt-3 flex justify-between items-center bg-muted/30">
+                  <div className="text-xs text-muted-foreground">
+                    {job.deadline ? `Hạn nộp: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : ''}
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="p-0 h-auto font-semibold text-primary hover:bg-transparent hover:text-primary/80 group-hover:translate-x-1 transition-all duration-300"
+                    className="p-0 h-auto font-bold text-primary hover:text-primary/80"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJobClick(job._id || job.id);
                     }}
                   >
-                    Xem chi tiết <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                    Chi tiết <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </CardFooter>
               </Card>
             ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">Hiện chưa có việc làm mới</p>
+            </div>
           )}
         </div>
 
         <div className="text-center">
           <Button
-            variant="gradient"
             size="lg"
-            className="px-8 py-6 rounded-2xl text-base shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-bold"
             onClick={handleViewAll}
           >
-            Xem tất cả việc làm
+            Khám phá thêm việc làm
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
@@ -207,3 +177,4 @@ const FeaturedJobs = () => {
 };
 
 export default FeaturedJobs;
+

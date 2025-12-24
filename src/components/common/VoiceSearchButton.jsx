@@ -215,7 +215,7 @@ const VoiceSearchButton = ({
       )}
 
       {/* Custom animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes sound-wave-1 {
           0%, 100% {
             transform: scale(1);

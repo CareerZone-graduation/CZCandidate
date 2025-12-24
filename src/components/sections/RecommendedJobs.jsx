@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Building, Calendar, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { MapPin, Briefcase, DollarSign, Clock, ArrowRight, Building, Sparkles, AlertCircle, RefreshCw, Zap } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { getRecommendations, generateRecommendations } from '@/services/recommendationService';
 import { getOnboardingStatus } from '@/services/onboardingService';
-import { getAllJobs } from '@/services/jobService';
 import { formatSalaryVND, formatWorkType, formatExperience } from '@/utils/formatters';
 
 const RecommendedJobs = () => {
@@ -34,19 +33,7 @@ const RecommendedJobs = () => {
   const completeness = statusData?.data?.profileCompleteness?.percentage || 0;
   const isProfileComplete = completeness >= 60;
 
-  // 2. Fetch Featured Jobs (Always needed as fallback)
-  const {
-    data: featuredJobsData,
-    isLoading: isFeaturedLoading
-  } = useQuery({
-    queryKey: ['jobs', 'featured'],
-    queryFn: () => getAllJobs({ page: 1, limit: 6, sortBy: 'newest' }),
-    staleTime: 10 * 60 * 1000,
-  });
-
-  const featuredJobs = Array.isArray(featuredJobsData?.data?.data) ? featuredJobsData.data.data : [];
-
-  // 3. Fetch Recommendations (Enabled only if profile complete)
+  // 2. Fetch Recommendations (Enabled only if profile complete)
   const {
     data: recResponse,
     isLoading: isRecLoading,
@@ -61,7 +48,7 @@ const RecommendedJobs = () => {
   // Recommendation Generation Mutation
   const generateMutation = useMutation({
     mutationFn: generateRecommendations,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
       refetchRecommendations();
     },
@@ -76,19 +63,7 @@ const RecommendedJobs = () => {
       recommendationReasons: rec.reasons
     })) || [];
 
-  // Determine what to display
-  // Logic: 
-  // - If IsAuthenticated AND ProfileComplete AND Have Recommendations -> Show Recommendations
-  // - Else -> Show Featured Jobs
-  const shouldShowRecommendations = isAuthenticated && isProfileComplete && recommendedJobs.length > 0;
-  const displayJobs = shouldShowRecommendations ? recommendedJobs : featuredJobs;
-
-  // Loading state: complex because we might be waiting for recommendation check
-  // If Authenticated and Profile Complete -> Wait for Rec Loading. 
-  // If Rec Loading finishes and empty -> we might trigger generate -> Wait? 
-  // Simplification: display loading if critical data is missing.
-
-  const isGlobalLoading = isFeaturedLoading || (isAuthenticated && isStatusLoading) || (isAuthenticated && isProfileComplete && isRecLoading);
+  const isGlobalLoading = (isAuthenticated && isStatusLoading) || (isAuthenticated && isProfileComplete && isRecLoading);
 
   // Auto-generate effect
   useEffect(() => {
@@ -127,31 +102,24 @@ const RecommendedJobs = () => {
     );
   };
 
+  // If not authenticated, we don't show this section at all (HomePage handles this, but safety check)
+  if (!isAuthenticated) return null;
+
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-emerald-50/30">
       <div className="container">
         <SectionHeader
-          badgeText={shouldShowRecommendations ? '✨ Dành riêng cho bạn' : '⭐ Việc làm nổi bật'}
+          badgeText="✨ Dành riêng cho bạn"
           title={
-            shouldShowRecommendations ? (
-              <>
-                Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">phù hợp với bạn</span>
-              </>
-            ) : (
-              <>
-                Cơ hội nghề nghiệp <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">hàng đầu</span>
-              </>
-            )
+            <>
+              Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">dành riêng cho bạn</span>
+            </>
           }
-          description={
-            shouldShowRecommendations
-              ? 'Những công việc được gợi ý dựa trên kỹ năng, kinh nghiệm và mong muốn của bạn.'
-              : 'Khám phá những vị trí chất lượng từ các công ty uy tín, với mức lương hấp dẫn và môi trường chuyên nghiệp.'
-          }
+          description="Những công việc được gợi ý dựa trên kỹ năng, kinh nghiệm và mong muốn của bạn."
         />
 
-        {/* Alert for incomplete profile (Only if authenticated, not loading, and profile incomplete) */}
-        {!isGlobalLoading && isAuthenticated && !isProfileComplete && (
+        {/* Alert for incomplete profile */}
+        {!isGlobalLoading && !isProfileComplete && (
           <Alert className="mb-8 bg-amber-50 border-amber-200/50 shadow-sm animate-in fade-in slide-in-from-top-2">
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800 flex items-center gap-2 justify-between flex-wrap">
@@ -162,7 +130,7 @@ const RecommendedJobs = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+                className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20 font-bold"
                 onClick={() => navigate('/profile')}
               >
                 Hoàn thiện ngay <ArrowRight className="ml-1 h-3 w-3" />
@@ -172,14 +140,14 @@ const RecommendedJobs = () => {
         )}
 
         {/* Refresh button */}
-        {shouldShowRecommendations && (
+        {recommendedJobs.length > 0 && (
           <div className="flex justify-end mb-6">
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefreshRecommendations}
               disabled={generateMutation.isPending}
-              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold"
             >
               <RefreshCw className={`h-4 w-4 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
               {generateMutation.isPending ? 'Đang phân tích...' : 'Làm mới gợi ý'}
@@ -190,7 +158,7 @@ const RecommendedJobs = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {(isGlobalLoading || generateMutation.isPending) ? (
             // Loading skeletons
-            [...Array(6)].map((_, i) => (
+            [...Array(3)].map((_, i) => (
               <Card key={i} className="h-80 shadow-md border-muted">
                 <CardContent className="p-6">
                   <div className="space-y-4">
@@ -210,17 +178,17 @@ const RecommendedJobs = () => {
                 </CardContent>
               </Card>
             ))
-          ) : displayJobs.length > 0 ? (
-            displayJobs.map((job) => (
+          ) : recommendedJobs.length > 0 ? (
+            recommendedJobs.map((job) => (
               <Card
                 key={job._id || job.id}
-                className="group relative overflow-hidden border border-muted shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
+                className="group relative overflow-hidden border border-emerald-100 shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
                 {/* Recommendation score badge */}
-                {shouldShowRecommendations && job.recommendationScore && (
+                {job.recommendationScore && (
                   <div className="absolute top-3 right-3 z-10">
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold border-0 shadow-sm">
+                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold border-0 shadow-sm">
                       <Sparkles className="w-3 h-3 mr-1" />
                       {job.recommendationScore}%
                     </Badge>
@@ -240,11 +208,11 @@ const RecommendedJobs = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="line-clamp-2 mb-1 text-lg group-hover:text-primary transition-colors">
+                      <CardTitle className="line-clamp-2 mb-1 text-lg group-hover:text-primary transition-colors font-bold">
                         {job.title || 'Không có tiêu đề'}
                       </CardTitle>
                       <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 font-medium">
                           <Building className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">
                             {job.recruiterProfileId?.company?.name || job.company?.name || 'Không rõ công ty'}
@@ -265,7 +233,7 @@ const RecommendedJobs = () => {
 
                 <CardContent className="pt-0 pb-4">
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
+                    <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-emerald-50 text-emerald-700">
                       <DollarSign className="w-3 h-3" />
                       {formatSalaryVND(job.minSalary, job.maxSalary)}
                     </Badge>
@@ -273,24 +241,18 @@ const RecommendedJobs = () => {
                       <Clock className="w-3 h-3" />
                       {formatWorkType(job.workType)}
                     </Badge>
-                    {(shouldShowRecommendations ? job.recommendationReasons : [1]).length > 0 ? null : (
-                      <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary/50">
-                        <Briefcase className="w-3 h-3" />
-                        {formatExperience(job.experience)}
-                      </Badge>
-                    )}
                   </div>
 
-                  {shouldShowRecommendations && renderReasonBadges(job.recommendationReasons)}
+                  {renderReasonBadges(job.recommendationReasons)}
                 </CardContent>
 
-                <CardFooter className="border-t pt-3 flex justify-between items-center bg-muted/30">
+                <CardFooter className="border-t pt-3 flex justify-between items-center bg-emerald-50/30">
                   <div className="text-xs text-muted-foreground">
                     {job.deadline ? `Hạn nộp: ${new Date(job.deadline).toLocaleDateString('vi-VN')}` : ''}
                   </div>
                   <Button
                     variant="ghost"
-                    className="p-0 h-auto font-medium text-primary hover:text-primary/80"
+                    className="p-0 h-auto font-bold text-emerald-700 hover:text-emerald-600 hover:bg-transparent"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJobClick(job._id || job.id);
@@ -301,26 +263,44 @@ const RecommendedJobs = () => {
                 </CardFooter>
               </Card>
             ))
+          ) : !isProfileComplete ? (
+            <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-dashed border-emerald-200">
+              <Zap className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Đánh thức sức mạnh trí tuệ nhân tạo</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                Hoàn thiện hồ sơ của bạn để CareerZone AI có thể tìm thấy những công việc phù hợp nhất với tài năng của bạn.
+              </p>
+              <Button
+                size="lg"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200"
+                onClick={() => navigate('/profile')}
+              >
+                Cập nhật hồ sơ ngay
+              </Button>
+            </div>
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">Không tìm thấy việc làm phù hợp</p>
+              <p className="text-muted-foreground">Chưa có gợi ý phù hợp. Hãy thử cập nhật thêm kỹ năng!</p>
             </div>
           )}
         </div>
 
-        <div className="text-center">
-          <Button
-            size="lg"
-            className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-bold"
-            onClick={() => navigate(shouldShowRecommendations ? '/jobs/recommended' : '/jobs/search')}
-          >
-            {shouldShowRecommendations ? 'Xem tất cả gợi ý' : 'Khám phá thêm việc làm'}
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
+        {recommendedJobs.length > 0 && (
+          <div className="text-center">
+            <Button
+              size="lg"
+              className="px-8 py-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl font-bold"
+              onClick={() => navigate('/jobs/recommended')}
+            >
+              Xem tất cả gợi ý
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
 export default RecommendedJobs;
+

@@ -34,9 +34,7 @@ const TopCompanies = () => {
     const fetchTopCompanies = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching top companies (by jobs)...');
         const response = await apiClient.get('/analytics/top-companies?limit=6');
-        console.log('📦 TOP COMPANIES API Response:', response.data);
 
         if (response.data.success) {
           setCompanies(response.data.data);
@@ -45,7 +43,6 @@ const TopCompanies = () => {
         }
       } catch (error) {
         console.error('❌ Failed to fetch top companies:', error);
-        console.error('Error details:', error.response?.data || error.message);
       } finally {
         setLoading(false);
       }

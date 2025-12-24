@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+).toString();
 
 /**
  * PDF Viewer Component
@@ -14,8 +17,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
  */
 const PDFViewer = ({ pdfUrl, onDownload, fileName = 'cv.pdf' }) => {
     const [numPages, setNumPages] = useState(null);
-    const [pageNumber, setPageNumber] = useState(1);
     const [scale, setScale] = useState(1.0);
+    const [pageNumber, setPageNumber] = useState(1);
+
+    // Reset page number when PDF changes
+    React.useEffect(() => {
+        setPageNumber(1);
+    }, [pdfUrl]);
 
 
     const onDocumentLoadSuccess = ({ numPages }) => {
@@ -89,6 +97,7 @@ const PDFViewer = ({ pdfUrl, onDownload, fileName = 'cv.pdf' }) => {
             {/* PDF Display */}
             <div className="flex-1 overflow-auto p-4 flex justify-center">
                 <Document
+                    key={pdfUrl}
                     file={pdfUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}

@@ -330,6 +330,9 @@ export const searchJobsOnMap = async (bounds) => {
     if (bounds.district) queryParams.append('district', bounds.district);
     if (bounds.minSalary) queryParams.append('minSalary', bounds.minSalary);
     if (bounds.maxSalary) queryParams.append('maxSalary', bounds.maxSalary);
+    if (bounds.latitude) queryParams.append('latitude', bounds.latitude);
+    if (bounds.longitude) queryParams.append('longitude', bounds.longitude);
+    if (bounds.distance) queryParams.append('distance', bounds.distance);
 
     const url = `/jobs/map-search?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -363,6 +366,9 @@ export const getJobClusters = async (bounds, zoom) => {
     if (bounds.district) queryParams.append('district', bounds.district);
     if (bounds.minSalary) queryParams.append('minSalary', bounds.minSalary);
     if (bounds.maxSalary) queryParams.append('maxSalary', bounds.maxSalary);
+    if (bounds.latitude) queryParams.append('latitude', bounds.latitude);
+    if (bounds.longitude) queryParams.append('longitude', bounds.longitude);
+    if (bounds.distance) queryParams.append('distance', bounds.distance);
 
     const url = `/jobs/map-clusters?${queryParams.toString()}`;
     const response = await apiClient.get(url);
