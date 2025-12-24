@@ -62,7 +62,6 @@ const MyInterviews = () => {
     refetchInterval: 60000, // Refetch every minute to update join buttons
   });
   const interviews = interviewsData?.data || [];
-  console.log(interviews);
 
   // Categorize interviews - Backend uses uppercase status values
   const upcomingInterviews = interviews.filter((interview) => {
@@ -387,7 +386,20 @@ const InterviewCard = ({ interview, onJoin, onDeviceTest, onDetail }) => {
                 </Badge>
               )}
             </div>
-            <CardTitle className="text-xl">{jobSnapshot.title || 'Phỏng vấn'}</CardTitle>
+            <CardTitle className="text-xl">
+              {interview.application?.id ? (
+                <a
+                  href={`/dashboard/applications/${interview.application.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                >
+                  {jobSnapshot.title || 'Phỏng vấn'}
+                </a>
+              ) : (
+                jobSnapshot.title || 'Phỏng vấn'
+              )}
+            </CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {jobSnapshot.company || 'Công ty'}
             </p>
@@ -484,7 +496,20 @@ const PastInterviewCard = ({ interview, onDetail }) => {
             <div className="mb-2">
               <Badge {...config.badge}>{config.badge.text}</Badge>
             </div>
-            <CardTitle className="text-xl">{jobSnapshot.title || 'Phỏng vấn'}</CardTitle>
+            <CardTitle className="text-xl">
+              {interview.application?.id ? (
+                <a
+                  href={`/dashboard/applications/${interview.application.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                >
+                  {jobSnapshot.title || 'Phỏng vấn'}
+                </a>
+              ) : (
+                jobSnapshot.title || 'Phỏng vấn'
+              )}
+            </CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {jobSnapshot.company || 'Công ty'}
             </p>

@@ -419,18 +419,16 @@ const Applications = () => {
                           {/* Previous Application Link */}
                           <div>
                             {application.previousApplicationId && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/dashboard/applications/${application.previousApplicationId}`);
-                                }}
+                              <a
+                                href={`/dashboard/applications/${application.previousApplicationId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline px-3 py-2 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <History className="h-4 w-4 mr-2" />
-                                Xem đơn trước
-                              </Button>
+                                Xem đơn trước (Tab mới)
+                              </a>
                             )}
                           </div>
 
@@ -450,18 +448,18 @@ const Applications = () => {
                               </Button>
                             )}
 
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-primary hover:bg-primary/90 shadow-sm"
+                            <a
+                              href={`/dashboard/applications/${application._id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 shadow-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleViewDetail(application)
                               }}
                             >
-                              Xem chi tiết
+                              Xem chi tiết (Tab mới)
                               <Eye className="h-4 w-4 ml-2" />
-                            </Button>
+                            </a>
                           </div>
                         </div>
                       </div>
