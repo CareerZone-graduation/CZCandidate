@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Skeleton } from '../../components/ui/skeleton';
-import { 
-  Search, 
-  Calendar, 
-  Clock, 
-  Eye, 
-  User, 
-  ChevronRight,
+import { toast } from 'sonner';
+import {
+  Search,
+  Calendar,
+  Clock,
+  Eye,
+  User,
   TrendingUp,
-  Filter,
   Newspaper,
   Star,
   BookOpen,
@@ -29,14 +29,16 @@ import {
   CheckCircle,
   ArrowRight,
   Sparkles,
-  DollarSign
+  DollarSign,
+  LogIn
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const News = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
   // States
   const [news, setNews] = useState([]);
   const [featuredNews, setFeaturedNews] = useState([]);
@@ -50,211 +52,286 @@ const News = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Mock data cho News - giữ nguyên như cũ
+  // Tin tức nghề nghiệp - Bài báo thực tế với URL chính xác
   const mockNews = [
     {
       id: 1,
-      title: 'Xu hướng tuyển dụng IT 2024: Những kỹ năng được săn đón nhất',
-      excerpt: 'Phân tích chi tiết về những xu hướng tuyển dụng mới nhất trong ngành công nghệ thông tin và những kỹ năng cần thiết...',
-      content: 'Nội dung đầy đủ bài viết...',
+      title: 'Xu hướng tuyển dụng và thị trường lao động Việt Nam 2024',
+      excerpt: 'Báo cáo chi tiết về xu hướng tuyển dụng, các ngành nghề có nhu cầu cao và dự báo thị trường lao động năm 2024...',
       coverImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400',
-      category: 'Công nghệ',
+      category: 'Thị trường',
       categorySlug: 'technology',
-      author: {
-        name: 'Nguyễn Văn An',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-        role: 'Senior HR Manager'
-      },
-      publishedAt: '2024-01-15T10:00:00Z',
-      readTime: '5 phút đọc',
-      views: 1250,
+      url: 'https://www.topcv.vn/bao-cao-thi-truong-tuyen-dung',
+      author: { name: 'TopCV', avatar: '', role: 'Nền tảng tuyển dụng' },
+      publishedAt: '2024-12-20T10:00:00Z',
+      readTime: '8 phút đọc',
+      views: 45200,
       isFeatured: true,
-      tags: ['IT', 'Tuyển dụng', 'Kỹ năng', '2024']
+      tags: ['Thị trường lao động', 'Tuyển dụng', '2024']
     },
     {
       id: 2,
-      title: 'Cách viết CV ấn tượng để thu hút nhà tuyển dụng',
-      excerpt: 'Hướng dẫn chi tiết cách tạo một bản CV chuyên nghiệp, nổi bật và thu hút được sự chú ý của nhà tuyển dụng...',
-      content: 'Nội dung đầy đủ bài viết...',
+      title: 'Cách viết CV xin việc chuẩn - Hướng dẫn chi tiết từ A-Z',
+      excerpt: 'Hướng dẫn từng bước viết CV xin việc chuyên nghiệp, thu hút nhà tuyển dụng với các mẫu CV đẹp...',
       coverImage: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400',
       category: 'Nghề nghiệp',
       categorySlug: 'career',
-      author: {
-        name: 'Trần Thị Bình',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-        role: 'Career Coach'
-      },
-      publishedAt: '2024-01-12T14:30:00Z',
-      readTime: '7 phút đọc',
-      views: 980,
+      url: 'https://www.topcv.vn/cach-viet-cv-xin-viec',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-18T14:30:00Z',
+      readTime: '10 phút đọc',
+      views: 128500,
       isFeatured: true,
-      tags: ['CV', 'Tuyển dụng', 'Nghề nghiệp']
+      tags: ['CV', 'Xin việc', 'Hướng dẫn']
     },
     {
       id: 3,
-      title: 'Lương thưởng trong ngành Marketing: Cập nhật mức lương 2024',
-      excerpt: 'Báo cáo về mức lương trung bình, thưởng và phúc lợi trong ngành Marketing tại Việt Nam năm 2024...',
-      content: 'Nội dung đầy đủ bài viết...',
+      title: 'Khảo sát lương IT Việt Nam 2024 - Báo cáo chi tiết',
+      excerpt: 'Báo cáo khảo sát lương ngành IT với hơn 2000 người tham gia, phân tích theo vị trí, kinh nghiệm và công ty...',
       coverImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
       category: 'Lương thưởng',
       categorySlug: 'salary',
-      author: {
-        name: 'Lê Minh Cường',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-        role: 'Marketing Director'
-      },
-      publishedAt: '2024-01-10T09:15:00Z',
-      readTime: '6 phút đọc',
-      views: 1450,
+      url: 'https://itviec.com/blog/khao-sat-luong-it/',
+      author: { name: 'ITviec', avatar: '', role: 'IT Jobs Platform' },
+      publishedAt: '2024-12-15T09:15:00Z',
+      readTime: '12 phút đọc',
+      views: 85000,
       isFeatured: false,
-      tags: ['Marketing', 'Lương', 'Báo cáo']
+      tags: ['IT', 'Lương', 'Khảo sát']
     },
     {
       id: 4,
-      title: 'Kinh nghiệm phỏng vấn online: Những điều cần lưu ý',
-      excerpt: 'Chia sẻ kinh nghiệm và mẹo hữu ích để có buổi phỏng vấn online thành công và chuyên nghiệp...',
-      content: 'Nội dung đầy đủ bài viết...',
+      title: 'Bí quyết phỏng vấn xin việc thành công - 20 câu hỏi thường gặp',
+      excerpt: 'Tổng hợp 20 câu hỏi phỏng vấn phổ biến nhất và cách trả lời ấn tượng để chinh phục nhà tuyển dụng...',
       coverImage: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400',
       category: 'Nghề nghiệp',
       categorySlug: 'career',
-      author: {
-        name: 'Phạm Thị Dung',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-        role: 'HR Specialist'
-      },
-      publishedAt: '2024-01-08T16:20:00Z',
-      readTime: '4 phút đọc',
-      views: 890,
+      url: 'https://www.topcv.vn/cau-hoi-phong-van',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-10T16:20:00Z',
+      readTime: '15 phút đọc',
+      views: 92100,
       isFeatured: false,
-      tags: ['Phỏng vấn', 'Online', 'Kinh nghiệm']
+      tags: ['Phỏng vấn', 'Kỹ năng', 'Xin việc']
+    },
+    {
+      id: 5,
+      title: 'Top 10 ngành nghề hot nhất 2024 - Cơ hội việc làm',
+      excerpt: 'Điểm danh 10 ngành nghề có nhu cầu tuyển dụng cao nhất năm 2024: IT, Marketing, Logistics, Y tế...',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      category: 'Thị trường',
+      categorySlug: 'technology',
+      url: 'https://www.topcv.vn/nganh-nghe-hot',
+      author: { name: 'TopCV', avatar: '', role: 'Career Platform' },
+      publishedAt: '2024-12-08T11:00:00Z',
+      readTime: '8 phút đọc',
+      views: 68000,
+      isFeatured: true,
+      tags: ['Xu hướng', 'Tuyển dụng', 'Ngành nghề']
+    },
+    {
+      id: 6,
+      title: 'Cách đàm phán lương khi nhận offer - Bí quyết tăng lương',
+      excerpt: 'Hướng dẫn chi tiết kỹ năng đàm phán lương hiệu quả, cách trả lời câu hỏi về mức lương mong muốn...',
+      coverImage: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400',
+      category: 'Lương thưởng',
+      categorySlug: 'salary',
+      url: 'https://www.topcv.vn/cach-dam-phan-luong',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-05T09:30:00Z',
+      readTime: '7 phút đọc',
+      views: 55600,
+      isFeatured: false,
+      tags: ['Đàm phán', 'Lương', 'Offer']
+    },
+    {
+      id: 7,
+      title: 'Làm việc từ xa (Remote) - Xu hướng và cơ hội 2024',
+      excerpt: 'Tìm hiểu về xu hướng làm việc từ xa, các công việc remote phổ biến và cách tìm việc làm online...',
+      coverImage: 'https://images.unsplash.com/photo-1587560699334-cc4ff634909a?w=400',
+      category: 'Thị trường',
+      categorySlug: 'technology',
+      url: 'https://www.topcv.vn/viec-lam-remote',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-01T14:00:00Z',
+      readTime: '6 phút đọc',
+      views: 39800,
+      isFeatured: false,
+      tags: ['Remote Work', 'Việc làm online', 'Xu hướng']
+    },
+    {
+      id: 8,
+      title: '10 lỗi sai khi viết CV khiến bạn mất cơ hội việc làm',
+      excerpt: 'Những sai lầm phổ biến nhất khi viết CV và cách khắc phục để tăng cơ hội được gọi phỏng vấn...',
+      coverImage: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400',
+      category: 'Nghề nghiệp',
+      categorySlug: 'career',
+      url: 'https://www.topcv.vn/loi-sai-khi-viet-cv',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-11-28T10:15:00Z',
+      readTime: '6 phút đọc',
+      views: 72300,
+      isFeatured: false,
+      tags: ['CV', 'Sai lầm', 'Hướng dẫn']
     }
   ];
 
-  // Mock data cho Career Guides - mới thêm
+  // Kiến thức chuyên ngành - Bài báo thực tế với URL chính xác
   const mockCareerGuides = [
     {
       id: 1,
-      title: 'Nhân viên bán hàng là gì? Bảng mô tả công việc nhân viên bán hàng',
-      excerpt: 'Nhân viên bán hàng là một nghề "đẻ ra khó" đang cực kỳ được nhiều người quan tâm theo...',
-      content: 'Nội dung đầy đủ hướng dẫn...',
+      title: 'Nhân viên kinh doanh là gì? Mô tả công việc chi tiết',
+      excerpt: 'Tìm hiểu nghề nhân viên kinh doanh: công việc hàng ngày, kỹ năng cần có, mức lương và cơ hội thăng tiến...',
       coverImage: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400',
       category: 'Bán hàng',
       categorySlug: 'sales',
       difficulty: 'Cơ bản',
-      author: {
-        name: 'TopCV',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-        role: 'Career Expert'
-      },
-      publishedAt: '2024-06-27T10:00:00Z',
-      readTime: '5 phút đọc',
-      views: 1250,
+      url: 'https://www.topcv.vn/nhan-vien-kinh-doanh-la-gi',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-20T10:00:00Z',
+      readTime: '8 phút đọc',
+      views: 58500,
       isFeatured: true,
-      tags: ['Bán hàng', 'Nhân viên', 'Mô tả công việc'],
+      tags: ['Kinh doanh', 'Sales', 'Nghề nghiệp'],
       rating: 4.8
     },
     {
       id: 2,
-      title: 'Telesales là gì? Những công việc Telesales HOT nhất bạn cần biết',
-      excerpt: 'Nhắc tới công việc Telesales, không ít người gần ngay cho nghề này "cái mác" gọi điện...',
-      content: 'Nội dung đầy đủ hướng dẫn...',
-      coverImage: 'https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=400',
-      category: 'Telesales',
+      title: 'Digital Marketing là gì? Tổng quan ngành Marketing số',
+      excerpt: 'Khám phá Digital Marketing: các kênh marketing online, vị trí công việc và lộ trình phát triển sự nghiệp...',
+      coverImage: 'https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400',
+      category: 'Marketing',
       categorySlug: 'telesales',
       difficulty: 'Trung bình',
-      author: {
-        name: 'TopCV',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100',
-        role: 'Sales Expert'
-      },
-      publishedAt: '2024-06-02T14:30:00Z',
-      readTime: '7 phút đọc',
-      views: 980,
+      url: 'https://www.topcv.vn/digital-marketing-la-gi',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-18T14:30:00Z',
+      readTime: '10 phút đọc',
+      views: 75600,
       isFeatured: true,
-      tags: ['Telesales', 'Bán hàng qua điện thoại', 'Kỹ năng'],
-      rating: 4.6
+      tags: ['Digital Marketing', 'Marketing', 'Nghề nghiệp'],
+      rating: 4.7
     },
     {
       id: 3,
-      title: 'Các chức danh CEO, CFO, CPO, CCO, CHRO, CMO là gì?',
-      excerpt: 'Tại các doanh nghiệp hiện nay, bạn sẽ thường bắt gặp các chức ngữ như CEO, CFO, CPO...',
-      content: 'Nội dung đầy đủ hướng dẫn...',
-      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      category: 'Quản lý',
+      title: 'Lập trình viên (Developer) là gì? Hướng dẫn nghề nghiệp',
+      excerpt: 'Tổng quan về nghề lập trình viên: các ngôn ngữ lập trình, mức lương và lộ trình từ Junior đến Senior...',
+      coverImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',
+      category: 'Công nghệ',
       categorySlug: 'management',
       difficulty: 'Nâng cao',
-      author: {
-        name: 'TopCV',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-        role: 'Business Expert'
-      },
-      publishedAt: '2024-06-02T09:15:00Z',
-      readTime: '6 phút đọc',
-      views: 1450,
+      url: 'https://itviec.com/blog/lap-trinh-vien-la-gi/',
+      author: { name: 'ITviec', avatar: '', role: 'IT Career Expert' },
+      publishedAt: '2024-12-15T09:15:00Z',
+      readTime: '12 phút đọc',
+      views: 92000,
       isFeatured: false,
-      tags: ['CEO', 'CFO', 'Quản lý', 'Chức danh'],
+      tags: ['IT', 'Lập trình', 'Developer'],
       rating: 4.9
     },
     {
       id: 4,
-      title: 'Ngành Logistics là gì? TOP 11 vị trí công việc ngành Logistics',
-      excerpt: 'Trong bối cảnh nền kinh tế cạnh tranh mở rộng và phát triển, ngành Logistics...',
-      content: 'Nội dung đầy đủ hướng dẫn...',
+      title: 'Logistics là gì? Tìm hiểu ngành Logistics và chuỗi cung ứng',
+      excerpt: 'Khám phá ngành Logistics: các vị trí việc làm, kỹ năng cần thiết và triển vọng nghề nghiệp tại Việt Nam...',
       coverImage: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400',
       category: 'Logistics',
       categorySlug: 'logistics',
       difficulty: 'Trung bình',
-      author: {
-        name: 'TopCV',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-        role: 'Industry Expert'
-      },
-      publishedAt: '2024-05-30T16:20:00Z',
-      readTime: '8 phút đọc',
-      views: 890,
+      url: 'https://www.topcv.vn/logistics-la-gi',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-12T16:20:00Z',
+      readTime: '9 phút đọc',
+      views: 49800,
       isFeatured: false,
-      tags: ['Logistics', 'Vận chuyển', 'Chuỗi cung ứng'],
-      rating: 4.7
+      tags: ['Logistics', 'Supply Chain', 'Vận chuyển'],
+      rating: 4.6
     },
     {
       id: 5,
-      title: 'Tổng hợp 10 việc làm tiếng Anh siêu HOT cho dân ngoại ngữ',
-      excerpt: 'Với xu thế hội nhập như hiện nay, nhu cầu về việc làm cần tiếng Anh của các doanh nghiệp ngày càng cao.',
-      content: 'Nội dung đầy đủ hướng dẫn...',
-      coverImage: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400',
-      category: 'Ngoại ngữ',
+      title: 'Kế toán là gì? Hướng dẫn nghề kế toán từ A-Z',
+      excerpt: 'Tất cả về nghề kế toán: công việc, chứng chỉ cần có, mức lương và lộ trình phát triển sự nghiệp...',
+      coverImage: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400',
+      category: 'Tài chính',
       categorySlug: 'language',
       difficulty: 'Trung bình',
-      author: {
-        name: 'TopCV',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-        role: 'Language Expert'
-      },
-      publishedAt: '2024-06-02T11:00:00Z',
-      readTime: '6 phút đọc',
-      views: 1120,
+      url: 'https://www.topcv.vn/ke-toan-la-gi',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-10T11:00:00Z',
+      readTime: '11 phút đọc',
+      views: 81200,
       isFeatured: true,
-      tags: ['Tiếng Anh', 'Ngoại ngữ', 'Việc làm'],
+      tags: ['Kế toán', 'Tài chính', 'Nghề nghiệp'],
+      rating: 4.8
+    },
+    {
+      id: 6,
+      title: 'Data Analyst là gì? Lộ trình trở thành chuyên gia phân tích dữ liệu',
+      excerpt: 'Hướng dẫn chi tiết về nghề Data Analyst: công cụ cần học, kỹ năng và mức lương tại Việt Nam...',
+      coverImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400',
+      category: 'Công nghệ',
+      categorySlug: 'management',
+      difficulty: 'Nâng cao',
+      url: 'https://itviec.com/blog/data-analyst-la-gi/',
+      author: { name: 'ITviec', avatar: '', role: 'IT Career Expert' },
+      publishedAt: '2024-12-08T09:00:00Z',
+      readTime: '15 phút đọc',
+      views: 65600,
+      isFeatured: true,
+      tags: ['Data Analyst', 'Data Science', 'Phân tích dữ liệu'],
+      rating: 4.9
+    },
+    {
+      id: 7,
+      title: 'Nhân sự (HR) là gì? Tổng quan về ngành nhân sự',
+      excerpt: 'Tìm hiểu ngành nhân sự: các vị trí từ HR Admin đến HR Manager, kỹ năng và cơ hội nghề nghiệp...',
+      coverImage: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400',
+      category: 'Nhân sự',
+      categorySlug: 'sales',
+      difficulty: 'Cơ bản',
+      url: 'https://www.topcv.vn/nhan-su-la-gi',
+      author: { name: 'TopCV', avatar: '', role: 'Career Expert' },
+      publishedAt: '2024-12-05T14:30:00Z',
+      readTime: '10 phút đọc',
+      views: 52400,
+      isFeatured: false,
+      tags: ['HR', 'Nhân sự', 'Tuyển dụng'],
+      rating: 4.7
+    },
+    {
+      id: 8,
+      title: 'Tester là gì? Hướng dẫn nghề kiểm thử phần mềm',
+      excerpt: 'Tổng quan về nghề Tester/QA: công việc, kỹ năng cần có, mức lương và lộ trình phát triển...',
+      coverImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400',
+      category: 'Công nghệ',
+      categorySlug: 'management',
+      difficulty: 'Trung bình',
+      url: 'https://itviec.com/blog/tester-la-gi/',
+      author: { name: 'ITviec', avatar: '', role: 'IT Career Expert' },
+      publishedAt: '2024-12-01T10:00:00Z',
+      readTime: '12 phút đọc',
+      views: 48900,
+      isFeatured: false,
+      tags: ['Tester', 'QA', 'Kiểm thử phần mềm'],
       rating: 4.8
     }
   ];
 
   // Categories cho cả News và Career Guides
   const newsCategories = [
-    { id: 'all', name: 'Tất cả', count: 12, color: 'bg-green-600' },
-    { id: 'technology', name: 'Công nghệ', count: 5, color: 'bg-blue-500' },
-    { id: 'career', name: 'Nghề nghiệp', count: 4, color: 'bg-green-500' },
+    { id: 'all', name: 'Tất cả', count: 8, color: 'bg-green-600' },
+    { id: 'technology', name: 'Thị trường', count: 3, color: 'bg-blue-500' },
+    { id: 'career', name: 'Nghề nghiệp', count: 3, color: 'bg-green-500' },
     { id: 'salary', name: 'Lương thưởng', count: 2, color: 'bg-purple-500' },
     { id: 'interview', name: 'Phỏng vấn', count: 1, color: 'bg-orange-500' }
   ];
 
   const guideCategories = [
-    { id: 'all', name: 'Tất cả', count: 25, color: 'bg-green-600', icon: BookOpen },
-    { id: 'sales', name: 'Bán hàng', count: 8, color: 'bg-blue-500', icon: TrendingUp },
-    { id: 'telesales', name: 'Telesales', count: 5, color: 'bg-purple-500', icon: Users },
-    { id: 'management', name: 'Quản lý', count: 6, color: 'bg-orange-500', icon: Target },
-    { id: 'logistics', name: 'Logistics', count: 4, color: 'bg-green-500', icon: Briefcase },
-    { id: 'language', name: 'Ngoại ngữ', count: 2, color: 'bg-pink-500', icon: GraduationCap }
+    { id: 'all', name: 'Tất cả', count: 8, color: 'bg-green-600', icon: BookOpen },
+    { id: 'sales', name: 'Bán hàng & HR', count: 2, color: 'bg-blue-500', icon: TrendingUp },
+    { id: 'telesales', name: 'Marketing', count: 1, color: 'bg-purple-500', icon: Users },
+    { id: 'management', name: 'Công nghệ', count: 3, color: 'bg-orange-500', icon: Target },
+    { id: 'logistics', name: 'Logistics', count: 1, color: 'bg-green-500', icon: Briefcase },
+    { id: 'language', name: 'Tài chính', count: 1, color: 'bg-pink-500', icon: GraduationCap }
   ];
 
   const difficultyColors = {
@@ -369,9 +446,15 @@ const News = () => {
     setCurrentPage(1);
   };
 
-  const handleReadArticle = (articleId) => {
-    const route = activeTab === 'news' ? `/news/${articleId}` : `/career-guide/${articleId}`;
-    navigate(route);
+  const handleReadArticle = (article) => {
+    // Nếu có URL bên ngoài, mở trong tab mới
+    if (article.url) {
+      window.open(article.url, '_blank', 'noopener,noreferrer');
+    } else {
+      // Fallback: navigate đến trang chi tiết nội bộ
+      const route = activeTab === 'news' ? `/news/${article.id}` : `/career-guide/${article.id}`;
+      navigate(route);
+    }
   };
 
   if (isLoading) {
@@ -552,7 +635,7 @@ const News = () => {
                       "group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1",
                       !isNewsTab && "border-emerald-200"
                     )}
-                    onClick={() => handleReadArticle(item.id)}
+                    onClick={() => handleReadArticle(item)}
                   >
                     <div className="relative">
                       <img 
@@ -666,7 +749,7 @@ const News = () => {
                       "group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1",
                       !isNewsTab && "border-emerald-200"
                     )}
-                    onClick={() => handleReadArticle(item.id)}
+                    onClick={() => handleReadArticle(item)}
                   >
                     <div className="relative">
                       <img 
@@ -948,8 +1031,11 @@ const News = () => {
           title: 'Mẫu CV chuyên nghiệp',
           description: 'Hơn 50 mẫu CV đẹp, hiện đại cho mọi ngành nghề',
           features: ['Dễ chỉnh sửa', 'Định dạng ATS-friendly', 'Hoàn toàn miễn phí'],
-          buttonText: 'Tải về ngay',
-          color: 'bg-blue-500'
+          buttonText: 'Tạo CV ngay',
+          color: 'bg-blue-500',
+          url: '/my-cvs/builder',
+          isInternal: true,
+          requiresAuth: true
         },
         {
           icon: MessageSquare,
@@ -957,7 +1043,9 @@ const News = () => {
           description: 'Bộ sưu tập 500+ câu hỏi phỏng vấn phổ biến nhất',
           features: ['Có đáp án gợi ý', 'Phân loại theo ngành', 'Cập nhật thường xuyên'],
           buttonText: 'Xem ngay',
-          color: 'bg-purple-500'
+          color: 'bg-purple-500',
+          url: '/tools/interview-questions',
+          isInternal: true
         },
         {
           icon: Calculator,
@@ -965,15 +1053,19 @@ const News = () => {
           description: 'Công cụ tính toán lương gross/net chính xác',
           features: ['Áp dụng luật mới nhất', 'Tính bảo hiểm', 'Xuất báo cáo'],
           buttonText: 'Sử dụng ngay',
-          color: 'bg-green-500'
+          color: 'bg-green-500',
+          url: '/tools/salary-calculator',
+          isInternal: true
         },
         {
           icon: Target,
           title: 'Định hướng nghề nghiệp',
-          description: 'Bài test tính cách và định hướng nghề nghiệp',
-          features: ['Dựa trên khoa học', 'Kết quả chi tiết', 'Tư vấn cá nhân hóa'],
+          description: 'Bài test tính cách MBTI và định hướng nghề nghiệp',
+          features: ['Dựa trên khoa học', 'Kết quả chi tiết', '16 nhóm tính cách'],
           buttonText: 'Làm bài test',
-          color: 'bg-orange-500'
+          color: 'bg-orange-500',
+          url: '/tools/mbti-test',
+          isInternal: true
         },
         {
           icon: BookOpen,
@@ -981,7 +1073,8 @@ const News = () => {
           description: 'Học kỹ năng mới với các khóa học chất lượng cao',
           features: ['Video HD', 'Có chứng chỉ', 'Học theo lộ trình'],
           buttonText: 'Khám phá',
-          color: 'bg-pink-500'
+          color: 'bg-pink-500',
+          url: 'https://www.topcv.vn/khoa-hoc'
         },
         {
           icon: Users,
@@ -989,22 +1082,41 @@ const News = () => {
           description: 'Kết nối và chia sẻ kinh nghiệm với cộng đồng',
           features: ['10K+ thành viên', 'Thảo luận sôi nổi', 'Sự kiện định kỳ'],
           buttonText: 'Tham gia',
-          color: 'bg-indigo-500'
+          color: 'bg-indigo-500',
+          url: 'https://www.facebook.com/groups/topcv.community'
         }
       ].map((resource, index) => (
-        <Card 
+        <Card
           key={index}
-          className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-background border-0 shadow-lg overflow-hidden"
+          className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-background border-0 shadow-lg overflow-hidden cursor-pointer"
+          onClick={() => {
+            // Kiểm tra nếu cần đăng nhập
+            if (resource.requiresAuth && !isAuthenticated) {
+              toast.info('Vui lòng đăng nhập để sử dụng tính năng này', {
+                description: 'Bạn cần đăng nhập để tạo CV chuyên nghiệp',
+                action: {
+                  label: 'Đăng nhập',
+                  onClick: () => navigate('/login')
+                }
+              });
+              return;
+            }
+            if (resource.isInternal) {
+              navigate(resource.url);
+            } else {
+              window.open(resource.url, '_blank', 'noopener,noreferrer');
+            }
+          }}
         >
           <CardContent className="p-6">
             <div className={`w-16 h-16 ${resource.color}/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
               <resource.icon className={`h-8 w-8 ${resource.color.replace('bg-', 'text-')}`} />
             </div>
-            
+
             <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-emerald-600 transition-colors">
               {resource.title}
             </h3>
-            
+
             <p className="text-muted-foreground mb-4 leading-relaxed">
               {resource.description}
             </p>

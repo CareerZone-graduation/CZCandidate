@@ -36,6 +36,9 @@ import JobAlertSettings from '../pages/dashboard/settings/JobAlertSettings.jsx';
 import PrivacySettings from '../pages/dashboard/settings/PrivacySettings.jsx';
 import MessagesPage from '../pages/messages/MessagesPage.jsx';
 import News from '../pages/news/News';
+import SalaryCalculator from '../pages/tools/SalaryCalculator';
+import InterviewQuestions from '../pages/tools/InterviewQuestions';
+import MBTITest from '../pages/tools/MBTITest';
 import MyInterviews from '../pages/interviews/MyInterviews';
 import InterviewDetail from '../pages/interviews/InterviewDetail';
 import InterviewRoom from '../pages/interviews/InterviewRoom';
@@ -177,6 +180,9 @@ const AppRouter = () => {
           <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
           <Route path="/news" element={<News />} />
+          <Route path="/tools/salary-calculator" element={<SalaryCalculator />} />
+          <Route path="/tools/interview-questions" element={<InterviewQuestions />} />
+          <Route path="/tools/mbti-test" element={<MBTITest />} />
         </Route>
 
         {/* Editor routes with specific layout */}
