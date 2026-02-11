@@ -70,19 +70,10 @@ const Register = () => {
 
     try {
       const resp = await registerService({ ...formData, turnstileToken });
-
-      if (resp.accessToken) {
-        dispatch(loginSuccess({ accessToken: resp.accessToken }));
-        setSuccess('Đăng ký thành công! Đang chuyển đến hoàn thiện hồ sơ...');
-        toast.success('Đăng ký thành công!');
-        setFormData({ fullname: '', email: '', password: '', role: 'candidate' });
-        setTimeout(() => navigate('/onboarding'), 1500);
-      } else {
-        setSuccess(resp.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
-        toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
-        setFormData({ fullname: '', email: '', password: '', role: 'candidate' });
-        setTimeout(() => navigate('/login'), 2000);
-      }
+      setSuccess(resp.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
+      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
+      setFormData({ fullname: '', email: '', password: '', role: 'candidate' });
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
       setError(errorMessage);
