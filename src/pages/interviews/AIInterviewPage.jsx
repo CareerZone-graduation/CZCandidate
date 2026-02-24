@@ -151,7 +151,7 @@ const AIInterviewPage = () => {
     loadScripts();
   }, []);
 
-=  const initLive2D = async () => {
+const initLive2D = async () => {
     if (!canvasRef.current || !areScriptsLoaded) return false;
 
     setIsVideoReady(false);
