@@ -1,35 +1,40 @@
-import { Search, Briefcase, User, MapPin } from "lucide-react";
+import { Search, MapPin, Sparkles, TrendingUp, Users, Building2, ChevronRight, Briefcase, UserCheck } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import HomeSearchAutocomplete from "../common/HomeSearchAutocomplete";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
   const autocompleteRef = useRef(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  /**
-   * Handle search from hero section
-   */
+  // Track mouse for parallax effect
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 20;
+      const y = (e.clientY / window.innerHeight - 0.5) * 20;
+      setMousePosition({ x, y });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   const handleHeroSearch = (query) => {
     const searchParams = new URLSearchParams();
     searchParams.set('query', query);
     searchParams.set('page', '1');
     searchParams.set('size', '10');
-    
-    // Add location if provided
+
     if (location.trim()) {
       searchParams.set('province', location.trim());
     }
-    
+
     navigate(`/jobs/search?${searchParams.toString()}`);
   };
 
-  /**
-   * Handle form submission
-   */
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const currentQuery = autocompleteRef.current?.getValue();
@@ -37,48 +42,93 @@ const HeroSection = () => {
       handleHeroSearch(currentQuery.trim());
     }
   };
+
+  // Stats data
+  const stats = [
+    { icon: Building2, value: "10,000+", label: "Công ty đối tác" },
+    { icon: Users, value: "500,000+", label: "Ứng viên tin tưởng" },
+    { icon: TrendingUp, value: "50,000+", label: "Việc làm mới/tháng" },
+  ];
+
   return (
-    // Professional Hero với nền gradient sáng như hình
-    <section className="relative bg-gradient-to-r from-green-100 via-green-200 to-blue-200 dark:from-green-900/30 dark:via-green-800/30 dark:to-blue-900/30 h-[67vh] flex items-center justify-center -mt-16">
-      {/* Background pattern overlay */}
-      <div className="absolute inset-0 opacity-10 dark:opacity-5">
+    <section className="hero-section relative flex items-start justify-center -mt-16">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden hero-bg-gradient">
+        {/* Animated gradient orbs */}
         <div
-          className="absolute inset-0"
+          className="hero-orb hero-orb-1"
           style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
-            backgroundSize: "30px 30px",
+            transform: `translate(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px)`
           }}
-        ></div>
+        />
+        <div
+          className="hero-orb hero-orb-2"
+          style={{
+            transform: `translate(${mousePosition.x * -0.3}px, ${mousePosition.y * -0.3}px)`
+          }}
+        />
+        <div
+          className="hero-orb hero-orb-3"
+          style={{
+            transform: `translate(${mousePosition.x * 0.4}px, ${mousePosition.y * -0.4}px)`
+          }}
+        />
+
+        {/* Floating particles */}
+        <div className="hero-particles">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="hero-particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${15 + Math.random() * 10}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 hero-grid-pattern opacity-[0.03] dark:opacity-[0.02]" />
       </div>
 
-      <div className="container relative z-10 pt-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-  <Button
-    size="lg"
-    className="bg-card hover:bg-muted text-primary font-bold text-lg px-10 py-5 rounded-full shadow-2xl border-0 transform hover:scale-105 transition-all duration-300 min-w-[180px]"
-    onClick={() => window.open(import.meta.env.VITE_RECRUITER_FE_URL || 'http://localhost:4000/', '_blank')}
-  >
-    <Briefcase className="mr-3 h-6 w-6" />
-    Đăng tuyển
-  </Button>
+      {/* Main Content */}
+      <div className="container relative z-10 pt-32 pb-20 px-4">
+        <div className="max-w-6xl mx-auto">
 
-  <Button
-    variant="outline"
-    size="lg"
-    className="bg-gradient-to-r from-green-300 via-green-400 to-blue-500 dark:from-green-600 dark:via-green-500 dark:to-blue-600 hover:opacity-90 text-white font-bold text-lg px-10 py-5 rounded-full border-2 border-white/40 dark:border-white/20 shadow-2xl transform hover:scale-105 transition-all duration-300 min-w-[180px] backdrop-blur-sm"
-  >
-    <User className="mr-3 h-6 w-6" />
-    Ứng tuyển
-  </Button>
-</div>
 
-         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-              <span className="text-gradient-primary shimmer-text">Tìm kiếm công việc</span>
-              <br />
-              <span className="shimmer-text-dark">định hình tương lai của bạn</span>
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-3 mb-8">
+            <button
+              onClick={() => window.open(import.meta.env.VITE_RECRUITER_FE_URL || 'http://localhost:4000/', '_blank')}
+              className="hero-action-btn hero-action-btn--outline"
+            >
+              <Briefcase className="w-4 h-4" />
+              <span>Đăng tuyển</span>
+            </button>
+            <button
+              className="hero-action-btn hero-action-btn--solid"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Ứng tuyển</span>
+            </button>
+          </div>
+
+          {/* Main Heading */}
+          <div className="text-center mb-10 space-y-3">
+            <h1 className="hero-title">
+              <span className="block hero-title-shimmer">
+                Tìm kiếm công việc
+              </span>
+              <span className="hero-title-gradient">
+                định hình tương lai của bạn
+              </span>
             </h1>
+          </div>
 
+          {/* Search Box */}
           <div className="backdrop-blur-md rounded-3xl shadow-2xl p-6 max-w-5xl mx-auto border border-border bg-card/80">
             <form onSubmit={handleFormSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Job Title Input with Autocomplete - Dài hơn */}
@@ -117,8 +167,26 @@ const HeroSection = () => {
               </Button>
             </form>
           </div>
-          <div className="mt-16"></div>
+
+
+
         </div>
+      </div>
+
+      {/* Bottom wave decoration */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
+        <svg
+          viewBox="0 0 1440 120"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0 120L48 110C96 100 192 80 288 70C384 60 480 60 576 65C672 70 768 80 864 85C960 90 1056 90 1152 85C1248 80 1344 70 1392 65L1440 60V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z"
+            className="fill-background"
+          />
+        </svg>
       </div>
     </section>
   );
