@@ -117,6 +117,35 @@ export const generateTTS = async (text) => {
   }
 };
 
+/**
+ * Get Simli session token
+ * @param {string} faceId - Simli Face ID
+ * @returns {Promise<any>}
+ */
+export const getSimliSessionToken = async (faceId) => {
+  try {
+    const response = await apiClient.post('/simli/get-session-token', { faceId }, { baseURL: PYTHON_API_URL });
+    return response.data;
+  } catch (error) {
+    console.error('Simli session token error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get Simli ICE servers
+ * @returns {Promise<any>}
+ */
+export const getSimliIceServers = async () => {
+  try {
+    const response = await apiClient.get('/simli/get-ice-servers', { baseURL: PYTHON_API_URL });
+    return response.data;
+  } catch (error) {
+    console.error('Simli ICE servers error:', error);
+    throw error;
+  }
+};
+
 // Removed D-ID functions
 
 /**
@@ -133,5 +162,7 @@ export default {
   transcribeAudio,
   sendChatMessage,
   generateTTS,
-  clearSession
+  clearSession,
+  getSimliSessionToken,
+  getSimliIceServers
 };

@@ -26,8 +26,12 @@ import { cn } from '@/lib/utils';
 import {
   sendChatMessage,
   transcribeAudio,
-  generateTTS
+  generateTTS,
+  getSimliSessionToken,
+  getSimliIceServers
 } from '@/services/aiInterviewService';
+import { SimliClient, LogLevel } from 'simli-client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Initialize PIXI for pixi-live2d-display
 import * as PIXI from 'pixi.js';
@@ -38,6 +42,8 @@ const generateSessionId = () => `session_${Date.now()}_${Math.random().toString(
 const MODEL_URLS = {
   haru: 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json',
 };
+
+const SIMLI_FACE_ID = "0c2b8b04-5274-41f1-a21c-d5c98322efa9";
 
 const AIInterviewPage = () => {
   const navigate = useNavigate();
@@ -55,12 +61,18 @@ const AIInterviewPage = () => {
   const [error, setError] = useState(null);
   const [isVideoReady, setIsVideoReady] = useState(false); // Used for canvas load
   const [interviewTopic, setInterviewTopic] = useState('Frontend Developer');
+  const [avatarType, setAvatarType] = useState('simli'); // 'live2d' or 'simli'
 
   // Refs
   const sessionIdRef = useRef(generateSessionId());
   const mediaRecorderRef = useRef(null);
   const canvasRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Simli Refs
+  const videoRef = useRef(null);
+  const audioRef = useRef(null);
+  const simliClientRef = useRef(null);
 
   // Audio playback and analysis
   const audioContextRef = useRef(null);
@@ -251,6 +263,10 @@ const AIInterviewPage = () => {
       audioContextRef.current.close().catch(() => { });
       audioContextRef.current = null;
     }
+    if (simliClientRef.current) {
+      simliClientRef.current.stop();
+      simliClientRef.current = null;
+    }
     setIsConnected(false);
     setIsVideoReady(false);
   };
@@ -301,101 +317,134 @@ const AIInterviewPage = () => {
     analyze();
   };
 
-  const speakLive2D = async (audioStream, text, onSpeakingStart) => {
+  const speakAI = async (audioStream, text, onSpeakingStart) => {
     setIsSpeaking(true);
     setStatus('AI đang nói...');
-    live2dStateRef.current.isSpeaking = true;
+    if (avatarType === 'live2d') live2dStateRef.current.isSpeaking = true;
 
     try {
-      if (modelRef.current) {
-        try { modelRef.current.motion('Tap', 0); } catch (e) { }
-      }
-      startAudioAnalysis();
+      if (avatarType === 'simli') {
+        if (onSpeakingStart) onSpeakingStart();
+        const reader = audioStream.getReader();
+        let audioBuffer = new Uint8Array(0);
+        let isSimliPlaying = false;
+        const PRE_BUFFER_SIZE = 16000;
 
-      if (!audioContextRef.current) {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (value && value.length > 0) {
+            const combined = new Uint8Array(audioBuffer.length + value.length);
+            combined.set(audioBuffer);
+            combined.set(value, audioBuffer.length);
+            audioBuffer = combined;
+          }
+
+          if (!isSimliPlaying && audioBuffer.length >= PRE_BUFFER_SIZE) {
+            isSimliPlaying = true;
+          }
+
+          if (isSimliPlaying || done) {
+            const evenLength = audioBuffer.length - (audioBuffer.length % 2);
+            if (evenLength > 0) {
+              const chunkToSend = audioBuffer.slice(0, evenLength);
+              audioBuffer = audioBuffer.slice(evenLength);
+
+              if (simliClientRef.current) {
+                simliClientRef.current.sendAudioData(chunkToSend);
+              }
+            }
+          }
+
+          if (done) break;
+        }
+
+      } else {
+        // LIVE2D LOGIC
+        if (modelRef.current) {
+          try { modelRef.current.motion('Tap', 0); } catch (e) { }
+        }
         startAudioAnalysis();
-      }
 
-      const sampleRate = 16000;
-      const audioContext = audioContextRef.current;
-      const reader = audioStream.getReader();
-
-      const startTime = audioContext.currentTime;
-      let nextPlayTime = startTime;
-
-      if (onSpeakingStart) onSpeakingStart();
-
-      let bufferResidue = new Uint8Array(0);
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        // Combine residue from last chunk with current chunk
-        const currentChunk = new Uint8Array(bufferResidue.length + value.length);
-        currentChunk.set(bufferResidue);
-        currentChunk.set(value, bufferResidue.length);
-
-        let processChunk;
-        // Ensure length is even because we are creating Int16Array (2 bytes each)
-        if (currentChunk.length % 2 !== 0) {
-          bufferResidue = currentChunk.slice(currentChunk.length - 1);
-          processChunk = currentChunk.slice(0, currentChunk.length - 1);
-        } else {
-          bufferResidue = new Uint8Array(0);
-          processChunk = currentChunk;
+        if (!audioContextRef.current) {
+          startAudioAnalysis();
         }
 
-        if (processChunk.length === 0) continue;
+        const sampleRate = 16000;
+        const audioContext = audioContextRef.current;
+        const reader = audioStream.getReader();
 
-        const raw16 = new Int16Array(processChunk.buffer, processChunk.byteOffset, processChunk.byteLength / 2);
-        const float32Array = new Float32Array(raw16.length);
-        for (let i = 0; i < raw16.length; i++) {
-          float32Array[i] = raw16[i] / 32768.0; // Normalize
+        const startTime = audioContext.currentTime;
+        let nextPlayTime = startTime;
+
+        if (onSpeakingStart) onSpeakingStart();
+
+        let bufferResidue = new Uint8Array(0);
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          const currentChunk = new Uint8Array(bufferResidue.length + value.length);
+          currentChunk.set(bufferResidue);
+          currentChunk.set(value, bufferResidue.length);
+
+          let processChunk;
+          if (currentChunk.length % 2 !== 0) {
+            bufferResidue = currentChunk.slice(currentChunk.length - 1);
+            processChunk = currentChunk.slice(0, currentChunk.length - 1);
+          } else {
+            bufferResidue = new Uint8Array(0);
+            processChunk = currentChunk;
+          }
+
+          if (processChunk.length === 0) continue;
+
+          const raw16 = new Int16Array(processChunk.buffer, processChunk.byteOffset, processChunk.byteLength / 2);
+          const float32Array = new Float32Array(raw16.length);
+          for (let i = 0; i < raw16.length; i++) {
+            float32Array[i] = raw16[i] / 32768.0;
+          }
+
+          const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
+          audioBuffer.getChannelData(0).set(float32Array);
+
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+
+          if (analyserRef.current) {
+            source.connect(analyserRef.current);
+            analyserRef.current.connect(audioContext.destination);
+          } else {
+            source.connect(audioContext.destination);
+          }
+
+          if (nextPlayTime < audioContext.currentTime) {
+            nextPlayTime = audioContext.currentTime;
+          }
+
+          source.start(nextPlayTime);
+          nextPlayTime += audioBuffer.duration;
         }
 
-        const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
-        audioBuffer.getChannelData(0).set(float32Array);
-
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-
-        if (analyserRef.current) {
-          source.connect(analyserRef.current);
-          analyserRef.current.connect(audioContext.destination);
-        } else {
-          source.connect(audioContext.destination);
+        const waitTime = nextPlayTime - audioContext.currentTime;
+        if (waitTime > 0) {
+          await new Promise(r => setTimeout(r, waitTime * 1000));
         }
 
-        // Catch up time if we fell behind because of network delays
-        if (nextPlayTime < audioContext.currentTime) {
-          nextPlayTime = audioContext.currentTime;
+        if (modelRef.current) {
+          try { modelRef.current.motion('Idle', 0); } catch (e) { }
         }
-
-        source.start(nextPlayTime);
-        nextPlayTime += audioBuffer.duration;
+        live2dStateRef.current.isSpeaking = false;
+        live2dStateRef.current.targetMouthOpen = 0;
       }
-
-      // Wait for play diff to finish
-      const waitTime = nextPlayTime - audioContext.currentTime;
-      if (waitTime > 0) {
-        await new Promise(r => setTimeout(r, waitTime * 1000));
-      }
-
-      if (modelRef.current) {
-        try { modelRef.current.motion('Idle', 0); } catch (e) { }
-      }
-      live2dStateRef.current.isSpeaking = false;
-      live2dStateRef.current.targetMouthOpen = 0;
-      setIsSpeaking(false);
-      setStatus('Nhấn giữ nút micro để nói (hoặc gõ vào hộp văn bản)');
-
     } catch (err) {
       console.error('Audio play error:', err);
       setStatus('Lỗi AI nói: ' + err.message);
       if (onSpeakingStart) onSpeakingStart();
-      live2dStateRef.current.isSpeaking = false;
+      if (avatarType === 'live2d') live2dStateRef.current.isSpeaking = false;
+    } finally {
       setIsSpeaking(false);
       setStatus('Nhấn giữ nút micro để nói (hoặc gõ vào hộp văn bản)');
     }
@@ -411,24 +460,69 @@ const AIInterviewPage = () => {
     setIsConnected(true); // Mounts the avatar panel content
   };
 
-  // Effect to load Live2D after canvas connects
-  useEffect(() => {
-    if (isConnected && canvasRef.current && areScriptsLoaded) {
-      setStatus('Đang tải Live2D model...');
-      initLive2D().then(success => {
-        if (!success) {
-          setError("Lỗi tải Live2D model.");
-          setIsStarting(false);
-          setIsConnected(false);
-          return;
-        }
-        // Start interview logic
-        setIsProcessing(true);
-        setStatus('AI đang chuẩn bị...');
-        resumeInterview();
-      });
+  const startSimli = async () => {
+    try {
+      const { session_token } = await getSimliSessionToken(SIMLI_FACE_ID);
+      const iceServers = await getSimliIceServers();
+
+      if (simliClientRef.current) {
+        simliClientRef.current.stop();
+        simliClientRef.current = null;
+      }
+
+      const simliClient = new SimliClient(
+        session_token,
+        videoRef.current,
+        audioRef.current,
+        iceServers,
+        LogLevel.DEBUG,
+        "p2p"
+      );
+
+      await simliClient.start();
+      simliClientRef.current = simliClient;
+      setIsVideoReady(true);
+      return true;
+    } catch (err) {
+      console.error("Simli error:", err);
+      return false;
     }
-  }, [isConnected]);
+  };
+
+  // Effect to load Live2D or Simli after canvas/video connects
+  useEffect(() => {
+    if (isConnected) {
+      if (avatarType === 'simli') {
+        setStatus('Đang kết nối Simli WebRTC...');
+        startSimli().then(success => {
+          if (!success) {
+            setError("Lỗi kết nối Simli.");
+            setIsStarting(false);
+            setIsConnected(false);
+            return;
+          }
+          setIsProcessing(true);
+          setStatus('AI đang chuẩn bị...');
+          resumeInterview();
+        });
+      } else {
+        if (canvasRef.current && areScriptsLoaded) {
+          setStatus('Đang tải Live2D model...');
+          initLive2D().then(success => {
+            if (!success) {
+              setError("Lỗi tải Live2D model.");
+              setIsStarting(false);
+              setIsConnected(false);
+              return;
+            }
+            setIsProcessing(true);
+            setStatus('AI đang chuẩn bị...');
+            resumeInterview();
+          });
+        }
+      }
+    }
+  }, [isConnected, areScriptsLoaded, avatarType]);
 
   const resumeInterview = async () => {
     try {
@@ -443,7 +537,7 @@ const AIInterviewPage = () => {
         isPlaceholder: true
       }]);
 
-      await speakLive2D(data.audioStream, data.response, () => {
+      await speakAI(data.audioStream, data.response, () => {
         setMessages([{
           role: 'ai',
           content: cleanedResponse,
@@ -555,7 +649,7 @@ const AIInterviewPage = () => {
         isPlaceholder: true
       }]);
 
-      await speakLive2D(data.audioStream, data.response, () => {
+      await speakAI(data.audioStream, data.response, () => {
         setMessages(prev => prev.map(msg =>
           msg.timestamp === placeholderId
             ? { role: 'ai', content: cleanedResponse, timestamp: placeholderId }
@@ -626,13 +720,28 @@ const AIInterviewPage = () => {
               <div className="relative aspect-square sm:aspect-video lg:aspect-square bg-gradient-to-br from-[#1a1f35] via-[#0c0f1a] to-[#2a1f4e]">
                 {isConnected ? (
                   <>
-                    <canvas
-                      ref={canvasRef}
-                      className={cn(
-                        "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
-                        isVideoReady ? "opacity-100" : "opacity-0"
-                      )}
-                    />
+                    {avatarType === 'live2d' ? (
+                      <canvas
+                        ref={canvasRef}
+                        className={cn(
+                          "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+                          isVideoReady ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    ) : (
+                      <>
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          className={cn(
+                            "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+                            isVideoReady ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <audio ref={audioRef} autoPlay />
+                      </>
+                    )}
 
                     <div className="absolute top-3 left-3 z-20">
                       <Badge
@@ -656,7 +765,9 @@ const AIInterviewPage = () => {
                     {!isVideoReady && !error && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-muted/80 to-muted z-10">
                         <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-                        <p className="text-sm font-medium animate-pulse">Đang tải Live2D model...</p>
+                        <p className="text-sm font-medium animate-pulse">
+                          {avatarType === 'live2d' ? 'Đang tải Live2D model...' : 'Đang kết nối Simli...'}
+                        </p>
                       </div>
                     )}
 
@@ -701,24 +812,44 @@ const AIInterviewPage = () => {
             {!isConnected && (
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="py-4 px-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      <Label htmlFor="interview-topic" className="text-sm font-medium cursor-pointer">
-                        Chủ đề phỏng vấn
-                      </Label>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <Label htmlFor="interview-topic" className="text-sm font-medium cursor-pointer">
+                          Chủ đề phỏng vấn
+                        </Label>
+                      </div>
+                      <Input
+                        id="interview-topic"
+                        type="text"
+                        placeholder="Ví dụ: Backend Developer, Data Analyst, Marketing..."
+                        value={interviewTopic}
+                        onChange={(e) => setInterviewTopic(e.target.value)}
+                        className="bg-background focus-visible:ring-primary/50"
+                      />
                     </div>
-                    <Input
-                      id="interview-topic"
-                      type="text"
-                      placeholder="Ví dụ: Backend Developer, Data Analyst, Marketing..."
-                      value={interviewTopic}
-                      onChange={(e) => setInterviewTopic(e.target.value)}
-                      className="bg-background focus-visible:ring-primary/50"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Bạn có thể chọn bất kỳ chủ đề hoặc công việc nào để phỏng vấn.
-                    </p>
+
+                    <div className="space-y-2 mt-4 pt-4 border-t border-primary/10">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-primary" />
+                        <Label htmlFor="avatar-type" className="text-sm font-medium cursor-pointer">
+                          Loại Avatar
+                        </Label>
+                      </div>
+                      <Select value={avatarType} onValueChange={setAvatarType}>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Chọn loại Avatar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="simli">Simli (Real-video, Phù hợp cấu hình cao)</SelectItem>
+                          <SelectItem value="live2d">Live2D (Hoạt hình 2D, Nhẹ & Nhanh)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Simli dùng WebRTC tạo video người thật. Live2D dùng mô hình Anime nhẹ.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
