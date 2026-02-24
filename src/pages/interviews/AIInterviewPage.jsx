@@ -151,8 +151,7 @@ const AIInterviewPage = () => {
     loadScripts();
   }, []);
 
-  // --- Live2D Canvas Initialization ---
-  const initLive2D = async () => {
+=  const initLive2D = async () => {
     if (!canvasRef.current || !areScriptsLoaded) return false;
 
     setIsVideoReady(false);
@@ -526,7 +525,7 @@ const AIInterviewPage = () => {
 
   const resumeInterview = async () => {
     try {
-      const data = await sendChatMessage(sessionIdRef.current, '', true, interviewTopic);
+      const data = await sendChatMessage(sessionIdRef.current, '', true, interviewTopic, avatarType);
       const cleanedResponse = cleanMessageContent(data.response);
 
       const placeholderId = Date.now();
@@ -638,7 +637,7 @@ const AIInterviewPage = () => {
     setStatus('AI đang suy nghĩ...');
 
     try {
-      const data = await sendChatMessage(sessionIdRef.current, text);
+      const data = await sendChatMessage(sessionIdRef.current, text, false, null, avatarType);
       const cleanedResponse = cleanMessageContent(data.response);
 
       const placeholderId = Date.now();

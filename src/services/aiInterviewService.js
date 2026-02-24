@@ -46,12 +46,13 @@ export const transcribeAudio = async (audioData) => {
  * @param {string} topic - Interview topic for focused questions (optional)
  * @returns {Promise<{response: string}>}
  */
-export const sendChatMessage = async (sessionId, message = '', isStart = false, topic = null) => {
+export const sendChatMessage = async (sessionId, message = '', isStart = false, topic = null, avatarType = 'live2d') => {
   try {
     const payload = {
       sessionId,
       message,
-      isStart
+      isStart,
+      avatarType
     };
 
     if (isStart && topic) {
