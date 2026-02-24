@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,21 +24,21 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-  getDIDCredentials,
-  submitDIDSDP,
-  speakWithDID,
-  closeDIDStream,
   sendChatMessage,
-  transcribeAudio
+  transcribeAudio,
+  generateTTS
 } from '@/services/aiInterviewService';
 
-// Generate unique session ID
+// Initialize PIXI for pixi-live2d-display
+import * as PIXI from 'pixi.js';
+window.PIXI = PIXI;
+
 const generateSessionId = () => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-/**
- * AI Interview Page Component
- * Virtual interview with AI avatar using D-ID, ElevenLabs, and Gemini
- */
+const MODEL_URLS = {
+  haru: 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json',
+};
+
 const AIInterviewPage = () => {
   const navigate = useNavigate();
 
@@ -47,311 +47,407 @@ const AIInterviewPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isStarting, setIsStarting] = useState(false); // Loading khi bắt đầu phỏng vấn
+  const [isStarting, setIsStarting] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [messages, setMessages] = useState([]);
+  const [manualInput, setManualInput] = useState(''); // Text input
   const [status, setStatus] = useState('Nhấn "Bắt đầu phỏng vấn" để khởi động');
   const [error, setError] = useState(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const [didStatus, setDidStatus] = useState('idle');
-  const [pendingAIMessage, setPendingAIMessage] = useState(null); // Chờ video bắt đầu nói mới hiện text
-  const [interviewTopic, setInterviewTopic] = useState('Frontend Developer (React, JavaScript)'); // Default topic
-
-  // Helper function to remove text in square brackets like [haha], [friendly], etc.
-  const cleanMessageContent = (text) => {
-    return text.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
-  };
+  const [isVideoReady, setIsVideoReady] = useState(false); // Used for canvas load
+  const [interviewTopic, setInterviewTopic] = useState('Frontend Developer');
 
   // Refs
   const sessionIdRef = useRef(generateSessionId());
   const mediaRecorderRef = useRef(null);
-  const videoRef = useRef(null);
-  const peerConnectionRef = useRef(null);
-  const streamIdRef = useRef(null);
-  const didSessionIdRef = useRef(null);
+  const canvasRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const mediaStreamRef = useRef(new MediaStream());
+
+  // Audio playback and analysis
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const audioElementRef = useRef(new Audio());
+  const animationFrameRef = useRef(null);
+
+  // Live2D State
+  const appRef = useRef(null);
+  const modelRef = useRef(null);
+  const [areScriptsLoaded, setAreScriptsLoaded] = useState(false);
+  const live2dStateRef = useRef({
+    mouthOpenValue: 0,
+    targetMouthOpen: 0,
+    headPhase: 0,
+    breathPhase: 0,
+    isSpeaking: false,
+    currentVolume: 0
+  });
+
+  // Helper function to clean text
+  const cleanMessageContent = (text) => (text || '').replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
 
   // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Ensure video stream is attached when video element mounts
-  useEffect(() => {
-    if (isConnected && videoRef.current && mediaStreamRef.current) {
-      videoRef.current.srcObject = mediaStreamRef.current;
-      videoRef.current.muted = false; // Always unmuted
-      videoRef.current.play()
-        .then(() => {
-          setIsVideoReady(true);
-        })
-        .catch(e => console.warn("Autoplay blocked:", e));
-    }
-  }, [isConnected]);
-
-  // Cleanup on unmount
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopRecording();
-      handleCloseDIDStream();
-      // Cleanup AudioContext
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
+      endInterviewCleanup();
+      cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
-  // --- WEBRTC & D-ID LOGIC ---
-  const onTrack = useCallback((event) => {
-    if (!event.track) return;
-    if (mediaStreamRef.current.getTrackById(event.track.id)) return;
-    mediaStreamRef.current.addTrack(event.track);
-
-    if (videoRef.current) {
-      if (videoRef.current.srcObject !== mediaStreamRef.current) {
-        videoRef.current.srcObject = mediaStreamRef.current;
-      }
-      videoRef.current.play()
-        .then(() => setIsVideoReady(true))
-        .catch(e => console.error("Video play failed:", e));
-    }
-  }, []);
-
-  const initializeDIDStream = async () => {
-    try {
-      setDidStatus('connecting');
-      setStatus('Đang kết nối với AI...');
-      setIsVideoReady(false);
-      mediaStreamRef.current = new MediaStream();
-
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-        peerConnectionRef.current = null;
-      }
-
-      const data = await getDIDCredentials();
-      if (data.error) throw new Error(data.error);
-
-      const { id, session_id, offer, ice_servers } = data;
-      streamIdRef.current = id;
-      didSessionIdRef.current = session_id;
-
-      const pc = new RTCPeerConnection({
-        iceServers: ice_servers || [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-      peerConnectionRef.current = pc;
-      pc.ontrack = onTrack;
-
-      pc.oniceconnectionstatechange = () => {
-        const state = pc.iceConnectionState;
-        if (state === 'connected' || state === 'completed') {
-          setDidStatus('connected');
-          setStatus('Đã kết nối AI Avatar!');
-        } else if (state === 'failed' || state === 'disconnected') {
-          setDidStatus('error');
-          setError('Mất kết nối video.');
-        }
+  // Dynamically load Live2D Core scripts
+  useEffect(() => {
+    const loadScripts = async () => {
+      const loadScript = (src) => {
+        return new Promise((resolve, reject) => {
+          if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
       };
 
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+      try {
+        // Hide AMD define to prevent Facebook SDK conflicts
+        const originalDefine = window.define;
+        const originalExports = window.exports;
+        window.define = undefined;
+        window.exports = undefined;
 
-      await new Promise((resolve) => {
-        if (pc.iceGatheringState === 'complete') {
-          resolve();
-        } else {
-          const checkState = () => {
-            if (pc.iceGatheringState === 'complete') {
-              pc.removeEventListener('icegatheringstatechange', checkState);
-              resolve();
-            }
-          };
-          pc.addEventListener('icegatheringstatechange', checkState);
-          setTimeout(resolve, 4000);
-        }
+        await loadScript('https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js');
+
+        // Restore
+        window.define = originalDefine;
+        window.exports = originalExports;
+
+        setAreScriptsLoaded(true);
+      } catch (err) {
+        console.error('Failed to load Live2D core scripts', err);
+        setError('Không thể tải tài nguyên Live2D.');
+      }
+    };
+
+    loadScripts();
+  }, []);
+
+  // --- Live2D Canvas Initialization ---
+  const initLive2D = async () => {
+    if (!canvasRef.current || !areScriptsLoaded) return false;
+
+    setIsVideoReady(false);
+
+    // Setup Pixi App
+    if (!appRef.current) {
+      appRef.current = new PIXI.Application({
+        view: canvasRef.current,
+        autoStart: true,
+        resizeTo: canvasRef.current.parentElement,
+        backgroundAlpha: 0,
+        antialias: true,
       });
 
-      const localDesc = pc.localDescription;
-      await submitDIDSDP(id, session_id, localDesc.type, localDesc.sdp);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Ticker for smooth animation
+      PIXI.Ticker.shared.add((dt) => {
+        const state = live2dStateRef.current;
+        const lerpSpeed = 0.25;
+        state.mouthOpenValue += (state.targetMouthOpen - state.mouthOpenValue) * lerpSpeed;
 
-      setIsConnected(true);
+        if (state.isSpeaking) {
+          state.headPhase += 0.02 * dt;
+        }
+        state.breathPhase += 0.015 * dt;
+      });
+    }
+
+    try {
+      if (modelRef.current) {
+        appRef.current.stage.removeChild(modelRef.current);
+        modelRef.current.destroy();
+      }
+
+      const { Live2DModel } = await import('pixi-live2d-display/cubism4');
+      const model = await Live2DModel.from(MODEL_URLS.haru, { autoInteract: false });
+      modelRef.current = model;
+      appRef.current.stage.addChild(model);
+
+      // Disable built-in sound
+      try {
+        if (PIXI.live2d && PIXI.live2d.SoundManager) {
+          PIXI.live2d.SoundManager.volume = 0;
+          PIXI.live2d.SoundManager.play = () => Promise.resolve();
+        }
+        const settings = model.internalModel?.settings;
+        if (settings?.motions) {
+          Object.values(settings.motions).forEach(group => {
+            group.forEach(m => {
+              if (m.Sound) m.Sound = undefined;
+              if (m.sound) m.sound = undefined;
+            });
+          });
+        }
+      } catch (e) { }
+
+      // Scale and position precisely to fit the Haru model face
+      const stageW = appRef.current.screen.width;
+      const stageH = appRef.current.screen.height;
+      const scale = Math.min(stageW / model.width, stageH / model.height) * 1.6;
+      model.scale.set(scale);
+      model.anchor.set(0.5, 0.5);
+      model.x = stageW / 2;
+      model.y = stageH * 0.75;
+
+      // Make Idle loop
+      try { model.motion('Idle'); } catch (e) { }
+
+      // Manual parameter hook
+      model.internalModel.on('beforeModelUpdate', () => {
+        const coreModel = model.internalModel?.coreModel;
+        if (!coreModel) return;
+        const state = live2dStateRef.current;
+
+        const setParam = (id2, id4, value) => {
+          try {
+            if (coreModel.setParameterValueById) coreModel.setParameterValueById(id4, value);
+            else if (coreModel.setParamFloat) coreModel.setParamFloat(id2, value);
+          } catch (e) { }
+        };
+
+        setParam('PARAM_MOUTH_OPEN_Y', 'ParamMouthOpenY', state.mouthOpenValue);
+
+        if (state.isSpeaking) {
+          setParam('PARAM_ANGLE_X', 'ParamAngleX', Math.sin(state.headPhase * 1.3) * 5);
+          setParam('PARAM_ANGLE_Y', 'ParamAngleY', Math.sin(state.headPhase * 0.9) * 3);
+          setParam('PARAM_ANGLE_Z', 'ParamAngleZ', Math.sin(state.headPhase * 0.7) * 2);
+          setParam('PARAM_BODY_ANGLE_X', 'ParamBodyAngleX', Math.sin(state.headPhase * 0.5) * 2);
+        }
+        setParam('PARAM_BREATH', 'ParamBreath', 0.5 + 0.5 * Math.sin(state.breathPhase));
+      });
+
+      setIsVideoReady(true);
       return true;
     } catch (err) {
-      console.error('D-ID init error:', err);
-      setDidStatus('error');
-      setError('Lỗi kết nối AI Avatar: ' + err.message);
-      toast.error('Không thể kết nối với AI Avatar');
+      console.error('Failed to load model', err);
       return false;
     }
   };
 
-  const handleCloseDIDStream = async () => {
-    const sId = streamIdRef.current;
-    const sessId = didSessionIdRef.current;
-
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
+  const endInterviewCleanup = () => {
+    if (appRef.current) {
+      appRef.current.ticker.stop();
     }
-
-    if (sId && sessId) {
-      try {
-        await closeDIDStream(sId, sessId);
-      } catch (err) {
-        console.error('Error closing stream:', err);
-      }
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
     }
-
-    streamIdRef.current = null;
-    didSessionIdRef.current = null;
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => { });
+      audioContextRef.current = null;
+    }
+    setIsConnected(false);
     setIsVideoReady(false);
-    setDidStatus('idle');
   };
 
-  /**
-   * Phát hiện khi video bắt đầu có âm thanh (avatar đang nói)
-   * Sử dụng AudioContext để phân tích audio stream
-   */
-  const waitForVideoSpeaking = useCallback(() => {
-    return new Promise((resolve) => {
-      // Nếu không có video stream, resolve ngay
-      if (!mediaStreamRef.current || mediaStreamRef.current.getAudioTracks().length === 0) {
-        setTimeout(resolve, 500); // Fallback delay
-        return;
-      }
+  // --- Audio Output and Lip Sync Analysis ---
+  const startAudioAnalysis = () => {
+    if (!audioContextRef.current) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioContextRef.current = new AudioContext();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
 
-      try {
-        // Tạo AudioContext nếu chưa có
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    if (!analyserRef.current) {
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
+
+      const source = audioContextRef.current.createMediaElementSource(audioElementRef.current);
+      source.connect(analyser);
+      analyser.connect(audioContextRef.current.destination);
+    }
+
+    const analyser = analyserRef.current;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    const analyze = () => {
+      const state = live2dStateRef.current;
+      if (state.isSpeaking) {
+        analyser.getByteTimeDomainData(dataArray);
+        let sumSquares = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const normalized = (dataArray[i] - 128) / 128.0;
+          sumSquares += normalized * normalized;
         }
-        const audioContext = audioContextRef.current;
-        
-        // Resume nếu bị suspended
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
+        const rms = Math.sqrt(sumSquares / dataArray.length);
+        let targetVolume = Math.min(1.0, rms * 5.0);
 
-        const source = audioContext.createMediaStreamSource(mediaStreamRef.current);
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        source.connect(analyser);
-        analyserRef.current = analyser;
+        const smoothing = targetVolume > state.currentVolume ? 0.6 : 0.4;
+        state.currentVolume += (targetVolume - state.currentVolume) * smoothing;
+        if (state.currentVolume < 0.05) state.currentVolume = 0;
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let checkCount = 0;
-        const maxChecks = 100; // Max 5 giây (50ms * 100)
-        const threshold = 10; // Ngưỡng âm thanh
-
-        const checkAudio = () => {
-          checkCount++;
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-          if (average > threshold) {
-            // Có âm thanh - video đang nói
-            source.disconnect();
-            resolve();
-          } else if (checkCount >= maxChecks) {
-            // Timeout - resolve anyway
-            source.disconnect();
-            resolve();
-          } else {
-            setTimeout(checkAudio, 50);
-          }
-        };
-
-        checkAudio();
-      } catch (err) {
-        console.warn('Audio detection error:', err);
-        setTimeout(resolve, 800); // Fallback delay
+        state.targetMouthOpen = state.currentVolume;
       }
-    });
-  }, []);
+      animationFrameRef.current = requestAnimationFrame(analyze);
+    };
+    analyze();
+  };
 
-  const handleSpeakWithDID = async (text, onSpeakingStart) => {
-    if (!streamIdRef.current || !didSessionIdRef.current) return;
-
+  const speakLive2D = async (audioStream, text, onSpeakingStart) => {
     setIsSpeaking(true);
-    setStatus('AI đang chuẩn bị nói...');
-    
+    setStatus('AI đang nói...');
+    live2dStateRef.current.isSpeaking = true;
+
     try {
-      // Gửi yêu cầu nói cho D-ID
-      await speakWithDID(streamIdRef.current, didSessionIdRef.current, text);
-      
-      // Chờ video thực sự bắt đầu phát âm thanh
-      await waitForVideoSpeaking();
-      
-      // Callback khi video bắt đầu nói - hiển thị text
-      if (onSpeakingStart) {
-        onSpeakingStart();
+      if (modelRef.current) {
+        try { modelRef.current.motion('Tap', 0); } catch (e) { }
       }
-      
-      setStatus('AI đang nói...');
-      
-      // Ước tính thời gian nói
-      const estimatedDuration = Math.max(2000, text.length * 80);
-      await new Promise(resolve => setTimeout(resolve, estimatedDuration));
-    } catch (err) {
-      console.error('D-ID speak error:', err);
-      setStatus('Lỗi AI nói: ' + err.message);
-      // Vẫn hiển thị message nếu lỗi
-      if (onSpeakingStart) {
-        onSpeakingStart();
+      startAudioAnalysis();
+
+      if (!audioContextRef.current) {
+        startAudioAnalysis();
       }
-    } finally {
+
+      const sampleRate = 16000;
+      const audioContext = audioContextRef.current;
+      const reader = audioStream.getReader();
+
+      const startTime = audioContext.currentTime;
+      let nextPlayTime = startTime;
+
+      if (onSpeakingStart) onSpeakingStart();
+
+      let bufferResidue = new Uint8Array(0);
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        // Combine residue from last chunk with current chunk
+        const currentChunk = new Uint8Array(bufferResidue.length + value.length);
+        currentChunk.set(bufferResidue);
+        currentChunk.set(value, bufferResidue.length);
+
+        let processChunk;
+        // Ensure length is even because we are creating Int16Array (2 bytes each)
+        if (currentChunk.length % 2 !== 0) {
+          bufferResidue = currentChunk.slice(currentChunk.length - 1);
+          processChunk = currentChunk.slice(0, currentChunk.length - 1);
+        } else {
+          bufferResidue = new Uint8Array(0);
+          processChunk = currentChunk;
+        }
+
+        if (processChunk.length === 0) continue;
+
+        const raw16 = new Int16Array(processChunk.buffer, processChunk.byteOffset, processChunk.byteLength / 2);
+        const float32Array = new Float32Array(raw16.length);
+        for (let i = 0; i < raw16.length; i++) {
+          float32Array[i] = raw16[i] / 32768.0; // Normalize
+        }
+
+        const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
+        audioBuffer.getChannelData(0).set(float32Array);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+
+        if (analyserRef.current) {
+          source.connect(analyserRef.current);
+          analyserRef.current.connect(audioContext.destination);
+        } else {
+          source.connect(audioContext.destination);
+        }
+
+        // Catch up time if we fell behind because of network delays
+        if (nextPlayTime < audioContext.currentTime) {
+          nextPlayTime = audioContext.currentTime;
+        }
+
+        source.start(nextPlayTime);
+        nextPlayTime += audioBuffer.duration;
+      }
+
+      // Wait for play diff to finish
+      const waitTime = nextPlayTime - audioContext.currentTime;
+      if (waitTime > 0) {
+        await new Promise(r => setTimeout(r, waitTime * 1000));
+      }
+
+      if (modelRef.current) {
+        try { modelRef.current.motion('Idle', 0); } catch (e) { }
+      }
+      live2dStateRef.current.isSpeaking = false;
+      live2dStateRef.current.targetMouthOpen = 0;
       setIsSpeaking(false);
-      setStatus('Nhấn giữ nút micro để nói');
+      setStatus('Nhấn giữ nút micro để nói (hoặc gõ vào hộp văn bản)');
+
+    } catch (err) {
+      console.error('Audio play error:', err);
+      setStatus('Lỗi AI nói: ' + err.message);
+      if (onSpeakingStart) onSpeakingStart();
+      live2dStateRef.current.isSpeaking = false;
+      setIsSpeaking(false);
+      setStatus('Nhấn giữ nút micro để nói (hoặc gõ vào hộp văn bản)');
     }
   };
 
+  // --- Core Interview Flow ---
   const startInterview = async () => {
-    if (isStarting) return; // Ngăn click nhiều lần
-    
+    if (isStarting) return;
     setIsStarting(true);
     setError(null);
     setMessages([]);
     sessionIdRef.current = generateSessionId();
+    setIsConnected(true); // Mounts the avatar panel content
+  };
 
-    const didInitialized = await initializeDIDStream();
-    if (!didInitialized) {
-      setIsStarting(false);
-      return;
+  // Effect to load Live2D after canvas connects
+  useEffect(() => {
+    if (isConnected && canvasRef.current && areScriptsLoaded) {
+      setStatus('Đang tải Live2D model...');
+      initLive2D().then(success => {
+        if (!success) {
+          setError("Lỗi tải Live2D model.");
+          setIsStarting(false);
+          setIsConnected(false);
+          return;
+        }
+        // Start interview logic
+        setIsProcessing(true);
+        setStatus('AI đang chuẩn bị...');
+        resumeInterview();
+      });
     }
+  }, [isConnected]);
 
-    setIsConnected(true);
-    setIsStarting(false); // Tắt loading sau khi kết nối thành công
-    setIsProcessing(true);
-    setStatus('AI đang chuẩn bị...');
-
+  const resumeInterview = async () => {
     try {
-      // Send topic when starting interview
       const data = await sendChatMessage(sessionIdRef.current, '', true, interviewTopic);
-      if (data.error) throw new Error(data.error);
-
       const cleanedResponse = cleanMessageContent(data.response);
-      
-      // Thêm placeholder message "Đang suy nghĩ..."
+
       const placeholderId = Date.now();
-      setMessages([{ 
-        role: 'ai', 
-        content: '💭 Đang suy nghĩ...', 
+      setMessages([{
+        role: 'ai',
+        content: '💭 Đang suy nghĩ...',
         timestamp: placeholderId,
-        isPlaceholder: true 
+        isPlaceholder: true
       }]);
-      
-      // Khi video bắt đầu nói, thay placeholder bằng text thật
-      await handleSpeakWithDID(data.response, () => {
-        setMessages([{ 
-          role: 'ai', 
-          content: cleanedResponse, 
-          timestamp: placeholderId 
+
+      await speakLive2D(data.audioStream, data.response, () => {
+        setMessages([{
+          role: 'ai',
+          content: cleanedResponse,
+          timestamp: placeholderId
         }]);
       });
     } catch (err) {
@@ -360,12 +456,13 @@ const AIInterviewPage = () => {
       toast.error('Không thể bắt đầu phỏng vấn');
     } finally {
       setIsProcessing(false);
-      setStatus('Nhấn giữ nút micro để nói');
+      setIsStarting(false);
+      setStatus('Nhấn giữ nút micro để nói (hoặc gõ vào hộp văn bản)');
     }
   };
 
   const addMessage = (role, content) => {
-    // Clean content from square brackets for display
+    if (!content.trim()) return;
     const cleanedContent = role === 'ai' ? cleanMessageContent(content) : content;
     setMessages(prev => [...prev, { role, content: cleanedContent, timestamp: Date.now() }]);
   };
@@ -440,29 +537,27 @@ const AIInterviewPage = () => {
   };
 
   const processUserMessage = async (text) => {
+    if (!text || !text.trim()) return;
+    setManualInput('');
     addMessage('user', text);
     setTranscript('');
     setStatus('AI đang suy nghĩ...');
 
     try {
       const data = await sendChatMessage(sessionIdRef.current, text);
-      if (data.error) throw new Error(data.error);
-
       const cleanedResponse = cleanMessageContent(data.response);
-      
-      // Thêm placeholder message "Đang suy nghĩ..."
+
       const placeholderId = Date.now();
-      setMessages(prev => [...prev, { 
-        role: 'ai', 
-        content: '💭 Đang suy nghĩ...', 
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        content: '💭 Đang suy nghĩ...',
         timestamp: placeholderId,
-        isPlaceholder: true 
+        isPlaceholder: true
       }]);
-      
-      // Khi video bắt đầu nói, thay placeholder bằng text thật
-      await handleSpeakWithDID(data.response, () => {
-        setMessages(prev => prev.map(msg => 
-          msg.timestamp === placeholderId 
+
+      await speakLive2D(data.audioStream, data.response, () => {
+        setMessages(prev => prev.map(msg =>
+          msg.timestamp === placeholderId
             ? { role: 'ai', content: cleanedResponse, timestamp: placeholderId }
             : msg
         ));
@@ -471,7 +566,6 @@ const AIInterviewPage = () => {
       console.error('Chat error:', err);
       setError('Lỗi phản hồi AI.');
       toast.error('Không thể nhận phản hồi từ AI');
-      // Xóa placeholder nếu lỗi
       setMessages(prev => prev.filter(msg => !msg.isPlaceholder));
     } finally {
       setIsProcessing(false);
@@ -489,31 +583,14 @@ const AIInterviewPage = () => {
 
   const endInterview = async () => {
     stopRecording();
-    await handleCloseDIDStream();
-    setIsConnected(false);
-    setStatus('Phỏng vấn đã kết thúc.');
+    endInterviewCleanup();
+    setMessages([]);
+    setStatus('Cài đặt chủ đề và nhấn bắt đầu để phỏng vấn');
     toast.success('Phỏng vấn đã kết thúc');
-  };
-
-  const handleManualPlay = () => {
-    const video = videoRef.current;
-    if (video) {
-      const tracks = mediaStreamRef.current?.getTracks() || [];
-      if (tracks.length === 0) {
-        toast.warning("Chưa nhận được video stream từ AI. Vui lòng đợi...");
-      }
-      if (video.srcObject !== mediaStreamRef.current) {
-        video.srcObject = mediaStreamRef.current;
-      }
-      video.play()
-        .then(() => setIsVideoReady(true))
-        .catch(e => toast.error("Không thể phát video: " + e.message));
-    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Button
@@ -534,120 +611,100 @@ const AIInterviewPage = () => {
               <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 CareerZone AI
               </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Phỏng vấn ảo với AI</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Phỏng vấn ảo với AI (Live2D)</p>
             </div>
           </div>
-
           <div className="w-20" />
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full max-w-6xl mx-auto">
           {/* Avatar Section */}
           <div className="flex flex-col gap-4">
             <Card className="overflow-hidden border-2 shadow-xl">
-              <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/50">
+              <div className="relative aspect-square sm:aspect-video lg:aspect-square bg-gradient-to-br from-[#1a1f35] via-[#0c0f1a] to-[#2a1f4e]">
                 {isConnected ? (
                   <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
+                    <canvas
+                      ref={canvasRef}
                       className={cn(
                         "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
                         isVideoReady ? "opacity-100" : "opacity-0"
                       )}
                     />
 
-                    {/* Status Badge */}
                     <div className="absolute top-3 left-3 z-20">
                       <Badge
                         variant="secondary"
                         className={cn(
                           "backdrop-blur-sm",
-                          didStatus === 'connecting' && "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
-                          didStatus === 'connected' && "bg-green-500/20 text-green-600 border-green-500/30",
-                          didStatus === 'error' && "bg-red-500/20 text-red-600 border-red-500/30"
+                          !isVideoReady && "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
+                          isVideoReady && "bg-green-500/20 text-green-600 border-green-500/30",
+                          error && "bg-red-500/20 text-red-600 border-red-500/30"
                         )}
                       >
                         <CircleDot className={cn(
                           "h-3 w-3 mr-1",
-                          didStatus === 'connecting' && "animate-pulse",
-                          didStatus === 'connected' && "text-green-500"
+                          !isVideoReady && "animate-pulse",
+                          isVideoReady && "text-green-500"
                         )} />
-                        {didStatus === 'connecting' && 'Đang kết nối...'}
-                        {didStatus === 'connected' && 'Trực tuyến'}
-                        {didStatus === 'error' && 'Lỗi kết nối'}
+                        {!isVideoReady ? 'Đang chuẩn bị...' : error ? 'Lỗi' : 'Sẵn sàng'}
                       </Badge>
                     </div>
 
-                    {/* Loading Overlay */}
-                    {!isVideoReady && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-muted to-muted/50 z-10">
-                        <div className="relative mb-4">
-                          <div className="h-20 w-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Bot className="h-8 w-8 text-primary" />
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground animate-pulse">Đang tải video...</p>
+                    {!isVideoReady && !error && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-muted/80 to-muted z-10">
+                        <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                        <p className="text-sm font-medium animate-pulse">Đang tải Live2D model...</p>
                       </div>
                     )}
 
-                    {/* Fallback Image */}
-                    {!isVideoReady && (
-                      <img
-                        src="https://clips-presenters.d-id.com/amy/image.png"
-                        alt="AI Interviewer"
-                        className="absolute inset-0 w-full h-full object-cover opacity-30"
-                      />
-                    )}
-
-                    {/* Speaking Indicator */}
                     {isSpeaking && (
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
-                        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm">
-                          <div className="flex gap-1">
-                            {[0, 1, 2].map((i) => (
-                              <span
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/10">
+                          <div className="flex gap-1 h-3 items-center">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                              <div
                                 key={i}
-                                className="w-2 h-2 rounded-full bg-primary animate-pulse"
-                                style={{ animationDelay: `${i * 0.15}s` }}
+                                className="w-1 bg-primary rounded-full animate-pulse"
+                                style={{
+                                  height: `${40 + Math.random() * 60}%`,
+                                  animationDelay: `${i * 0.15}s`,
+                                  animationDuration: '0.5s'
+                                }}
                               />
                             ))}
                           </div>
-                          <span className="text-xs text-white ml-2">Đang nói...</span>
+                          <span className="text-xs font-semibold text-white ml-1">AI đang phản hồi</span>
                         </div>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-muted/20">
                     <div className="relative">
-                      <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner">
                         <Bot className="h-12 w-12 text-primary" />
                       </div>
-                      <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
+                      <div className="absolute inset-0 rounded-full border border-primary/30 animate-pulse" />
                     </div>
                     <div className="text-center">
-                      <p className="font-medium text-foreground">AI Interviewer</p>
-                      <p className="text-sm text-muted-foreground">Sẵn sàng phỏng vấn</p>
+                      <p className="font-semibold text-foreground">AI Phỏng vấn viên</p>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-xs text-balance">Mô hình AI tương tác trực quan qua hình đại diện 2D</p>
                     </div>
                   </div>
                 )}
               </div>
             </Card>
 
-            {/* Topic Input Card - Only show when not connected */}
             {!isConnected && (
               <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="py-4 px-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Target className="h-4 w-4 text-primary" />
-                      <Label htmlFor="interview-topic" className="text-sm font-medium">
+                      <Label htmlFor="interview-topic" className="text-sm font-medium cursor-pointer">
                         Chủ đề phỏng vấn
                       </Label>
                     </div>
@@ -657,37 +714,36 @@ const AIInterviewPage = () => {
                       placeholder="Ví dụ: Backend Developer, Data Analyst, Marketing..."
                       value={interviewTopic}
                       onChange={(e) => setInterviewTopic(e.target.value)}
-                      className="bg-background"
+                      className="bg-background focus-visible:ring-primary/50"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Nhập vị trí hoặc lĩnh vực bạn muốn phỏng vấn để AI đưa ra câu hỏi phù hợp hơn
+                      Bạn có thể chọn bất kỳ chủ đề hoặc công việc nào để phỏng vấn.
                     </p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Status Card */}
             <Card className={cn(
-              "transition-colors",
-              error && "border-destructive bg-destructive/5"
+              "transition-all duration-300",
+              error ? "border-destructive bg-destructive/10" : "bg-card shadow-sm"
             )}>
               <CardContent className="py-3 px-4">
                 <div className="flex items-center gap-3">
                   {isProcessing ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
                   ) : error ? (
-                    <div className="h-5 w-5 rounded-full bg-destructive/20 flex items-center justify-center">
-                      <span className="text-destructive text-xs">!</span>
+                    <div className="h-6 w-6 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                      <span className="text-destructive font-bold text-xs">!</span>
                     </div>
                   ) : (
-                    <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                    <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <Sparkles className="h-3 w-3 text-primary" />
                     </div>
                   )}
                   <p className={cn(
-                    "text-sm",
-                    error ? "text-destructive" : "text-muted-foreground"
+                    "text-sm font-medium",
+                    error ? "text-destructive" : "text-foreground/80"
                   )}>
                     {error || status}
                   </p>
@@ -697,63 +753,60 @@ const AIInterviewPage = () => {
           </div>
 
           {/* Chat Section */}
-          <Card className="flex flex-col h-[500px] lg:h-auto">
-            <CardHeader className="pb-3 border-b">
+          <Card className="flex flex-col h-[500px] lg:h-auto shadow-md border-border/60">
+            <CardHeader className="pb-3 border-b bg-muted/10">
               <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Cuộc trò chuyện
+                <MessageSquare className="h-4 w-4 text-primary" />
+                Nội dung trò chuyện
               </CardTitle>
             </CardHeader>
 
             <ScrollArea className="flex-1 p-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <MessageSquare className="h-8 w-8 text-primary/60" />
                   </div>
-                  <p className="text-muted-foreground">
-                    Cuộc phỏng vấn sẽ hiển thị ở đây
+                  <p className="text-muted-foreground font-medium">
+                    {isConnected ? "Chuẩn bị câu hỏi..." : "Bắt đầu phỏng vấn để trò chuyện"}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {messages.map((msg, idx) => (
                     <div
                       key={idx}
                       className={cn(
-                        "flex gap-3 animate-in slide-in-from-bottom-2",
+                        "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
                         msg.role === 'user' && "flex-row-reverse"
                       )}
                     >
-                      <Avatar className="h-8 w-8 shrink-0">
+                      <Avatar className="h-8 w-8 shrink-0 shadow-sm border border-border">
                         {msg.role === 'ai' ? (
-                          <>
-                            <AvatarImage src="https://clips-presenters.d-id.com/amy/image.png" />
-                            <AvatarFallback className="bg-primary/10">
-                              <Bot className="h-4 w-4 text-primary" />
-                            </AvatarFallback>
-                          </>
+                          <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                            AI
+                          </AvatarFallback>
                         ) : (
-                          <AvatarFallback className="bg-secondary">
+                          <AvatarFallback className="bg-secondary text-secondary-foreground">
                             <User className="h-4 w-4" />
                           </AvatarFallback>
                         )}
                       </Avatar>
 
                       <div className={cn(
-                        "max-w-[80%] space-y-1",
+                        "max-w-[85%] space-y-1.5",
                         msg.role === 'user' && "items-end"
                       )}>
                         <p className={cn(
-                          "text-xs text-muted-foreground",
+                          "text-[11px] font-medium text-muted-foreground uppercase tracking-wider",
                           msg.role === 'user' && "text-right"
                         )}>
-                          {msg.role === 'ai' ? 'AI Interviewer' : 'Bạn'}
+                          {msg.role === 'ai' ? 'Haru AI' : 'Bạn'}
                         </p>
                         <div className={cn(
-                          "rounded-2xl px-4 py-2.5 text-sm",
+                          "rounded-2xl px-4 py-3 text-[14.5px] shadow-sm leading-relaxed",
                           msg.role === 'ai'
-                            ? "bg-muted rounded-tl-sm"
+                            ? "bg-muted/80 rounded-tl-sm text-foreground"
                             : "bg-primary text-primary-foreground rounded-tr-sm"
                         )}>
                           {msg.content}
@@ -761,23 +814,50 @@ const AIInterviewPage = () => {
                       </div>
                     </div>
                   ))}
-                  <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} className="h-2" />
                 </div>
               )}
             </ScrollArea>
 
-            {/* Live Transcript */}
             {transcript && (
-              <div className="border-t px-4 py-3 bg-primary/5">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
+              <div className="border-t px-4 py-3 bg-card animate-in fade-in fill-mode-both">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
                   </span>
-                  <p className="text-sm text-muted-foreground italic truncate">
-                    {transcript}
+                  <p className="text-sm text-foreground/90 italic truncate pr-2">
+                    "{transcript}"
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Thêm input text phụ nếu user không có mic hoặc lười nói */}
+            {isConnected && (
+              <div className="border-t px-4 py-3 bg-card flex gap-2">
+                <Input
+                  value={manualInput}
+                  onChange={e => setManualInput(e.target.value)}
+                  disabled={isProcessing || isSpeaking}
+                  placeholder="Hoặc bạn có thể gõ nội dung chat vào đây..."
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && manualInput.trim()) {
+                      setIsProcessing(true);
+                      processUserMessage(manualInput);
+                    }
+                  }}
+                />
+                <Button
+                  size="icon"
+                  disabled={!manualInput.trim() || isProcessing || isSpeaking}
+                  onClick={() => {
+                    setIsProcessing(true);
+                    processUserMessage(manualInput);
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 rotate-180" />
+                </Button>
               </div>
             )}
           </Card>
@@ -785,29 +865,29 @@ const AIInterviewPage = () => {
       </main>
 
       {/* Controls Footer */}
-      <footer className="sticky bottom-0 border-t bg-background/80 backdrop-blur-lg">
+      <footer className="sticky bottom-0 border-t bg-background/95 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
         <div className="container mx-auto px-4 py-4">
-          {/* Show current topic when interview is active */}
           {isConnected && interviewTopic && (
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Target className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Chủ đề: <span className="font-medium text-foreground">{interviewTopic}</span>
+            <div className="flex items-center justify-center gap-2 mb-3 max-w-md mx-auto truncate">
+              <Target className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-[13px] text-muted-foreground truncate">
+                Chủ đề: <span className="font-semibold text-foreground">{interviewTopic}</span>
               </span>
             </div>
           )}
-          <div className="flex items-center justify-center gap-4">
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
             {!isConnected ? (
               <Button
                 size="lg"
                 onClick={startInterview}
                 disabled={isStarting || !interviewTopic.trim()}
-                className="gap-2 px-8 shadow-lg"
+                className="gap-2 px-8 shadow-lg hover:shadow-primary/25 transition-all text-base rounded-full h-12"
               >
                 {isStarting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Đang kết nối...
+                    Đang thiết lập...
                   </>
                 ) : (
                   <>
@@ -817,13 +897,14 @@ const AIInterviewPage = () => {
                 )}
               </Button>
             ) : (
-              <>
+              <div className="flex gap-4 w-full sm:w-auto mt-2 sm:mt-0 px-2 sm:px-0">
                 <Button
-                  variant={isRecording ? "destructive" : "secondary"}
+                  variant={isRecording ? "destructive" : "default"}
                   size="lg"
                   className={cn(
-                    "gap-2 min-w-[180px] transition-all",
-                    isRecording && "animate-pulse shadow-lg shadow-destructive/25"
+                    "gap-2 flex-1 sm:min-w-[200px] transition-all duration-200 rounded-full h-12 text-base font-medium",
+                    isRecording && "animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.4)] scale-[0.98]",
+                    !isRecording && !isProcessing && !isSpeaking && "hover:shadow-lg shadow-primary/20"
                   )}
                   onMouseDown={startRecording}
                   onMouseUp={stopRecording}
@@ -835,7 +916,7 @@ const AIInterviewPage = () => {
                   {isRecording ? (
                     <>
                       <MicOff className="h-5 w-5" />
-                      Đang ghi...
+                      Đang ghi âm...
                     </>
                   ) : isProcessing ? (
                     <>
@@ -854,12 +935,12 @@ const AIInterviewPage = () => {
                   variant="outline"
                   size="lg"
                   onClick={endInterview}
-                  className="gap-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  className="gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground rounded-full shrink-0 h-12 px-6"
                 >
                   <Phone className="h-5 w-5 rotate-[135deg]" />
-                  <span className="hidden sm:inline">Kết thúc</span>
+                  <span className="hidden sm:inline font-medium">Kết thúc</span>
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
