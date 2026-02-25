@@ -31,3 +31,8 @@ digest.txt
 pnpm-lock.yaml
 package-lock.json
 .env
+.agents
+.agent
+.claude
+skills-lock.json
+.shared

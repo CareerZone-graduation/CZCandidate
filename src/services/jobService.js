@@ -145,6 +145,7 @@ export const searchJobsHybrid = async (params = {}) => {
     if (params.district) queryParams.append('district', params.district);
     if (params.minSalary) queryParams.append('minSalary', params.minSalary);
     if (params.maxSalary) queryParams.append('maxSalary', params.maxSalary);
+    if (params.aiSearch !== undefined) queryParams.append('aiSearch', params.aiSearch ? 'true' : 'false');
 
     // Location distance filter parameters
     if (params.latitude !== undefined && params.latitude !== null) queryParams.append('latitude', params.latitude);

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * ResultsPagination - Clean, professional pagination component
+ * ResultsPagination — Swiss/Minimalist professional pagination
  */
 const ResultsPagination = ({
   currentPage = 1,
@@ -21,123 +20,103 @@ const ResultsPagination = ({
     const pages = [];
     const rangeStart = Math.max(2, currentPage - delta);
     const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
-
-    if (totalPages > 1) pages.push(1);
+    pages.push(1);
     if (rangeStart > 2) pages.push('...');
-    
     for (let i = rangeStart; i <= rangeEnd; i++) {
       if (i !== 1 && i !== totalPages) pages.push(i);
     }
-    
     if (rangeEnd < totalPages - 1) pages.push('...');
     if (totalPages > 1) pages.push(totalPages);
-
     return pages;
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      onPageChange(page);
-    }
+    if (page >= 1 && page <= totalPages && page !== currentPage) onPageChange(page);
   };
 
   const pageNumbers = getPageNumbers();
 
+  const NavBtn = ({ onClick, disabled, children, title }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={cn(
+        'flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer',
+        'text-muted-foreground transition-all duration-200',
+        'hover:bg-primary/10 hover:text-primary',
+        'disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground',
+        '@media (prefers-reduced-motion: reduce) transition-none'
+      )}
+    >
+      {children}
+    </button>
+  );
+
+  const startItem = Math.min((currentPage - 1) * pageSize + 1, totalResults);
+  const endItem   = Math.min(currentPage * pageSize, totalResults);
+
   return (
-    <div className={cn(
-      "flex flex-col sm:flex-row items-center justify-center gap-4",
-      "bg-white rounded-2xl border border-slate-200 shadow-sm p-4",
-      className
-    )}>
-      {/* Pagination Controls */}
-      <div className="flex items-center gap-1">
-        {/* First Page */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handlePageChange(1)}
-          disabled={currentPage === 1}
-          className="h-9 w-9 rounded-lg text-slate-500 hover:text-primary disabled:opacity-40"
-        >
+    <div
+      className={cn(
+        'flex flex-col sm:flex-row items-center justify-between gap-3',
+        'bg-card border border-border/60 rounded-xl px-4 py-3 shadow-sm',
+        className
+      )}
+    >
+      {/* Result range info */}
+      <p className="text-xs text-muted-foreground order-2 sm:order-1">
+        Hiển thị{' '}
+        <span className="font-semibold text-foreground">{startItem.toLocaleString()}–{endItem.toLocaleString()}</span>
+        {' '}trong{' '}
+        <span className="font-semibold text-foreground">{totalResults.toLocaleString()}</span>
+        {' '}việc làm
+      </p>
+
+      {/* Controls */}
+      <div className="flex items-center gap-1 order-1 sm:order-2">
+        <NavBtn onClick={() => handlePageChange(1)} disabled={currentPage === 1} title="Trang đầu">
           <ChevronsLeft className="h-4 w-4" />
-        </Button>
-
-        {/* Previous Page */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="h-9 w-9 rounded-lg text-slate-500 hover:text-primary disabled:opacity-40"
-        >
+        </NavBtn>
+        <NavBtn onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} title="Trang trước">
           <ChevronLeft className="h-4 w-4" />
-        </Button>
+        </NavBtn>
 
-        {/* Page Numbers */}
-        <div className="flex items-center gap-1 mx-2">
+        <div className="flex items-center gap-0.5 mx-1">
           {pageNumbers.map((page, index) => {
             if (page === '...') {
               return (
-                <span 
-                  key={`ellipsis-${index}`} 
-                  className="w-9 text-center text-slate-400"
-                >
+                <span key={`ellipsis-${index}`} className="w-8 text-center text-xs text-muted-foreground select-none">
                   ···
                 </span>
               );
             }
-
             const isActive = currentPage === page;
             return (
-              <Button
+              <button
                 key={page}
-                variant={isActive ? "default" : "ghost"}
-                size="icon"
                 onClick={() => handlePageChange(page)}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  "h-9 w-9 rounded-lg font-medium transition-all",
-                  isActive 
-                    ? "bg-primary text-white shadow-md shadow-primary/20" 
-                    : "text-slate-600 hover:text-primary hover:bg-primary/5"
+                  'w-8 h-8 rounded-lg text-xs font-medium cursor-pointer',
+                  'transition-all duration-200',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/25 font-semibold'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
               >
                 {page}
-              </Button>
+              </button>
             );
           })}
         </div>
 
-        {/* Next Page */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="h-9 w-9 rounded-lg text-slate-500 hover:text-primary disabled:opacity-40"
-        >
+        <NavBtn onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} title="Trang sau">
           <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        {/* Last Page */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handlePageChange(totalPages)}
-          disabled={currentPage === totalPages}
-          className="h-9 w-9 rounded-lg text-slate-500 hover:text-primary disabled:opacity-40"
-        >
+        </NavBtn>
+        <NavBtn onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} title="Trang cuối">
           <ChevronsRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Page Info */}
-      <div className="text-sm text-slate-500">
-        Trang <span className="font-medium text-slate-700">{currentPage}</span> / {totalPages}
-        {totalResults > 0 && (
-          <span className="hidden sm:inline ml-2">
-            ({totalResults.toLocaleString()} kết quả)
-          </span>
-        )}
+        </NavBtn>
       </div>
     </div>
   );
