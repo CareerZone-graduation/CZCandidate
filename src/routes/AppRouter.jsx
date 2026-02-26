@@ -43,7 +43,9 @@ import MBTITest from '../pages/tools/MBTITest';
 import MyInterviews from '../pages/interviews/MyInterviews';
 import InterviewDetail from '../pages/interviews/InterviewDetail';
 import InterviewRoom from '../pages/interviews/InterviewRoom';
-import AIInterviewPage from '../pages/interviews/AIInterviewPage';
+import AIInterviewLanding from '../pages/interviews/AIInterviewLanding';
+import AIAssistantInterview from '../pages/interviews/AIAssistantInterview';
+import AnimeInterviewPage from '../pages/interviews/AnimeInterviewPage';
 
 import DeviceTest from '../components/interviews/DeviceTest';
 import NotFound from '../pages/NotFound';
@@ -277,7 +279,9 @@ const AppRouter = () => {
           <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
           {/* AI Interview route - full-screen experience */}
-          <Route path="/interviews/ai" element={<AIInterviewPage />} />
+          <Route path="/interviews/ai" element={<AIInterviewLanding />} />
+          <Route path="/interviews/ai/anime" element={<AnimeInterviewPage />} />
+          <Route path="/interviews/ai/assistant" element={<AIAssistantInterview />} />
 
         </Route>
 

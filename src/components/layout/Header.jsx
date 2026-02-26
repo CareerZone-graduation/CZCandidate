@@ -361,7 +361,10 @@ const Header = () => {
                             <FileText className="h-4 w-4 text-primary" /> Đơn ứng tuyển
                           </Link>
                           <Link to="/interviews" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <Video className="h-4 w-4 text-primary" /> Lịch phỏng vấn
+                            <Calendar className="h-4 w-4 text-primary" /> Lịch phỏng vấn
+                          </Link>
+                          <Link to="/interviews/ai" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <Video className="h-4 w-4 text-primary" /> Phỏng vấn AI
                           </Link>
                           <button
                             onClick={() => openChat()}
@@ -698,9 +701,24 @@ const Header = () => {
                           onClick={() => setShowUserDropdown(false)}
                         >
                           <div className="mr-3 p-1.5 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                            <Video className="h-4 w-4 text-green-600" />
+                            <Calendar className="h-4 w-4 text-green-600" />
                           </div>
                           <span className="font-medium">Lịch phỏng vấn</span>
+                        </Link>
+
+                        <Link
+                          to="/interviews/ai"
+                          className={cn(
+                            "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group",
+                            "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                            "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                          )}
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <div className="mr-3 p-1.5 rounded-lg bg-pink-500/10 group-hover:bg-pink-500/20 transition-colors">
+                            <Video className="h-4 w-4 text-pink-600" />
+                          </div>
+                          <span className="font-medium">Phỏng vấn AI</span>
                         </Link>
 
                         <Link
