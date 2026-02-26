@@ -38,6 +38,7 @@ import JobLocationMap from '@/components/common/JobLocationMap';
 import JobDetailHeader from '@/components/common/JobDetail/Header';
 import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
 import JobDetailSkeleton from './JobDetailSkeleton';
+import SimilarJobs from '@/components/jobs/SimilarJobs';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -531,6 +532,9 @@ const JobDetail = () => {
                     />
                   </CardContent>
                 </Card>
+
+                {/* Similar Jobs */}
+                <SimilarJobs jobId={id} />
               </div>
 
               {/* Right Column (Sidebar) */}

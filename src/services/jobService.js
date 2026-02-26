@@ -462,3 +462,9 @@ export const searchExternalJobs = async (params = {}) => {
     throw error;
   }
 };
+
+// Lấy danh sách việc làm tương tự (dựa trên embedding vector search)
+export const getSimilarJobs = async (jobId, params = {}) => {
+  const { data } = await apiClient.get(`/jobs/${jobId}/similar`, { params });
+  return data;
+};
