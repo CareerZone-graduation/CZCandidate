@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { SlidersHorizontal, ArrowLeft, Map, LayoutGrid, Briefcase, X, Sparkles, Filter } from 'lucide-react';
-import { searchJobsHybrid } from '@/services/jobService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SlidersHorizontal, ArrowLeft, Map, LayoutGrid, Briefcase, X, Sparkles, Filter, Globe, ArrowRight } from 'lucide-react';
+import { searchJobsHybrid, searchExternalJobs } from '@/services/jobService';
 import { validateSearchParams, validateHybridSearchRequest } from '@/schemas/searchSchemas';
 import { toast } from 'sonner';
 
@@ -17,7 +17,9 @@ import JobResultsList from './components/SearchResults/JobResultsList';
 import SearchResultsHeader from './components/SearchResults/SearchResultsHeader';
 import ResultsPagination from './components/SearchResults/ResultsPagination';
 import JobMapView from './components/MapView/JobMapView';
+import ExternalJobResultsList from './components/SearchResults/ExternalJobResultsList';
 import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 /**
  * Main JobSearch page component - Redesigned for professional job portal
@@ -27,6 +29,7 @@ const JobSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState('list');
+  const [currentTab, setCurrentTab] = useState('internal');
 
   // Extract and validate search parameters from URL
   const rawParams = {
@@ -107,10 +110,29 @@ const JobSearch = () => {
       const result = await searchJobsHybrid(apiValidation.data || searchParameters);
       return result;
     },
-    enabled: apiValidation.success,
+    enabled: apiValidation.success && currentTab === 'internal',
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    keepPreviousData: true
+  });
+
+  const {
+    data: externalSearchResults,
+    isLoading: isExternalLoading,
+    isError: isExternalError,
+  } = useQuery({
+    queryKey: ['jobs', 'external-search', { query, page, size }],
+    queryFn: async () => {
+      const result = await searchExternalJobs({
+        query: query ? query : 'software engineer',
+        page,
+        num_pages: 1
+      });
+      return result;
+    },
+    enabled: currentTab === 'external',
+    staleTime: 5 * 60 * 1000,
     keepPreviousData: true
   });
 
@@ -442,30 +464,75 @@ const JobSearch = () => {
 
             {/* Results content */}
             {viewMode === 'list' ? (
-              <div className="space-y-3">
-                <JobResultsList
-                  jobs={searchResults?.data || []}
-                  isLoading={isLoading}
-                  isError={isError}
-                  error={error}
-                  onRetry={refetch}
-                  query={query}
-                  userLocation={userLocationForMap}
-                  searchParameters={apiValidation.data || searchParameters}
-                />
+              <Tabs value={currentTab} onValueChange={(val) => { setCurrentTab(val); handlePageChange(1); }} className="w-full">
+                <TabsList className="mb-6 grid w-full max-w-[400px] grid-cols-2">
+                  <TabsTrigger value="internal" className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4" />
+                    CareerZone
+                  </TabsTrigger>
+                  <TabsTrigger value="external" className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Từ Internet
+                  </TabsTrigger>
+                </TabsList>
 
-                {searchResults?.data?.length > 0 && (
-                  <div className="mt-6">
-                    <ResultsPagination
-                      currentPage={page}
-                      totalPages={searchResults?.meta?.totalPages || 0}
-                      totalResults={searchResults?.meta?.total || 0}
-                      pageSize={size}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                )}
-              </div>
+                <TabsContent value="internal" className="space-y-3 mt-0">
+                  {/* Fallback Search Prompt */}
+                  {query && searchResults?.data?.length === 0 && !isLoading && (
+                    <div className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">
+                        Không tìm thấy kết quả? Xem việc làm từ internet
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentTab('external')}>
+                        Xem ngay <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <JobResultsList
+                    jobs={searchResults?.data || []}
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    onRetry={refetch}
+                    query={query}
+                    userLocation={userLocationForMap}
+                    searchParameters={apiValidation.data || searchParameters}
+                  />
+
+                  {searchResults?.data?.length > 0 && (
+                    <div className="mt-6">
+                      <ResultsPagination
+                        currentPage={page}
+                        totalPages={searchResults?.meta?.totalPages || 0}
+                        totalResults={searchResults?.meta?.total || 0}
+                        pageSize={size}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="external" className="mt-0">
+                  <ExternalJobResultsList
+                    jobs={externalSearchResults?.data || []}
+                    isLoading={isExternalLoading}
+                    isError={isExternalError}
+                    onJobClick={(job) => navigate(`/jobs/external/${job.id}`, { state: { job } })}
+                  />
+                  {externalSearchResults?.data?.length > 0 && (
+                    <div className="mt-6">
+                      <ResultsPagination
+                        currentPage={page}
+                        totalPages={10} // Giới hạn cho external API để tránh lạm dụng request
+                        totalResults={externalSearchResults?.meta?.total || 50}
+                        pageSize={size}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             ) : (
               <div className="rounded-xl overflow-hidden border border-border/60 shadow-sm">
                 <JobMapView

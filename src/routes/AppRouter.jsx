@@ -21,6 +21,7 @@ import Dashboard from '../pages/dashboard/Dashboard';
 import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobDetail from '../pages/jobs/JobDetail';
 import JobSearch from '../pages/jobs/JobSearch';
+import ExternalJobDetail from '../pages/jobs/ExternalJobDetail';
 import RecommendedJobsPage from '../pages/RecommendedJobsPage';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import ViewHistory from '../pages/jobs/ViewHistory';
@@ -177,6 +178,7 @@ const AppRouter = () => {
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/recommended" element={<RecommendedJobsPage />} />
           <Route path="/jobs/alert" element={<JobAlertJobsPage />} />
+          <Route path="/jobs/external/:jobId" element={<ExternalJobDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />

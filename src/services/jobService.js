@@ -437,3 +437,28 @@ export const getJobsByIds = async (ids) => {
   const response = await apiClient.post('/jobs/by-ids', { ids });
   return response.data.data;
 };
+
+// Tìm kiếm việc làm bên ngoài (JSearch API qua Backend Proxy)
+export const searchExternalJobs = async (params = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    // Required parameters
+    if (params.query) queryParams.append('query', params.query);
+
+    // Optional parameters
+    if (params.page) queryParams.append('page', params.page);
+    if (params.num_pages) queryParams.append('num_pages', params.num_pages);
+    if (params.employment_types) queryParams.append('employment_types', params.employment_types);
+    if (params.date_posted) queryParams.append('date_posted', params.date_posted);
+    if (params.remote_jobs_only !== undefined) queryParams.append('remote_jobs_only', params.remote_jobs_only);
+
+    const url = `/jobs/external/search${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    // Endpoint này public nên không cần JWT, nhưng apiClient có thể tự gửi nếu có
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching external jobs:', error);
+    throw error;
+  }
+};
