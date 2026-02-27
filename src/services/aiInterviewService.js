@@ -5,6 +5,7 @@
  */
 
 import apiClient from './apiClient';
+import { getAccessToken } from '@/utils/token'; // Import utils để lấy đúng token
 
 // Base path for Python service directly bypassing node proxy
 const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000/api';
@@ -15,7 +16,7 @@ const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:
  */
 export const getAssemblyAIToken = async () => {
   try {
-    const response = await apiClient.get('/assemblyai/token', { baseURL: PYTHON_API_URL });
+    const response = await apiClient.get('/ai-interview/assemblyai/token');
     return response.data;
   } catch (error) {
     console.error('AssemblyAI token error:', error);
@@ -30,7 +31,7 @@ export const getAssemblyAIToken = async () => {
  */
 export const transcribeAudio = async (audioData) => {
   try {
-    const response = await apiClient.post('/transcribe', { audioData }, { baseURL: PYTHON_API_URL });
+    const response = await apiClient.post('/ai-interview/transcribe', { audioData });
     return response.data;
   } catch (error) {
     console.error('Transcription error:', error);
@@ -59,25 +60,16 @@ export const sendChatMessage = async (sessionId, message = '', isStart = false, 
       payload.topic = topic;
     }
 
-    const token = localStorage.getItem('token') || '';
-
-    const fetchUrl = `${PYTHON_API_URL}/chat`;
-
-    const response = await fetch(fetchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
+    // Dùng apiClient (Axios) thay vì fetch gốc. 
+    // Do endpoint trả stream audio, ta chỉ định adapter là 'fetch' để nhận đúng ReadableStream trên trình duyệt (hỗ trợ bởi Axios 1.7.0+)
+    const response = await apiClient.post('/ai-interview/chat', payload, {
+      responseType: 'stream',
+      adapter: 'fetch'
     });
 
-    if (!response.ok) {
-      throw new Error(`Chat API failed: ${response.statusText}`);
-    }
+    // Axios trả về header dưới dạng lowercase hoặc thông qua hàm get()
+    const aiResponseEnc = response.headers['x-ai-response'] || (typeof response.headers.get === 'function' ? response.headers.get('x-ai-response') : null);
 
-    // AI Response is injected into custom header by Backend
-    const aiResponseEnc = response.headers.get('X-AI-Response');
     let aiResponseText = '';
     if (aiResponseEnc) {
       aiResponseText = decodeURIComponent(aiResponseEnc);
@@ -88,10 +80,11 @@ export const sendChatMessage = async (sessionId, message = '', isStart = false, 
 
     return {
       response: aiResponseText,
-      audioStream: response.body
+      // Khi dùng adapter: 'fetch' với responseType: 'stream', response.data chính là ReadableStream
+      audioStream: response.data
     };
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Chat API Error:', error);
     throw error;
   }
 };
@@ -104,11 +97,10 @@ export const sendChatMessage = async (sessionId, message = '', isStart = false, 
 export const generateTTS = async (text) => {
   try {
     const response = await apiClient.post(
-      '/tts',
+      '/ai-interview/tts',
       { text },
       {
-        responseType: 'blob',
-        baseURL: PYTHON_API_URL
+        responseType: 'blob'
       }
     );
     return response.data;
@@ -125,7 +117,7 @@ export const generateTTS = async (text) => {
  */
 export const getSimliSessionToken = async (faceId) => {
   try {
-    const response = await apiClient.post('/simli/get-session-token', { faceId }, { baseURL: PYTHON_API_URL });
+    const response = await apiClient.post('/ai-interview/simli/get-session-token', { faceId });
     return response.data;
   } catch (error) {
     console.error('Simli session token error:', error);
@@ -139,7 +131,7 @@ export const getSimliSessionToken = async (faceId) => {
  */
 export const getSimliIceServers = async () => {
   try {
-    const response = await apiClient.get('/simli/get-ice-servers', { baseURL: PYTHON_API_URL });
+    const response = await apiClient.get('/ai-interview/simli/get-ice-servers');
     return response.data;
   } catch (error) {
     console.error('Simli ICE servers error:', error);

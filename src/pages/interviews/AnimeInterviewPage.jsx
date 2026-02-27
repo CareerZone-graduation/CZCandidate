@@ -270,13 +270,13 @@ const AnimeInterviewPage = () => {
         }
     };
 
-    const startAudioAnalysis = () => {
+    const startAudioAnalysis = async () => {
         if (!audioContextRef.current) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioContextRef.current = new AudioContext();
         }
         if (audioContextRef.current.state === 'suspended') {
-            audioContextRef.current.resume();
+            await audioContextRef.current.resume();
         }
 
         if (!analyserRef.current) {
@@ -324,18 +324,16 @@ const AnimeInterviewPage = () => {
             if (modelRef.current) {
                 try { modelRef.current.motion('Tap', 0); } catch (e) { }
             }
-            startAudioAnalysis();
 
-            if (!audioContextRef.current) {
-                startAudioAnalysis();
-            }
+            // Đảm bảo AudioContext đã hoàn toàn wake-up trước khi ta lấy currentTime
+            await startAudioAnalysis();
 
             const sampleRate = 16000;
             const audioContext = audioContextRef.current;
             const reader = audioStream.getReader();
 
-            const startTime = audioContext.currentTime;
-            let nextPlayTime = startTime;
+            let nextPlayTime = 0;
+            let isFirstChunk = true;
 
             if (onSpeakingStart) onSpeakingStart();
 
@@ -380,8 +378,15 @@ const AnimeInterviewPage = () => {
                     source.connect(audioContext.destination);
                 }
 
-                if (nextPlayTime < audioContext.currentTime) {
-                    nextPlayTime = audioContext.currentTime;
+                // Chốt thời gian phát ngay khi nhận được chunk hợp lệ đầu tiên
+                // Cộng thêm 150ms (0.15) làm buffer để loa không bị miss
+                if (isFirstChunk) {
+                    isFirstChunk = false;
+                    nextPlayTime = audioContext.currentTime + 0.15;
+                } else if (nextPlayTime < audioContext.currentTime) {
+                    // Nếu mạng lag khiến luồng bị đứt đoạn, phải dời mốc nextPlayTime
+                    // vượt lên trên currentTime hiện tại của loa để mảng không bị quăng đi
+                    nextPlayTime = audioContext.currentTime + 0.01;
                 }
 
                 source.start(nextPlayTime);
@@ -425,6 +430,26 @@ const AnimeInterviewPage = () => {
         setMessages([]);
         sessionIdRef.current = generateSessionId();
         setIsConnected(true);
+
+        try {
+            if (!audioContextRef.current) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContextRef.current = new AudioContext();
+            }
+            if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+            }
+            // Tạo 1 âm thanh rỗng siêu ngắn (âm lượng = 0) để ép thiết bị mở luồng audio
+            const osc = audioContextRef.current.createOscillator();
+            const gainNode = audioContextRef.current.createGain();
+            gainNode.gain.value = 0;
+            osc.connect(gainNode);
+            gainNode.connect(audioContextRef.current.destination);
+            osc.start();
+            osc.stop(audioContextRef.current.currentTime + 0.01);
+        } catch (e) {
+            console.warn("Lỗi warm-up audio:", e);
+        }
 
         setIsProcessing(true);
         setStatus('AI đang chuẩn bị...');
