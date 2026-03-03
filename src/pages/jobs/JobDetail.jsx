@@ -40,6 +40,7 @@ import JobDetailHeader from '@/components/common/JobDetail/Header';
 import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
 import JobDetailSkeleton from './JobDetailSkeleton';
 import SimilarJobs from '@/components/jobs/SimilarJobs';
+import AlsoLikedJobs from '@/components/jobs/AlsoLikedJobs';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -428,109 +429,120 @@ const JobDetail = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="lg:col-span-2 space-y-6">
                 {/* Job Overview */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
+                <Card className="border-border/50 shadow-sm overflow-hidden rounded-2xl">
+                  <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
                     <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-6">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
+                        <MapPin className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
-                        <p className="text-foreground font-semibold">{job.location?.province}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Địa điểm</p>
+                        <p className="text-foreground font-semibold line-clamp-2">{job.location?.province || 'Chưa cập nhật'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-600 shrink-0">
+                        <Briefcase className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Loại hình</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Loại hình</p>
                         <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Building className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-600 shrink-0">
+                        <Building className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Hình thức làm việc</p>
                         <p className="text-foreground font-semibold">{formatWorkMode(job.workType)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
-                        <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-green-500/10 rounded-xl text-green-600 shrink-0">
+                        <Clock className="w-5 h-5" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Kinh nghiệm</p>
                         <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-orange-500/10 rounded-xl text-orange-600 shrink-0">
+                        <Calendar className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Hạn nộp</p>
-                        <p className="text-orange-600 font-semibold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Hạn nộp hồ sơ</p>
+                        <p className="text-orange-600 font-bold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Tag className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-600 shrink-0">
+                        <Tag className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Ngành nghề</p>
-                        <p className="text-foreground font-semibold">{formatCategory(job.category)}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Ngành nghề chính</p>
+                        <p className="text-foreground font-semibold line-clamp-2">{formatCategory(job.category)}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Job Description */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Mô tả công việc</CardTitle>
+                <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                  <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl font-bold">Mô tả công việc</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
+                    <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                      dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
 
                 {/* Requirements */}
                 {job.requirements && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Yêu cầu ứng viên</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-orange-400 to-red-500" />
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-bold">Yêu cầu ứng viên</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                      <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                        dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Benefits */}
                 {job.benefits && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Quyền lợi</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-teal-500" />
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-bold">Quyền lợi</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                      <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                        dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Skills */}
                 {job.skills && job.skills.length > 0 && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Kỹ năng yêu cầu</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl">
+                    <CardHeader className="pb-4 border-b border-border/50">
+                      <CardTitle className="text-lg font-bold">Kỹ năng chuyên môn</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
+                    <CardContent className="pt-5">
+                      <div className="flex flex-wrap gap-2.5">
                         {job.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 hover:-translate-y-0.5 transition-transform px-3 py-1.5 text-sm">
                             {skill}
                           </Badge>
                         ))}
@@ -540,11 +552,13 @@ const JobDetail = () => {
                 )}
 
                 {/* Location Map */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Địa điểm làm việc</CardTitle>
+                <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-4 bg-muted/20 border-b border-border/50">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-primary" /> Địa điểm làm việc
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     <JobLocationMap
                       location={job.location}
                       address={job.address}
@@ -554,12 +568,20 @@ const JobDetail = () => {
                 </Card>
 
                 {/* Similar Jobs */}
-                <SimilarJobs jobId={id} />
+                <div className="pt-4">
+                  <SimilarJobs jobId={id} />
+                </div>
+
+                {/* Also Liked Jobs (CF Recommendations) */}
+                <div className="pt-2">
+                  <AlsoLikedJobs jobId={id} />
+                </div>
               </div>
 
               {/* Right Column (Sidebar) */}
               <div className="lg:col-span-1">
                 <JobDetailSidebar
+                  job={job}
                   relatedJobs={relatedJobs}
                   isLoadingRelated={isLoadingRelated}
                   currentJobs={currentJobs}
@@ -567,6 +589,9 @@ const JobDetail = () => {
                   relatedJobsPage={relatedJobsPage}
                   handlePrevPage={handlePrevPage}
                   handleNextPage={handleNextPage}
+                  handleApply={handleApply}
+                  isApplied={job.isApplied}
+                  isJobActive={job.status === 'ACTIVE'}
                 />
               </div>
             </div>

@@ -468,3 +468,10 @@ export const getSimilarJobs = async (jobId, params = {}) => {
   const { data } = await apiClient.get(`/jobs/${jobId}/similar`, { params });
   return data;
 };
+
+// Lấy danh sách việc làm người khác cũng quan tâm (dựa trên Item-Item CF)
+export const getAlsoLikedJobs = async (jobId, params = {}) => {
+  const { data } = await apiClient.get(`/jobs/${jobId}/also-liked`, { params });
+  return data;
+};
+
