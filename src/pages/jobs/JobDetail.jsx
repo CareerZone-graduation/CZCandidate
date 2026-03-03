@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +29,7 @@ import {
 import { getJobApplicantCount, getJobById, getJobsByCompany } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { saveViewHistory } from '../../services/viewHistoryService';
+import { interactionService } from '../../services/interactionService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -73,16 +74,24 @@ const JobDetail = () => {
     select: (data) => data.data?.filter(j => j._id !== id) || [],
   });
 
+  // Ref để đảm bảo chỉ track VIEW 1 lần cho mỗi jobId
+  const trackedViewRef = useRef(null);
+
   // Tự động lưu lịch sử xem khi vào trang chi tiết job
   useEffect(() => {
-    if (job && id && isAuthenticated) {
-      // Lưu lịch sử xem (silent - không hiển thị thông báo)
+    if (job && id && isAuthenticated && trackedViewRef.current !== id) {
+      trackedViewRef.current = id; // Đánh dấu đã track cho jobId này
+
+      // Lưu lịch sử xem (hệ thống cũ)
       saveViewHistory(id).catch((error) => {
-        // Silent error - không làm gián đoạn trải nghiệm người dùng
         console.error('Failed to save view history:', error);
       });
+
+      // Tracking tương tác (hệ thống AI Recommendation)
+      interactionService.trackJobView(id, { sourcePage: 'job_detail' })
+        .catch(err => console.error('Error tracking VIEW interaction:', err));
     }
-  }, [job, id, isAuthenticated]);
+  }, [id, job, isAuthenticated]);
 
   const formatWorkType = (type) => {
     const typeMap = {
@@ -213,6 +222,10 @@ const JobDetail = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
     queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
     queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
+
+    // Tracking tương tác ứng tuyển (APPLY)
+    interactionService.trackJobApply(id, { sourcePage: 'job_detail' })
+      .catch(err => console.error('Error tracking APPLY interaction:', err));
   };
 
   const { mutate: toggleSaveJob } = useMutation({
@@ -232,9 +245,16 @@ const JobDetail = () => {
       return { previousJobData };
     },
     onSuccess: (data) => {
-      const message = data.data.message || (job?.isSaved ? 'Đã bỏ lưu công việc' : 'Đã lưu công việc thành công');
+      const isNowSaved = !job?.isSaved;
+      const message = data.data.message || (isNowSaved ? 'Đã lưu công việc thành công' : 'Đã bỏ lưu công việc');
       toast.success(message);
       queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
+
+      // Nếu là lưu công việc (SAVE) thì tracking
+      if (isNowSaved) {
+        interactionService.trackJobSave(id, { sourcePage: 'job_detail' })
+          .catch(err => console.error('Error tracking SAVE interaction:', err));
+      }
     },
     onError: (err, _newVariables, context) => {
       if (context?.previousJobData) {

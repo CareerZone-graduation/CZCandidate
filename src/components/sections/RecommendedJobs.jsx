@@ -10,7 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SectionHeader } from '@/components/common/SectionHeader';
-import { getRecommendations, generateRecommendations } from '@/services/recommendationService';
+import { getAIRecommendations } from '@/services/recommendationService';
 import { getOnboardingStatus } from '@/services/onboardingService';
 import { formatSalaryVND, formatWorkType, formatExperience } from '@/utils/formatters';
 
@@ -33,73 +33,45 @@ const RecommendedJobs = () => {
   const completeness = statusData?.data?.profileCompleteness?.percentage || 0;
   const isProfileComplete = completeness >= 60;
 
-  // 2. Fetch Recommendations (Enabled only if profile complete)
+  // 2. Fetch AI Recommendations
   const {
     data: recResponse,
     isLoading: isRecLoading,
-    refetch: refetchRecommendations
+    refetch: refetchRecommendations,
+    isFetching: isRecFetching
   } = useQuery({
-    queryKey: ['recommendations', 'home'],
-    queryFn: () => getRecommendations({ page: 1, limit: 6 }),
-    enabled: !!isAuthenticated && isProfileComplete,
+    queryKey: ['ai-recommendations', 'home'],
+    queryFn: () => getAIRecommendations({ page: 1, limit: 6 }),
+    enabled: !!isAuthenticated,
     staleTime: 5 * 60 * 1000,
-  });
-
-  // Recommendation Generation Mutation
-  const generateMutation = useMutation({
-    mutationFn: generateRecommendations,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      refetchRecommendations();
-    },
   });
 
   // Extract recommended jobs
   const recommendedJobs = recResponse?.data
-    ?.filter(rec => rec.jobId)
-    .map(rec => ({
-      ...rec.jobId,
-      recommendationScore: rec.score,
-      recommendationReasons: rec.reasons
+    ?.filter(job => job?._id)
+    .map(job => ({
+      ...job,
+      aiScore: job.aiScore,
+      company: job.company || job.recruiterProfileId?.company
     })) || [];
 
-  const isGlobalLoading = (isAuthenticated && isStatusLoading) || (isAuthenticated && isProfileComplete && isRecLoading);
+  const aiSource = recResponse?.source || 'unknown';
 
-  // Auto-generate effect
-  useEffect(() => {
-    if (isAuthenticated && isProfileComplete && !isRecLoading && recommendedJobs.length === 0 && !generateMutation.isPending) {
-      // Debounce generation to avoid loops
-      const timer = setTimeout(() => {
-        generateMutation.mutate({ limit: 20 });
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, isProfileComplete, isRecLoading, recommendedJobs.length]);
-
+  const isGlobalLoading = (isAuthenticated && isStatusLoading) || (isAuthenticated && isRecLoading);
 
   const handleRefreshRecommendations = () => {
-    generateMutation.mutate({ limit: 20 });
+    refetchRecommendations();
   };
 
   const handleJobClick = (jobId) => {
     navigate(`/jobs/${jobId}`);
   };
 
-  const renderReasonBadges = (reasons) => {
-    if (!reasons || reasons.length === 0) return null;
-    return (
-      <div className="flex flex-wrap gap-2 mt-2">
-        {reasons.slice(0, 2).map((reason, idx) => (
-          <Badge
-            key={idx}
-            variant="outline"
-            className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"
-          >
-            {reason.value}
-          </Badge>
-        ))}
-      </div>
-    );
+  const SOURCE_LABELS = {
+    model: { label: 'AI Model', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    cold_start: { label: 'Cold Start', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    popular: { label: 'Phổ biến', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    unknown: { label: 'Không rõ', color: 'bg-gray-100 text-gray-700 border-gray-200' },
   };
 
   // If not authenticated, we don't show this section at all (HomePage handles this, but safety check)
@@ -112,10 +84,10 @@ const RecommendedJobs = () => {
           badgeText="✨ Dành riêng cho bạn"
           title={
             <>
-              Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">dành riêng cho bạn</span>
+              Việc làm <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Đề xuất bởi AI</span>
             </>
           }
-          description="Những công việc được gợi ý dựa trên kỹ năng, kinh nghiệm và mong muốn của bạn."
+          description="Công nghệ AI phân tích hồ sơ và tương tác của bạn để mang đến những cơ hội phù hợp nhất."
         />
 
         {/* Alert for incomplete profile */}
@@ -139,24 +111,32 @@ const RecommendedJobs = () => {
           </Alert>
         )}
 
-        {/* Refresh button */}
+        {/* Refresh button & AI Source Config */}
         {recommendedJobs.length > 0 && (
-          <div className="flex justify-end mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Sparkles className="h-4 w-4 text-emerald-500" /> AI Source:
+              </span>
+              <Badge variant="outline" className={SOURCE_LABELS[aiSource]?.color || SOURCE_LABELS.unknown.color}>
+                {SOURCE_LABELS[aiSource]?.label || aiSource}
+              </Badge>
+            </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefreshRecommendations}
-              disabled={generateMutation.isPending}
+              disabled={isRecFetching}
               className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold"
             >
-              <RefreshCw className={`h-4 w-4 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
-              {generateMutation.isPending ? 'Đang phân tích...' : 'Làm mới gợi ý'}
+              <RefreshCw className={`h-4 w-4 ${isRecFetching ? 'animate-spin' : ''}`} />
+              {isRecFetching ? 'Đang tải...' : 'Làm mới gợi ý'}
             </Button>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {(isGlobalLoading || generateMutation.isPending) ? (
+          {isGlobalLoading ? (
             // Loading skeletons
             [...Array(3)].map((_, i) => (
               <Card key={i} className="h-80 shadow-md border-muted">
@@ -185,15 +165,7 @@ const RecommendedJobs = () => {
                 className="group relative overflow-hidden border border-emerald-100 shadow-md hover:shadow-xl bg-card cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id || job.id)}
               >
-                {/* Recommendation score badge */}
-                {job.recommendationScore && (
-                  <div className="absolute top-3 right-3 z-10">
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold border-0 shadow-sm">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      {job.recommendationScore}%
-                    </Badge>
-                  </div>
-                )}
+                {/* Score badge removed as requested */}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start space-x-4">
@@ -232,7 +204,7 @@ const RecommendedJobs = () => {
                 </CardHeader>
 
                 <CardContent className="pt-0 pb-4">
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-emerald-50 text-emerald-700">
                       <DollarSign className="w-3 h-3" />
                       {formatSalaryVND(job.minSalary, job.maxSalary)}
@@ -242,8 +214,6 @@ const RecommendedJobs = () => {
                       {formatWorkType(job.workType)}
                     </Badge>
                   </div>
-
-                  {renderReasonBadges(job.recommendationReasons)}
                 </CardContent>
 
                 <CardFooter className="border-t pt-3 flex justify-between items-center bg-emerald-50/30">

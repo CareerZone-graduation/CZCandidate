@@ -22,10 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { getRecommendations, generateRecommendations } from '@/services/recommendationService';
+import { getRecommendations, generateRecommendations, getAIRecommendations } from '@/services/recommendationService';
 import { getOnboardingStatus } from '@/services/onboardingService';
 import { formatSalaryVND, formatWorkType, formatExperience } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const RecommendedJobsPage = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const RecommendedJobsPage = () => {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('ai'); // 'ai' | 'profile'
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -66,8 +68,21 @@ const RecommendedJobsPage = () => {
   } = useQuery({
     queryKey: ['recommendations', page],
     queryFn: () => getRecommendations({ page, limit: 20 }),
-    enabled: isProfileComplete && isAuthenticated,
+    enabled: isProfileComplete && isAuthenticated && activeTab === 'profile',
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch AI Recommendations
+  const {
+    data: aiRecommendationsData,
+    isLoading: isAILoading,
+    isFetching: isAIFetching,
+  } = useQuery({
+    queryKey: ['ai-recommendations', page],
+    queryFn: () => getAIRecommendations({ page, limit: 20 }),
+    enabled: isAuthenticated && activeTab === 'ai',
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   // Mutation to generate recommendations
@@ -83,14 +98,27 @@ const RecommendedJobsPage = () => {
     }
   });
 
-  const jobs = recommendationsData?.data?.map(rec => ({
+  // Build jobs list depending on active tab
+  const profileJobs = recommendationsData?.data?.map(rec => ({
     ...rec.jobId,
     recommendationScore: rec.score,
     recommendationReasons: rec.reasons,
     recommendedAt: rec.generatedAt
-  })).filter(job => job?._id) || []; // Filter out invalid jobs
+  })).filter(job => job?._id) || [];
 
-  const pagination = recommendationsData?.pagination || {
+  const aiJobs = aiRecommendationsData?.data?.map(job => ({
+    ...job,
+    aiScore: job.aiScore,
+    company: job.company || job.recruiterProfileId?.company,
+  })).filter(job => job?._id) || [];
+
+  const aiSource = aiRecommendationsData?.source || 'unknown';
+
+  const jobs = activeTab === 'ai' ? aiJobs : profileJobs;
+  const isCurrentLoading = activeTab === 'ai' ? isAILoading : isJobsLoading;
+  const isCurrentFetching = activeTab === 'ai' ? isAIFetching : isJobsFetching;
+
+  const pagination = (activeTab === 'ai' ? aiRecommendationsData?.pagination : recommendationsData?.pagination) || {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
@@ -99,15 +127,13 @@ const RecommendedJobsPage = () => {
 
   // Auto-generate if empty on first page
   useEffect(() => {
-    if (isProfileComplete && !isJobsLoading && !isJobsFetching && jobs.length === 0 && page === 1 && !generateMutation.isPending) {
-      // Check if we should auto-generate
-      // We use a small timeout to avoid immediate flash or loops, although enabled flag helps
+    if (activeTab === 'profile' && isProfileComplete && !isJobsLoading && !isJobsFetching && profileJobs.length === 0 && page === 1 && !generateMutation.isPending) {
       const timer = setTimeout(() => {
         generateMutation.mutate({ limit: 20 });
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isProfileComplete, isJobsLoading, isJobsFetching, jobs.length, page, generateMutation.isPending]);
+  }, [activeTab, isProfileComplete, isJobsLoading, isJobsFetching, profileJobs.length, page, generateMutation.isPending]);
 
   const handleJobClick = (jobId) => {
     navigate(`/jobs/${jobId}`);
@@ -116,6 +142,18 @@ const RecommendedJobsPage = () => {
   const handlePageChange = (newPage) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const SOURCE_LABELS = {
+    model: { label: 'AI Model', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    cold_start: { label: 'Cold Start', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    popular: { label: 'Phổ biến', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    unknown: { label: 'Không rõ', color: 'bg-gray-100 text-gray-700 border-gray-200' },
   };
 
   const renderReasonBadges = (reasons) => {
@@ -177,7 +215,7 @@ const RecommendedJobsPage = () => {
                 : 'Hãy hoàn thiện hồ sơ để nhận gợi ý việc làm tốt nhất'}
             </p>
           </div>
-          {isProfileComplete && (
+          {isProfileComplete && activeTab === 'profile' && (
             <div className="flex gap-3">
               <Button
                 variant="secondary"
@@ -190,6 +228,22 @@ const RecommendedJobsPage = () => {
               </Button>
             </div>
           )}
+        </div>
+
+        {/* Tabs */}
+        <div className="mt-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="bg-white/20">
+              <TabsTrigger value="ai" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 text-white">
+                <Sparkles className="h-4 w-4 mr-2" />
+                AI Recommendations
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 text-white">
+                <UserCheck className="h-4 w-4 mr-2" />
+                Gợi ý theo hồ sơ
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
     </div>
@@ -266,9 +320,29 @@ const RecommendedJobsPage = () => {
       <PageHeader />
 
       <div className="container py-8">
+        {/* AI Source badge */}
+        {activeTab === 'ai' && aiSource && !isCurrentLoading && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Nguồn gợi ý:</span>
+            <Badge variant="outline" className={SOURCE_LABELS[aiSource]?.color || SOURCE_LABELS.unknown.color}>
+              {SOURCE_LABELS[aiSource]?.label || aiSource}
+            </Badge>
+            {aiSource === 'cold_start' && (
+              <span className="text-xs text-muted-foreground">
+                — Bạn chưa có đủ tương tác, gợi ý dựa trên hồ sơ
+              </span>
+            )}
+            {aiSource === 'popular' && (
+              <span className="text-xs text-muted-foreground">
+                — Hiển thị các việc làm phổ biến nhất
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Jobs grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(isJobsLoading || generateMutation.isPending) ? (
+          {(isCurrentLoading || (activeTab === 'profile' && generateMutation.isPending)) ? (
             [...Array(6)].map((_, i) => (
               <Card key={i} className="h-80 rounded-2xl overflow-hidden">
                 <CardContent className="p-6">
@@ -296,22 +370,14 @@ const RecommendedJobsPage = () => {
                 className="group relative overflow-hidden border shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 onClick={() => handleJobClick(job._id)}
               >
-                {/* Score badge */}
-                {job.recommendationScore && (
-                  <div className="absolute top-3 right-3 z-10">
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold border-0 shadow-md">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      {job.recommendationScore}% phù hợp
-                    </Badge>
-                  </div>
-                )}
+                {/* Score badge removed as requested */}
 
                 <CardHeader className="pb-3">
                   <div className="flex items-start space-x-4">
                     <Avatar className="w-16 h-16 flex-shrink-0 border-2 border-white shadow-sm rounded-xl">
                       <AvatarImage
-                        src={job.recruiterProfileId?.company?.logo || ''}
-                        alt={job.recruiterProfileId?.company?.name || 'Logo'}
+                        src={job.company?.logo || job.recruiterProfileId?.company?.logo || ''}
+                        alt={job.company?.name || job.recruiterProfileId?.company?.name || 'Logo'}
                         className="object-contain bg-white"
                       />
                       <AvatarFallback className="rounded-xl">
@@ -326,7 +392,7 @@ const RecommendedJobsPage = () => {
                         <div className="flex items-center gap-1">
                           <Building className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">
-                            {job.recruiterProfileId?.company?.name || 'Không rõ công ty'}
+                            {job.company?.name || job.recruiterProfileId?.company?.name || 'Không rõ công ty'}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">

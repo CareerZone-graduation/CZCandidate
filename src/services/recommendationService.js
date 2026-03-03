@@ -17,11 +17,11 @@ export const generateRecommendations = async (options = {}) => {
  */
 export const getRecommendations = async (params = {}) => {
   const queryParams = new URLSearchParams();
-  
+
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
   if (params.refresh !== undefined) queryParams.append('refresh', params.refresh);
-  
+
   const url = `/candidate/recommendations${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   const response = await apiClient.get(url);
   return response.data;
@@ -34,4 +34,21 @@ export const getRecommendations = async (params = {}) => {
  */
 export const refreshRecommendations = async (options = {}) => {
   return getRecommendations({ ...options, refresh: true });
+};
+
+/**
+ * Get AI-powered job recommendations (from FastAPI LightFM model)
+ * Response includes { data, source, pagination }
+ * source: "model" | "cold_start" | "popular"
+ * @param {Object} params - { page, limit }
+ * @returns {Promise<Object>} AI recommendations
+ */
+export const getAIRecommendations = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  if (params.page) queryParams.append('page', params.page);
+  if (params.limit) queryParams.append('limit', params.limit);
+
+  const url = `/candidate/recommendations/ai${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const response = await apiClient.get(url);
+  return response.data;
 };
