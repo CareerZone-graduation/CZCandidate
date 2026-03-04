@@ -29,7 +29,7 @@ const AlsoLikedJobs = ({ jobId }) => {
             <CardHeader>
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    Người khác cũng quan tâm
+                    Những người xem việc làm này cũng quan tâm
                 </CardTitle>
             </CardHeader>
             <CardContent>

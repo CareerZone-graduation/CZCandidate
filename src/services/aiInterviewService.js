@@ -5,10 +5,6 @@
  */
 
 import apiClient from './apiClient';
-import { getAccessToken } from '@/utils/token'; // Import utils để lấy đúng token
-
-// Base path for Python service directly bypassing node proxy
-const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000/api';
 
 /**
  * Get AssemblyAI token for real-time transcription
