@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
+import { useCopilot } from '@/contexts/CopilotContext';
 import {
   MapPin,
   Clock,
@@ -48,6 +49,7 @@ const JobDetail = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
   const { openChat } = useChat();
+  const { openCopilot } = useCopilot();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
@@ -425,6 +427,7 @@ const JobDetail = () => {
               isLoadingApplicants={isLoadingApplicants}
               handleViewApplicants={handleViewApplicants}
               handleMessage={handleMessage}
+              handleSummarize={() => openCopilot('summarize_job', { jobId: id })}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

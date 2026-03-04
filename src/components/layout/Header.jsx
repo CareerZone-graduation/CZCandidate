@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useChat } from '@/contexts/ChatContext';
+import { useCopilot } from '@/contexts/CopilotContext';
 import {
   Menu,
   Briefcase,
@@ -42,7 +43,8 @@ import {
   MessageCircle,
   Video,
   Calendar,
-  FileCheck
+  FileCheck,
+  Sparkles
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { clearNotifications } from '@/redux/notificationSlice';
@@ -70,6 +72,7 @@ const Header = () => {
   const { unreadCount: notificationCount } = useSelector((state) => state.notifications);
   const isHeaderWhite = useHeaderTheme(500); // Khoảng 2/3 màn hình
   const { openChat } = useChat();
+  const { openCopilot } = useCopilot();
 
   // User dropdown state
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -367,6 +370,13 @@ const Header = () => {
                             <Video className="h-4 w-4 text-primary" /> Phỏng vấn AI
                           </Link>
                           <button
+                            onClick={() => { openCopilot(); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors text-left text-indigo-700 bg-indigo-50/50"
+                          >
+                            <Sparkles className="h-4 w-4 text-indigo-600" />
+                            CareerZone Copilot AI
+                          </button>
+                          <button
                             onClick={() => openChat()}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                           >
@@ -498,6 +508,21 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <ThemeToggle />
+
+              {/* Copilot Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => openCopilot()}
+                title="CareerZone Copilot AI"
+                className={cn(
+                  "h-10 w-10 rounded-full relative transition-all duration-300 group",
+                  "hover:bg-gradient-to-br hover:from-indigo-50 hover:to-indigo-100/50 border border-indigo-100 bg-indigo-50/30",
+                  "hover:shadow-lg hover:shadow-indigo-500/20"
+                )}
+              >
+                <Sparkles className="h-5 w-5 transition-all text-indigo-600 group-hover:scale-110" />
+              </Button>
 
               {/* Messages Button */}
               <div className="relative">

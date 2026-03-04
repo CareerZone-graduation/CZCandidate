@@ -10,7 +10,8 @@ import {
     Briefcase,
     Building,
     Calendar,
-    Zap
+    Zap,
+    Sparkles
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,8 @@ const JobDetailHeader = ({
     hasViewedApplicants,
     isLoadingApplicants,
     handleViewApplicants,
-    handleMessage
+    handleMessage,
+    handleSummarize
 }) => {
     // Helper to format work type
     const formatWorkType = (type) => {
@@ -144,7 +146,16 @@ const JobDetailHeader = ({
                     {/* Action Cards (Desktop right, Mobile bottom) */}
                     <div className="w-full lg:w-auto flex flex-col gap-3 lg:shrink-0 lg:min-w-[280px]">
                         <div className="p-5 bg-card/80 backdrop-blur-md rounded-2xl border border-border/60 shadow-sm flex flex-col gap-3">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-1">Thao tác ứng viên</h3>
+                            <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-sm font-medium text-muted-foreground">Thao tác ứng viên</h3>
+                                <button
+                                    onClick={handleSummarize}
+                                    className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 px-2 py-1 rounded-full transition-all duration-300 border border-indigo-100/50 hover:scale-105 active:scale-95 shadow-sm group"
+                                >
+                                    <Sparkles className="w-3 h-3 group-hover:animate-pulse" />
+                                    Tóm tắt AI
+                                </button>
+                            </div>
 
                             {isApplied ? (
                                 <div className="space-y-3">
