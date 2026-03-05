@@ -150,9 +150,9 @@ const JobDetailHeader = ({
                                 <h3 className="text-sm font-medium text-muted-foreground">Thao tác ứng viên</h3>
                                 <button
                                     onClick={handleSummarize}
-                                    className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 px-2 py-1 rounded-full transition-all duration-300 border border-indigo-100/50 hover:scale-105 active:scale-95 shadow-sm group"
+                                    className="copilot-glow-btn flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-transparent px-2.5 py-1 rounded-full transition-all duration-300 border-none hover:scale-105 active:scale-95 shadow-sm group"
                                 >
-                                    <Sparkles className="w-3 h-3 group-hover:animate-pulse" />
+                                    <Sparkles className="w-3 h-3 group-hover:animate-pulse text-indigo-500" />
                                     Tóm tắt AI
                                 </button>
                             </div>

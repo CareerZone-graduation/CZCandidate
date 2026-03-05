@@ -371,10 +371,14 @@ const Header = () => {
                           </Link>
                           <button
                             onClick={() => { openCopilot(); }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors text-left text-indigo-700 bg-indigo-50/50"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-left text-indigo-700 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100/50 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 group overflow-hidden relative"
                           >
-                            <Sparkles className="h-4 w-4 text-indigo-600" />
-                            CareerZone Copilot AI
+                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
+                              <Sparkles className="h-12 w-12" />
+                            </div>
+                            <Sparkles className="h-5 w-5 text-indigo-600 group-hover:animate-pulse" />
+                            <span className="relative z-10">CareerZone Copilot AI</span>
+                            <Badge className="ml-auto bg-indigo-600 hover:bg-indigo-700 text-[10px] h-5">Mới</Badge>
                           </button>
                           <button
                             onClick={() => openChat()}
@@ -516,12 +520,10 @@ const Header = () => {
                 onClick={() => openCopilot()}
                 title="CareerZone Copilot AI"
                 className={cn(
-                  "h-10 w-10 rounded-full relative transition-all duration-300 group",
-                  "hover:bg-gradient-to-br hover:from-indigo-50 hover:to-indigo-100/50 border border-indigo-100 bg-indigo-50/30",
-                  "hover:shadow-lg hover:shadow-indigo-500/20"
+                  "copilot-glow-btn h-10 w-10 rounded-full relative transition-all duration-300 group border-none shadow-sm hover:shadow-indigo-500/40 hover:scale-110"
                 )}
               >
-                <Sparkles className="h-5 w-5 transition-all text-indigo-600 group-hover:scale-110" />
+                <Sparkles className="h-5 w-5 transition-all text-indigo-600 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
               </Button>
 
               {/* Messages Button */}

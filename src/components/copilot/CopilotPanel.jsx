@@ -143,13 +143,12 @@ function MessageBubble({ msg, index }) {
 function ToolProgressIndicator({ toolProgress }) {
     const toolLabels = {
         search_jobs: 'Đang tìm kiếm việc làm…',
-        get_recommendations: 'Đang tạo gợi ý cá nhân hóa…',
+        get_recommendations: 'Đang lấy gợi ý cá nhân hóa…',
         get_job_detail: 'Đang đọc chi tiết công việc…',
         get_my_interviews: 'Đang lấy lịch phỏng vấn…',
         get_my_applications: 'Đang lấy danh sách ứng tuyển…',
         getExpiringJobs: 'Đang lấy các công việc sắp hết hạn…',
-        getSavedJobsExpiringSoon: 'Đang kiểm tra việc làm đã lưu…',
-        enhance_job_post: 'Đang nâng cấp tin tuyển dụng…',
+        getSavedJobsExpiringSoon: 'Đang kiểm tra việc làm đã lưu…'
     };
     const label = toolLabels[toolProgress.tool] || 'Đang xử lý…';
 
