@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUser } from '../redux/authSlice';
+import { CopilotProvider } from '@/contexts/CopilotContext';
+import CopilotPanel from '@/components/copilot/CopilotPanel';
 
 // Layouts
 import MainLayout from '../components/layout/MainLayout';
@@ -169,10 +171,11 @@ const AppRouter = () => {
         v7_relativeSplatPath: true,
       }}
     >
-      <ScrollToTopOnRouteChange />
-      <GlobalOnboardingChecker />
-      <GlobalVerificationChecker />
-      <Routes>
+      <CopilotProvider>
+        <ScrollToTopOnRouteChange />
+        <GlobalOnboardingChecker />
+        <GlobalVerificationChecker />
+        <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -312,6 +315,8 @@ const AppRouter = () => {
         {/* Fallback for any other route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <CopilotPanel />
+      </CopilotProvider>
     </BrowserRouter >
   );
 };

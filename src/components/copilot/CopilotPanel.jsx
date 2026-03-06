@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCopilot } from '@/contexts/CopilotContext';
 import { JobCardList } from './renderers/JobCardList';
 import { InterviewScheduleList } from './renderers/InterviewScheduleList';
+import { ApplicationCardList } from './renderers/ApplicationCardList';
 import { CandidateComparison } from './renderers/CandidateComparison';
 import {
     Send, Sparkles, X, Loader2, Bot, User,
@@ -19,6 +20,8 @@ function StructuredDataRenderer({ data }) {
             return <JobCardList jobs={data.data.jobs} />;
         case 'interview_schedule':
             return <InterviewScheduleList interviews={data.data.interviews} />;
+        case 'application_cards':
+            return <ApplicationCardList applications={data.data.applications} />;
         case 'candidate_comparison':
             return <CandidateComparison data={data.data} />;
         case 'knowledge_answer':

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Clock, User, Briefcase } from 'lucide-react';
+import { useCopilot } from '@/contexts/CopilotContext';
 
 const statusConfig = {
     SCHEDULED: { label: 'Đã lên lịch', color: 'bg-sky-50 text-sky-600 border-sky-200' },
@@ -20,6 +21,8 @@ function formatDateTime(dateStr) {
 }
 
 export function InterviewScheduleList({ interviews }) {
+    const { navigate } = useCopilot();
+
     if (!interviews || interviews.length === 0) {
         return (
             <div className="text-sm text-gray-400 italic px-3 py-2.5 border border-dashed border-gray-200 rounded-xl bg-gray-50">
@@ -27,6 +30,10 @@ export function InterviewScheduleList({ interviews }) {
             </div>
         );
     }
+
+    const handleInterviewClick = (interviewId) => {
+        navigate(`/interviews/${interviewId}`);
+    };
 
     return (
         <div className="space-y-2 w-full">
@@ -38,12 +45,11 @@ export function InterviewScheduleList({ interviews }) {
                 return (
                     <div
                         key={iv._id}
-                        className="group p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow hover:border-sky-200 transition-all duration-200"
+                        className="group p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow hover:border-sky-200 transition-all duration-200 cursor-pointer animate-copilot-card-fadein"
                         style={{
-                            animation: 'copilot-card-fadein 0.4s ease-out forwards',
-                            opacity: 0,
                             animationDelay: `${index * 60}ms`,
                         }}
+                        onClick={() => handleInterviewClick(iv._id)}
                     >
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                             <div className="flex items-center gap-2 min-w-0">
@@ -90,6 +96,10 @@ export function InterviewScheduleList({ interviews }) {
                 @keyframes copilot-card-fadein {
                     from { opacity: 0; transform: translateY(8px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-copilot-card-fadein {
+                    animation: copilot-card-fadein 0.4s ease-out forwards;
+                    opacity: 0;
                 }
             `}</style>
         </div>

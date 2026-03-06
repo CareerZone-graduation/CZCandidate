@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { MapPin, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { useCopilot } from '@/contexts/CopilotContext';
 
 function formatDeadline(dateStr) {
     if (!dateStr) return '';
@@ -10,6 +11,7 @@ function formatDeadline(dateStr) {
 }
 
 export function JobCardList({ jobs }) {
+    const { navigate } = useCopilot();
     const prevCountRef = useRef(0);
 
     useEffect(() => {
@@ -24,6 +26,10 @@ export function JobCardList({ jobs }) {
         );
     }
 
+    const handleJobClick = (jobId) => {
+        navigate(`/jobs/${jobId}`);
+    };
+
     return (
         <div className="space-y-2 w-full">
             {jobs.map((job, index) => {
@@ -31,12 +37,11 @@ export function JobCardList({ jobs }) {
                 return (
                     <div
                         key={job._id}
-                        className="group p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition-all duration-200 cursor-pointer"
+                        className={`group p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition-all duration-200 cursor-pointer ${isNew ? 'animate-copilot-card-fadein' : ''}`}
                         style={{
-                            animation: isNew ? 'copilot-card-fadein 0.4s ease-out forwards' : 'none',
-                            opacity: isNew ? 0 : 1,
                             animationDelay: isNew ? `${index * 60}ms` : '0ms',
                         }}
+                        onClick={() => handleJobClick(job._id)}
                     >
                         <div className="flex gap-2.5">
                             {job.logo && (
@@ -97,6 +102,10 @@ export function JobCardList({ jobs }) {
                         opacity: 1;
                         transform: translateY(0);
                     }
+                }
+                .animate-copilot-card-fadein {
+                    animation: copilot-card-fadein 0.4s ease-out forwards;
+                    opacity: 0;
                 }
             `}</style>
         </div>

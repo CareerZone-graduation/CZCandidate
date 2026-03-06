@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAccessToken } from '@/utils/token';
 
 const CopilotContext = createContext(null);
 
 export function CopilotProvider({ children }) {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [sessions, setSessions] = useState([]);
     const [activeSessionId, setActiveSessionId] = useState(null);
@@ -229,7 +231,8 @@ export function CopilotProvider({ children }) {
         pendingAction, toolProgress,
         sendMessage, applyAction, dismissAction,
         openCopilot, closeCopilot: () => setIsOpen(false),
-        clearSession
+        clearSession,
+        navigate
     };
 
     return (

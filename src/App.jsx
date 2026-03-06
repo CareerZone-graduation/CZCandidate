@@ -10,8 +10,6 @@ import ScrollToTop from '@/components/common/ScrollToTop';
 import TikTokPreloader from '@/components/common/TikTokPreloader';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { useChat } from '@/contexts/ChatContext';
-import { CopilotProvider } from '@/contexts/CopilotContext';
-import CopilotPanel from '@/components/copilot/CopilotPanel';
 
 function AppContent() {
   const { isChatOpen, chatConfig, closeChat } = useChat();
@@ -32,9 +30,6 @@ function AppContent() {
         jobId={chatConfig.jobId}
         companyName={chatConfig.companyName}
       />
-
-      {/* Copilot Side Panel */}
-      <CopilotPanel />
     </>
   );
 }
@@ -50,9 +45,7 @@ function App() {
         <BackgroundProvider>
           <ChatProvider>
             <FirebaseProvider>
-              <CopilotProvider>
-                <AppContent />
-              </CopilotProvider>
+              <AppContent />
             </FirebaseProvider>
           </ChatProvider>
         </BackgroundProvider>
