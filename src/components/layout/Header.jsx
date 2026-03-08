@@ -44,7 +44,8 @@ import {
   Video,
   Calendar,
   FileCheck,
-  Sparkles
+  Sparkles,
+  LifeBuoy
 } from 'lucide-react';
 import { logoutSuccess } from '@/redux/authSlice';
 import { clearNotifications } from '@/redux/notificationSlice';
@@ -82,11 +83,10 @@ const Header = () => {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // Navigation links (excluding Jobs and CV - handled by dropdown menus)
-  // Contact link only shows when authenticated
+  // Contact link moved to user dropdown menu
   const navLinks = [
     { to: "/companies", label: "Công ty", title: 'Công ty', href: '/companies', icon: <Building2 className="h-5 w-5" /> },
-    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> },
-    ...(isAuthenticated ? [{ to: "/contact", label: "Liên hệ hỗ trợ", title: 'Liên hệ hỗ trợ', href: '/contact', icon: <Newspaper className="h-5 w-5" /> }] : [])
+    { to: "/news", label: "Tin tức", title: 'Cẩm nang', href: '/news', icon: <Newspaper className="h-5 w-5" /> }
   ];
 
   // Logic lấy tên viết tắt cho Avatar
@@ -371,14 +371,24 @@ const Header = () => {
                           </Link>
                           <button
                             onClick={() => { openCopilot(); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-left text-indigo-700 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100/50 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 group overflow-hidden relative"
+                            className="copilot-glow-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 text-left overflow-hidden relative"
                           >
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
-                              <Sparkles className="h-12 w-12" />
+                            {/* Animated background glow */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/0 via-indigo-400/10 to-indigo-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+
+                            {/* Floating sparkles background */}
+                            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:scale-150 transition-transform duration-500">
+                              <Sparkles className="h-12 w-12 text-indigo-600" />
                             </div>
-                            <Sparkles className="h-5 w-5 text-indigo-600 group-hover:animate-pulse" />
-                            <span className="relative z-10">CareerZone Copilot AI</span>
-                            <Badge className="ml-auto bg-indigo-600 hover:bg-indigo-700 text-[10px] h-5">Mới</Badge>
+
+                            {/* Animated particles */}
+                            <div className="absolute top-2 right-8 w-1 h-1 bg-indigo-400 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping" />
+                            <div className="absolute top-4 right-12 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping animation-delay-200" />
+                            <div className="absolute bottom-3 right-10 w-1 h-1 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping animation-delay-300" />
+
+                            <Sparkles className="h-5 w-5 text-indigo-600 relative z-10" />
+                            <span className="relative z-10 text-indigo-700 dark:text-indigo-300">CareerZone Copilot</span>
+                            <span className="copilot-ai-badge ml-auto relative z-10">AI</span>
                           </button>
                           <button
                             onClick={() => openChat()}
@@ -400,6 +410,9 @@ const Header = () => {
                                 {notificationCount}
                               </Badge>
                             )}
+                          </Link>
+                          <Link to="/contact" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <LifeBuoy className="h-4 w-4 text-primary" /> Liên hệ hỗ trợ
                           </Link>
                         </>
                       )}
@@ -516,14 +529,15 @@ const Header = () => {
               {/* Copilot Button */}
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => openCopilot()}
                 title="CareerZone Copilot AI"
                 className={cn(
-                  "copilot-glow-btn h-10 w-10 rounded-full relative transition-all duration-300 group border-none shadow-sm hover:shadow-indigo-500/40 hover:scale-110"
+                  "copilot-glow-btn h-9 px-3 rounded-full relative transition-all duration-300 group border-none shadow-sm hover:shadow-indigo-500/40 hover:scale-105 overflow-visible gap-2"
                 )}
               >
-                <Sparkles className="h-5 w-5 transition-all text-indigo-600 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+                <Sparkles className="h-4 w-4 transition-all text-indigo-600 relative z-10" />
+                <span className="copilot-ai-badge relative z-10">AI</span>
               </Button>
 
               {/* Messages Button */}
@@ -793,6 +807,22 @@ const Header = () => {
                             {user?.user?.coinBalance?.toLocaleString() || 0} xu
                           </div>
                         </div>
+                      </Link>
+
+                      {/* Support Link */}
+                      <Link
+                        to="/contact"
+                        className={cn(
+                          "flex items-center px-3 py-2.5 text-sm text-foreground rounded-xl transition-all duration-300 group mb-2",
+                          "hover:bg-gradient-to-r hover:from-muted hover:to-muted/50",
+                          "hover:shadow-md hover:scale-105 hover:translate-x-1"
+                        )}
+                        onClick={() => setShowUserDropdown(false)}
+                      >
+                        <div className="mr-3 p-1.5 rounded-lg bg-cyan-500/10 group-hover:bg-cyan-500/20 transition-colors">
+                          <LifeBuoy className="h-4 w-4 text-cyan-600" />
+                        </div>
+                        <span className="font-medium">Liên hệ hỗ trợ</span>
                       </Link>
 
                       <button

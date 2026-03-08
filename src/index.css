@@ -452,7 +452,9 @@ a:active,
   left: -150%;
   width: 400%;
   height: 400%;
-  background: conic-gradient(transparent,
+  background: conic-gradient(
+      transparent,
+      transparent 10%,
       rgba(99, 102, 241, 0.9),
       /* Indigo */
       rgba(14, 165, 233, 0.9),
@@ -467,7 +469,8 @@ a:active,
       /* Fuchsia */
       rgba(168, 85, 247, 0.9),
       /* Purple */
-      transparent 30%);
+      transparent 90%
+  );
   animation: copilot-glow-rotate 2s linear infinite;
   z-index: -2;
 }
@@ -475,7 +478,7 @@ a:active,
 .copilot-glow-btn::after {
   content: '';
   position: absolute;
-  inset: 1.5px;
+  inset: 2.5px;
   background: white;
   border-radius: inherit;
   z-index: -1;
@@ -483,17 +486,15 @@ a:active,
 }
 
 .dark .copilot-glow-btn::after {
-  background: oklch(20% 0.025 261.2);
-  /* --card */
+  background: hsl(var(--background));
 }
 
 .copilot-glow-btn:hover::after {
   background: rgb(249 250 251);
-  /* gray-50 */
 }
 
 .dark .copilot-glow-btn:hover::after {
-  background: oklch(22% 0.025 261.2);
+  background: hsl(var(--card));
 }
 
 /* Enhanced focus styles */
@@ -1952,4 +1953,24 @@ html {
   .hero-orb {
     opacity: 0.5;
   }
+}
+
+/* AI Badge styling */
+.copilot-ai-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 7px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 1), rgba(139, 92, 246, 1));
+  color: white;
+  border-radius: 6px;
+  letter-spacing: 0.8px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.copilot-glow-btn:hover .copilot-ai-badge {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
