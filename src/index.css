@@ -478,7 +478,7 @@ a:active,
 .copilot-glow-btn::after {
   content: '';
   position: absolute;
-  inset: 2.5px;
+  inset: 1.5px;
   background: white;
   border-radius: inherit;
   z-index: -1;
