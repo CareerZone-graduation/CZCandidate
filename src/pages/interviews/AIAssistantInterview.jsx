@@ -519,7 +519,7 @@ const AIAssistantInterview = () => {
                     </div>
 
                     {/* Chat Section */}
-                    <Card className="flex flex-col h-[500px] lg:h-auto shadow-xl border-slate-200 dark:border-slate-800 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden">
+                    <Card className="flex flex-col shadow-xl border-slate-200 dark:border-slate-800 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden">
                         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                             <CardTitle className="text-base flex items-center gap-2 text-slate-800 dark:text-slate-200">
                                 <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -527,7 +527,7 @@ const AIAssistantInterview = () => {
                             </CardTitle>
                         </CardHeader>
 
-                        <ScrollArea className="flex-1 p-4 bg-slate-50/50 dark:bg-slate-950/30">
+                        <ScrollArea className="h-[400px] lg:h-[500px] p-4 bg-slate-50/50 dark:bg-slate-950/30">
                             {messages.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
                                     <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center mb-4">

@@ -807,7 +807,7 @@ const AnimeInterviewPage = () => {
                     </div>
 
                     {/* Chat Section */}
-                    <Card className="flex flex-col h-[500px] lg:h-auto shadow-xl border-pink-200 dark:border-purple-800 rounded-2xl bg-white/90 dark:bg-background/90 backdrop-blur-md">
+                    <Card className="flex flex-col shadow-xl border-pink-200 dark:border-purple-800 rounded-2xl bg-white/90 dark:bg-background/90 backdrop-blur-md">
                         <CardHeader className="pb-3 border-b border-pink-100 dark:border-purple-900 bg-pink-50/50 dark:bg-purple-900/20 rounded-t-2xl">
                             <CardTitle className="text-base flex items-center gap-2">
                                 <MessageSquare className="h-4 w-4 text-pink-500" />
@@ -815,7 +815,7 @@ const AnimeInterviewPage = () => {
                             </CardTitle>
                         </CardHeader>
 
-                        <ScrollArea className="flex-1 p-4">
+                        <ScrollArea className="h-[400px] lg:h-[500px] p-4">
                             {messages.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
                                     <div className="h-16 w-16 rounded-full bg-pink-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
@@ -1006,7 +1006,7 @@ const AnimeInterviewPage = () => {
                                     className="gap-2 border-pink-200 dark:border-purple-800 text-pink-600 hover:bg-pink-50 dark:hover:bg-purple-900/30 rounded-full shrink-0 h-12 px-6 font-bold"
                                 >
                                     <Phone className="h-5 w-5 rotate-[135deg]" />
-                                    <span className="hidden sm:inline">Chạm chán</span>
+                                    <span className="hidden sm:inline">Rời khỏi</span>
                                 </Button>
                             </div>
                         )}
