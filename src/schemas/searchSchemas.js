@@ -31,7 +31,7 @@ export const jobCategoryEnum = [
 // Job type enum values
 export const jobTypeEnum = [
   'FULL_TIME',
-  'PART_TIME', 
+  'PART_TIME',
   'CONTRACT',
   'TEMPORARY',
   'INTERNSHIP',
@@ -65,6 +65,7 @@ export const hybridSearchJobSchema = z.object({
   query: z.string().max(200, 'Query không được vượt quá 200 ký tự').default(''),
   page: z.coerce.number().int().min(1, 'Trang phải lớn hơn 0').default(1),
   size: z.coerce.number().int().min(1, 'Kích thước trang phải lớn hơn 0').max(50, 'Kích thước trang không được vượt quá 50').default(10),
+  aiSearch: z.boolean().optional(),
   // Filters cho tìm kiếm
   category: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.enum(jobCategoryEnum).optional()),
   type: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.enum(jobTypeEnum).optional()),
@@ -79,7 +80,7 @@ export const hybridSearchJobSchema = z.object({
   // Weight parameters for RRF
   textWeight: z.coerce.number().min(0).max(1).default(0.4),
   vectorWeight: z.coerce.number().min(0).max(1).default(0.6),
-  
+
   // Location filter by distance (exact radius filtering)
   latitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-90, 'Latitude phải trong khoảng -90 đến 90').max(90, 'Latitude phải trong khoảng -90 đến 90').optional()),
   longitude: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.coerce.number().min(-180, 'Longitude phải trong khoảng -180 đến 180').max(180, 'Longitude phải trong khoảng -180 đến 180').optional()),
@@ -127,6 +128,7 @@ export const searchParamsSchema = z.object({
   query: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1).optional(),
   size: z.coerce.number().int().min(1).max(50).default(10).optional(),
+  aiSearch: z.boolean().optional(),
   category: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.enum(jobCategoryEnum).optional()),
   type: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.enum(jobTypeEnum).optional()),
   workType: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : val, z.enum(workTypeEnum).optional()),

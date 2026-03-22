@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUser } from '../redux/authSlice';
+import { CopilotProvider } from '@/contexts/CopilotContext';
+import CopilotPanel from '@/components/copilot/CopilotPanel';
 
 // Layouts
 import MainLayout from '../components/layout/MainLayout';
@@ -21,6 +23,7 @@ import Dashboard from '../pages/dashboard/Dashboard';
 import JobSuggestion from '../pages/dashboard/JobSuggestion';
 import JobDetail from '../pages/jobs/JobDetail';
 import JobSearch from '../pages/jobs/JobSearch';
+import ExternalJobDetail from '../pages/jobs/ExternalJobDetail';
 import RecommendedJobsPage from '../pages/RecommendedJobsPage';
 import SavedJobs from '../pages/jobs/SavedJobs';
 import ViewHistory from '../pages/jobs/ViewHistory';
@@ -42,6 +45,9 @@ import MBTITest from '../pages/tools/MBTITest';
 import MyInterviews from '../pages/interviews/MyInterviews';
 import InterviewDetail from '../pages/interviews/InterviewDetail';
 import InterviewRoom from '../pages/interviews/InterviewRoom';
+import AIInterviewLanding from '../pages/interviews/AIInterviewLanding';
+import AIAssistantInterview from '../pages/interviews/AIAssistantInterview';
+import AnimeInterviewPage from '../pages/interviews/AnimeInterviewPage';
 
 import DeviceTest from '../components/interviews/DeviceTest';
 import NotFound from '../pages/NotFound';
@@ -165,10 +171,11 @@ const AppRouter = () => {
         v7_relativeSplatPath: true,
       }}
     >
-      <ScrollToTopOnRouteChange />
-      <GlobalOnboardingChecker />
-      <GlobalVerificationChecker />
-      <Routes>
+      <CopilotProvider>
+        <ScrollToTopOnRouteChange />
+        <GlobalOnboardingChecker />
+        <GlobalVerificationChecker />
+        <Routes>
         {/* Public routes */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -176,6 +183,7 @@ const AppRouter = () => {
           <Route path="/jobs/search" element={<JobSearch />} />
           <Route path="/jobs/recommended" element={<RecommendedJobsPage />} />
           <Route path="/jobs/alert" element={<JobAlertJobsPage />} />
+          <Route path="/jobs/external/:jobId" element={<ExternalJobDetail />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/companies" element={<CompanyList />} />
           <Route path="/company/:companyId" element={<CompanyDetail />} />
@@ -274,6 +282,9 @@ const AppRouter = () => {
           <Route path="/interviews/:interviewId/device-test" element={<DeviceTest />} />
           <Route path="/interviews/:interviewId/room" element={<InterviewRoom />} />
           {/* AI Interview route - full-screen experience */}
+          <Route path="/interviews/ai" element={<AIInterviewLanding />} />
+          <Route path="/interviews/ai/anime" element={<AnimeInterviewPage />} />
+          <Route path="/interviews/ai/assistant" element={<AIAssistantInterview />} />
 
         </Route>
 
@@ -304,6 +315,8 @@ const AppRouter = () => {
         {/* Fallback for any other route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <CopilotPanel />
+      </CopilotProvider>
     </BrowserRouter >
   );
 };

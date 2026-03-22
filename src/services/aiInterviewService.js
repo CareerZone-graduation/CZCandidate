@@ -6,16 +6,13 @@
 
 import apiClient from './apiClient';
 
-// Base path for Python proxy (relative to apiClient baseURL)
-const PYTHON_API_PATH = '/python';
-
 /**
  * Get AssemblyAI token for real-time transcription
  * @returns {Promise<{token: string}>}
  */
 export const getAssemblyAIToken = async () => {
   try {
-    const response = await apiClient.get(`${PYTHON_API_PATH}/api/assemblyai/token`);
+    const response = await apiClient.get('/ai-interview/assemblyai/token');
     return response.data;
   } catch (error) {
     console.error('AssemblyAI token error:', error);
@@ -30,7 +27,7 @@ export const getAssemblyAIToken = async () => {
  */
 export const transcribeAudio = async (audioData) => {
   try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/transcribe`, { audioData });
+    const response = await apiClient.post('/ai-interview/transcribe', { audioData });
     return response.data;
   } catch (error) {
     console.error('Transcription error:', error);
@@ -46,23 +43,44 @@ export const transcribeAudio = async (audioData) => {
  * @param {string} topic - Interview topic for focused questions (optional)
  * @returns {Promise<{response: string}>}
  */
-export const sendChatMessage = async (sessionId, message = '', isStart = false, topic = null) => {
+export const sendChatMessage = async (sessionId, message = '', isStart = false, topic = null, avatarType = 'live2d') => {
   try {
-    const payload = { 
-      sessionId, 
-      message, 
-      isStart 
+    const payload = {
+      sessionId,
+      message,
+      isStart,
+      avatarType
     };
-    
-    // Only include topic when starting the interview
+
     if (isStart && topic) {
       payload.topic = topic;
     }
-    
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/chat`, payload);
-    return response.data;
+
+    // Dùng apiClient (Axios) thay vì fetch gốc. 
+    // Do endpoint trả stream audio, ta chỉ định adapter là 'fetch' để nhận đúng ReadableStream trên trình duyệt (hỗ trợ bởi Axios 1.7.0+)
+    const response = await apiClient.post('/ai-interview/chat', payload, {
+      responseType: 'stream',
+      adapter: 'fetch'
+    });
+
+    // Axios trả về header dưới dạng lowercase hoặc thông qua hàm get()
+    const aiResponseEnc = response.headers['x-ai-response'] || (typeof response.headers.get === 'function' ? response.headers.get('x-ai-response') : null);
+
+    let aiResponseText = '';
+    if (aiResponseEnc) {
+      aiResponseText = decodeURIComponent(aiResponseEnc);
+    } else {
+      console.warn('X-AI-Response header missing in stream');
+      aiResponseText = '...'; // fallback
+    }
+
+    return {
+      response: aiResponseText,
+      // Khi dùng adapter: 'fetch' với responseType: 'stream', response.data chính là ReadableStream
+      audioStream: response.data
+    };
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Chat API Error:', error);
     throw error;
   }
 };
@@ -75,9 +93,11 @@ export const sendChatMessage = async (sessionId, message = '', isStart = false, 
 export const generateTTS = async (text) => {
   try {
     const response = await apiClient.post(
-      `${PYTHON_API_PATH}/api/tts`, 
+      '/ai-interview/tts',
       { text },
-      { responseType: 'blob' }
+      {
+        responseType: 'blob'
+      }
     );
     return response.data;
   } catch (error) {
@@ -87,114 +107,42 @@ export const generateTTS = async (text) => {
 };
 
 /**
- * Get D-ID streaming credentials
- * @returns {Promise<{id: string, session_id: string, offer: RTCSessionDescriptionInit, ice_servers: RTCIceServer[]}>}
+ * Get Simli session token
+ * @param {string} faceId - Simli Face ID
+ * @returns {Promise<any>}
  */
-export const getDIDCredentials = async () => {
+export const getSimliSessionToken = async (faceId) => {
   try {
-    const response = await apiClient.get(`${PYTHON_API_PATH}/api/did/credentials`);
+    const response = await apiClient.post('/ai-interview/simli/get-session-token', { faceId });
     return response.data;
   } catch (error) {
-    console.error('D-ID credentials error:', error);
+    console.error('Simli session token error:', error);
     throw error;
   }
 };
 
 /**
- * Submit SDP answer to D-ID
- * @param {string} streamId - D-ID stream ID
- * @param {string} sessionId - D-ID session ID
- * @param {string} sdpType - SDP type (answer)
- * @param {string} sdpSdp - SDP content
- * @returns {Promise<Object>}
+ * Get Simli ICE servers
+ * @returns {Promise<any>}
  */
-export const submitDIDSDP = async (streamId, sessionId, sdpType, sdpSdp) => {
+export const getSimliIceServers = async () => {
   try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/did/sdp`, { 
-      streamId, 
-      sessionId, 
-      sdpType, 
-      sdpSdp 
-    });
+    const response = await apiClient.get('/ai-interview/simli/get-ice-servers');
     return response.data;
   } catch (error) {
-    console.error('D-ID SDP error:', error);
+    console.error('Simli ICE servers error:', error);
     throw error;
   }
 };
 
-/**
- * Submit ICE candidate to D-ID
- * @param {string} streamId - D-ID stream ID
- * @param {string} sessionId - D-ID session ID
- * @param {string} candidate - ICE candidate
- * @param {string} sdpMid - SDP mid
- * @param {number} sdpMLineIndex - SDP M-Line index
- * @returns {Promise<Object>}
- */
-export const submitDIDICE = async (streamId, sessionId, candidate, sdpMid, sdpMLineIndex) => {
-  try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/did/ice`, { 
-      streamId, 
-      sessionId, 
-      candidate, 
-      sdpMid, 
-      sdpMLineIndex 
-    });
-    return response.data;
-  } catch (error) {
-    console.error('D-ID ICE error:', error);
-    throw error;
-  }
-};
+// Removed D-ID functions
 
 /**
- * Make D-ID avatar speak
- * @param {string} streamId - D-ID stream ID
- * @param {string} sessionId - D-ID session ID
- * @param {string} text - Text for the avatar to speak
- * @returns {Promise<Object>}
- */
-export const speakWithDID = async (streamId, sessionId, text) => {
-  try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/did/speak`, { 
-      streamId, 
-      sessionId, 
-      text 
-    });
-    return response.data;
-  } catch (error) {
-    console.error('D-ID speak error:', error);
-    throw error;
-  }
-};
-
-/**
- * Close D-ID stream and clear session
- * @param {string} streamId - D-ID stream ID
- * @param {string} sessionId - D-ID session ID
- * @returns {Promise<{success: boolean}>}
- */
-export const closeDIDStream = async (streamId, sessionId) => {
-  try {
-    const response = await apiClient.post(`${PYTHON_API_PATH}/api/did/close`, { 
-      streamId, 
-      sessionId 
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Close stream error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Clear interview session (deprecated - use closeDIDStream instead)
+ * Clear interview session (deprecated)
  * @param {string} sessionId - Interview session ID
  * @returns {Promise<{success: boolean}>}
  */
 export const clearSession = async (sessionId) => {
-  // This function is now handled by closeDIDStream
   return { success: true };
 };
 
@@ -203,10 +151,7 @@ export default {
   transcribeAudio,
   sendChatMessage,
   generateTTS,
-  getDIDCredentials,
-  submitDIDSDP,
-  submitDIDICE,
-  speakWithDID,
-  closeDIDStream,
-  clearSession
+  clearSession,
+  getSimliSessionToken,
+  getSimliIceServers
 };

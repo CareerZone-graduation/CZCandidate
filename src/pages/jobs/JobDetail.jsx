@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
+import { useCopilot } from '@/contexts/CopilotContext';
 import {
   MapPin,
   Clock,
@@ -29,6 +30,7 @@ import {
 import { getJobApplicantCount, getJobById, getJobsByCompany } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { saveViewHistory } from '../../services/viewHistoryService';
+import { interactionService } from '../../services/interactionService';
 import { toast } from 'sonner';
 import { ApplyJobDialog } from './components/ApplyJobDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,6 +40,8 @@ import JobLocationMap from '@/components/common/JobLocationMap';
 import JobDetailHeader from '@/components/common/JobDetail/Header';
 import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
 import JobDetailSkeleton from './JobDetailSkeleton';
+import SimilarJobs from '@/components/jobs/SimilarJobs';
+import AlsoLikedJobs from '@/components/jobs/AlsoLikedJobs';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -45,6 +49,7 @@ const JobDetail = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const queryClient = useQueryClient();
   const { openChat } = useChat();
+  const { openCopilot } = useCopilot();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [applicantCount, setApplicantCount] = useState(null);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
@@ -72,16 +77,24 @@ const JobDetail = () => {
     select: (data) => data.data?.filter(j => j._id !== id) || [],
   });
 
+  // Ref để đảm bảo chỉ track VIEW 1 lần cho mỗi jobId
+  const trackedViewRef = useRef(null);
+
   // Tự động lưu lịch sử xem khi vào trang chi tiết job
   useEffect(() => {
-    if (job && id && isAuthenticated) {
-      // Lưu lịch sử xem (silent - không hiển thị thông báo)
+    if (job && id && isAuthenticated && trackedViewRef.current !== id) {
+      trackedViewRef.current = id; // Đánh dấu đã track cho jobId này
+
+      // Lưu lịch sử xem (hệ thống cũ)
       saveViewHistory(id).catch((error) => {
-        // Silent error - không làm gián đoạn trải nghiệm người dùng
         console.error('Failed to save view history:', error);
       });
+
+      // Tracking tương tác (hệ thống AI Recommendation)
+      interactionService.trackJobView(id, { sourcePage: 'job_detail' })
+        .catch(err => console.error('Error tracking VIEW interaction:', err));
     }
-  }, [job, id, isAuthenticated]);
+  }, [id, job, isAuthenticated]);
 
   const formatWorkType = (type) => {
     const typeMap = {
@@ -212,6 +225,10 @@ const JobDetail = () => {
     toast.success("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.");
     queryClient.invalidateQueries({ queryKey: ['jobDetail', id] });
     queryClient.invalidateQueries({ queryKey: ['appliedJobs'] });
+
+    // Tracking tương tác ứng tuyển (APPLY)
+    interactionService.trackJobApply(id, { sourcePage: 'job_detail' })
+      .catch(err => console.error('Error tracking APPLY interaction:', err));
   };
 
   const { mutate: toggleSaveJob } = useMutation({
@@ -231,9 +248,16 @@ const JobDetail = () => {
       return { previousJobData };
     },
     onSuccess: (data) => {
-      const message = data.data.message || (job?.isSaved ? 'Đã bỏ lưu công việc' : 'Đã lưu công việc thành công');
+      const isNowSaved = !job?.isSaved;
+      const message = data.data.message || (isNowSaved ? 'Đã lưu công việc thành công' : 'Đã bỏ lưu công việc');
       toast.success(message);
       queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
+
+      // Nếu là lưu công việc (SAVE) thì tracking
+      if (isNowSaved) {
+        interactionService.trackJobSave(id, { sourcePage: 'job_detail' })
+          .catch(err => console.error('Error tracking SAVE interaction:', err));
+      }
     },
     onError: (err, _newVariables, context) => {
       if (context?.previousJobData) {
@@ -403,113 +427,125 @@ const JobDetail = () => {
               isLoadingApplicants={isLoadingApplicants}
               handleViewApplicants={handleViewApplicants}
               handleMessage={handleMessage}
+              handleSummarize={() => openCopilot('summarize_job', { jobId: id })}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="lg:col-span-2 space-y-6">
                 {/* Job Overview */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
+                <Card className="border-border/50 shadow-sm overflow-hidden rounded-2xl">
+                  <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
                     <CardTitle className="text-lg font-bold">Tổng quan công việc</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-6">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
+                        <MapPin className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Địa điểm</p>
-                        <p className="text-foreground font-semibold">{job.location?.province}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Địa điểm</p>
+                        <p className="text-foreground font-semibold line-clamp-2">{job.location?.province || 'Chưa cập nhật'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-600 shrink-0">
+                        <Briefcase className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Loại hình</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Loại hình</p>
                         <p className="text-foreground font-semibold">{formatWorkType(job.type)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Building className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-600 shrink-0">
+                        <Building className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Hình thức</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Hình thức làm việc</p>
                         <p className="text-foreground font-semibold">{formatWorkMode(job.workType)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Ngày đăng</p>
-                        <p className="text-foreground font-semibold">{new Date(job.createdAt || job.deadline).toLocaleDateString('vi-VN')}</p>
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-green-500/10 rounded-xl text-green-600 shrink-0">
+                        <Clock className="w-5 h-5" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Kinh nghiệm</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Kinh nghiệm</p>
                         <p className="text-foreground font-semibold">{formatExperience(job.experience)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-orange-500/10 rounded-xl text-orange-600 shrink-0">
+                        <Calendar className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Hạn nộp</p>
-                        <p className="text-orange-600 font-semibold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Hạn nộp hồ sơ</p>
+                        <p className="text-orange-600 font-bold">{new Date(job.deadline).toLocaleDateString('vi-VN')}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Tag className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-600 shrink-0">
+                        <Tag className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Ngành nghề</p>
-                        <p className="text-foreground font-semibold">{formatCategory(job.category)}</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-0.5">Ngành nghề chính</p>
+                        <p className="text-foreground font-semibold line-clamp-2">{formatCategory(job.category)}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Job Description */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Mô tả công việc</CardTitle>
+                <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                  <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl font-bold">Mô tả công việc</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
+                    <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                      dangerouslySetInnerHTML={{ __html: job.description?.replace(/\n/g, '<br />') }} />
                   </CardContent>
                 </Card>
 
                 {/* Requirements */}
                 {job.requirements && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Yêu cầu ứng viên</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-orange-400 to-red-500" />
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-bold">Yêu cầu ứng viên</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
+                      <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                        dangerouslySetInnerHTML={{ __html: job.requirements?.replace(/\n/g, '<br />') }} />
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Benefits */}
                 {job.benefits && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Quyền lợi</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-teal-500" />
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-bold">Quyền lợi</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose max-w-none text-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
+                      <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90 leading-relaxed font-medium"
+                        dangerouslySetInnerHTML={{ __html: job.benefits?.replace(/\n/g, '<br />') }} />
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Skills */}
                 {job.skills && job.skills.length > 0 && (
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-bold">Kỹ năng yêu cầu</CardTitle>
+                  <Card className="border-border/50 shadow-sm rounded-2xl">
+                    <CardHeader className="pb-4 border-b border-border/50">
+                      <CardTitle className="text-lg font-bold">Kỹ năng chuyên môn</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
+                    <CardContent className="pt-5">
+                      <div className="flex flex-wrap gap-2.5">
                         {job.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 hover:-translate-y-0.5 transition-transform px-3 py-1.5 text-sm">
                             {skill}
                           </Badge>
                         ))}
@@ -519,11 +555,13 @@ const JobDetail = () => {
                 )}
 
                 {/* Location Map */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Địa điểm làm việc</CardTitle>
+                <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+                  <CardHeader className="pb-4 bg-muted/20 border-b border-border/50">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-primary" /> Địa điểm làm việc
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     <JobLocationMap
                       location={job.location}
                       address={job.address}
@@ -531,11 +569,22 @@ const JobDetail = () => {
                     />
                   </CardContent>
                 </Card>
+
+                {/* Similar Jobs */}
+                <div className="pt-4">
+                  <SimilarJobs jobId={id} />
+                </div>
+
+                {/* Also Liked Jobs (CF Recommendations) */}
+                <div className="pt-2">
+                  <AlsoLikedJobs jobId={id} />
+                </div>
               </div>
 
               {/* Right Column (Sidebar) */}
               <div className="lg:col-span-1">
                 <JobDetailSidebar
+                  job={job}
                   relatedJobs={relatedJobs}
                   isLoadingRelated={isLoadingRelated}
                   currentJobs={currentJobs}
@@ -543,6 +592,9 @@ const JobDetail = () => {
                   relatedJobsPage={relatedJobsPage}
                   handlePrevPage={handlePrevPage}
                   handleNextPage={handleNextPage}
+                  handleApply={handleApply}
+                  isApplied={job.isApplied}
+                  isJobActive={job.status === 'ACTIVE'}
                 />
               </div>
             </div>
