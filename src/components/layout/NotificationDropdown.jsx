@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, BellRing, BellPlus, BellOff } from 'lucide-react';
+import { Bell, BellRing, BellPlus, BellOff, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
@@ -54,6 +54,8 @@ const getNotificationLink = (notification) => {
       return `/dashboard/settings/job-alerts`;
     case 'support_request':
       return `/support/${entity?.id || metadata?.supportRequestId}`;
+    case 'talent_pool_invitation':
+      return `/jobs/${metadata?.jobId}`;
     default:
       return '/notifications';
   }
@@ -69,7 +71,25 @@ const NotificationDropdownItem = ({ notification, onClose }) => {
       dispatch(markNotificationAsRead(notification._id));
     }
     onClose();
-    navigate(link);
+    if (notification.type === 'talent_pool_invitation') {
+      navigate(link, {
+        state: {
+          fromNotification: {
+            type: 'talent_pool_invitation',
+            notificationId: notification._id
+          }
+        }
+      });
+    } else {
+      navigate(link);
+    }
+  };
+
+  const NotificationIcon = () => {
+    if (notification.type === 'talent_pool_invitation') {
+      return <Send size={16} className="text-primary" />;
+    }
+    return <BellRing size={16} className="text-primary" />;
   };
 
   return (
@@ -78,7 +98,7 @@ const NotificationDropdownItem = ({ notification, onClose }) => {
       className="cursor-pointer flex items-start gap-3 p-2.5"
     >
       <div className="shrink-0 mt-1">
-        <BellRing size={16} className="text-primary" />
+        <NotificationIcon />
       </div>
       <div className="grow">
         <p className={`text-sm leading-tight ${!notification.isRead ? 'font-bold' : 'font-medium'}`}>

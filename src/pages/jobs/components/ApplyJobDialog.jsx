@@ -37,9 +37,10 @@ import { ErrorState } from '@/components/common/ErrorState';
  *  onOpenChange: (open: boolean) => void;
  *  onSuccess: () => void;
  *  isReapply?: boolean;
+ *  source?: string;
  * }} props
  */
-export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess, isReapply = false }) => {
+export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess, isReapply = false, source = 'DIRECT_APPLY' }) => {
   const [cvSource, setCvSource] = useState('uploaded'); // 'uploaded' or 'template'
   const [selectedCv, setSelectedCv] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
@@ -141,6 +142,7 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       candidateName,
       candidateEmail,
       candidatePhone,
+      source,
     };
 
     try {

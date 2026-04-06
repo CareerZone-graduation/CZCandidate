@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { BellRing, CheckCheck, BellPlus, BellOff } from 'lucide-react';
+import { BellRing, CheckCheck, BellPlus, BellOff, Send } from 'lucide-react';
 import useFirebaseMessaging from '@/hooks/useFirebaseMessaging';
 import NotificationPermissionGuide from '@/components/common/NotificationPermissionGuide';
 import NotificationPermissionAlert from '@/components/common/NotificationPermissionAlert';
@@ -63,6 +63,8 @@ const getNotificationLink = (notification) => {
       return `/dashboard/settings/job-alerts`;
     case 'support_request':
       return `/support/${entity?.id || metadata?.supportRequestId}`;
+    case 'talent_pool_invitation':
+      return `/jobs/${metadata?.jobId}`;
     default:
       return null;
   }
@@ -77,8 +79,26 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
       onMarkAsRead(notification._id);
     }
     if (link) {
-      navigate(link);
+      if (notification.type === 'talent_pool_invitation') {
+        navigate(link, {
+          state: {
+            fromNotification: {
+              type: 'talent_pool_invitation',
+              notificationId: notification._id
+            }
+          }
+        });
+      } else {
+        navigate(link);
+      }
     }
+  };
+
+  const NotificationIcon = () => {
+    if (notification.type === 'talent_pool_invitation') {
+      return <Send size={20} />;
+    }
+    return <BellRing size={20} />;
   };
 
   return (
@@ -94,7 +114,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
           "w-10 h-10 rounded-full flex items-center justify-center",
           !notification.isRead ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
         )}>
-          <BellRing size={20} />
+          <NotificationIcon />
         </div>
       </div>
       <div className="grow">

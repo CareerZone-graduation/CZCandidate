@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
@@ -25,8 +25,10 @@ import {
   Coins,
   Eye,
   AlertTriangle,
-  Tag
+  Tag,
+  Send
 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getJobApplicantCount, getJobById, getJobsByCompany } from '../../services/jobService';
 import { saveJob, unsaveJob } from '../../services/savedJobService';
 import { saveViewHistory } from '../../services/viewHistoryService';
@@ -46,7 +48,10 @@ import AlsoLikedJobs from '@/components/jobs/AlsoLikedJobs';
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useSelector((state) => state.auth);
+
+  const isFromInvitation = location.state?.fromNotification?.type === 'talent_pool_invitation';
   const queryClient = useQueryClient();
   const { openChat } = useChat();
   const { openCopilot } = useCopilot();
@@ -417,6 +422,16 @@ const JobDetail = () => {
               Quay lại
             </Button>
 
+            {isFromInvitation && (
+              <Alert className="mb-6 bg-blue-50 border-blue-200">
+                <Send className="h-5 w-5 text-blue-600" />
+                <AlertTitle className="text-blue-800 font-bold">Lời mời đặc biệt</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  Bạn được mời ứng tuyển vào vị trí này từ Talent Pool. Chúc bạn may mắn!
+                </AlertDescription>
+              </Alert>
+            )}
+
             <JobDetailHeader
               job={job}
               isAuthenticated={isAuthenticated}
@@ -611,6 +626,7 @@ const JobDetail = () => {
             onOpenChange={setShowApplyDialog}
             onSuccess={handleApplySuccess}
             isReapply={job.isApplied}
+            source={isFromInvitation ? 'TALENT_POOL_INVITATION' : 'DIRECT_APPLY'}
           />
         )}
       </div>
