@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 import { getCompanyById, getCompanyJobs } from '@/services/companyService';
 import { formatSalary, formatTimeAgo } from '@/utils/formatters';
+import KnowledgeChatSidebar, { KnowledgeChatFAB } from '@/components/KnowledgeChatbot/KnowledgeChatSidebar';
 
 import JobLocationMap from '@/components/common/JobLocationMap';
 
@@ -37,6 +39,8 @@ const CompanyDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const jobsPerPage = 6;
 
   // Fetch company details
@@ -369,6 +373,22 @@ const CompanyDetail = () => {
           </>
         )}
       </div>
+
+      {/* Knowledge Chatbot */}
+      {isAuthenticated && companyData && (
+        <>
+          <KnowledgeChatFAB
+            onClick={() => setIsChatSidebarOpen(true)}
+            label="Hỏi AI về công ty"
+          />
+          <KnowledgeChatSidebar
+            recruiterId={companyData.recruiterId}
+            companyName={companyData.name}
+            isOpen={isChatSidebarOpen}
+            onClose={() => setIsChatSidebarOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 };

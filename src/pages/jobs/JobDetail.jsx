@@ -44,6 +44,7 @@ import JobDetailSidebar from '@/components/common/JobDetail/Sidebar';
 import JobDetailSkeleton from './JobDetailSkeleton';
 import SimilarJobs from '@/components/jobs/SimilarJobs';
 import AlsoLikedJobs from '@/components/jobs/AlsoLikedJobs';
+import KnowledgeChatSidebar, { KnowledgeChatFAB } from '@/components/KnowledgeChatbot/KnowledgeChatSidebar';
 
 const JobDetail = () => {
   const { id } = useParams();
@@ -61,6 +62,7 @@ const JobDetail = () => {
   const [hasViewedApplicants, setHasViewedApplicants] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [relatedJobsPage, setRelatedJobsPage] = useState(1);
+  const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
   const jobsPerPage = 6;
 
   // Fetch job details using React Query
@@ -628,6 +630,22 @@ const JobDetail = () => {
             isReapply={job.isApplied}
             source={isFromInvitation ? 'TALENT_POOL_INVITATION' : 'DIRECT_APPLY'}
           />
+        )}
+
+        {/* Knowledge Chatbot */}
+        {isAuthenticated && job && (
+          <>
+            <KnowledgeChatFAB
+              onClick={() => setIsChatSidebarOpen(true)}
+              label="Hỏi AI về công ty"
+            />
+            <KnowledgeChatSidebar
+              jobId={job._id}
+              companyName={job.company?.name || job.recruiterProfileId?.company?.name}
+              isOpen={isChatSidebarOpen}
+              onClose={() => setIsChatSidebarOpen(false)}
+            />
+          </>
         )}
       </div>
     </HelmetProvider>
