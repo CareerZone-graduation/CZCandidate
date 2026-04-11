@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { loginSuccess, fetchUser, logoutSuccess } from '@/redux/authSlice';
+import { fetchUser, logoutSuccess } from '@/redux/authSlice';
 import * as authService from '@/services/authService';
 import { initiateGoogleLogin, handleGoogleCallback } from '@/services/googleAuthService';
 import { Button } from '@/components/ui/button';
@@ -104,8 +104,8 @@ const Login = () => {
           return;
         }
 
-        dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
-        await dispatch(fetchUser());
+        saveAccessToken(loginData.data.accessToken);
+        await dispatch(fetchUser()).unwrap();
         navigate('/');
       } else {
         throw new Error('Phản hồi đăng nhập không hợp lệ.');
