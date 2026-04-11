@@ -219,7 +219,6 @@ const AppRouter = () => {
         <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPassword />} />
         <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/" /> : <ResetPassword />} />
-
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/verify-prompt" element={<VerifyEmailPrompt />} />
 

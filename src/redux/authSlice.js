@@ -61,7 +61,10 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchUser.pending, (state) => {
-        state.isInitializing = true;
+        // We don't set isInitializing to true here because it would cause 
+        // the entire AppRouter to unmount and remount, which can reset
+        // one-time guards in auth pages.
+        // isInitializing should only be true during the very first app load.
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.user = action.payload; // The payload is the user object

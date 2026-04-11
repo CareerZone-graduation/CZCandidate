@@ -23,7 +23,7 @@ const OnboardingPage = memo(() => {
 
   // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const handleComplete = useCallback(() => {
-    navigate('/dashboard', { replace: true });
+    navigate('/', { replace: true });
   }, [navigate]);
 
   // Render the appropriate step based on current step
@@ -87,10 +87,10 @@ const OnboardingPage = memo(() => {
     }
   }, [isAuthenticated, navigate]);
 
-  // If onboarding is already completed, redirect to dashboard
+  // If onboarding is already completed, redirect to home
   useEffect(() => {
     if (!isLoading && !needsOnboarding) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [needsOnboarding, isLoading, navigate]);
 

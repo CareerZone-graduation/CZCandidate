@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { register as registerService } from '@/services/authService';
-import { loginSuccess } from '@/redux/authSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
-import * as authService from '@/services/authService';
 import {
   Eye,
   EyeOff,
@@ -17,9 +12,6 @@ import {
   Lock,
   User,
   UserPlus,
-  Briefcase,
-  Shield,
-  Zap,
 } from 'lucide-react';
 import AuthLayout from '@/components/layout/AuthLayout';
 
@@ -37,7 +29,6 @@ const Register = () => {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileKey, setTurnstileKey] = useState(0);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,38 +75,7 @@ const Register = () => {
     }
   };
 
-  const handleGoogleLoginSuccess = async (credentialResponse) => {
-    setIsLoading(true);
-    try {
-      const loginData = await authService.googleLogin(credentialResponse.credential);
-      if (loginData && loginData.data && loginData.data.accessToken) {
-        if (loginData.data.role !== 'candidate') {
-          toast.error('Tài khoản này là tài khoản nhà tuyển dụng, không thể đăng nhập vào trang ứng viên.');
-          return;
-        }
-        dispatch(loginSuccess({ accessToken: loginData.data.accessToken }));
-        toast.success('Đăng ký thành công!');
-        navigate('/onboarding');
-      } else {
-        throw new Error('Phản hồi đăng nhập không hợp lệ từ máy chủ.');
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Đăng ký Google thất bại. Vui lòng thử lại.';
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleGoogleLoginError = () => {
-    toast.error('Đăng ký Google thất bại. Vui lòng thử lại.');
-  };
-
-  const features = [
-    { icon: Briefcase, title: 'Hàng nghìn việc làm', desc: 'Cơ hội từ các công ty hàng đầu Việt Nam' },
-    { icon: Shield, title: 'Bảo mật thông tin', desc: 'Dữ liệu của bạn được bảo vệ an toàn' },
-    { icon: Zap, title: 'Ứng tuyển nhanh chóng', desc: 'Chỉ cần vài click để ứng tuyển' },
-  ];
 
   const leftSection = (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-left-4 duration-700">
@@ -152,12 +112,11 @@ const Register = () => {
   );
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <AuthLayout
-        title="Tạo tài khoản mới"
-        subtitle="Đăng ký miễn phí và tìm việc ngay hôm nay"
-        leftSection={leftSection}
-      >
+    <AuthLayout
+      title="Tạo tài khoản mới"
+      subtitle="Đăng ký miễn phí và tìm việc ngay hôm nay"
+      leftSection={leftSection}
+    >
         <form onSubmit={handleSubmit} className="w-full space-y-5">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
@@ -279,8 +238,7 @@ const Register = () => {
             </Link>
           </p>
         </form>
-      </AuthLayout>
-    </GoogleOAuthProvider>
+    </AuthLayout>
   );
 };
 
