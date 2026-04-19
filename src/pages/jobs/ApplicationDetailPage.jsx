@@ -49,6 +49,7 @@ import {
   Briefcase,
   Link as LinkIcon,
   Video,
+  ClipboardList,
 
 } from 'lucide-react';
 
@@ -304,6 +305,21 @@ const ApplicationDetailPage = () => {
                     </Link>
                   </Button>
                 )}
+                {application.testAssignments && application.testAssignments.map(assignment => (
+                  <Button
+                    key={assignment._id}
+                    className={cn(
+                      "text-white border-0",
+                      assignment.status === 'COMPLETED' ? "bg-stone-600 hover:bg-stone-700" : "bg-violet-600 hover:bg-violet-700"
+                    )}
+                    asChild
+                  >
+                    <Link to={`/tests/${assignment._id}/${assignment.status === 'COMPLETED' ? 'result' : 'take'}`}>
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      {assignment.status === 'COMPLETED' ? 'Kết quả bài Test' : 'Làm bài Test'}
+                    </Link>
+                  </Button>
+                ))}
                 <Button variant="outline" asChild>
                   <Link to={`/jobs/${application.jobId}`}>
                     <ExternalLink className="h-4 w-4 mr-2" />

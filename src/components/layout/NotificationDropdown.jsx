@@ -56,6 +56,11 @@ const getNotificationLink = (notification) => {
       return `/support/${entity?.id || metadata?.supportRequestId}`;
     case 'talent_pool_invitation':
       return `/jobs/${metadata?.jobId}`;
+    case 'workflow':
+      if (metadata?.testAssignmentId) {
+        return `/tests/${metadata.testAssignmentId}/take`;
+      }
+      return `/dashboard/applications/${metadata?.applicationId || entity?.id}`;
     default:
       return '/notifications';
   }

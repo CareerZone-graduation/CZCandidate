@@ -73,6 +73,8 @@ import SupportRequestDetailPage from '../pages/support/SupportRequestDetailPage'
 
 // Contact Page
 import ContactPage from '../pages/contact/ContactPage';
+import TestTaking from '../pages/tests/TestTaking';
+import TestResult from '../pages/tests/TestResult';
 
 // Protected Route Component
 const ProtectedRoute = ({ isAuthenticated }) => {
@@ -305,6 +307,12 @@ const AppRouter = () => {
           <Route path="/contact" element={<MainLayout />}>
             <Route index element={<ContactPage />} />
           </Route>
+        </Route>
+
+        {/* Protected Test Taking Routes */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+          <Route path="/tests/:assignmentId/take" element={<TestTaking />} />
+          <Route path="/tests/:assignmentId/result" element={<TestResult />} />
         </Route>
 
         {/* Payment result routes - không cần layout */}
