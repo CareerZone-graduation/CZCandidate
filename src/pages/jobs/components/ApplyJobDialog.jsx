@@ -24,10 +24,13 @@ import { toast } from 'sonner';
 import { applyJob, reapplyJob } from '@/services/jobService';
 import { getCurrentUserProfile, uploadCV } from '@/services/profileService';
 import { getCvs } from '@/services/api';
-import { AlertCircle, Loader2, FileUp, FileText, RefreshCw, Upload } from 'lucide-react';
+import apiClient from '@/services/apiClient';
+import { AlertCircle, Loader2, FileUp, FileText, RefreshCw, Upload, BarChart3, Eye } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
+import { cn } from '@/lib/utils';
+import { scoreCVForApplication } from '@/services/applicationService';
 
 /**
  * @param {{
@@ -50,6 +53,8 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [isScoring, setIsScoring] = useState(false);
+  const [scoringResult, setScoringResult] = useState(null);
 
   // File upload ref
   const fileInputRef = useRef(null);
@@ -120,6 +125,8 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       setIsSubmitting(false);
       setCvSource('uploaded');
       setSelectedCv('');
+      setScoringResult(null);
+      setIsScoring(false);
     }
   }, [open, userProfile, user, jobTitle, uploadedCvs, templateCvs, cvSource]);
 
@@ -218,6 +225,168 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  // Handle CV Scoring - use preview API without creating application
+  const handleScoreCV = async () => {
+    if (!selectedCv) {
+      toast.error('Vui lòng chọn CV trước khi chấm điểm');
+      return;
+    }
+
+    if (!jobId) {
+      toast.error('Không tìm thấy thông tin công việc');
+      return;
+    }
+
+    setIsScoring(true);
+
+    try {
+      // Call preview API (no application created)
+      const requestData = cvSource === 'uploaded' 
+        ? { cvId: selectedCv } 
+        : { cvTemplateId: selectedCv };
+
+      const response = await apiClient.post(`/jobs/${jobId}/preview-cv-score`, requestData);
+      const scoreData = response.data;
+      
+      if (scoreData?.success && scoreData?.data) {
+        // Navigate to cv-score page (existing page) with state data
+        // Wrap data in format that CVScoreDetail expects
+        
+        // Convert radar chart data to proper format
+        // Priority: Use category_scores as it's more reliable than visualization.radar_chart
+        let radarMetrics = null;
+        
+        console.log('=== RADAR METRICS DEBUG ===');
+        console.log('Category scores:', scoreData.data.category_scores);
+        console.log('Visualization:', scoreData.data.visualization);
+        console.log('Radar chart:', scoreData.data.visualization?.radar_chart);
+        
+        if (scoreData.data.category_scores && Array.isArray(scoreData.data.category_scores) && scoreData.data.category_scores.length > 0) {
+          // Use category_scores - most reliable source
+          radarMetrics = scoreData.data.category_scores.map(cat => ({
+            metric: cat.name || cat.category || 'Unknown',
+            score: cat.score || 0
+          }));
+          console.log('Using category_scores for radar');
+        } else if (scoreData.data.visualization?.radar_chart) {
+          // Fallback to radar_chart if category_scores not available
+          const radarChart = scoreData.data.visualization.radar_chart;
+          console.log('Radar chart structure:', radarChart);
+          
+          if (radarChart.labels && radarChart.values && 
+              Array.isArray(radarChart.labels) && Array.isArray(radarChart.values) &&
+              radarChart.labels.length === radarChart.values.length &&
+              radarChart.labels.length > 0) {
+            radarMetrics = radarChart.labels.map((label, idx) => ({
+              metric: label,
+              score: radarChart.values[idx]
+            }));
+            console.log('Using radar_chart for radar');
+          } else {
+            console.log('Radar chart format invalid:', {
+              hasLabels: !!radarChart.labels,
+              hasValues: !!radarChart.values,
+              labelsIsArray: Array.isArray(radarChart.labels),
+              valuesIsArray: Array.isArray(radarChart.values),
+              labelsLength: radarChart.labels?.length,
+              valuesLength: radarChart.values?.length
+            });
+          }
+        } else if (scoreData.data.breakdown && typeof scoreData.data.breakdown === 'object') {
+          // Last fallback: use breakdown scores
+          radarMetrics = Object.entries(scoreData.data.breakdown).map(([key, value]) => ({
+            metric: key,
+            score: value
+          }));
+          console.log('Using breakdown for radar');
+        }
+        
+        console.log('Final radarMetrics:', radarMetrics);
+        
+        const scoringResult = {
+          overall_score: scoreData.data.overall_score || 0,
+          breakdown: scoreData.data.breakdown || {},
+          suggestions: scoreData.data.suggestions || [],
+          category_scores: scoreData.data.category_scores || [],
+          summary: scoreData.data.summary || '',
+          strengths: scoreData.data.strengths || [],
+          weaknesses: scoreData.data.weaknesses || [],
+          critical_gaps: scoreData.data.critical_gaps || [],
+          keyword_analysis: scoreData.data.keyword_analysis || {},
+          gaps: scoreData.data.gaps || {},
+          visualization: scoreData.data.visualization || {},
+          graph: scoreData.data.graph || [],
+          improvements: scoreData.data.improvements || {},
+          suggested_keywords: scoreData.data.suggested_keywords || [],
+          rewrite_examples: scoreData.data.rewrite_examples || [],
+          // Enhanced data for advanced visualizations
+          enhanced: {
+            career_paths: scoreData.data.career_paths || [],
+            recommended_projects: scoreData.data.recommended_projects || [],
+            skill_gaps: scoreData.data.skill_gaps || [],
+            radar_metrics: radarMetrics
+          },
+          jobId: jobId, // Pass jobId to navigate back
+          cvId: requestData.cvId, // Pass CV info for optimization
+          cvTemplateId: requestData.cvTemplateId,
+          isPreview: true // Flag to indicate this is preview mode
+        };
+        
+        // Navigate to existing cv-score page with query params
+        window.location.href = `/cv-score?data=${encodeURIComponent(JSON.stringify(scoringResult))}`;
+        toast.success('Đang chuyển đến trang phân tích chi tiết...');
+      } else {
+        toast.error('Không thể chấm điểm CV');
+      }
+    } catch (error) {
+      console.error('Error scoring CV:', error);
+      const errorMsg = error.response?.data?.message || 'Không thể chấm điểm CV. Vui lòng thử lại.';
+      toast.error(errorMsg);
+    } finally {
+      setIsScoring(false);
+    }
+  };
+
+  const handleViewDetailedScore = async () => {
+    try {
+      // Create temporary application for detailed view
+      const applicationData = {
+        ...(cvSource === 'uploaded' ? { cvId: selectedCv } : { cvTemplateId: selectedCv }),
+        coverLetter: coverLetter || 'Temporary application for CV scoring preview',
+        candidateName,
+        candidateEmail,
+        candidatePhone,
+        source: 'CV_SCORING_PREVIEW'
+      };
+
+      console.log('Creating preview application...', applicationData);
+      const applyResponse = await applyJob(jobId, applicationData);
+      console.log('Apply response:', applyResponse);
+      
+      // fe-candidate returns full Axios response
+      const responseData = applyResponse.data;
+      console.log('Response data:', responseData);
+      
+      if (responseData?.success && responseData?.data?._id) {
+        const applicationId = responseData.data._id;
+        console.log('Opening cv-score page for application:', applicationId);
+        
+        // Wait for scoring to complete (backend processes async)
+        toast.info('Đang chuẩn bị trang phân tích chi tiết...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Open detailed score page in new tab
+        window.open(`/dashboard/applications/${applicationId}/cv-score`, '_blank');
+      } else {
+        console.error('Invalid response structure:', responseData);
+        toast.error('Không thể tạo bản xem trước');
+      }
+    } catch (error) {
+      console.error('Error creating preview application:', error);
+      toast.error('Không thể mở trang chi tiết');
     }
   };
 
@@ -393,6 +562,40 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
                 placeholder="Viết một vài lời giới thiệu về bản thân và tại sao bạn phù hợp với vị trí này..."
                 className="border-gray-300 focus:border-green-600 focus:ring-green-600"
               />
+            </div>
+
+            {/* CV Scoring Section */}
+            <div className="space-y-3 pt-2 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium text-gray-900">
+                    Kiểm tra độ phù hợp CV
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Xem trước điểm số CV với công việc này
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleScoreCV}
+                  disabled={!selectedCv || isScoring || isSubmitting}
+                  className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                >
+                  {isScoring ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang chấm điểm...
+                    </>
+                  ) : (
+                    <>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Chấm điểm CV
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 

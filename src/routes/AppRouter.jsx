@@ -30,6 +30,9 @@ import ViewHistory from '../pages/jobs/ViewHistory';
 import JobAlertJobsPage from '../pages/jobs/JobAlertJobsPage';
 import Applications from '../pages/jobs/Applications';
 import ApplicationDetailPage from '../pages/jobs/ApplicationDetailPage';
+import CVScoreDetailPage from '../pages/applications/CVScoreDetail';
+import ImprovedCVPreview from '../pages/cv/ImprovedCVPreview';
+import TestImprovedCV from '../pages/cv/TestImprovedCV';
 import Profile from '../pages/profile/ProfilePage';
 import WorkPreferences from '../pages/profile/WorkPreferences';
 import ProfilePrivacySettings from '../pages/profile/ProfilePrivacySettings';
@@ -205,6 +208,9 @@ const AppRouter = () => {
         {/* CV Render Page - Public route without layout */}
         <Route path="/render/:cvId" element={<CVRenderOnlyPage />} />
 
+        {/* CV Score - Public route for preview mode (no application) */}
+        <Route path="/cv-score" element={<CVScoreDetailPage />} />
+
         {/* Protected CV Management routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
           <Route path="/my-cvs" element={<MainLayout />}>
@@ -212,6 +218,10 @@ const AppRouter = () => {
             <Route path="builder" element={<CVBuilderPage />} />
             <Route path="uploaded" element={<UploadedCVPage />} />
           </Route>
+          
+          {/* CV Preview route (no layout for full-screen) */}
+          <Route path="/cv/preview" element={<ImprovedCVPreview />} />
+          <Route path="/cv/test" element={<TestImprovedCV />} />
         </Route>
 
         {/* Auth routes */}
@@ -234,6 +244,7 @@ const AppRouter = () => {
             <Route path="job-suggestions" element={<JobSuggestion />} />
             <Route path="applications" element={<Applications />} />
             <Route path="applications/:id" element={<ApplicationDetailPage />} />
+            <Route path="applications/:applicationId/cv-score" element={<CVScoreDetailPage />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
             <Route path="view-history" element={<ViewHistory />} />
             <Route path="settings/job-alerts" element={<JobAlertSettings />} />
