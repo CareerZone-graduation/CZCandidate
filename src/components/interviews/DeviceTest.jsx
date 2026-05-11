@@ -201,6 +201,13 @@ const DeviceTest = ({ interviewId: propInterviewId, onComplete }) => {
   }, [selectedVideoDevice, selectedAudioDevice, isVideoEnabled, isAudioEnabled]);
 
   const startMediaStream = async () => {
+    // Guard: getUserMedia requires at least one of audio/video to be true
+    if (!isVideoEnabled && !isAudioEnabled) {
+      stopMediaStream();
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
 

@@ -152,7 +152,6 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
         toast.success('Nộp đơn ứng tuyển lại thành công!');
       } else {
         await applyJob(jobId, applicationData);
-        toast.success('Nộp đơn ứng tuyển thành công!');
       }
       onOpenChange(false);
       if (onSuccess) onSuccess();
