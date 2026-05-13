@@ -5,6 +5,7 @@ import * as service from '@/services/testAssignmentService';
 import TestTimer from '@/components/test/TestTimer';
 import QuestionCard from '@/components/test/QuestionCard';
 import ProgressIndicator from '@/components/test/ProgressIndicator';
+import { SubmitConfirmModal } from '@/components/test/SubmitConfirmModal';
 
 const TestTaking = () => {
   const { assignmentId } = useParams();
@@ -14,6 +15,8 @@ const TestTaking = () => {
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [submitMode, setSubmitMode] = useState('normal');
 
   const fetchAssignment = useCallback(async () => {
     try {
@@ -108,16 +111,14 @@ const TestTaking = () => {
       return;
     }
 
-    const confirm = window.confirm(
-      isTimeout
-        ? 'Hết giờ! Bài làm của bạn sẽ được nộp tự động.'
-        : `Bạn chắc chắn muốn nộp bài? ${allAnswered ? 'Bạn đã trả lời đầy đủ tất cả các câu.' : ''}`
-    );
-    if (!confirm) return;
+    setSubmitMode(isTimeout ? 'timeout' : 'normal');
+    setShowSubmitModal(true);
+  }, [submitting, allAnswered, questions, answers, unansweredCount]);
 
+  const confirmSubmit = useCallback(async () => {
+    const isTimeout = submitMode === 'timeout';
     setSubmitting(true);
     try {
-      // Gửi tất cả câu trả lời trong 1 request duy nhất
       const allAnswers = questions
         .map((q) => answers[q._id])
         .filter((a) => a?.selectedOptionId)
@@ -131,8 +132,9 @@ const TestTaking = () => {
       toast.error('Không thể nộp bài. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
+      setShowSubmitModal(false);
     }
-  }, [assignment, answers, allAnswered, unansweredCount, assignmentId, navigate, questions, submitting, timeLeft]);
+  }, [assignment, answers, assignmentId, navigate, questions, submitMode, timeLeft]);
 
   const handleTimeout = useCallback(() => {
     if (submitting) return;
@@ -238,6 +240,18 @@ const TestTaking = () => {
           </div>
         </div>
       </main>
+
+      <SubmitConfirmModal
+        isOpen={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+        onConfirm={confirmSubmit}
+        isTimeout={submitMode === 'timeout'}
+        allAnswered={allAnswered}
+        answeredCount={answeredIndices.size}
+        totalQuestions={questions.length}
+        timeSpentSeconds={(assignment.test.duration * 60) - Math.max(timeLeft, 0)}
+        submitting={submitting}
+      />
     </div>
   );
 };
