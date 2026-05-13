@@ -17,6 +17,7 @@ import ProjectsForm from '../forms/ProjectsForm';
 import CertificatesForm from '../forms/CertificatesForm';
 import SimpleSectionOrderManager from './SimpleSectionOrderManager';
 import SampleDataSpotlight from './SampleDataSpotlight';
+import ConfirmationDialog from '../common/ConfirmationDialog';
 import {
   User,
   Briefcase,
@@ -57,6 +58,7 @@ const CVBuilder = () => {
   const [cvData, setCVData] = useState(null);
   const [error, setError] = useState(null);
   const [showSampleSuggestion, setShowSampleSuggestion] = useState(false);
+  const [showAutoFillConfirm, setShowAutoFillConfirm] = useState(false);
 
   // Load or create CV
   useEffect(() => {
@@ -178,16 +180,17 @@ const CVBuilder = () => {
     toast.info('Bạn có thể tải dữ liệu mẫu bất cứ lúc nào từ sidebar!');
   };
 
-  const handleAutoFillFromProfile = async () => {
+  const handleAutoFillFromProfile = () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để sử dụng tính năng này.');
       return;
     }
 
-    if (!window.confirm('Hành động này sẽ ghi đè dữ liệu hiện tại của CV bằng thông tin từ hồ sơ cá nhân. Bạn có chắc chắn muốn tiếp tục không?')) {
-      return;
-    }
+    setShowAutoFillConfirm(true);
+  };
 
+  const confirmAutoFillFromProfile = async () => {
+    setShowAutoFillConfirm(false);
     setIsLoading(true);
     try {
       const response = await getMyProfile();
@@ -644,6 +647,22 @@ const CVBuilder = () => {
           />
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={showAutoFillConfirm}
+        onOpenChange={(open) => {
+          if (!open && !isLoading) {
+            setShowAutoFillConfirm(false);
+          }
+        }}
+        title="Điền tự động từ hồ sơ?"
+        description="Hành động này sẽ ghi đè dữ liệu hiện tại của CV bằng thông tin từ hồ sơ cá nhân. Bạn có chắc chắn muốn tiếp tục không?"
+        onConfirm={confirmAutoFillFromProfile}
+        confirmText="Tiếp tục"
+        cancelText="Hủy"
+        variant="destructive"
+        isLoading={isLoading}
+      />
     </>
   );
 };
