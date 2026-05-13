@@ -229,6 +229,8 @@ const ApplicationDetailPage = () => {
   const jobSnapshot = application.jobSnapshot || {};
   const isTemplateCv = application.submittedCV?.source === 'TEMPLATE';
   const isUploadedCv = application.submittedCV?.source === 'UPLOADED';
+  const interviewHistory = application.interviewHistory || [];
+  const latestInterviewInfo = application.latestInterviewInfo || application.interview || null;
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -289,19 +291,19 @@ const ApplicationDetailPage = () => {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Nhắn tin nhà tuyển dụng
                 </Button>
-                {application.interview && (
+                {latestInterviewInfo && (
                   <Button
                     className={cn(
                       "text-white border-0",
-                      application.interview.isEnded
+                      ['COMPLETED', 'ENDED', 'CANCELLED'].includes(latestInterviewInfo.status)
                         ? "bg-stone-600 hover:bg-stone-700"
                         : "bg-emerald-600 hover:bg-emerald-700 animate-pulse hover:animate-none"
                     )}
                     asChild
                   >
-                    <Link to={`/interviews/${application.interview._id}`}>
+                    <Link to={`/interviews/${latestInterviewInfo.interviewId || latestInterviewInfo._id}`}>
                       <Video className="h-4 w-4 mr-2" />
-                      {application.interview.isEnded ? 'Chi tiết phỏng vấn' : 'Vào phòng phỏng vấn'}
+                      {['COMPLETED', 'ENDED', 'CANCELLED'].includes(latestInterviewInfo.status) ? 'Chi tiết phỏng vấn' : 'Vào phòng phỏng vấn'}
                     </Link>
                   </Button>
                 )}
@@ -570,6 +572,72 @@ const ApplicationDetailPage = () => {
                       {application.coverLetter}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {interviewHistory.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Lịch sử phỏng vấn</CardTitle>
+                  </div>
+                  <CardDescription>Tất cả các vòng phỏng vấn của đơn ứng tuyển này</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {interviewHistory.map((interview) => {
+                    const resultLabel = interview.result === 'PASSED'
+                      ? 'Đạt'
+                      : interview.result === 'FAILED'
+                        ? 'Không đạt'
+                        : ['COMPLETED', 'ENDED'].includes(interview.status)
+                          ? 'Chờ đánh giá'
+                          : 'Đã lên lịch';
+
+                    const resultClassName = interview.result === 'PASSED'
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : interview.result === 'FAILED'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : ['COMPLETED', 'ENDED'].includes(interview.status)
+                          ? 'bg-teal-50 text-teal-700 border-teal-200'
+                          : 'bg-cyan-50 text-cyan-700 border-cyan-200';
+
+                    return (
+                      <div key={interview.interviewId || interview._id} className="rounded-xl border p-4 bg-muted/20">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {interview.roundName || `Vòng ${interview.sequence || '?'}`}
+                            </p>
+                            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                              <p>Lịch phỏng vấn: <span className="text-foreground">{formatDateTime(interview.scheduledTime)}</span></p>
+                              <p>Trạng thái hệ thống: <span className="text-foreground">{interview.status}</span></p>
+                              {interview.evaluatedAt && (
+                                <p>Đánh giá lúc: <span className="text-foreground">{formatDateTime(interview.evaluatedAt)}</span></p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-start sm:items-end gap-2">
+                            <Badge variant="outline" className={resultClassName}>
+                              {resultLabel}
+                            </Badge>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link to={`/interviews/${interview.interviewId || interview._id}`}>
+                                <Video className="h-4 w-4 mr-2" />
+                                Xem chi tiết
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                        {interview.evaluationNote && (
+                          <div className="mt-3 rounded-lg border bg-white p-3 text-sm text-gray-700">
+                            <span className="font-medium text-gray-900">Ghi chú đánh giá:</span> {interview.evaluationNote}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
