@@ -1,0 +1,1850 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Progress } from '../../components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import {
+  Award,
+  ArrowLeft,
+  Download,
+  FileText,
+  Briefcase,
+  Target,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Lightbulb,
+  Sparkles,
+  BarChart3,
+  Loader2,
+  Eye,
+  Edit3,
+  Zap,
+  Clock,
+  ListChecks,
+  Wand2,
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
+
+// Import services
+import { getApplicationDetail, generateImprovedCV } from '../../services/applicationService';
+import { getJobById } from '../../services/jobService';
+import apiClient from '../../services/apiClient';
+
+// Import CV Analysis Components
+import CVRadarChart from '../../components/cv-analysis/CVRadarChart';
+import CareerPathTimeline from '../../components/cv-analysis/CareerPathTimeline';
+import ProjectRecommendations from '../../components/cv-analysis/ProjectRecommendations';
+import AIImprovementPanel from '../../components/cv-analysis/AIImprovementPanel';
+
+const CVScoreDetail = () => {
+  const { applicationId } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [generatedCV, setGeneratedCV] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showOptimizedCVModal, setShowOptimizedCVModal] = useState(false);
+  const [optimizedCVData, setOptimizedCVData] = useState(null);
+  
+  // Check if this is preview mode (data from query params)
+  const [previewData, setPreviewData] = useState(null);
+  const isPreviewMode = !applicationId && searchParams.has('data');
+
+  // Parse preview data from query params
+  useEffect(() => {
+    if (isPreviewMode) {
+      try {
+        const dataParam = searchParams.get('data');
+        const parsedData = JSON.parse(decodeURIComponent(dataParam));
+        
+        console.log('=== PARSED PREVIEW DATA ===');
+        console.log('Full data:', parsedData);
+        console.log('Enhanced:', parsedData.enhanced);
+        console.log('Radar metrics:', parsedData.enhanced?.radar_metrics);
+        console.log('Visualization:', parsedData.visualization);
+        console.log('Category scores:', parsedData.category_scores);
+        
+        setPreviewData(parsedData);
+      } catch (error) {
+        console.error('Error parsing preview data:', error);
+        toast.error('Dữ liệu không hợp lệ');
+        navigate(-1);
+      }
+    }
+  }, [isPreviewMode, searchParams, navigate]);
+
+  // Fetch application detail (only in application mode)
+  const { data: applicationData, isLoading } = useQuery({
+    queryKey: ['applicationDetail', applicationId],
+    queryFn: () => getApplicationDetail(applicationId),
+    enabled: !!applicationId && !isPreviewMode,
+  });
+
+  // Fetch job detail (in preview mode when we have jobId)
+  const { data: jobData, isLoading: isLoadingJob } = useQuery({
+    queryKey: ['jobDetail', previewData?.jobId],
+    queryFn: () => getJobById(previewData.jobId),
+    enabled: isPreviewMode && !!previewData?.jobId,
+  });
+
+  // Use preview data or application data
+  const application = isPreviewMode ? null : applicationData?.data;
+  let cvScore = isPreviewMode ? previewData : application?.cvScore;
+  const job = isPreviewMode ? jobData?.data?.data : application?.job;
+
+  // Fix radar_metrics if it's in wrong format (has labels/values keys instead of array)
+  if (cvScore?.enhanced?.radar_metrics && typeof cvScore.enhanced.radar_metrics === 'object' && !Array.isArray(cvScore.enhanced.radar_metrics)) {
+    const radarData = cvScore.enhanced.radar_metrics;
+    if (radarData.labels && radarData.values && Array.isArray(radarData.labels) && Array.isArray(radarData.values)) {
+      // Convert from {labels: [...], values: [...]} to [{metric: ..., score: ...}, ...]
+      cvScore = {
+        ...cvScore,
+        enhanced: {
+          ...cvScore.enhanced,
+          radar_metrics: radarData.labels.map((label, idx) => ({
+            metric: label,
+            score: radarData.values[idx]
+          }))
+        }
+      };
+      console.log('Fixed radar_metrics format:', cvScore.enhanced.radar_metrics);
+    }
+  }
+
+  // Debug logs
+  useEffect(() => {
+    if (isPreviewMode && previewData) {
+      console.log('=== PREVIEW MODE ===');
+      console.log('Preview data:', previewData);
+    } else if (application) {
+      console.log('Application:', application);
+      console.log('Job:', job);
+      console.log('Job description:', job?.description);
+      console.log('CV:', application?.cv);
+      console.log('CV Score:', cvScore);
+      console.log('=== ENHANCED DEBUG ===');
+      console.log('Has enhanced?', !!cvScore?.enhanced);
+      console.log('Enhanced data:', cvScore?.enhanced);
+      console.log('Radar metrics:', cvScore?.enhanced?.radar_metrics);
+      console.log('Career paths:', cvScore?.enhanced?.career_paths);
+      console.log('Skill gaps:', cvScore?.enhanced?.skill_gaps);
+      console.log('Projects:', cvScore?.enhanced?.recommended_projects);
+    }
+  }, [isPreviewMode, previewData, application, job, cvScore]);
+
+  // Auto-generate CV khi vào tab "ai-improved" và chưa có optimizedCVData
+  useEffect(() => {
+    if (activeTab === 'ai-improved' && !optimizedCVData && !isGenerating && isPreviewMode && job) {
+      handleGenerateCV();
+    }
+  }, [activeTab, optimizedCVData, isGenerating, isPreviewMode, job]);
+
+  const handleGenerateCV = async () => {
+    if (isPreviewMode) {
+      // Preview mode: Generate optimized CV using AI
+      console.log('=== GENERATE OPTIMIZED CV ===');
+      console.log('Preview data:', previewData);
+      console.log('Job:', job);
+      console.log('CV Score:', cvScore);
+      
+      toast.info('Đang tạo CV tối ưu dựa trên gợi ý AI...');
+      setIsGenerating(true);
+      
+      try {
+        // Get CV ID from preview data (need to pass from ApplyJobDialog)
+        const cvId = previewData?.cvId;
+        const cvTemplateId = previewData?.cvTemplateId;
+        
+        console.log('CV ID:', cvId);
+        console.log('CV Template ID:', cvTemplateId);
+        
+        if (!cvId && !cvTemplateId) {
+          toast.error('Không tìm thấy thông tin CV');
+          setIsGenerating(false);
+          return;
+        }
+
+        if (!job?._id) {
+          toast.error('Không tìm thấy thông tin công việc');
+          setIsGenerating(false);
+          return;
+        }
+
+        console.log('Calling API:', `/jobs/${job._id}/optimize-cv`);
+        console.log('Request body:', { cvId, cvTemplateId, scoringData: cvScore });
+
+        // Call API to generate optimized CV
+        const response = await apiClient.post(`/jobs/${job._id}/optimize-cv`, {
+          cvId,
+          cvTemplateId,
+          scoringData: cvScore
+        });
+
+        console.log('API Response:', response);
+
+        if (response.data?.success && response.data?.data) {
+          setOptimizedCVData(response.data.data);
+          // Also set generatedCV for backward compatibility with existing tab
+          setGeneratedCV({
+            improvedCVData: response.data.data.optimizedCV,
+            score_prediction: cvScore.overall_score + (response.data.data.improvements?.score_increase || 0),
+            originalCV: response.data.data.originalCV
+          });
+          // Don't switch tab, just show CV below
+          toast.success('Đã tạo CV tối ưu thành công! Xem bên dưới.');
+        } else {
+          toast.error('Không thể tạo CV tối ưu');
+        }
+      } catch (error) {
+        console.error('Error generating optimized CV:', error);
+        console.error('Error response:', error.response);
+        toast.error(error.response?.data?.message || 'Không thể tạo CV tối ưu. Vui lòng thử lại.');
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+    
+    // Application mode: existing logic
+    if (!applicationId) {
+      toast.error('Không tìm thấy ID đơn ứng tuyển');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await generateImprovedCV(applicationId);
+      console.log('Generated CV response:', response);
+
+      if (response.success) {
+        setGeneratedCV(response.data);
+        toast.success('Đã tạo CV cải thiện thành công!');
+        // Auto switch to preview tab
+        setActiveTab('ai-improved');
+      } else {
+        toast.error(response.message || 'Không thể tạo CV cải thiện');
+      }
+    } catch (error) {
+      console.error('Error generating CV:', error);
+      toast.error(error.response?.data?.message || 'Không thể tạo CV cải thiện. Vui lòng thử lại sau.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadCV = () => {
+    if (!generatedCV || !generatedCV.improvedCVData) {
+      toast.error('Chưa có CV để tải xuống');
+      return;
+    }
+
+    // Save CV data to sessionStorage instead of URL params (avoid URI length limit)
+    const cvData = generatedCV.improvedCVData;
+    const templateId = generatedCV.originalTemplate?.templateId || application?.submittedCV?.templateId || 'modern-blue';
+
+    // Generate unique key for this CV
+    const cvKey = `improved-cv-${applicationId}-${Date.now()}`;
+
+    // Save to sessionStorage
+    sessionStorage.setItem(cvKey, JSON.stringify({
+      cvData,
+      templateId,
+      improvements: generatedCV.improvements,
+      score_prediction: generatedCV.score_prediction
+    }));
+
+    // Open preview page with key
+    window.open(`/cv/preview?key=${cvKey}`, '_blank');
+    toast.success('Đang mở CV để xem và tải xuống...');
+  };
+
+  const extractCVText = (cv) => {
+    console.log('=== extractCVText DEBUG ===');
+    console.log('extractCVText input:', cv);
+    if (!cv) return 'Không có dữ liệu CV';
+
+    // Nếu cv là submittedCV, lấy templateSnapshot hoặc cvData
+    const cvData = cv.templateSnapshot || cv.cvData || cv;
+    console.log('cvData after templateSnapshot check:', cvData);
+    console.log('cvData keys:', cvData ? Object.keys(cvData) : 'null');
+
+    if (!cvData) return 'Không có dữ liệu CV';
+
+    const sections = [];
+
+    // DEBUG: Log tất cả fields
+    console.log('=== ALL CV FIELDS ===');
+    for (const key in cvData) {
+      console.log(`${key}:`, cvData[key]);
+    }
+
+    // Personal Info
+    if (cvData.personalInfo) {
+      sections.push(`Họ tên: ${cvData.personalInfo.fullName || ''}`);
+      sections.push(`Email: ${cvData.personalInfo.email || ''}`);
+      sections.push(`Số điện thoại: ${cvData.personalInfo.phone || ''}`);
+      if (cvData.personalInfo.address) sections.push(`Địa chỉ: ${cvData.personalInfo.address}`);
+      if (cvData.personalInfo.dateOfBirth) sections.push(`Ngày sinh: ${cvData.personalInfo.dateOfBirth}`);
+      if (cvData.personalInfo.linkedin) sections.push(`LinkedIn: ${cvData.personalInfo.linkedin}`);
+      if (cvData.personalInfo.github) sections.push(`GitHub: ${cvData.personalInfo.github}`);
+      if (cvData.personalInfo.website) sections.push(`Website: ${cvData.personalInfo.website}`);
+    }
+
+    // Professional Summary (CV model field)
+    if (cvData.professionalSummary) {
+      sections.push(`\nTóm tắt chuyên môn:\n${cvData.professionalSummary}`);
+    }
+
+    // Objective
+    if (cvData.objective) {
+      sections.push(`\nMục tiêu nghề nghiệp:\n${cvData.objective}`);
+    }
+
+    // Summary
+    if (cvData.summary) {
+      sections.push(`\nTóm tắt:\n${cvData.summary}`);
+    }
+
+    // Work Experience (CV model field)
+    if (cvData.workExperience && cvData.workExperience.length > 0) {
+      sections.push('\nKinh nghiệm làm việc:');
+      cvData.workExperience.forEach((exp) => {
+        const position = exp.position || exp.title || 'Vị trí';
+        const company = exp.company || 'Công ty';
+        const location = exp.location ? ` - ${exp.location}` : '';
+        sections.push(`- ${position} tại ${company}${location} (${exp.startDate || ''} - ${exp.endDate || exp.isCurrentJob ? 'Hiện tại' : ''})`);
+        if (exp.description) sections.push(`  ${exp.description}`);
+        if (exp.achievements && exp.achievements.length > 0) {
+          sections.push(`  Thành tựu:`);
+          exp.achievements.forEach(achievement => sections.push(`    • ${achievement}`));
+        }
+      });
+    }
+
+    // Experience (fallback for old structure)
+    if (cvData.experience && cvData.experience.length > 0) {
+      sections.push('\nKinh nghiệm làm việc:');
+      cvData.experience.forEach((exp) => {
+        sections.push(`- ${exp.title || exp.position || 'Vị trí'} tại ${exp.company || 'Công ty'} (${exp.startDate || ''} - ${exp.endDate || 'Hiện tại'})`);
+        if (exp.description) sections.push(`  ${exp.description}`);
+        if (exp.responsibilities) sections.push(`  Trách nhiệm: ${exp.responsibilities}`);
+      });
+    }
+
+    // Skills - xử lý nhiều loại skills
+    // Technical Skills
+    if (cvData.skillsTechnical && cvData.skillsTechnical.length > 0) {
+      sections.push('\nKỹ năng chuyên môn (Technical Skills):');
+      cvData.skillsTechnical.forEach((skill) => {
+        if (typeof skill === 'string') {
+          sections.push(`- ${skill}`);
+        } else if (skill && typeof skill === 'object') {
+          const skillName = skill.name || skill.skill || skill.title || '';
+          const skillLevel = skill.level || skill.proficiency || '';
+          sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+        }
+      });
+    }
+
+    // Soft Skills
+    if (cvData.skillsSoft && cvData.skillsSoft.length > 0) {
+      sections.push('\nKỹ năng mềm (Soft Skills):');
+      cvData.skillsSoft.forEach((skill) => {
+        if (typeof skill === 'string') {
+          sections.push(`- ${skill}`);
+        } else if (skill && typeof skill === 'object') {
+          const skillName = skill.name || skill.skill || skill.title || '';
+          const skillLevel = skill.level || skill.proficiency || '';
+          sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+        }
+      });
+    }
+
+    // General Skills - xử lý theo CV model structure
+    if (cvData.skills && cvData.skills.length > 0) {
+      // Group skills by category
+      const technicalSkills = cvData.skills.filter(s => s.category === 'Technical');
+      const softSkills = cvData.skills.filter(s => s.category === 'Soft Skills');
+      const languages = cvData.skills.filter(s => s.category === 'Language');
+      const otherSkills = cvData.skills.filter(s => !s.category || !['Technical', 'Soft Skills', 'Language'].includes(s.category));
+
+      if (technicalSkills.length > 0) {
+        sections.push('\nKỹ năng chuyên môn (Technical Skills):');
+        technicalSkills.forEach((skill) => {
+          if (typeof skill === 'string') {
+            sections.push(`- ${skill}`);
+          } else if (skill && typeof skill === 'object') {
+            const skillName = skill.name || skill.skill || skill.title || '';
+            const skillLevel = skill.level || skill.proficiency || '';
+            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+          }
+        });
+      }
+
+      if (softSkills.length > 0) {
+        sections.push('\nKỹ năng mềm (Soft Skills):');
+        softSkills.forEach((skill) => {
+          if (typeof skill === 'string') {
+            sections.push(`- ${skill}`);
+          } else if (skill && typeof skill === 'object') {
+            const skillName = skill.name || skill.skill || skill.title || '';
+            const skillLevel = skill.level || skill.proficiency || '';
+            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+          }
+        });
+      }
+
+      if (languages.length > 0) {
+        sections.push('\nNgôn ngữ lập trình / Công nghệ:');
+        languages.forEach((skill) => {
+          if (typeof skill === 'string') {
+            sections.push(`- ${skill}`);
+          } else if (skill && typeof skill === 'object') {
+            const skillName = skill.name || skill.skill || skill.title || '';
+            const skillLevel = skill.level || skill.proficiency || '';
+            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+          }
+        });
+      }
+
+      if (otherSkills.length > 0) {
+        sections.push('\nKỹ năng khác:');
+        otherSkills.forEach((skill) => {
+          if (typeof skill === 'string') {
+            sections.push(`- ${skill}`);
+          } else if (skill && typeof skill === 'object') {
+            const skillName = skill.name || skill.skill || skill.title || '';
+            const skillLevel = skill.level || skill.proficiency || '';
+            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
+          }
+        });
+      }
+    }
+
+    // Education
+    if (cvData.education && cvData.education.length > 0) {
+      sections.push('\nHọc vấn:');
+      cvData.education.forEach((edu) => {
+        const school = edu.school || edu.institution || edu.university || 'Trường học';
+        const degree = edu.degree || edu.major || 'Bằng cấp';
+        sections.push(`- ${degree} tại ${school} (${edu.startDate || ''} - ${edu.endDate || 'Hiện tại'})`);
+        if (edu.description) sections.push(`  ${edu.description}`);
+        if (edu.gpa) sections.push(`  GPA: ${edu.gpa}`);
+      });
+    }
+
+    // Projects
+    if (cvData.projects && cvData.projects.length > 0) {
+      sections.push('\nDự án:');
+      cvData.projects.forEach((proj) => {
+        sections.push(`- ${proj.name || proj.title || 'Dự án'}: ${proj.description || ''}`);
+        if (proj.technologies) sections.push(`  Công nghệ: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : proj.technologies}`);
+        if (proj.role) sections.push(`  Vai trò: ${proj.role}`);
+      });
+    }
+
+    // Certificates (CV model field name)
+    if (cvData.certificates && cvData.certificates.length > 0) {
+      sections.push('\nChứng chỉ:');
+      cvData.certificates.forEach((cert) => {
+        if (typeof cert === 'string') {
+          sections.push(`- ${cert}`);
+        } else if (cert && typeof cert === 'object') {
+          const certName = cert.name || cert.title || cert.certification || 'Chứng chỉ';
+          const certIssuer = cert.issuer || cert.organization || '';
+          const certIssueDate = cert.issueDate || cert.date || cert.year || '';
+          const certExpiryDate = cert.expiryDate || '';
+          const certCredentialId = cert.credentialId || '';
+          const certUrl = cert.url || '';
+
+          let certLine = `- ${certName}`;
+          if (certIssuer) certLine += ` - ${certIssuer}`;
+          if (certIssueDate) certLine += ` (${certIssueDate}${certExpiryDate ? ` - ${certExpiryDate}` : ''})`;
+          if (certCredentialId) certLine += ` [ID: ${certCredentialId}]`;
+          sections.push(certLine);
+          if (certUrl) sections.push(`  URL: ${certUrl}`);
+        }
+      });
+    }
+
+    // Certifications (fallback for old structure)
+    if (cvData.certifications && cvData.certifications.length > 0) {
+      sections.push('\nChứng chỉ:');
+      cvData.certifications.forEach((cert) => {
+        if (typeof cert === 'string') {
+          sections.push(`- ${cert}`);
+        } else if (cert && typeof cert === 'object') {
+          const certName = cert.name || cert.title || cert.certification || 'Chứng chỉ';
+          const certIssuer = cert.issuer || cert.organization || '';
+          const certDate = cert.date || cert.year || cert.issueDate || '';
+          const certLevel = cert.level || cert.score || '';
+          sections.push(`- ${certName}${certLevel ? ` (${certLevel})` : ''}${certIssuer ? ` - ${certIssuer}` : ''}${certDate ? ` (${certDate})` : ''}`);
+        }
+      });
+    }
+
+    // Languages
+    if (cvData.languages && cvData.languages.length > 0) {
+      sections.push('\nNgôn ngữ:');
+      cvData.languages.forEach((lang) => {
+        if (typeof lang === 'string') {
+          sections.push(`- ${lang}`);
+        } else if (lang && typeof lang === 'object') {
+          const langName = lang.name || lang.language || '';
+          const langLevel = lang.level || lang.proficiency || '';
+          sections.push(`- ${langName}${langLevel ? ` (${langLevel})` : ''}`);
+        }
+      });
+    }
+
+    // Awards
+    if (cvData.awards && cvData.awards.length > 0) {
+      sections.push('\nGiải thưởng:');
+      cvData.awards.forEach((award) => {
+        sections.push(`- ${award.name || award.title || 'Giải thưởng'}${award.date ? ` (${award.date})` : ''}`);
+        if (award.description) sections.push(`  ${award.description}`);
+      });
+    }
+
+    // Hobbies/Interests
+    if (cvData.hobbies) {
+      sections.push(`\nSở thích: ${Array.isArray(cvData.hobbies) ? cvData.hobbies.join(', ') : cvData.hobbies}`);
+    }
+    if (cvData.interests) {
+      sections.push(`\nSở thích: ${Array.isArray(cvData.interests) ? cvData.interests.join(', ') : cvData.interests}`);
+    }
+
+    return sections.join('\n');
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getScoreGradient = (score) => {
+    if (score >= 80) return 'from-green-500 to-emerald-500';
+    if (score >= 60) return 'from-yellow-500 to-orange-500';
+    return 'from-red-500 to-pink-500';
+  };
+
+  if (isLoading || isLoadingJob || (isPreviewMode && !previewData)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  if ((!isPreviewMode && (!application || !cvScore || !cvScore.breakdown)) || 
+      (isPreviewMode && (!previewData || !previewData.breakdown))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">
+              {!cvScore && !previewData ? 'Không tìm thấy kết quả chấm điểm' : 'Đang xử lý chấm điểm...'}
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {!cvScore && !previewData
+                ? 'Vui lòng chấm điểm CV trước khi xem chi tiết.'
+                : 'Hệ thống đang phân tích CV. Vui lòng đợi 30 giây và refresh lại trang.'}
+            </p>
+            <Button onClick={() => navigate(isPreviewMode && job?._id ? `/jobs/${job._id}` : '/dashboard/applications')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Quay lại
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(isPreviewMode && job?._id ? `/jobs/${job._id}` : '/dashboard/applications')}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {isPreviewMode ? 'Quay lại trang ứng tuyển' : 'Quay lại danh sách'}
+          </Button>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {isPreviewMode ? 'Xem trước điểm CV' : 'Phân tích CV chi tiết'}
+              </h1>
+              <p className="text-gray-600">
+                Vị trí: <span className="font-semibold">{job?.title}</span>
+              </p>
+            </div>
+            <div className="text-right flex flex-col items-end gap-3">
+              <div>
+                <div className={cn('text-5xl font-bold mb-1', getScoreColor(cvScore.overall_score))}>
+                  {cvScore.overall_score}/100
+                </div>
+                <Badge
+                  className={cn(
+                    'text-sm',
+                    cvScore.overall_score >= 80
+                      ? 'bg-green-100 text-green-700'
+                      : cvScore.overall_score >= 60
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-red-100 text-red-700'
+                  )}
+                >
+                  {cvScore.overall_score >= 80
+                    ? 'Xuất sắc'
+                    : cvScore.overall_score >= 60
+                    ? 'Khá tốt'
+                    : 'Cần cải thiện'}
+                </Badge>
+              </div>
+              
+        
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Navigation - Move before optimized CV */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+            <TabsTrigger value="overview" className="flex flex-col items-center gap-1 py-3">
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-xs">Tổng quan</span>
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex flex-col items-center gap-1 py-3">
+              <Target className="h-5 w-5" />
+              <span className="text-xs">Phân tích chi tiết</span>
+            </TabsTrigger>
+            <TabsTrigger value="suggestions" className="flex flex-col items-center gap-1 py-3">
+              <Lightbulb className="h-5 w-5" />
+              <span className="text-xs">Gợi ý cải thiện</span>
+            </TabsTrigger>
+            <TabsTrigger value="ai-improved" className="flex flex-col items-center gap-1 py-3 relative">
+              <Wand2 className="h-5 w-5" />
+              <span className="text-xs">CV AI cải thiện</span>
+              <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-purple-500" />
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1: Tổng quan (So sánh CV & JD) */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Overall Match Score */}
+            <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50">
+              <CardContent className="p-8">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Độ phù hợp CV với Job</h2>
+                  <div className={cn(
+                    'text-6xl font-bold mb-3',
+                    cvScore.overall_score >= 75 ? 'text-green-600' :
+                    cvScore.overall_score >= 50 ? 'text-yellow-600' : 'text-red-600'
+                  )}>
+                    {cvScore.overall_score}%
+                  </div>
+                  <Badge className={cn(
+                    'text-lg px-4 py-2',
+                    cvScore.overall_score >= 75 ? 'bg-green-100 text-green-700 border-green-300' :
+                    cvScore.overall_score >= 50 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                    'bg-red-100 text-red-700 border-red-300'
+                  )}>
+                    {cvScore.overall_score >= 75 ? '🟢 High Match - Rất phù hợp!' :
+                     cvScore.overall_score >= 50 ? '🟡 Medium Match - Khá phù hợp' :
+                     '🔴 Low Match - Cần cải thiện'}
+                  </Badge>
+                </div>
+                <p className="text-center text-gray-600 max-w-2xl mx-auto">
+                  {cvScore.overall_score >= 75 
+                    ? 'CV của bạn rất phù hợp với vị trí này! Hãy apply ngay.'
+                    : cvScore.overall_score >= 50
+                    ? 'CV của bạn khá phù hợp. Cải thiện thêm một chút để tăng cơ hội.'
+                    : 'CV của bạn cần cải thiện để phù hợp hơn với vị trí này.'}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Breakdown Scores */}
+            {cvScore.breakdown && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-purple-600" />
+                    Chi tiết điểm số
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Thông tin cá nhân', value: cvScore.breakdown.personal_info || 0, max: 5, icon: '👤' },
+                      { label: 'Kỹ năng', value: cvScore.breakdown.skills, max: 20, icon: '💻' },
+                      { label: 'Kinh nghiệm', value: cvScore.breakdown.experience, max: 20, icon: '💼' },
+                      { label: 'Học vấn', value: cvScore.breakdown.education, max: 10, icon: '🎓' },
+                      { label: 'Từ khóa/ATS', value: cvScore.breakdown.keywords_ats, max: 15, icon: '🔑' },
+                      { label: 'Thành tích', value: cvScore.breakdown.achievements, max: 15, icon: '🏆' },
+                      { label: 'Trình bày', value: cvScore.breakdown.presentation, max: 15, icon: '📄' },
+                    ].map((item, index) => {
+                      const clampedValue = Math.min(item.value, item.max);
+                      return (
+                        <div key={index}>
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="font-medium flex items-center gap-2">
+                              <span>{item.icon}</span>
+                              {item.label}
+                            </span>
+                            <span className="text-gray-600">
+                              {clampedValue}/{item.max}
+                            </span>
+                          </div>
+                          <Progress value={(clampedValue / item.max) * 100} className="h-3" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Summary */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Strengths */}
+              {cvScore.strengths && cvScore.strengths.length > 0 && (
+                <Card className="border-green-200 bg-green-50/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Điểm mạnh ({cvScore.strengths.length})
+                    </h3>
+                    <ul className="space-y-2">
+                      {cvScore.strengths.slice(0, 3).map((strength, idx) => (
+                        <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                          <span className="text-green-600 mt-1">✓</span>
+                          <span>{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Weaknesses */}
+              {cvScore.weaknesses && cvScore.weaknesses.length > 0 && (
+                <Card className="border-yellow-200 bg-yellow-50/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5" />
+                      Điểm yếu ({cvScore.weaknesses.length})
+                    </h3>
+                    <ul className="space-y-2">
+                      {cvScore.weaknesses.slice(0, 3).map((weakness, idx) => (
+                        <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                          <span className="text-yellow-600 mt-1">⚠</span>
+                          <span>{weakness}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Critical Gaps */}
+              {cvScore.critical_gaps && cvScore.critical_gaps.length > 0 && (
+                <Card className="border-red-200 bg-red-50/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                      <XCircle className="h-5 w-5" />
+                      Thiếu sót ({cvScore.critical_gaps.length})
+                    </h3>
+                    <ul className="space-y-2">
+                      {cvScore.critical_gaps.slice(0, 3).map((gap, idx) => (
+                        <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                          <span className="text-red-600 mt-1">✗</span>
+                          <span>{gap}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* What-if CV Improvement Simulator */}
+            <Card className="border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-red-50">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-2xl mb-2 flex items-center gap-2 text-orange-700">
+                  <Zap className="h-7 w-7" />
+                  🔥 Cải thiện CV - Tăng điểm nhanh
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Mô phỏng: Nếu bạn cải thiện những điểm sau, điểm CV sẽ tăng bao nhiêu?
+                </p>
+
+                <div className="space-y-3">
+                  {/* Generate suggestions from missing keywords */}
+                  {cvScore.analysis?.keyword_match?.missing?.slice(0, 5).map((skill, idx) => {
+                    const impact = Math.max(5, Math.min(20, 20 - idx * 3));
+                    const newScore = Math.min(100, cvScore.overall_score + impact);
+                    const priority = idx + 1;
+                    const effort = priority <= 2 ? 3 : priority <= 4 ? 2 : 1;
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className="bg-white rounded-lg p-4 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-md cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge className="bg-orange-600 text-white px-2 py-1 text-sm">
+                                #{priority}
+                              </Badge>
+                              <span className="font-semibold text-gray-900">
+                                Thêm kỹ năng: <span className="text-orange-600">{skill}</span>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="text-gray-600">
+                                Loại: <span className="font-medium">Kỹ năng</span>
+                              </span>
+                              <span className="text-gray-600">
+                                Impact: {'🔥'.repeat(Math.ceil(impact / 5))}
+                              </span>
+                              <span className="text-gray-600">
+                                Effort: {'🔥'.repeat(effort)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <div className="text-3xl font-bold text-green-600 mb-1">
+                              +{impact}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {cvScore.overall_score} → <span className="font-semibold text-green-600">{newScore}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add project suggestion if low project score */}
+                  {cvScore?.breakdown?.achievements !== undefined && cvScore.breakdown.achievements < 10 && (
+                    <div className="bg-white rounded-lg p-4 border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-md cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge className="bg-purple-600 text-white px-2 py-1 text-sm">
+                              #LONG-TERM
+                            </Badge>
+                            <span className="font-semibold text-gray-900">
+                              Làm dự án thực tế về <span className="text-purple-600">{job?.title}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-gray-600">
+                              Loại: <span className="font-medium">Dự án</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Impact: 🔥🔥🔥
+                            </span>
+                            <span className="text-gray-600">
+                              Effort: 🔥🔥🔥🔥
+                            </span>
+                            <span className="text-gray-600">
+                              Thời gian: <span className="font-medium">2-4 tuần</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
+                            +15
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {cvScore.overall_score} → <span className="font-semibold text-green-600">{Math.min(100, cvScore.overall_score + 15)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add experience suggestion if low experience score */}
+                  {cvScore.breakdown.experience < 15 && (
+                    <div className="bg-white rounded-lg p-4 border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-md cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge className="bg-blue-600 text-white px-2 py-1 text-sm">
+                              #LONG-TERM
+                            </Badge>
+                            <span className="font-semibold text-gray-900">
+                              Tích lũy thêm <span className="text-blue-600">6-12 tháng kinh nghiệm</span> liên quan
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-gray-600">
+                              Loại: <span className="font-medium">Kinh nghiệm</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Impact: 🔥🔥🔥🔥
+                            </span>
+                            <span className="text-gray-600">
+                              Effort: 🔥🔥🔥🔥🔥
+                            </span>
+                            <span className="text-gray-600">
+                              Thời gian: <span className="font-medium">6-12 tháng</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
+                            +20
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {cvScore.overall_score} → <span className="font-semibold text-green-600">{Math.min(100, cvScore.overall_score + 20)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Summary */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-green-700 mb-1 flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5" />
+                        💡 Gợi ý tối ưu
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Quick Fix:</span> Thêm top 3 kỹ năng (2-4 tuần) → +{Math.min(45, (cvScore.analysis?.keyword_match?.missing?.length || 0) * 3)} điểm
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Long-term:</span> Làm dự án + tích lũy kinh nghiệm (6-12 tháng) → +35 điểm
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600">Điểm tối đa có thể đạt:</div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {Math.min(100, cvScore.overall_score + 
+                          Math.min(45, (cvScore.analysis?.keyword_match?.missing?.length || 0) * 3) +
+                          (cvScore.breakdown.achievements < 10 ? 15 : 0) +
+                          (cvScore.breakdown.experience < 15 ? 20 : 0)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 2: Phân tích chi tiết */}
+          <TabsContent value="analysis" className="space-y-6">
+            {/* Job Details */}
+            <Card className="border-2 border-blue-200">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-xl mb-4 flex items-center gap-2 text-blue-700">
+                  <Briefcase className="h-6 w-6" />
+                  Thông tin công việc
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Vị trí:</h4>
+                    <p className="text-gray-700">{job?.title}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Mô tả công việc:</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{job?.description}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Yêu cầu:</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{job?.requirements}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* JD vs CV Comparison Graph */}
+            {cvScore.graph && cvScore.graph.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2">
+                    <Target className="h-6 w-6 text-purple-600" />
+                    So sánh yêu cầu JD và CV
+                  </h3>
+                  <div className="space-y-4">
+                    {cvScore.graph.map((item, idx) => (
+                      <div key={idx} className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div>
+                          <h4 className="font-semibold text-blue-700 mb-2 text-sm">Yêu cầu từ JD</h4>
+                          <p className="text-sm text-gray-700">{item.jd_requirement}</p>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-green-700 text-sm">Bằng chứng từ CV</h4>
+                            <Badge className={cn(
+                              'text-xs',
+                              item.match_level === 'high' && 'bg-green-100 text-green-700',
+                              item.match_level === 'medium' && 'bg-yellow-100 text-yellow-700',
+                              item.match_level === 'low' && 'bg-red-100 text-red-700'
+                            )}>
+                              {item.match_level === 'high' && '✓ Phù hợp cao'}
+                              {item.match_level === 'medium' && '~ Phù hợp trung bình'}
+                              {item.match_level === 'low' && '✗ Phù hợp thấp'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-700">{item.cv_evidence}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Keyword Analysis */}
+            {cvScore.keyword_analysis && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-purple-600" />
+                    Phân tích từ khóa (ATS)
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-green-700 mb-3">
+                        Từ khóa đã có ({cvScore.keyword_analysis.matched?.length || 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {cvScore.keyword_analysis.matched?.map((keyword, idx) => (
+                          <Badge key={idx} className="bg-green-100 text-green-700 border-green-300">
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-red-700 mb-3">
+                        Từ khóa còn thiếu ({cvScore.keyword_analysis.missing?.length || 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {cvScore.keyword_analysis.missing?.map((keyword, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="bg-red-50 text-red-700 border-red-300"
+                          >
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {cvScore.keyword_analysis.coverage_ratio !== undefined && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Tỷ lệ phủ từ khóa</span>
+                        <span className="text-lg font-bold text-purple-600">
+                          {(() => {
+                            // Recalculate coverage ratio from matched/total
+                            const matched = cvScore.keyword_analysis.matched?.length || 0;
+                            const missing = cvScore.keyword_analysis.missing?.length || 0;
+                            const total = matched + missing;
+                            const ratio = total > 0 ? (matched / total) * 100 : 0;
+                            return Math.round(ratio);
+                          })()}%
+                        </span>
+                      </div>
+                      <Progress value={(() => {
+                        const matched = cvScore.keyword_analysis.matched?.length || 0;
+                        const missing = cvScore.keyword_analysis.missing?.length || 0;
+                        const total = matched + missing;
+                        return total > 0 ? (matched / total) * 100 : 0;
+                      })()} className="h-2" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Gap Analysis */}
+            {cvScore.gaps && (
+              <Card className="border-2 border-orange-200">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2 text-orange-700">
+                    <AlertCircle className="h-6 w-6" />
+                    Phân tích khoảng cách
+                  </h3>
+                  
+                  {/* Critical Gaps */}
+                  {cvScore.gaps.critical && cvScore.gaps.critical.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                        <XCircle className="h-5 w-5" />
+                        Thiếu sót nghiêm trọng
+                      </h4>
+                      <ul className="space-y-2">
+                        {cvScore.gaps.critical.map((gap, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200"
+                          >
+                            <span className="text-red-600 font-bold">{idx + 1}.</span>
+                            <span className="text-gray-700">{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Moderate Gaps */}
+                  {cvScore.gaps.moderate && cvScore.gaps.moderate.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5" />
+                        Điểm yếu cần cải thiện
+                      </h4>
+                      <ul className="space-y-2">
+                        {cvScore.gaps.moderate.map((gap, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                          >
+                            <span className="text-yellow-600 font-bold">{idx + 1}.</span>
+                            <span className="text-gray-700">{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Minor Gaps */}
+                  {cvScore.gaps.minor && cvScore.gaps.minor.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5" />
+                        Cần cải thiện nhỏ
+                      </h4>
+                      <ul className="space-y-2">
+                        {cvScore.gaps.minor.map((gap, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                          >
+                            <span className="text-blue-600 font-bold">{idx + 1}.</span>
+                            <span className="text-gray-700">{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ===== NEW COMPONENTS START HERE ===== */}
+            
+            {/* Radar Chart - Sơ đồ Năng Lực */}
+            {(() => {
+              console.log('=== RADAR CHART RENDER CHECK ===');
+              console.log('cvScore:', cvScore);
+              console.log('cvScore.enhanced:', cvScore?.enhanced);
+              console.log('cvScore.enhanced.radar_metrics:', cvScore?.enhanced?.radar_metrics);
+              console.log('Has radar_metrics?', !!cvScore?.enhanced?.radar_metrics);
+              return null;
+            })()}
+            {cvScore?.enhanced?.radar_metrics && (
+              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-6 flex items-center gap-2 text-purple-700">
+                    <BarChart3 className="h-6 w-6" />
+                    📊 Sơ đồ Năng Lực
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Biểu đồ hình sao thể hiện điểm mạnh và điểm yếu của bạn trên 8 khía cạnh
+                  </p>
+                  <CVRadarChart data={cvScore.enhanced.radar_metrics} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Career Path - Lộ Trình Nghề Nghiệp */}
+            {cvScore?.enhanced?.career_paths && cvScore.enhanced.career_paths.length > 0 && (
+              <Card className="border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2 text-blue-700">
+                    <Target className="h-6 w-6" />
+                    🛤️ Lộ Trình Nghề Nghiệp (3-5 năm)
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Các con đường phát triển nghề nghiệp phù hợp với profile của bạn
+                  </p>
+                  <CareerPathTimeline paths={cvScore.enhanced.career_paths} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Skill Gaps */}
+            {cvScore?.enhanced?.skill_gaps && cvScore.enhanced.skill_gaps.length > 0 && (
+              <Card className="border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-yellow-50">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2 text-orange-700">
+                    <TrendingUp className="h-6 w-6" />
+                    📈 Kỹ Năng Cần Cải Thiện
+                  </h3>
+                  <div className="space-y-4">
+                    {cvScore.enhanced.skill_gaps.map((gap, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 border-2 border-orange-200">
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-semibold text-lg text-gray-900">{gap.skill}</h4>
+                          <Badge
+                            className={cn(
+                              'px-3 py-1',
+                              gap.priority === 'High' && 'bg-red-100 text-red-700 border-red-300',
+                              gap.priority === 'Medium' && 'bg-yellow-100 text-yellow-700 border-yellow-300',
+                              gap.priority === 'Low' && 'bg-gray-100 text-gray-700 border-gray-300'
+                            )}
+                          >
+                            {gap.priority === 'High' && '🔥 Ưu tiên cao'}
+                            {gap.priority === 'Medium' && '⚡ Ưu tiên trung bình'}
+                            {gap.priority === 'Low' && '💡 Ưu tiên thấp'}
+                          </Badge>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <span className="text-sm text-gray-600">Trình độ hiện tại:</span>
+                            <span className="ml-2 font-semibold text-gray-900">{gap.current_level}</span>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">Trình độ cần đạt:</span>
+                            <span className="ml-2 font-semibold text-gray-900">{gap.required_level}</span>
+                          </div>
+                        </div>
+                        {gap.learning_path && gap.learning_path.length > 0 && (
+                          <div className="mb-3">
+                            <span className="text-sm font-semibold text-gray-700">Lộ trình học:</span>
+                            <ul className="mt-2 space-y-1">
+                              {gap.learning_path.map((step, i) => (
+                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-orange-600">{i + 1}.</span>
+                                  {step}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-3 border-t">
+                          <span className="text-sm text-gray-600">
+                            Thời gian: <span className="font-semibold">{gap.estimated_time}</span>
+                          </span>
+                          <span className="text-sm font-semibold text-green-600">{gap.impact}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Tab 3: So sánh CV & JD - REDESIGNED */}
+          <TabsContent value="comparison" className="space-y-6">
+            {/* Overall Match Score */}
+            <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50">
+              <CardContent className="p-8">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Độ phù hợp CV với Job</h2>
+                  <div className={cn(
+                    'text-6xl font-bold mb-3',
+                    cvScore.overall_score >= 75 ? 'text-green-600' :
+                    cvScore.overall_score >= 50 ? 'text-yellow-600' : 'text-red-600'
+                  )}>
+                    {cvScore.overall_score}%
+                  </div>
+                  <Badge className={cn(
+                    'text-lg px-4 py-2',
+                    cvScore.overall_score >= 75 ? 'bg-green-100 text-green-700 border-green-300' :
+                    cvScore.overall_score >= 50 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                    'bg-red-100 text-red-700 border-red-300'
+                  )}>
+                    {cvScore.overall_score >= 75 ? '🟢 High Match - Rất phù hợp!' :
+                     cvScore.overall_score >= 50 ? '🟡 Medium Match - Khá phù hợp' :
+                     '🔴 Low Match - Cần cải thiện'}
+                  </Badge>
+                </div>
+                <p className="text-center text-gray-600 max-w-2xl mx-auto">
+                  {cvScore.overall_score >= 75 
+                    ? 'CV của bạn rất phù hợp với vị trí này! Hãy apply ngay.'
+                    : cvScore.overall_score >= 50
+                    ? 'CV của bạn khá phù hợp. Cải thiện thêm một chút để tăng cơ hội.'
+                    : 'CV của bạn cần cải thiện để phù hợp hơn với vị trí này.'}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Breakdown Scores */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-xl mb-6 flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                  Chi tiết độ phù hợp
+                </h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Skills Match */}
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-5 border-2 border-blue-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-blue-700 flex items-center gap-2">
+                        💻 Kỹ năng
+                      </h4>
+                      <span className="text-2xl font-bold text-blue-600">
+                        {Math.round((cvScore.breakdown.skills / 20) * 100)}%
+                      </span>
+                    </div>
+                    <Progress value={(cvScore.breakdown.skills / 20) * 100} className="h-3 mb-2" />
+                    <p className="text-sm text-gray-600">{cvScore.breakdown.skills}/20 điểm</p>
+                  </div>
+
+                  {/* Experience Match */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-5 border-2 border-green-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                        💼 Kinh nghiệm
+                      </h4>
+                      <span className="text-2xl font-bold text-green-600">
+                        {Math.round((cvScore.breakdown.experience / 20) * 100)}%
+                      </span>
+                    </div>
+                    <Progress value={(cvScore.breakdown.experience / 20) * 100} className="h-3 mb-2" />
+                    <p className="text-sm text-gray-600">{cvScore.breakdown.experience}/20 điểm</p>
+                  </div>
+
+                  {/* Education Match */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 border-2 border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-purple-700 flex items-center gap-2">
+                        🎓 Học vấn
+                      </h4>
+                      <span className="text-2xl font-bold text-purple-600">
+                        {Math.round((cvScore.breakdown.education / 10) * 100)}%
+                      </span>
+                    </div>
+                    <Progress value={(cvScore.breakdown.education / 10) * 100} className="h-3 mb-2" />
+                    <p className="text-sm text-gray-600">{cvScore.breakdown.education}/10 điểm</p>
+                  </div>
+
+                  {/* Keyword Match */}
+                  <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg p-5 border-2 border-orange-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-orange-700 flex items-center gap-2">
+                        🔑 Từ khóa (ATS)
+                      </h4>
+                      <span className="text-2xl font-bold text-orange-600">
+                        {Math.round((cvScore.breakdown.keywords_ats / 15) * 100)}%
+                      </span>
+                    </div>
+                    <Progress value={(cvScore.breakdown.keywords_ats / 15) * 100} className="h-3 mb-2" />
+                    <p className="text-sm text-gray-600">{cvScore.breakdown.keywords_ats}/15 điểm</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Skills Comparison */}
+            {cvScore.analysis?.keyword_match && (
+              <Card className="border-2 border-indigo-200">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-6 flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-indigo-600" />
+                    So sánh kỹ năng & từ khóa
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Matched Skills */}
+                    <div className="bg-green-50 rounded-lg p-5 border-2 border-green-200">
+                      <h4 className="font-semibold text-green-700 mb-4 flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5" />
+                        ✅ Bạn đã có ({cvScore.analysis.keyword_match.matched?.length || 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {cvScore.analysis.keyword_match.matched?.map((keyword, idx) => (
+                          <Badge key={idx} className="bg-green-100 text-green-700 border-green-300 text-sm px-3 py-1">
+                            ✓ {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Missing Skills */}
+                    <div className="bg-red-50 rounded-lg p-5 border-2 border-red-200">
+                      <h4 className="font-semibold text-red-700 mb-4 flex items-center gap-2">
+                        <XCircle className="h-5 w-5" />
+                        ❌ Bạn đang thiếu ({cvScore.analysis.keyword_match.missing?.length || 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {cvScore.analysis.keyword_match.missing?.map((keyword, idx) => (
+                          <Badge key={idx} variant="outline" className="bg-red-50 text-red-700 border-red-300 text-sm px-3 py-1">
+                            ✗ {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Strengths & Weaknesses */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Strengths */}
+              {cvScore.strengths && cvScore.strengths.length > 0 && (
+                <Card className="border-2 border-green-200 bg-green-50/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-xl text-green-700 mb-4 flex items-center gap-2">
+                      <CheckCircle className="h-6 w-6" />
+                      💪 Điểm mạnh của bạn
+                    </h3>
+                    <ul className="space-y-3">
+                      {cvScore.strengths.map((strength, idx) => (
+                        <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-green-200">
+                          <span className="text-green-600 font-bold mt-0.5">✓</span>
+                          <span className="text-gray-700">{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Weaknesses */}
+              {cvScore.weaknesses && cvScore.weaknesses.length > 0 && (
+                <Card className="border-2 border-yellow-200 bg-yellow-50/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-xl text-yellow-700 mb-4 flex items-center gap-2">
+                      <AlertCircle className="h-6 w-6" />
+                      ⚠️ Điểm cần cải thiện
+                    </h3>
+                    <ul className="space-y-3">
+                      {cvScore.weaknesses.map((weakness, idx) => (
+                        <li key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-yellow-200">
+                          <span className="text-yellow-600 font-bold mt-0.5">!</span>
+                          <span className="text-gray-700">{weakness}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* What-if CV Improvement Simulator */}
+            <Card className="border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-red-50">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-2xl mb-2 flex items-center gap-2 text-orange-700">
+                  <Zap className="h-7 w-7" />
+                  🔥 Cải thiện CV - Tăng điểm nhanh
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Mô phỏng: Nếu bạn cải thiện những điểm sau, điểm CV sẽ tăng bao nhiêu?
+                </p>
+
+                <div className="space-y-3">
+                  {/* Generate suggestions from missing keywords */}
+                  {cvScore.analysis?.keyword_match?.missing?.slice(0, 5).map((skill, idx) => {
+                    // Calculate simulated impact (mock data - can be replaced with real backend calculation)
+                    const impact = Math.max(5, Math.min(20, 20 - idx * 3));
+                    const newScore = Math.min(100, cvScore.overall_score + impact);
+                    const priority = idx + 1;
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className="bg-white rounded-lg p-4 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge className="bg-orange-600 text-white px-2 py-1">
+                                #{priority}
+                              </Badge>
+                              <span className="font-semibold text-gray-900">
+                                Thêm kỹ năng: <span className="text-orange-600">{skill}</span>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="text-gray-600">
+                                Loại: <span className="font-medium">Kỹ năng</span>
+                              </span>
+                              <span className="text-gray-600">
+                                Độ khó: {priority <= 2 ? '🔥🔥🔥' : priority <= 4 ? '🔥🔥' : '🔥'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-3xl font-bold text-green-600 mb-1">
+                              +{impact}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {cvScore.overall_score} → <span className="font-semibold text-green-600">{newScore}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add project suggestion if low project score */}
+                  {cvScore.breakdown.achievements < 10 && (
+                    <div className="bg-white rounded-lg p-4 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge className="bg-purple-600 text-white px-2 py-1">
+                              #HOT
+                            </Badge>
+                            <span className="font-semibold text-gray-900">
+                              Làm dự án thực tế liên quan đến <span className="text-purple-600">{job?.title}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-gray-600">
+                              Loại: <span className="font-medium">Dự án</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Thời gian: <span className="font-medium">2-4 tuần</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Độ khó: 🔥🔥🔥🔥
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
+                            +15
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {cvScore.overall_score} → <span className="font-semibold text-green-600">{Math.min(100, cvScore.overall_score + 15)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add experience suggestion if low experience score */}
+                  {cvScore.breakdown.experience < 15 && (
+                    <div className="bg-white rounded-lg p-4 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge className="bg-blue-600 text-white px-2 py-1">
+                              #LONG-TERM
+                            </Badge>
+                            <span className="font-semibold text-gray-900">
+                              Tích lũy thêm <span className="text-blue-600">6-12 tháng kinh nghiệm</span> liên quan
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-gray-600">
+                              Loại: <span className="font-medium">Kinh nghiệm</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Thời gian: <span className="font-medium">6-12 tháng</span>
+                            </span>
+                            <span className="text-gray-600">
+                              Độ khó: 🔥🔥🔥🔥🔥
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
+                            +20
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {cvScore.overall_score} → <span className="font-semibold text-green-600">{Math.min(100, cvScore.overall_score + 20)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Summary */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-green-700 mb-1">💡 Gợi ý tối ưu</h4>
+                      <p className="text-sm text-gray-600">
+                        Ưu tiên cải thiện <span className="font-semibold">top 3 kỹ năng</span> để tăng điểm nhanh nhất
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600">Điểm tối đa có thể đạt:</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {Math.min(100, cvScore.overall_score + 
+                          (cvScore.analysis?.keyword_match?.missing?.length > 0 ? 15 : 0) +
+                          (cvScore.breakdown.achievements < 10 ? 15 : 0) +
+                          (cvScore.breakdown.experience < 15 ? 20 : 0)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action CTA */}
+            <Card className="border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-xl text-gray-900 mb-2">Bước tiếp theo?</h3>
+                    <p className="text-gray-600">
+                      {cvScore.overall_score >= 75 
+                        ? 'CV của bạn rất phù hợp! Đừng bỏ lỡ cơ hội này.'
+                        : 'Cải thiện CV theo gợi ý ở Tab "Gợi ý cải thiện" để tăng cơ hội.'}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    {cvScore.overall_score >= 50 && (
+                      <Button 
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Đã Apply rồi
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline"
+                      className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                      onClick={() => setActiveTab('ai-improved')}
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Cải thiện CV với AI
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 4: Gợi ý cải thiện */}
+          <TabsContent value="suggestions" className="space-y-6">
+            {/* AI Improvement Panel - Interactive suggestions */}
+            <AIImprovementPanel 
+              cvScore={cvScore}
+              onApplyImprovement={(improvements) => {
+                // Navigate to CV builder with improvements data
+                const cvKey = `cv-improvements-${Date.now()}`;
+                sessionStorage.setItem(cvKey, JSON.stringify(improvements));
+                navigate(`/my-cvs/builder?improvements=${cvKey}`);
+              }}
+            />
+
+            {/* Project Recommendations - NEW COMPONENT */}
+            {cvScore?.enhanced?.recommended_projects && cvScore.enhanced.recommended_projects.length > 0 && (
+              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4 flex items-center gap-2 text-purple-700">
+                    <Lightbulb className="h-6 w-6" />
+                    💼 Dự Án Nên Làm
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Các dự án được AI gợi ý dựa trên khoảng cách giữa CV của bạn và yêu cầu công việc
+                  </p>
+                  <ProjectRecommendations projects={cvScore.enhanced.recommended_projects} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Detailed Suggestions */}
+            {cvScore.detailed_suggestions && (
+              <Card className="border-2 border-indigo-200">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-xl mb-4">Gợi ý chi tiết</h3>
+                  {cvScore.detailed_suggestions.summary && (
+                    <div className="mb-4 p-4 bg-indigo-50 rounded-lg">
+                      <h4 className="font-semibold mb-2">Phần Giới thiệu</h4>
+                      {cvScore.detailed_suggestions.summary.suggestions?.map((s, i) => (
+                        <p key={i} className="text-sm text-gray-700">• {s}</p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Tab 5: CV AI cải thiện */}
+          <TabsContent value="ai-improved" className="space-y-6">
+            {/* Important Disclaimer */}
+            <Card className="border-2 border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <h3 className="font-semibold text-lg text-yellow-800 mb-2">⚠️ Lưu ý quan trọng</h3>
+                    <p className="text-gray-700 leading-relaxed mb-2">
+                      AI sẽ gợi ý viết lại CV để <span className="font-semibold">phù hợp hơn với JD</span>, giúp tỉ lệ match cao hơn và có thể <span className="font-semibold text-green-600">pass vòng CV</span>.
+                    </p>
+                    <p className="text-gray-700 leading-relaxed">
+                      Tuy nhiên, điều này <span className="font-semibold text-red-600">KHÔNG có nghĩa</span> bạn không cần học thêm, cải thiện skill, hay làm thêm project. 
+                      <span className="font-semibold"> Vòng phỏng vấn phụ thuộc vào kinh nghiệm thực tế của bạn!</span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* CV được AI tối ưu hóa - Hiển thị ngay khi có data */}
+            {optimizedCVData ? (
+              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="font-semibold text-2xl text-purple-700 flex items-center gap-2">
+                        <Sparkles className="h-6 w-6" />
+                        CV được AI tối ưu hóa
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        CV đã được cải thiện dựa trên gợi ý AI và yêu cầu công việc
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Improvements Summary */}
+                  {optimizedCVData.improvements && (
+                    <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                      <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Cải thiện
+                      </h4>
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">+{optimizedCVData.improvements.score_increase}</div>
+                          <div className="text-xs text-gray-600">Điểm dự kiến tăng</div>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">{optimizedCVData.improvements.applied_suggestions}</div>
+                          <div className="text-xs text-gray-600">Gợi ý áp dụng</div>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">{optimizedCVData.improvements.keywords_added}</div>
+                          <div className="text-xs text-gray-600">Từ khóa thêm</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CV Content */}
+                  <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+                    {/* Personal Info */}
+                    {optimizedCVData.optimizedCV?.personalInfo && (
+                      <div className="mb-6 text-center border-b-2 border-purple-600 pb-4">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                          {optimizedCVData.optimizedCV.personalInfo.fullName}
+                        </h1>
+                        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
+                          {optimizedCVData.optimizedCV.personalInfo.email && (
+                            <span>📧 {optimizedCVData.optimizedCV.personalInfo.email}</span>
+                          )}
+                          {optimizedCVData.optimizedCV.personalInfo.phone && (
+                            <span>📱 {optimizedCVData.optimizedCV.personalInfo.phone}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Professional Summary */}
+                    {optimizedCVData.optimizedCV?.professionalSummary && (
+                      <div className="mb-6">
+                        <h2 className="text-xl font-bold text-purple-700 mb-3">Tóm tắt chuyên môn</h2>
+                        <p className="text-gray-700 leading-relaxed">
+                          {optimizedCVData.optimizedCV.professionalSummary}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Work Experience */}
+                    {optimizedCVData.optimizedCV?.workExperience && optimizedCVData.optimizedCV.workExperience.length > 0 && (
+                      <div className="mb-6">
+                        <h2 className="text-xl font-bold text-purple-700 mb-3">Kinh nghiệm làm việc</h2>
+                        {optimizedCVData.optimizedCV.workExperience.map((exp, idx) => (
+                          <div key={idx} className="mb-4 pl-4 border-l-2 border-purple-300">
+                            <h3 className="font-semibold text-gray-900">{exp.position}</h3>
+                            <p className="text-gray-600 text-sm">{exp.company} • {exp.startDate} - {exp.endDate}</p>
+                            <p className="text-gray-700 mt-2">{exp.description}</p>
+                            {exp.achievements && exp.achievements.length > 0 && (
+                              <ul className="mt-2 space-y-1">
+                                {exp.achievements.map((achievement, aIdx) => (
+                                  <li key={aIdx} className="text-gray-700 text-sm flex items-start gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                    <span>{achievement}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Skills */}
+                    {optimizedCVData.optimizedCV?.skills && (
+                      <div className="mb-6">
+                        <h2 className="text-xl font-bold text-purple-700 mb-3">Kỹ năng</h2>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {optimizedCVData.optimizedCV.skills.technical && optimizedCVData.optimizedCV.skills.technical.length > 0 && (
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Kỹ năng chuyên môn</h3>
+                              <div className="flex flex-wrap gap-2">
+                                {optimizedCVData.optimizedCV.skills.technical.map((skill, idx) => (
+                                  <Badge key={idx} className="bg-purple-100 text-purple-700">{skill}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {optimizedCVData.optimizedCV.skills.soft && optimizedCVData.optimizedCV.skills.soft.length > 0 && (
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Kỹ năng mềm</h3>
+                              <div className="flex flex-wrap gap-2">
+                                {optimizedCVData.optimizedCV.skills.soft.map((skill, idx) => (
+                                  <Badge key={idx} className="bg-blue-100 text-blue-700">{skill}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-2 border-gray-200">
+                <CardContent className="p-12 text-center">
+                  <Wand2 className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Chưa có CV tối ưu</h3>
+                  <p className="text-gray-600 mb-6">
+                    Click button "Tạo CV tối ưu" ở header để AI tạo CV phù hợp với JD
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default CVScoreDetail;

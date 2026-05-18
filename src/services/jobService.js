@@ -475,3 +475,25 @@ export const getAlsoLikedJobs = async (jobId, params = {}) => {
   return data;
 };
 
+
+
+/**
+ * Chấm điểm CV của một application
+ * @param {string} applicationId - ID của application
+ * @returns {Promise} Response từ API
+ */
+export const scoreCVForApplication = async (applicationId) => {
+  const response = await apiClient.post(`/applications/${applicationId}/score-cv`);
+  return response.data;
+};
+
+
+/**
+ * Lấy chi tiết một application của candidate
+ * @param {string} applicationId - ID của application
+ * @returns {Promise} Response từ API
+ */
+export const getApplicationDetail = async (applicationId) => {
+  const response = await apiClient.get(`/applications/my/${applicationId}`);
+  return response.data;
+};

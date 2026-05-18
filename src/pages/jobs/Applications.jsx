@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -25,19 +25,44 @@ import {
   ChevronRight,
   RefreshCw,
   History,
+  Sparkles,
+  Award,
+  TrendingUp,
+  Loader2,
 } from 'lucide-react';
-import { getMyApplications } from '../../services/jobService';
+import { getMyApplications, scoreCVForApplication } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
 import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 /**
  * Component hiển thị danh sách đơn ứng tuyển của người dùng
  */
 const Applications = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [scoringApplicationId, setScoringApplicationId] = useState(null);
   const limit = 10; // Increased limit for list view
+
+  // Mutation để chấm điểm CV
+  const scoreCVMutation = useMutation({
+    mutationFn: scoreCVForApplication,
+    onSuccess: (data, applicationId) => {
+      toast.success('Chấm điểm CV thành công!');
+      
+      // Refetch applications để cập nhật điểm
+      queryClient.invalidateQueries(['myApplications']);
+      
+      // Redirect sang trang chi tiết CV score
+      navigate(`/dashboard/applications/${applicationId}/cv-score`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Không thể chấm điểm CV');
+      setScoringApplicationId(null);
+    }
+  });
 
   // Query để lấy danh sách đơn ứng tuyển
   const {
@@ -146,6 +171,18 @@ const Applications = () => {
 
   const handleDownloadCV = (cvUrl) => {
     window.open(cvUrl, '_blank');
+  };
+
+  const handleScoreCV = (e, applicationId) => {
+    e.stopPropagation();
+    setScoringApplicationId(applicationId);
+    scoreCVMutation.mutate(applicationId);
+  };
+
+  const handleViewScore = (e, applicationId) => {
+    e.stopPropagation();
+    // Navigate to CV score detail page
+    navigate(`/dashboard/applications/${applicationId}/cv-score`);
   };
 
   const handleViewDetail = (application) => {
@@ -433,6 +470,9 @@ const Applications = () => {
                           </div>
 
                           <div className="flex items-center gap-3">
+                      
+  
+
                             {application.submittedCV && (
                               <Button
                                 variant="ghost"
