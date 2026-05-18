@@ -17,6 +17,21 @@ import {
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
+const formatSkillLevel = (level) => {
+  if (!level) return 'Chưa xác định';
+
+  const normalizedLevel = String(level).trim().toLowerCase();
+  const levelLabels = {
+    none: 'Chưa có nền tảng',
+    beginner: 'Cơ bản',
+    intermediate: 'Trung cấp',
+    advanced: 'Nâng cao',
+    expert: 'Chuyên gia'
+  };
+
+  return levelLabels[normalizedLevel] || level;
+};
+
 const AIImprovementPanel = ({ cvScore, onApplyImprovement }) => {
   const [expandedSections, setExpandedSections] = useState({
     summary: true,
@@ -208,10 +223,10 @@ const AIImprovementPanel = ({ cvScore, onApplyImprovement }) => {
                         </div>
                         <div className="flex items-center gap-2 mb-3 text-sm">
                           <span className="text-gray-600">Hiện tại:</span>
-                          <Badge variant="outline">{gap.current}</Badge>
+                          <Badge variant="outline">{formatSkillLevel(gap.current)}</Badge>
                           <span className="text-gray-400">→</span>
                           <span className="text-gray-600">Cần:</span>
-                          <Badge className="bg-green-100 text-green-700">{gap.required}</Badge>
+                          <Badge className="bg-green-100 text-green-700">{formatSkillLevel(gap.required)}</Badge>
                         </div>
                         {gap.resources && gap.resources.length > 0 && (
                           <div className="mt-3">

@@ -19,8 +19,8 @@ export const getApplicationDetail = async (applicationId) => {
 /**
  * Score CV for an application
  */
-export const scoreCVForApplication = async (applicationId) => {
-  const response = await apiClient.post(`/applications/${applicationId}/score-cv`);
+export const scoreCVForApplication = async (applicationId, options = {}) => {
+  const response = await apiClient.post(`/applications/${applicationId}/score-cv`, options);
   return response.data;
 };
 

@@ -482,8 +482,8 @@ export const getAlsoLikedJobs = async (jobId, params = {}) => {
  * @param {string} applicationId - ID của application
  * @returns {Promise} Response từ API
  */
-export const scoreCVForApplication = async (applicationId) => {
-  const response = await apiClient.post(`/applications/${applicationId}/score-cv`);
+export const scoreCVForApplication = async (applicationId, options = {}) => {
+  const response = await apiClient.post(`/applications/${applicationId}/score-cv`, options);
   return response.data;
 };
 

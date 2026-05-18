@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import {
-  Award,
   ArrowLeft,
-  Download,
-  FileText,
   Briefcase,
   Target,
   TrendingUp,
@@ -21,18 +18,15 @@ import {
   Sparkles,
   BarChart3,
   Loader2,
-  Eye,
-  Edit3,
   Zap,
-  Clock,
-  ListChecks,
   Wand2,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
 // Import services
-import { getApplicationDetail, generateImprovedCV } from '../../services/applicationService';
+import { getApplicationDetail, scoreCVForApplication } from '../../services/applicationService';
 import { getJobById } from '../../services/jobService';
 import apiClient from '../../services/apiClient';
 
@@ -42,42 +36,116 @@ import CareerPathTimeline from '../../components/cv-analysis/CareerPathTimeline'
 import ProjectRecommendations from '../../components/cv-analysis/ProjectRecommendations';
 import AIImprovementPanel from '../../components/cv-analysis/AIImprovementPanel';
 
+const CV_SCORE_PREVIEW_STORAGE_KEY = 'careerzone.cvScorePreview';
+
+const formatSkillLevel = (level) => {
+  if (!level) return 'Chưa xác định';
+
+  const normalizedLevel = String(level).trim().toLowerCase();
+  const levelLabels = {
+    none: 'Chưa có nền tảng',
+    beginner: 'Cơ bản',
+    intermediate: 'Trung cấp',
+    advanced: 'Nâng cao',
+    expert: 'Chuyên gia'
+  };
+
+  return levelLabels[normalizedLevel] || level;
+};
+
 const CVScoreDetail = () => {
   const { applicationId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [generatedCV, setGeneratedCV] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
-  const [showOptimizedCVModal, setShowOptimizedCVModal] = useState(false);
-  const [optimizedCVData, setOptimizedCVData] = useState(null);
   
-  // Check if this is preview mode (data from query params)
+  // Check if this is preview mode (data from router state/session storage)
   const [previewData, setPreviewData] = useState(null);
-  const isPreviewMode = !applicationId && searchParams.has('data');
+  const isPreviewMode = !applicationId;
 
-  // Parse preview data from query params
-  useEffect(() => {
-    if (isPreviewMode) {
-      try {
-        const dataParam = searchParams.get('data');
-        const parsedData = JSON.parse(decodeURIComponent(dataParam));
-        
-        console.log('=== PARSED PREVIEW DATA ===');
-        console.log('Full data:', parsedData);
-        console.log('Enhanced:', parsedData.enhanced);
-        console.log('Radar metrics:', parsedData.enhanced?.radar_metrics);
-        console.log('Visualization:', parsedData.visualization);
-        console.log('Category scores:', parsedData.category_scores);
-        
-        setPreviewData(parsedData);
-      } catch (error) {
-        console.error('Error parsing preview data:', error);
-        toast.error('Dữ liệu không hợp lệ');
-        navigate(-1);
-      }
+  const buildRadarMetrics = (scoreData) => {
+    if (scoreData?.category_scores && Array.isArray(scoreData.category_scores) && scoreData.category_scores.length > 0) {
+      return scoreData.category_scores.map((cat) => ({
+        metric: cat.name || cat.category || 'Unknown',
+        score: cat.score || 0
+      }));
     }
-  }, [isPreviewMode, searchParams, navigate]);
+
+    const radarChart = scoreData?.visualization?.radar_chart;
+    if (radarChart?.labels && radarChart?.values && Array.isArray(radarChart.labels) && Array.isArray(radarChart.values)) {
+      return radarChart.labels.map((label, idx) => ({
+        metric: label,
+        score: radarChart.values[idx] || 0
+      }));
+    }
+
+    return scoreData?.breakdown
+      ? Object.entries(scoreData.breakdown).map(([key, value]) => ({ metric: key, score: value || 0 }))
+      : [];
+  };
+
+  const mergePreviewScore = (previousData, scoreData) => ({
+    ...previousData,
+    ...scoreData,
+    enhanced: {
+      ...(previousData?.enhanced || {}),
+      ...(scoreData.enhanced || {}),
+      career_paths: scoreData.career_paths || scoreData.enhanced?.career_paths || previousData?.enhanced?.career_paths || [],
+      recommended_projects: scoreData.recommended_projects || scoreData.enhanced?.recommended_projects || previousData?.enhanced?.recommended_projects || [],
+      skill_gaps: scoreData.skill_gaps || scoreData.enhanced?.skill_gaps || previousData?.enhanced?.skill_gaps || [],
+      radar_metrics: buildRadarMetrics(scoreData)
+    },
+    isPreview: true
+  });
+
+  // Parse preview data from router state/session storage.
+  // Query param support is kept only for old links, then the URL is cleaned.
+  useEffect(() => {
+    if (!isPreviewMode) return;
+
+    try {
+      let parsedData = location.state?.previewScore || null;
+
+      if (!parsedData) {
+        const storedData = sessionStorage.getItem(CV_SCORE_PREVIEW_STORAGE_KEY);
+        if (storedData) {
+          parsedData = JSON.parse(storedData);
+        }
+      }
+
+      if (!parsedData && searchParams.has('data')) {
+        const dataParam = searchParams.get('data');
+        parsedData = JSON.parse(decodeURIComponent(dataParam));
+      }
+
+      if (!parsedData) {
+        toast.error('Không tìm thấy dữ liệu chấm điểm CV');
+        navigate(-1);
+        return;
+      }
+
+      setPreviewData(parsedData);
+
+      try {
+        sessionStorage.setItem(CV_SCORE_PREVIEW_STORAGE_KEY, JSON.stringify(parsedData));
+      } catch (storageError) {
+        console.warn('Could not persist CV scoring preview data', storageError);
+      }
+
+      if (searchParams.has('data')) {
+        navigate('/cv-score', {
+          replace: true,
+          state: { previewScore: parsedData }
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing preview data:', error);
+      toast.error('Dữ liệu không hợp lệ');
+      navigate(-1);
+    }
+  }, [isPreviewMode, location.state, searchParams, navigate]);
 
   // Fetch application detail (only in application mode)
   const { data: applicationData, isLoading } = useQuery({
@@ -93,10 +161,64 @@ const CVScoreDetail = () => {
     enabled: isPreviewMode && !!previewData?.jobId,
   });
 
+  const reanalyzeMutation = useMutation({
+    mutationFn: async () => {
+      if (isPreviewMode) {
+        const requestData = previewData?.cvId
+          ? { cvId: previewData.cvId, forceRefresh: true }
+          : { cvTemplateId: previewData?.cvTemplateId, forceRefresh: true };
+
+        const response = await apiClient.post(`/jobs/${previewData.jobId}/preview-cv-score`, requestData);
+        return response.data;
+      }
+
+      return scoreCVForApplication(applicationId, { forceRefresh: true });
+    },
+    onSuccess: (response) => {
+      const nextScore = response?.data;
+      if (!nextScore) {
+        toast.error('Không nhận được kết quả phân tích mới');
+        return;
+      }
+
+      if (isPreviewMode) {
+        setPreviewData((current) => {
+          const nextPreviewScore = mergePreviewScore(current, nextScore);
+          try {
+            sessionStorage.setItem(CV_SCORE_PREVIEW_STORAGE_KEY, JSON.stringify(nextPreviewScore));
+          } catch (storageError) {
+            console.warn('Could not persist CV scoring preview data', storageError);
+          }
+          return nextPreviewScore;
+        });
+      } else {
+        queryClient.setQueryData(['applicationDetail', applicationId], (oldData) => {
+          if (!oldData?.data) return oldData;
+          return {
+            ...oldData,
+            data: {
+              ...oldData.data,
+              cvScore: nextScore
+            }
+          };
+        });
+      }
+
+      toast.success('Đã phân tích lại CV');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Không thể phân tích lại CV');
+    }
+  });
+
   // Use preview data or application data
   const application = isPreviewMode ? null : applicationData?.data;
   let cvScore = isPreviewMode ? previewData : application?.cvScore;
   const job = isPreviewMode ? jobData?.data?.data : application?.job;
+  const scoreTimestamp = cvScore?.scoredAt
+    ? new Date(cvScore.scoredAt).toLocaleString('vi-VN')
+    : null;
+  const showCachedScoreNotice = Boolean(cvScore?.isCached || scoreTimestamp);
 
   // Fix radar_metrics if it's in wrong format (has labels/values keys instead of array)
   if (cvScore?.enhanced?.radar_metrics && typeof cvScore.enhanced.radar_metrics === 'object' && !Array.isArray(cvScore.enhanced.radar_metrics)) {
@@ -137,391 +259,6 @@ const CVScoreDetail = () => {
       console.log('Projects:', cvScore?.enhanced?.recommended_projects);
     }
   }, [isPreviewMode, previewData, application, job, cvScore]);
-
-  // Auto-generate CV khi vào tab "ai-improved" và chưa có optimizedCVData
-  useEffect(() => {
-    if (activeTab === 'ai-improved' && !optimizedCVData && !isGenerating && isPreviewMode && job) {
-      handleGenerateCV();
-    }
-  }, [activeTab, optimizedCVData, isGenerating, isPreviewMode, job]);
-
-  const handleGenerateCV = async () => {
-    if (isPreviewMode) {
-      // Preview mode: Generate optimized CV using AI
-      console.log('=== GENERATE OPTIMIZED CV ===');
-      console.log('Preview data:', previewData);
-      console.log('Job:', job);
-      console.log('CV Score:', cvScore);
-      
-      toast.info('Đang tạo CV tối ưu dựa trên gợi ý AI...');
-      setIsGenerating(true);
-      
-      try {
-        // Get CV ID from preview data (need to pass from ApplyJobDialog)
-        const cvId = previewData?.cvId;
-        const cvTemplateId = previewData?.cvTemplateId;
-        
-        console.log('CV ID:', cvId);
-        console.log('CV Template ID:', cvTemplateId);
-        
-        if (!cvId && !cvTemplateId) {
-          toast.error('Không tìm thấy thông tin CV');
-          setIsGenerating(false);
-          return;
-        }
-
-        if (!job?._id) {
-          toast.error('Không tìm thấy thông tin công việc');
-          setIsGenerating(false);
-          return;
-        }
-
-        console.log('Calling API:', `/jobs/${job._id}/optimize-cv`);
-        console.log('Request body:', { cvId, cvTemplateId, scoringData: cvScore });
-
-        // Call API to generate optimized CV
-        const response = await apiClient.post(`/jobs/${job._id}/optimize-cv`, {
-          cvId,
-          cvTemplateId,
-          scoringData: cvScore
-        });
-
-        console.log('API Response:', response);
-
-        if (response.data?.success && response.data?.data) {
-          setOptimizedCVData(response.data.data);
-          // Also set generatedCV for backward compatibility with existing tab
-          setGeneratedCV({
-            improvedCVData: response.data.data.optimizedCV,
-            score_prediction: cvScore.overall_score + (response.data.data.improvements?.score_increase || 0),
-            originalCV: response.data.data.originalCV
-          });
-          // Don't switch tab, just show CV below
-          toast.success('Đã tạo CV tối ưu thành công! Xem bên dưới.');
-        } else {
-          toast.error('Không thể tạo CV tối ưu');
-        }
-      } catch (error) {
-        console.error('Error generating optimized CV:', error);
-        console.error('Error response:', error.response);
-        toast.error(error.response?.data?.message || 'Không thể tạo CV tối ưu. Vui lòng thử lại.');
-      } finally {
-        setIsGenerating(false);
-      }
-      return;
-    }
-    
-    // Application mode: existing logic
-    if (!applicationId) {
-      toast.error('Không tìm thấy ID đơn ứng tuyển');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await generateImprovedCV(applicationId);
-      console.log('Generated CV response:', response);
-
-      if (response.success) {
-        setGeneratedCV(response.data);
-        toast.success('Đã tạo CV cải thiện thành công!');
-        // Auto switch to preview tab
-        setActiveTab('ai-improved');
-      } else {
-        toast.error(response.message || 'Không thể tạo CV cải thiện');
-      }
-    } catch (error) {
-      console.error('Error generating CV:', error);
-      toast.error(error.response?.data?.message || 'Không thể tạo CV cải thiện. Vui lòng thử lại sau.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleDownloadCV = () => {
-    if (!generatedCV || !generatedCV.improvedCVData) {
-      toast.error('Chưa có CV để tải xuống');
-      return;
-    }
-
-    // Save CV data to sessionStorage instead of URL params (avoid URI length limit)
-    const cvData = generatedCV.improvedCVData;
-    const templateId = generatedCV.originalTemplate?.templateId || application?.submittedCV?.templateId || 'modern-blue';
-
-    // Generate unique key for this CV
-    const cvKey = `improved-cv-${applicationId}-${Date.now()}`;
-
-    // Save to sessionStorage
-    sessionStorage.setItem(cvKey, JSON.stringify({
-      cvData,
-      templateId,
-      improvements: generatedCV.improvements,
-      score_prediction: generatedCV.score_prediction
-    }));
-
-    // Open preview page with key
-    window.open(`/cv/preview?key=${cvKey}`, '_blank');
-    toast.success('Đang mở CV để xem và tải xuống...');
-  };
-
-  const extractCVText = (cv) => {
-    console.log('=== extractCVText DEBUG ===');
-    console.log('extractCVText input:', cv);
-    if (!cv) return 'Không có dữ liệu CV';
-
-    // Nếu cv là submittedCV, lấy templateSnapshot hoặc cvData
-    const cvData = cv.templateSnapshot || cv.cvData || cv;
-    console.log('cvData after templateSnapshot check:', cvData);
-    console.log('cvData keys:', cvData ? Object.keys(cvData) : 'null');
-
-    if (!cvData) return 'Không có dữ liệu CV';
-
-    const sections = [];
-
-    // DEBUG: Log tất cả fields
-    console.log('=== ALL CV FIELDS ===');
-    for (const key in cvData) {
-      console.log(`${key}:`, cvData[key]);
-    }
-
-    // Personal Info
-    if (cvData.personalInfo) {
-      sections.push(`Họ tên: ${cvData.personalInfo.fullName || ''}`);
-      sections.push(`Email: ${cvData.personalInfo.email || ''}`);
-      sections.push(`Số điện thoại: ${cvData.personalInfo.phone || ''}`);
-      if (cvData.personalInfo.address) sections.push(`Địa chỉ: ${cvData.personalInfo.address}`);
-      if (cvData.personalInfo.dateOfBirth) sections.push(`Ngày sinh: ${cvData.personalInfo.dateOfBirth}`);
-      if (cvData.personalInfo.linkedin) sections.push(`LinkedIn: ${cvData.personalInfo.linkedin}`);
-      if (cvData.personalInfo.github) sections.push(`GitHub: ${cvData.personalInfo.github}`);
-      if (cvData.personalInfo.website) sections.push(`Website: ${cvData.personalInfo.website}`);
-    }
-
-    // Professional Summary (CV model field)
-    if (cvData.professionalSummary) {
-      sections.push(`\nTóm tắt chuyên môn:\n${cvData.professionalSummary}`);
-    }
-
-    // Objective
-    if (cvData.objective) {
-      sections.push(`\nMục tiêu nghề nghiệp:\n${cvData.objective}`);
-    }
-
-    // Summary
-    if (cvData.summary) {
-      sections.push(`\nTóm tắt:\n${cvData.summary}`);
-    }
-
-    // Work Experience (CV model field)
-    if (cvData.workExperience && cvData.workExperience.length > 0) {
-      sections.push('\nKinh nghiệm làm việc:');
-      cvData.workExperience.forEach((exp) => {
-        const position = exp.position || exp.title || 'Vị trí';
-        const company = exp.company || 'Công ty';
-        const location = exp.location ? ` - ${exp.location}` : '';
-        sections.push(`- ${position} tại ${company}${location} (${exp.startDate || ''} - ${exp.endDate || exp.isCurrentJob ? 'Hiện tại' : ''})`);
-        if (exp.description) sections.push(`  ${exp.description}`);
-        if (exp.achievements && exp.achievements.length > 0) {
-          sections.push(`  Thành tựu:`);
-          exp.achievements.forEach(achievement => sections.push(`    • ${achievement}`));
-        }
-      });
-    }
-
-    // Experience (fallback for old structure)
-    if (cvData.experience && cvData.experience.length > 0) {
-      sections.push('\nKinh nghiệm làm việc:');
-      cvData.experience.forEach((exp) => {
-        sections.push(`- ${exp.title || exp.position || 'Vị trí'} tại ${exp.company || 'Công ty'} (${exp.startDate || ''} - ${exp.endDate || 'Hiện tại'})`);
-        if (exp.description) sections.push(`  ${exp.description}`);
-        if (exp.responsibilities) sections.push(`  Trách nhiệm: ${exp.responsibilities}`);
-      });
-    }
-
-    // Skills - xử lý nhiều loại skills
-    // Technical Skills
-    if (cvData.skillsTechnical && cvData.skillsTechnical.length > 0) {
-      sections.push('\nKỹ năng chuyên môn (Technical Skills):');
-      cvData.skillsTechnical.forEach((skill) => {
-        if (typeof skill === 'string') {
-          sections.push(`- ${skill}`);
-        } else if (skill && typeof skill === 'object') {
-          const skillName = skill.name || skill.skill || skill.title || '';
-          const skillLevel = skill.level || skill.proficiency || '';
-          sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-        }
-      });
-    }
-
-    // Soft Skills
-    if (cvData.skillsSoft && cvData.skillsSoft.length > 0) {
-      sections.push('\nKỹ năng mềm (Soft Skills):');
-      cvData.skillsSoft.forEach((skill) => {
-        if (typeof skill === 'string') {
-          sections.push(`- ${skill}`);
-        } else if (skill && typeof skill === 'object') {
-          const skillName = skill.name || skill.skill || skill.title || '';
-          const skillLevel = skill.level || skill.proficiency || '';
-          sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-        }
-      });
-    }
-
-    // General Skills - xử lý theo CV model structure
-    if (cvData.skills && cvData.skills.length > 0) {
-      // Group skills by category
-      const technicalSkills = cvData.skills.filter(s => s.category === 'Technical');
-      const softSkills = cvData.skills.filter(s => s.category === 'Soft Skills');
-      const languages = cvData.skills.filter(s => s.category === 'Language');
-      const otherSkills = cvData.skills.filter(s => !s.category || !['Technical', 'Soft Skills', 'Language'].includes(s.category));
-
-      if (technicalSkills.length > 0) {
-        sections.push('\nKỹ năng chuyên môn (Technical Skills):');
-        technicalSkills.forEach((skill) => {
-          if (typeof skill === 'string') {
-            sections.push(`- ${skill}`);
-          } else if (skill && typeof skill === 'object') {
-            const skillName = skill.name || skill.skill || skill.title || '';
-            const skillLevel = skill.level || skill.proficiency || '';
-            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-          }
-        });
-      }
-
-      if (softSkills.length > 0) {
-        sections.push('\nKỹ năng mềm (Soft Skills):');
-        softSkills.forEach((skill) => {
-          if (typeof skill === 'string') {
-            sections.push(`- ${skill}`);
-          } else if (skill && typeof skill === 'object') {
-            const skillName = skill.name || skill.skill || skill.title || '';
-            const skillLevel = skill.level || skill.proficiency || '';
-            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-          }
-        });
-      }
-
-      if (languages.length > 0) {
-        sections.push('\nNgôn ngữ lập trình / Công nghệ:');
-        languages.forEach((skill) => {
-          if (typeof skill === 'string') {
-            sections.push(`- ${skill}`);
-          } else if (skill && typeof skill === 'object') {
-            const skillName = skill.name || skill.skill || skill.title || '';
-            const skillLevel = skill.level || skill.proficiency || '';
-            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-          }
-        });
-      }
-
-      if (otherSkills.length > 0) {
-        sections.push('\nKỹ năng khác:');
-        otherSkills.forEach((skill) => {
-          if (typeof skill === 'string') {
-            sections.push(`- ${skill}`);
-          } else if (skill && typeof skill === 'object') {
-            const skillName = skill.name || skill.skill || skill.title || '';
-            const skillLevel = skill.level || skill.proficiency || '';
-            sections.push(`- ${skillName}${skillLevel ? ` (${skillLevel})` : ''}`);
-          }
-        });
-      }
-    }
-
-    // Education
-    if (cvData.education && cvData.education.length > 0) {
-      sections.push('\nHọc vấn:');
-      cvData.education.forEach((edu) => {
-        const school = edu.school || edu.institution || edu.university || 'Trường học';
-        const degree = edu.degree || edu.major || 'Bằng cấp';
-        sections.push(`- ${degree} tại ${school} (${edu.startDate || ''} - ${edu.endDate || 'Hiện tại'})`);
-        if (edu.description) sections.push(`  ${edu.description}`);
-        if (edu.gpa) sections.push(`  GPA: ${edu.gpa}`);
-      });
-    }
-
-    // Projects
-    if (cvData.projects && cvData.projects.length > 0) {
-      sections.push('\nDự án:');
-      cvData.projects.forEach((proj) => {
-        sections.push(`- ${proj.name || proj.title || 'Dự án'}: ${proj.description || ''}`);
-        if (proj.technologies) sections.push(`  Công nghệ: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : proj.technologies}`);
-        if (proj.role) sections.push(`  Vai trò: ${proj.role}`);
-      });
-    }
-
-    // Certificates (CV model field name)
-    if (cvData.certificates && cvData.certificates.length > 0) {
-      sections.push('\nChứng chỉ:');
-      cvData.certificates.forEach((cert) => {
-        if (typeof cert === 'string') {
-          sections.push(`- ${cert}`);
-        } else if (cert && typeof cert === 'object') {
-          const certName = cert.name || cert.title || cert.certification || 'Chứng chỉ';
-          const certIssuer = cert.issuer || cert.organization || '';
-          const certIssueDate = cert.issueDate || cert.date || cert.year || '';
-          const certExpiryDate = cert.expiryDate || '';
-          const certCredentialId = cert.credentialId || '';
-          const certUrl = cert.url || '';
-
-          let certLine = `- ${certName}`;
-          if (certIssuer) certLine += ` - ${certIssuer}`;
-          if (certIssueDate) certLine += ` (${certIssueDate}${certExpiryDate ? ` - ${certExpiryDate}` : ''})`;
-          if (certCredentialId) certLine += ` [ID: ${certCredentialId}]`;
-          sections.push(certLine);
-          if (certUrl) sections.push(`  URL: ${certUrl}`);
-        }
-      });
-    }
-
-    // Certifications (fallback for old structure)
-    if (cvData.certifications && cvData.certifications.length > 0) {
-      sections.push('\nChứng chỉ:');
-      cvData.certifications.forEach((cert) => {
-        if (typeof cert === 'string') {
-          sections.push(`- ${cert}`);
-        } else if (cert && typeof cert === 'object') {
-          const certName = cert.name || cert.title || cert.certification || 'Chứng chỉ';
-          const certIssuer = cert.issuer || cert.organization || '';
-          const certDate = cert.date || cert.year || cert.issueDate || '';
-          const certLevel = cert.level || cert.score || '';
-          sections.push(`- ${certName}${certLevel ? ` (${certLevel})` : ''}${certIssuer ? ` - ${certIssuer}` : ''}${certDate ? ` (${certDate})` : ''}`);
-        }
-      });
-    }
-
-    // Languages
-    if (cvData.languages && cvData.languages.length > 0) {
-      sections.push('\nNgôn ngữ:');
-      cvData.languages.forEach((lang) => {
-        if (typeof lang === 'string') {
-          sections.push(`- ${lang}`);
-        } else if (lang && typeof lang === 'object') {
-          const langName = lang.name || lang.language || '';
-          const langLevel = lang.level || lang.proficiency || '';
-          sections.push(`- ${langName}${langLevel ? ` (${langLevel})` : ''}`);
-        }
-      });
-    }
-
-    // Awards
-    if (cvData.awards && cvData.awards.length > 0) {
-      sections.push('\nGiải thưởng:');
-      cvData.awards.forEach((award) => {
-        sections.push(`- ${award.name || award.title || 'Giải thưởng'}${award.date ? ` (${award.date})` : ''}`);
-        if (award.description) sections.push(`  ${award.description}`);
-      });
-    }
-
-    // Hobbies/Interests
-    if (cvData.hobbies) {
-      sections.push(`\nSở thích: ${Array.isArray(cvData.hobbies) ? cvData.hobbies.join(', ') : cvData.hobbies}`);
-    }
-    if (cvData.interests) {
-      sections.push(`\nSở thích: ${Array.isArray(cvData.interests) ? cvData.interests.join(', ') : cvData.interests}`);
-    }
-
-    return sections.join('\n');
-  };
 
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-green-600';
@@ -619,6 +356,42 @@ const CVScoreDetail = () => {
           </div>
         </div>
 
+        {showCachedScoreNotice && (
+          <Card className="mb-6 border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 text-amber-700" />
+                  <div>
+                    <p className="font-medium text-amber-900">
+                      Đang hiển thị kết quả đã lưu
+                    </p>
+                    <p className="text-sm text-amber-800">
+                      {scoreTimestamp
+                        ? `Kết quả được chấm lúc ${scoreTimestamp}. Nếu CV hoặc JD đã thay đổi, hãy phân tích lại để cập nhật.`
+                        : 'Nếu CV hoặc JD đã thay đổi, hãy phân tích lại để cập nhật kết quả mới nhất.'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => reanalyzeMutation.mutate()}
+                  disabled={reanalyzeMutation.isPending || (isPreviewMode && !previewData?.jobId)}
+                  className="border-amber-600 text-amber-800 hover:bg-amber-100"
+                >
+                  {reanalyzeMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  Phân tích lại
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs Navigation - Move before optimized CV */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 h-auto p-1">
@@ -636,7 +409,7 @@ const CVScoreDetail = () => {
             </TabsTrigger>
             <TabsTrigger value="ai-improved" className="flex flex-col items-center gap-1 py-3 relative">
               <Wand2 className="h-5 w-5" />
-              <span className="text-xs">CV AI cải thiện</span>
+              <span className="text-xs">Cải thiện văn bản</span>
               <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-purple-500" />
             </TabsTrigger>
           </TabsList>
@@ -1224,11 +997,11 @@ const CVScoreDetail = () => {
                         <div className="grid md:grid-cols-2 gap-4 mb-3">
                           <div>
                             <span className="text-sm text-gray-600">Trình độ hiện tại:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{gap.current_level}</span>
+                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(gap.current_level)}</span>
                           </div>
                           <div>
                             <span className="text-sm text-gray-600">Trình độ cần đạt:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{gap.required_level}</span>
+                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(gap.required_level)}</span>
                           </div>
                         </div>
                         {gap.learning_path && gap.learning_path.length > 0 && (
@@ -1629,7 +1402,7 @@ const CVScoreDetail = () => {
                       onClick={() => setActiveTab('ai-improved')}
                     >
                       <Wand2 className="h-4 w-4 mr-2" />
-                      Cải thiện CV với AI
+                      Xem cải thiện dạng văn bản
                     </Button>
                   </div>
                 </div>
@@ -1684,7 +1457,7 @@ const CVScoreDetail = () => {
             )}
           </TabsContent>
 
-          {/* Tab 5: CV AI cải thiện */}
+          {/* Tab 5: Cải thiện dạng văn bản */}
           <TabsContent value="ai-improved" className="space-y-6">
             {/* Important Disclaimer */}
             <Card className="border-2 border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50">
@@ -1705,141 +1478,97 @@ const CVScoreDetail = () => {
               </CardContent>
             </Card>
 
-            {/* CV được AI tối ưu hóa - Hiển thị ngay khi có data */}
-            {optimizedCVData ? (
-              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
+            {/* Chỉ hiển thị cải thiện dạng văn bản, không preview CV */}
+            <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-2xl text-purple-700 flex items-center gap-2 mb-2">
+                  <Sparkles className="h-6 w-6" />
+                  Cải thiện CV dạng văn bản
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Hệ thống chỉ hiển thị các nội dung cần chỉnh sửa, không render bản preview CV mới.
+                </p>
+
+                <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Tóm tắt cải thiện
+                  </h4>
+                  <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <h3 className="font-semibold text-2xl text-purple-700 flex items-center gap-2">
-                        <Sparkles className="h-6 w-6" />
-                        CV được AI tối ưu hóa
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        CV đã được cải thiện dựa trên gợi ý AI và yêu cầu công việc
-                      </p>
+                      <div className="text-2xl font-bold text-green-600">
+                        +{Math.min(30, (cvScore?.suggested_keywords?.length || 0) * 2)}
+                      </div>
+                      <div className="text-xs text-gray-600">Điểm tiềm năng tăng</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {(cvScore?.improvements?.content?.length || 0) + (cvScore?.improvements?.formatting?.length || 0)}
+                      </div>
+                      <div className="text-xs text-gray-600">Mục cần chỉnh sửa</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">{cvScore?.suggested_keywords?.length || 0}</div>
+                      <div className="text-xs text-gray-600">Từ khóa nên bổ sung</div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Improvements Summary */}
-                  {optimizedCVData.improvements && (
-                    <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                      <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        Cải thiện
-                      </h4>
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">+{optimizedCVData.improvements.score_increase}</div>
-                          <div className="text-xs text-gray-600">Điểm dự kiến tăng</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">{optimizedCVData.improvements.applied_suggestions}</div>
-                          <div className="text-xs text-gray-600">Gợi ý áp dụng</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">{optimizedCVData.improvements.keywords_added}</div>
-                          <div className="text-xs text-gray-600">Từ khóa thêm</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* CV Content */}
-                  <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
-                    {/* Personal Info */}
-                    {optimizedCVData.optimizedCV?.personalInfo && (
-                      <div className="mb-6 text-center border-b-2 border-purple-600 pb-4">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                          {optimizedCVData.optimizedCV.personalInfo.fullName}
-                        </h1>
-                        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
-                          {optimizedCVData.optimizedCV.personalInfo.email && (
-                            <span>📧 {optimizedCVData.optimizedCV.personalInfo.email}</span>
-                          )}
-                          {optimizedCVData.optimizedCV.personalInfo.phone && (
-                            <span>📱 {optimizedCVData.optimizedCV.personalInfo.phone}</span>
-                          )}
-                        </div>
-                      </div>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Nội dung nên chỉnh sửa</h4>
+                    {cvScore?.improvements?.content?.length ? (
+                      <ul className="space-y-2">
+                        {cvScore.improvements.content.map((item, idx) => (
+                          <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                            <span className="text-purple-600 mt-1">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-600">Hiện chưa có gợi ý nội dung chi tiết.</p>
                     )}
+                  </div>
 
-                    {/* Professional Summary */}
-                    {optimizedCVData.optimizedCV?.professionalSummary && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-bold text-purple-700 mb-3">Tóm tắt chuyên môn</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                          {optimizedCVData.optimizedCV.professionalSummary}
-                        </p>
-                      </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Trình bày nên chỉnh sửa</h4>
+                    {cvScore?.improvements?.formatting?.length ? (
+                      <ul className="space-y-2">
+                        {cvScore.improvements.formatting.map((item, idx) => (
+                          <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                            <span className="text-blue-600 mt-1">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-600">Hiện chưa có gợi ý trình bày chi tiết.</p>
                     )}
+                  </div>
 
-                    {/* Work Experience */}
-                    {optimizedCVData.optimizedCV?.workExperience && optimizedCVData.optimizedCV.workExperience.length > 0 && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-bold text-purple-700 mb-3">Kinh nghiệm làm việc</h2>
-                        {optimizedCVData.optimizedCV.workExperience.map((exp, idx) => (
-                          <div key={idx} className="mb-4 pl-4 border-l-2 border-purple-300">
-                            <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                            <p className="text-gray-600 text-sm">{exp.company} • {exp.startDate} - {exp.endDate}</p>
-                            <p className="text-gray-700 mt-2">{exp.description}</p>
-                            {exp.achievements && exp.achievements.length > 0 && (
-                              <ul className="mt-2 space-y-1">
-                                {exp.achievements.map((achievement, aIdx) => (
-                                  <li key={aIdx} className="text-gray-700 text-sm flex items-start gap-2">
-                                    <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                    <span>{achievement}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Ví dụ viết lại</h4>
+                    {cvScore?.rewrite_examples?.length ? (
+                      <div className="space-y-3">
+                        {cvScore.rewrite_examples.map((example, idx) => (
+                          <div key={idx} className="rounded-lg border border-gray-200 overflow-hidden">
+                            <div className="bg-red-50 px-3 py-2 text-sm text-red-800">
+                              <span className="font-semibold">Trước:</span> {example.original}
+                            </div>
+                            <div className="bg-green-50 px-3 py-2 text-sm text-green-800">
+                              <span className="font-semibold">Sau:</span> {example.improved}
+                            </div>
                           </div>
                         ))}
                       </div>
-                    )}
-
-                    {/* Skills */}
-                    {optimizedCVData.optimizedCV?.skills && (
-                      <div className="mb-6">
-                        <h2 className="text-xl font-bold text-purple-700 mb-3">Kỹ năng</h2>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          {optimizedCVData.optimizedCV.skills.technical && optimizedCVData.optimizedCV.skills.technical.length > 0 && (
-                            <div>
-                              <h3 className="font-semibold text-gray-900 mb-2">Kỹ năng chuyên môn</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {optimizedCVData.optimizedCV.skills.technical.map((skill, idx) => (
-                                  <Badge key={idx} className="bg-purple-100 text-purple-700">{skill}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {optimizedCVData.optimizedCV.skills.soft && optimizedCVData.optimizedCV.skills.soft.length > 0 && (
-                            <div>
-                              <h3 className="font-semibold text-gray-900 mb-2">Kỹ năng mềm</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {optimizedCVData.optimizedCV.skills.soft.map((skill, idx) => (
-                                  <Badge key={idx} className="bg-blue-100 text-blue-700">{skill}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">Chưa có ví dụ viết lại cụ thể.</p>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-2 border-gray-200">
-                <CardContent className="p-12 text-center">
-                  <Wand2 className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Chưa có CV tối ưu</h3>
-                  <p className="text-gray-600 mb-6">
-                    Click button "Tạo CV tối ưu" ở header để AI tạo CV phù hợp với JD
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

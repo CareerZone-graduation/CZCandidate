@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
@@ -25,12 +26,13 @@ import { applyJob, reapplyJob } from '@/services/jobService';
 import { getCurrentUserProfile, uploadCV } from '@/services/profileService';
 import { getCvs } from '@/services/api';
 import apiClient from '@/services/apiClient';
-import { AlertCircle, Loader2, FileUp, FileText, RefreshCw, Upload, BarChart3, Eye } from 'lucide-react';
+import { AlertCircle, Loader2, FileUp, FileText, RefreshCw, Upload, BarChart3 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/common/ErrorState';
 import { cn } from '@/lib/utils';
-import { scoreCVForApplication } from '@/services/applicationService';
+
+const CV_SCORE_PREVIEW_STORAGE_KEY = 'careerzone.cvScorePreview';
 
 /**
  * @param {{
@@ -44,6 +46,7 @@ import { scoreCVForApplication } from '@/services/applicationService';
  * }} props
  */
 export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess, isReapply = false, source = 'DIRECT_APPLY' }) => {
+  const navigate = useNavigate();
   const [cvSource, setCvSource] = useState('uploaded'); // 'uploaded' or 'template'
   const [selectedCv, setSelectedCv] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
@@ -54,7 +57,6 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
   const [isUploading, setIsUploading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [isScoring, setIsScoring] = useState(false);
-  const [scoringResult, setScoringResult] = useState(null);
 
   // File upload ref
   const fileInputRef = useRef(null);
@@ -125,7 +127,6 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       setIsSubmitting(false);
       setCvSource('uploaded');
       setSelectedCv('');
-      setScoringResult(null);
       setIsScoring(false);
     }
   }, [open, userProfile, user, jobTitle, uploadedCvs, templateCvs, cvSource]);
@@ -321,6 +322,10 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
           improvements: scoreData.data.improvements || {},
           suggested_keywords: scoreData.data.suggested_keywords || [],
           rewrite_examples: scoreData.data.rewrite_examples || [],
+          isCached: scoreData.data.isCached || false,
+          canReanalyze: scoreData.data.canReanalyze !== false,
+          cacheMessage: scoreData.data.cacheMessage,
+          scoredAt: scoreData.data.scoredAt,
           // Enhanced data for advanced visualizations
           enhanced: {
             career_paths: scoreData.data.career_paths || [],
@@ -334,8 +339,15 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
           isPreview: true // Flag to indicate this is preview mode
         };
         
-        // Navigate to existing cv-score page with query params
-        window.location.href = `/cv-score?data=${encodeURIComponent(JSON.stringify(scoringResult))}`;
+        try {
+          sessionStorage.setItem(CV_SCORE_PREVIEW_STORAGE_KEY, JSON.stringify(scoringResult));
+        } catch (storageError) {
+          console.warn('Could not persist CV scoring preview data', storageError);
+        }
+
+        navigate('/cv-score', {
+          state: { previewScore: scoringResult }
+        });
         toast.success('Đang chuyển đến trang phân tích chi tiết...');
       } else {
         toast.error('Không thể chấm điểm CV');
@@ -346,46 +358,6 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       toast.error(errorMsg);
     } finally {
       setIsScoring(false);
-    }
-  };
-
-  const handleViewDetailedScore = async () => {
-    try {
-      // Create temporary application for detailed view
-      const applicationData = {
-        ...(cvSource === 'uploaded' ? { cvId: selectedCv } : { cvTemplateId: selectedCv }),
-        coverLetter: coverLetter || 'Temporary application for CV scoring preview',
-        candidateName,
-        candidateEmail,
-        candidatePhone,
-        source: 'CV_SCORING_PREVIEW'
-      };
-
-      console.log('Creating preview application...', applicationData);
-      const applyResponse = await applyJob(jobId, applicationData);
-      console.log('Apply response:', applyResponse);
-      
-      // fe-candidate returns full Axios response
-      const responseData = applyResponse.data;
-      console.log('Response data:', responseData);
-      
-      if (responseData?.success && responseData?.data?._id) {
-        const applicationId = responseData.data._id;
-        console.log('Opening cv-score page for application:', applicationId);
-        
-        // Wait for scoring to complete (backend processes async)
-        toast.info('Đang chuẩn bị trang phân tích chi tiết...');
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        // Open detailed score page in new tab
-        window.open(`/dashboard/applications/${applicationId}/cv-score`, '_blank');
-      } else {
-        console.error('Invalid response structure:', responseData);
-        toast.error('Không thể tạo bản xem trước');
-      }
-    } catch (error) {
-      console.error('Error creating preview application:', error);
-      toast.error('Không thể mở trang chi tiết');
     }
   };
 
