@@ -497,3 +497,22 @@ export const getApplicationDetail = async (applicationId) => {
   const response = await apiClient.get(`/applications/my/${applicationId}`);
   return response.data;
 };
+
+/**
+ * Bắt đầu phân tích chấm điểm CV (khởi tạo phiên SSE stream)
+ * @param {string} applicationId - ID của application
+ * @returns {Promise} Response chứa analysisId
+ */
+export const startCVScoreAnalysis = async (applicationId, options = {}) => {
+  const response = await apiClient.post(`/applications/${applicationId}/cv-score/analysis`, options);
+  return response.data;
+};
+
+/**
+ * Xây dựng URL SSE stream cho kết quả phân tích CV
+ * @param {string} analysisId - ID phiên phân tích
+ * @returns {string} URL SSE hoàn chỉnh
+ */
+export const buildCVScoreStreamUrl = (analysisId) => {
+  return `${import.meta.env.VITE_API_BASE_URL}/api/applications/cv-score/stream/${analysisId}`;
+};

@@ -251,104 +251,26 @@ export const ApplyJobDialog = ({ jobId, jobTitle, open, onOpenChange, onSuccess,
       const response = await apiClient.post(`/jobs/${jobId}/preview-cv-score`, requestData);
       const scoreData = response.data;
       
-      if (scoreData?.success && scoreData?.data) {
-        // Navigate to cv-score page (existing page) with state data
-        // Wrap data in format that CVScoreDetail expects
-        
-        // Convert radar chart data to proper format
-        // Priority: Use category_scores as it's more reliable than visualization.radar_chart
-        let radarMetrics = null;
-        
-        console.log('=== RADAR METRICS DEBUG ===');
-        console.log('Category scores:', scoreData.data.category_scores);
-        console.log('Visualization:', scoreData.data.visualization);
-        console.log('Radar chart:', scoreData.data.visualization?.radar_chart);
-        
-        if (scoreData.data.category_scores && Array.isArray(scoreData.data.category_scores) && scoreData.data.category_scores.length > 0) {
-          // Use category_scores - most reliable source
-          radarMetrics = scoreData.data.category_scores.map(cat => ({
-            metric: cat.name || cat.category || 'Unknown',
-            score: cat.score || 0
-          }));
-          console.log('Using category_scores for radar');
-        } else if (scoreData.data.visualization?.radar_chart) {
-          // Fallback to radar_chart if category_scores not available
-          const radarChart = scoreData.data.visualization.radar_chart;
-          console.log('Radar chart structure:', radarChart);
-          
-          if (radarChart.labels && radarChart.values && 
-              Array.isArray(radarChart.labels) && Array.isArray(radarChart.values) &&
-              radarChart.labels.length === radarChart.values.length &&
-              radarChart.labels.length > 0) {
-            radarMetrics = radarChart.labels.map((label, idx) => ({
-              metric: label,
-              score: radarChart.values[idx]
-            }));
-            console.log('Using radar_chart for radar');
-          } else {
-            console.log('Radar chart format invalid:', {
-              hasLabels: !!radarChart.labels,
-              hasValues: !!radarChart.values,
-              labelsIsArray: Array.isArray(radarChart.labels),
-              valuesIsArray: Array.isArray(radarChart.values),
-              labelsLength: radarChart.labels?.length,
-              valuesLength: radarChart.values?.length
-            });
-          }
-        } else if (scoreData.data.breakdown && typeof scoreData.data.breakdown === 'object') {
-          // Last fallback: use breakdown scores
-          radarMetrics = Object.entries(scoreData.data.breakdown).map(([key, value]) => ({
-            metric: key,
-            score: value
-          }));
-          console.log('Using breakdown for radar');
-        }
-        
-        console.log('Final radarMetrics:', radarMetrics);
-        
-        const scoringResult = {
-          overall_score: scoreData.data.overall_score || 0,
-          breakdown: scoreData.data.breakdown || {},
-          suggestions: scoreData.data.suggestions || [],
-          category_scores: scoreData.data.category_scores || [],
-          summary: scoreData.data.summary || '',
-          strengths: scoreData.data.strengths || [],
-          weaknesses: scoreData.data.weaknesses || [],
-          critical_gaps: scoreData.data.critical_gaps || [],
-          keyword_analysis: scoreData.data.keyword_analysis || {},
-          gaps: scoreData.data.gaps || {},
-          visualization: scoreData.data.visualization || {},
-          graph: scoreData.data.graph || [],
-          improvements: scoreData.data.improvements || {},
-          suggested_keywords: scoreData.data.suggested_keywords || [],
-          rewrite_examples: scoreData.data.rewrite_examples || [],
-          isCached: scoreData.data.isCached || false,
-          canReanalyze: scoreData.data.canReanalyze !== false,
-          cacheMessage: scoreData.data.cacheMessage,
-          scoredAt: scoreData.data.scoredAt,
-          // Enhanced data for advanced visualizations
-          enhanced: {
-            career_paths: scoreData.data.career_paths || [],
-            recommended_projects: scoreData.data.recommended_projects || [],
-            skill_gaps: scoreData.data.skill_gaps || [],
-            radar_metrics: radarMetrics
-          },
-          jobId: jobId, // Pass jobId to navigate back
-          cvId: requestData.cvId, // Pass CV info for optimization
+      if (scoreData?.success && scoreData?.data?.analysisId) {
+        // Build preview context for the detail page
+        const previewContext = {
+          jobId: jobId,
+          cvId: requestData.cvId,
           cvTemplateId: requestData.cvTemplateId,
-          isPreview: true // Flag to indicate this is preview mode
+          analysisId: scoreData.data.analysisId,
+          isPreview: true
         };
         
         try {
-          sessionStorage.setItem(CV_SCORE_PREVIEW_STORAGE_KEY, JSON.stringify(scoringResult));
+          sessionStorage.setItem(CV_SCORE_PREVIEW_STORAGE_KEY, JSON.stringify(previewContext));
         } catch (storageError) {
           console.warn('Could not persist CV scoring preview data', storageError);
         }
 
         navigate('/cv-score', {
-          state: { previewScore: scoringResult }
+          state: { previewScore: previewContext }
         });
-        toast.success('Đang chuyển đến trang phân tích chi tiết...');
+        toast.success('Đang bắt đầu phân tích chấm điểm...');
       } else {
         toast.error('Không thể chấm điểm CV');
       }

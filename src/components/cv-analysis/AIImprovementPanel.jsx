@@ -32,7 +32,7 @@ const formatSkillLevel = (level) => {
   return levelLabels[normalizedLevel] || level;
 };
 
-const AIImprovementPanel = ({ cvScore, onApplyImprovement }) => {
+const AIImprovementPanel = ({ cvScore }) => {
   const [expandedSections, setExpandedSections] = useState({
     summary: true,
     experience: false,
@@ -277,31 +277,6 @@ const AIImprovementPanel = ({ cvScore, onApplyImprovement }) => {
           })}
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-6 flex gap-3">
-          <Button
-            className="flex-1 bg-purple-600 hover:bg-purple-700"
-            onClick={() => {
-              toast.success('Đang chuyển đến trang chỉnh sửa CV...');
-              if (onApplyImprovement) {
-                onApplyImprovement(cvScore);
-              }
-            }}
-          >
-            <FileEdit className="h-4 w-4 mr-2" />
-            Áp dụng vào CV
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const allText = JSON.stringify(cvScore, null, 2);
-              handleCopy(allText, 'all');
-            }}
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy tất cả
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

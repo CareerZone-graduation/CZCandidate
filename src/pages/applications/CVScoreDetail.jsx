@@ -26,9 +26,10 @@ import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
 // Import services
-import { getApplicationDetail, scoreCVForApplication } from '../../services/applicationService';
-import { getJobById } from '../../services/jobService';
+import { getApplicationDetail } from '../../services/applicationService';
+import { getJobById, buildCVScoreStreamUrl, startCVScoreAnalysis } from '../../services/jobService';
 import apiClient from '../../services/apiClient';
+import { getAccessToken } from '../../utils/token';
 
 // Import CV Analysis Components
 import CVRadarChart from '../../components/cv-analysis/CVRadarChart';
@@ -37,6 +38,7 @@ import ProjectRecommendations from '../../components/cv-analysis/ProjectRecommen
 import AIImprovementPanel from '../../components/cv-analysis/AIImprovementPanel';
 
 const CV_SCORE_PREVIEW_STORAGE_KEY = 'careerzone.cvScorePreview';
+const STREAM_REPLAY_DELAY_MS = 450;
 
 const formatSkillLevel = (level) => {
   if (!level) return 'Chưa xác định';
@@ -53,6 +55,20 @@ const formatSkillLevel = (level) => {
   return levelLabels[normalizedLevel] || level;
 };
 
+const renderTextValue = (value) => {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (Array.isArray(value)) return value.map(renderTextValue).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    return value.skill || value.name || value.title || value.label || value.description || JSON.stringify(value);
+  }
+  return String(value);
+};
+
+const getGapCurrentLevel = (gap) => gap?.current_level ?? gap?.current;
+const getGapRequiredLevel = (gap) => gap?.required_level ?? gap?.required;
+const getGapEstimatedTime = (gap) => gap?.estimated_time ?? gap?.time;
+
 const CVScoreDetail = () => {
   const { applicationId } = useParams();
   const [searchParams] = useSearchParams();
@@ -63,7 +79,43 @@ const CVScoreDetail = () => {
   
   // Check if this is preview mode (data from router state/session storage)
   const [previewData, setPreviewData] = useState(null);
-  const isPreviewMode = !applicationId;
+  const isPreviewMode = !applicationId && (location.pathname === '/cv-score' || searchParams.has('data'));
+
+  // --- SSE Realtime Stream State ---
+  const initialAnalysisId = location.state?.analysisId || location.state?.previewScore?.analysisId;
+  const [analysisId, setAnalysisId] = useState(initialAnalysisId);
+  const [streamStatus, setStreamStatus] = useState(initialAnalysisId ? 'CONNECTING' : 'IDLE'); // IDLE | CONNECTING | ANALYZING | DONE | ERROR
+  const [streamData, setStreamData] = useState({});
+  const [streamProgress, setStreamProgress] = useState(0);
+  const [streamPhaseLabel, setStreamPhaseLabel] = useState('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [displayMatchScore, setDisplayMatchScore] = useState(null);
+
+  const animateMatchScore = (nextScore) => {
+    if (!Number.isFinite(nextScore)) return;
+
+    setDisplayMatchScore((currentScore) => {
+      const startScore = Number.isFinite(currentScore) ? currentScore : 0;
+      const distance = nextScore - startScore;
+      const steps = 20;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step += 1;
+        const progress = step / steps;
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(startScore + distance * easedProgress);
+
+        setDisplayMatchScore(value);
+        if (step >= steps) {
+          clearInterval(timer);
+          setDisplayMatchScore(nextScore);
+        }
+      }, 25);
+
+      return startScore;
+    });
+  };
 
   const buildRadarMetrics = (scoreData) => {
     if (scoreData?.category_scores && Array.isArray(scoreData.category_scores) && scoreData.category_scores.length > 0) {
@@ -126,6 +178,11 @@ const CVScoreDetail = () => {
         return;
       }
 
+      if (parsedData.analysisId && !analysisId) {
+        setAnalysisId(parsedData.analysisId);
+        setStreamStatus('CONNECTING');
+      }
+
       setPreviewData(parsedData);
 
       try {
@@ -145,14 +202,191 @@ const CVScoreDetail = () => {
       toast.error('Dữ liệu không hợp lệ');
       navigate(-1);
     }
-  }, [isPreviewMode, location.state, searchParams, navigate]);
+  }, [isPreviewMode, location.state, searchParams, navigate, analysisId]);
 
   // Fetch application detail (only in application mode)
-  const { data: applicationData, isLoading } = useQuery({
+  const { data: applicationData, isLoading, refetch: refetchApplication } = useQuery({
     queryKey: ['applicationDetail', applicationId],
     queryFn: () => getApplicationDetail(applicationId),
     enabled: !!applicationId && !isPreviewMode,
   });
+
+  // --- SSE Stream Effect ---
+  useEffect(() => {
+    if (!analysisId) return;
+
+    let abortController;
+    let retryCount = 0;
+    let isCancelled = false;
+    let isProcessingEventQueue = false;
+    const eventQueue = [];
+    const MAX_RETRIES = 3;
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const connectSSE = () => {
+      setStreamStatus('CONNECTING');
+      const url = buildCVScoreStreamUrl(analysisId);
+      abortController = new AbortController();
+
+      const handleEvent = (eventType, data) => {
+        if (eventType === 'progress_update') {
+          if (data.analysisProgress != null) setStreamProgress(data.analysisProgress);
+          if (data.phaseLabel) setStreamPhaseLabel(data.phaseLabel);
+          return;
+        }
+
+        if (eventType === 'score_update') {
+          const nextMatchScore = Number(data.matchScore ?? data.overall_score);
+          const normalizedData = Number.isFinite(nextMatchScore)
+            ? { ...data, overall_score: nextMatchScore }
+            : data;
+          setStreamData(prev => ({ ...prev, ...normalizedData }));
+          animateMatchScore(nextMatchScore);
+
+          if (isPreviewMode) {
+            setPreviewData(prev => mergePreviewScore(prev || {}, normalizedData));
+          }
+          return;
+        }
+
+        if (eventType === 'section_update') {
+          setStreamData(prev => ({ ...prev, ...(data.sections || {}) }));
+          return;
+        }
+
+        if (eventType === 'completed' || eventType === 'analysis_complete') {
+          if (data.finalResult) {
+            const finalMatchScore = Number(data.finalResult.matchScore ?? data.finalResult.overall_score);
+            const normalizedResult = Number.isFinite(finalMatchScore)
+              ? { ...data.finalResult, overall_score: finalMatchScore }
+              : data.finalResult;
+            setStreamData(prev => ({ ...prev, ...normalizedResult }));
+            animateMatchScore(finalMatchScore);
+          }
+
+          setStreamStatus('DONE');
+          setStreamProgress(100);
+
+          if (!isPreviewMode) {
+            setTimeout(() => {
+              refetchApplication();
+              queryClient.invalidateQueries(['myApplications']);
+            }, 1000);
+          }
+          return;
+        }
+
+        if (eventType === 'analysis_error') {
+          toast.error(data.message || 'Lỗi phân tích CV');
+          setStreamStatus('ERROR');
+        }
+      };
+
+      const processEventQueue = async () => {
+        if (isProcessingEventQueue) return;
+        isProcessingEventQueue = true;
+
+        while (!isCancelled && eventQueue.length > 0) {
+          const { eventType, data } = eventQueue.shift();
+          handleEvent(eventType, data);
+
+          // When the server replays buffered SSE events, give React a frame to render each progress step.
+          if (eventType === 'progress_update' && data.analysisProgress < 100) {
+            await wait(STREAM_REPLAY_DELAY_MS);
+          }
+        }
+
+        isProcessingEventQueue = false;
+      };
+
+      const enqueueEvent = (eventType, data) => {
+        eventQueue.push({ eventType, data });
+        processEventQueue();
+      };
+
+      const handleStreamFailure = () => {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          const backoff = Math.pow(2, retryCount - 1) * 1000;
+          setTimeout(connectSSE, backoff);
+        } else {
+          if (isPreviewMode) {
+            toast.error('Mất kết nối stream. Không thể hoàn tất chấm điểm xem trước.');
+            setStreamStatus('ERROR');
+          } else {
+            toast.error('Mất kết nối stream. Vui lòng chấm điểm lại.');
+            setStreamStatus('ERROR');
+          }
+        }
+      };
+
+      fetch(url, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+          Accept: 'text/event-stream',
+        },
+        signal: abortController.signal,
+      })
+        .then(async (response) => {
+          if (!response.ok || !response.body) {
+            throw new Error(`Stream request failed: ${response.status}`);
+          }
+
+          setStreamStatus('ANALYZING');
+          retryCount = 0;
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let currentEvent = 'message';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('event: ')) {
+                currentEvent = line.slice(7).trim();
+              } else if (line.startsWith('data: ')) {
+                const data = JSON.parse(line.slice(6));
+                enqueueEvent(currentEvent, data);
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          if (error.name === 'AbortError') return;
+          handleStreamFailure();
+        });
+    };
+
+    connectSSE();
+    return () => {
+      isCancelled = true;
+      if (abortController) abortController.abort();
+    };
+  }, [analysisId, isPreviewMode, refetchApplication, queryClient]);
+
+  // --- Polling Fallback ---
+  useEffect(() => {
+    if (!isPolling) return;
+    const interval = setInterval(() => {
+      refetchApplication().then((res) => {
+        const score = res.data?.data?.cvScore || res.data?.cvScore;
+        if (score && score.overall_score) {
+          setIsPolling(false);
+          setStreamStatus('DONE');
+          setStreamProgress(100);
+          toast.success('Đã tải xong kết quả chấm điểm!');
+        }
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isPolling, refetchApplication]);
 
   // Fetch job detail (in preview mode when we have jobId)
   const { data: jobData, isLoading: isLoadingJob } = useQuery({
@@ -165,16 +399,32 @@ const CVScoreDetail = () => {
     mutationFn: async () => {
       if (isPreviewMode) {
         const requestData = previewData?.cvId
-          ? { cvId: previewData.cvId, forceRefresh: true }
-          : { cvTemplateId: previewData?.cvTemplateId, forceRefresh: true };
+          ? { cvId: previewData.cvId }
+          : { cvTemplateId: previewData?.cvTemplateId };
 
-        const response = await apiClient.post(`/jobs/${previewData.jobId}/preview-cv-score`, requestData);
+        const response = await apiClient.post(`/jobs/${previewData.jobId}/preview-cv-score`, {
+          ...requestData,
+          forceRefresh: true,
+        });
         return response.data;
       }
 
-      return scoreCVForApplication(applicationId, { forceRefresh: true });
+      return startCVScoreAnalysis(applicationId, { forceRefresh: true });
     },
     onSuccess: (response) => {
+      const nextAnalysisId = response?.data?.analysisId || response?.analysisId;
+      if (nextAnalysisId) {
+        setStreamData({});
+        setStreamProgress(0);
+        setStreamPhaseLabel('Đang khởi tạo...');
+        setDisplayMatchScore(null);
+        setIsPolling(false);
+        setAnalysisId(nextAnalysisId);
+        setStreamStatus('CONNECTING');
+        toast.success('Đang chấm điểm lại CV...');
+        return;
+      }
+
       const nextScore = response?.data;
       if (!nextScore) {
         toast.error('Không nhận được kết quả phân tích mới');
@@ -204,21 +454,37 @@ const CVScoreDetail = () => {
         });
       }
 
-      toast.success('Đã phân tích lại CV');
+      toast.success('Đã chấm điểm lại CV');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể phân tích lại CV');
+      toast.error(error.response?.data?.message || 'Không thể chấm điểm lại CV');
     }
   });
 
   // Use preview data or application data
   const application = isPreviewMode ? null : applicationData?.data;
-  let cvScore = isPreviewMode ? previewData : application?.cvScore;
+  const isStreaming = streamStatus === 'CONNECTING' || streamStatus === 'ANALYZING';
+  const isReanalyzing = isStreaming || reanalyzeMutation.isPending;
+  const restCvScore = isPreviewMode ? previewData : null;
+  // Merge SSE streamed data on top of REST data when streaming
+  let cvScore = (isStreaming || streamStatus === 'DONE') && Object.keys(streamData).length > 0
+    ? { ...(restCvScore || {}), ...streamData }
+    : restCvScore;
+  // Safe defaults so render never crashes on undefined.breakdown during streaming
+  const hasRealScore = cvScore && cvScore.overall_score != null;
+  if (isStreaming || streamStatus === 'DONE') {
+    if (!cvScore) cvScore = {};
+    if (!cvScore.breakdown) cvScore.breakdown = {};
+  }
+  const matchScoreValue = Number(cvScore?.matchScore ?? cvScore?.overall_score);
+  const effectiveMatchScore = Number.isFinite(matchScoreValue) ? matchScoreValue : null;
+  const heroMatchScore = isReanalyzing ? null : (displayMatchScore ?? effectiveMatchScore);
   const job = isPreviewMode ? jobData?.data?.data : application?.job;
   const scoreTimestamp = cvScore?.scoredAt
     ? new Date(cvScore.scoredAt).toLocaleString('vi-VN')
     : null;
   const showCachedScoreNotice = Boolean(cvScore?.isCached || scoreTimestamp);
+  const canReanalyzeScore = Boolean(effectiveMatchScore != null && ((!isPreviewMode && applicationId) || (isPreviewMode && previewData?.jobId)));
 
   // Fix radar_metrics if it's in wrong format (has labels/values keys instead of array)
   if (cvScore?.enhanced?.radar_metrics && typeof cvScore.enhanced.radar_metrics === 'object' && !Array.isArray(cvScore.enhanced.radar_metrics)) {
@@ -280,30 +546,34 @@ const CVScoreDetail = () => {
     );
   }
 
-  if ((!isPreviewMode && (!application || !cvScore || !cvScore.breakdown)) || 
-      (isPreviewMode && (!previewData || !previewData.breakdown))) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {!cvScore && !previewData ? 'Không tìm thấy kết quả chấm điểm' : 'Đang xử lý chấm điểm...'}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {!cvScore && !previewData
-                ? 'Vui lòng chấm điểm CV trước khi xem chi tiết.'
-                : 'Hệ thống đang phân tích CV. Vui lòng đợi 30 giây và refresh lại trang.'}
-            </p>
-            <Button onClick={() => navigate(isPreviewMode && job?._id ? `/jobs/${job._id}` : '/dashboard/applications')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // Show error only when NOT streaming AND no data at all
+  if (!isStreaming && !isPolling && streamStatus !== 'DONE') {
+    if ((!isPreviewMode && (!application || !cvScore || !cvScore.breakdown)) ||
+        (isPreviewMode && (!previewData || (!previewData.breakdown && !previewData.analysisId)))) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">
+                {!cvScore && !previewData ? 'Không tìm thấy kết quả chấm điểm' : 'Đang xử lý chấm điểm...'}
+              </h2>
+              <p className="text-gray-600 mb-4">
+                {!cvScore && !previewData
+                  ? 'Vui lòng chấm điểm CV trước khi xem chi tiết.'
+                  : 'Hệ thống đang phân tích CV. Vui lòng đợi 30 giây và refresh lại trang.'}
+              </p>
+              <Button onClick={() => navigate(isPreviewMode && job?._id ? `/jobs/${job._id}` : '/dashboard/applications')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Quay lại
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 py-8">
@@ -329,34 +599,72 @@ const CVScoreDetail = () => {
               </p>
             </div>
             <div className="text-right flex flex-col items-end gap-3">
-              <div>
-                <div className={cn('text-5xl font-bold mb-1', getScoreColor(cvScore.overall_score))}>
-                  {cvScore.overall_score}/100
+              {heroMatchScore != null ? (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-purple-700 mb-2">
+                    Độ khớp CV-JD
+                  </p>
+                  <div className={cn('text-5xl font-bold mb-1 transition-all duration-700', getScoreColor(heroMatchScore))}>
+                    {heroMatchScore}%
+                  </div>
+                  <Badge
+                    className={cn(
+                      'text-sm',
+                      heroMatchScore >= 80
+                        ? 'bg-green-100 text-green-700'
+                        : heroMatchScore >= 60
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    )}
+                  >
+                    {heroMatchScore >= 80
+                      ? 'Xuất sắc'
+                      : heroMatchScore >= 60
+                      ? 'Khá tốt'
+                      : 'Cần cải thiện'}
+                  </Badge>
                 </div>
-                <Badge
-                  className={cn(
-                    'text-sm',
-                    cvScore.overall_score >= 80
-                      ? 'bg-green-100 text-green-700'
-                      : cvScore.overall_score >= 60
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                  )}
-                >
-                  {cvScore.overall_score >= 80
-                    ? 'Xuất sắc'
-                    : cvScore.overall_score >= 60
-                    ? 'Khá tốt'
-                    : 'Cần cải thiện'}
-                </Badge>
-              </div>
+              ) : (
+                <div className="animate-pulse">
+                  <div className="h-12 w-32 bg-gray-200 rounded mb-2" />
+                  <div className="h-6 w-20 bg-gray-200 rounded ml-auto" />
+                </div>
+              )}
               
         
             </div>
           </div>
         </div>
 
-        {showCachedScoreNotice && (
+        {/* Streaming Progress Banner */}
+        {isReanalyzing && (
+          <Card className="mb-6 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 animate-pulse-subtle overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                  <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1 animate-bounce" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-purple-900 mb-1">
+                    AI đang phân tích CV của bạn...
+                  </p>
+                  <p className="text-sm text-purple-700 mb-2">
+                    {streamPhaseLabel || 'Đang khởi tạo...'}
+                  </p>
+                  <div className="relative">
+                    <Progress value={streamProgress} className="h-2" />
+                    <span className="text-xs text-purple-600 mt-1 block text-right">
+                      Tiến trình phân tích: {streamProgress}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {canReanalyzeScore && (
           <Card className="mb-6 border-amber-200 bg-amber-50">
             <CardContent className="p-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -364,12 +672,12 @@ const CVScoreDetail = () => {
                   <AlertCircle className="mt-0.5 h-5 w-5 text-amber-700" />
                   <div>
                     <p className="font-medium text-amber-900">
-                      Đang hiển thị kết quả đã lưu
+                      {showCachedScoreNotice ? 'Đang hiển thị kết quả đã lưu' : 'Muốn cập nhật độ khớp CV-JD?'}
                     </p>
                     <p className="text-sm text-amber-800">
                       {scoreTimestamp
-                        ? `Kết quả được chấm lúc ${scoreTimestamp}. Nếu CV hoặc JD đã thay đổi, hãy phân tích lại để cập nhật.`
-                        : 'Nếu CV hoặc JD đã thay đổi, hãy phân tích lại để cập nhật kết quả mới nhất.'}
+                        ? `Kết quả được chấm lúc ${scoreTimestamp}. Nếu CV hoặc JD đã thay đổi, hãy chấm điểm lại để cập nhật.`
+                        : 'Nếu CV hoặc JD đã thay đổi, hãy chấm điểm lại để cập nhật kết quả mới nhất.'}
                     </p>
                   </div>
                 </div>
@@ -377,15 +685,15 @@ const CVScoreDetail = () => {
                   type="button"
                   variant="outline"
                   onClick={() => reanalyzeMutation.mutate()}
-                  disabled={reanalyzeMutation.isPending || (isPreviewMode && !previewData?.jobId)}
+                  disabled={isReanalyzing || (isPreviewMode && !previewData?.jobId)}
                   className="border-amber-600 text-amber-800 hover:bg-amber-100"
                 >
-                  {reanalyzeMutation.isPending ? (
+                  {isReanalyzing ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <RefreshCw className="mr-2 h-4 w-4" />
                   )}
-                  Phân tích lại
+                  {isReanalyzing ? 'Đang chấm điểm...' : 'Chấm điểm lại'}
                 </Button>
               </div>
             </CardContent>
@@ -417,29 +725,37 @@ const CVScoreDetail = () => {
           {/* Tab 1: Tổng quan (So sánh CV & JD) */}
           <TabsContent value="overview" className="space-y-6">
             {/* Overall Match Score */}
-            <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Độ phù hợp CV với Job</h2>
-                  <div className={cn(
-                    'text-6xl font-bold mb-3',
-                    cvScore.overall_score >= 75 ? 'text-green-600' :
-                    cvScore.overall_score >= 50 ? 'text-yellow-600' : 'text-red-600'
-                  )}>
-                    {cvScore.overall_score}%
+            {cvScore.overall_score != null && !isReanalyzing ? (
+              <Card className="border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50">
+                <CardContent className="p-8">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Độ phù hợp CV với Job</h2>
+                    <div className="relative mx-auto mb-5 flex h-48 w-48 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full bg-white/80 shadow-[0_22px_80px_rgba(126,34,206,0.24)]" />
+                      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-purple-100 via-white to-indigo-100" />
+                      <div className="absolute inset-0 rounded-full border-[5px] border-purple-200/70" />
+                      <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-purple-600 border-r-fuchsia-500 animate-spin" />
+                      <div className="absolute -inset-2 rounded-full border border-dashed border-purple-300/70 animate-[spin_7s_linear_infinite_reverse]" />
+                      <div className={cn(
+                        'relative z-10 text-6xl font-bold transition-all duration-700',
+                        cvScore.overall_score >= 75 ? 'text-green-600' :
+                        cvScore.overall_score >= 50 ? 'text-yellow-600' : 'text-red-600'
+                      )}>
+                        {cvScore.overall_score}%
+                      </div>
+                    </div>
+                    <Badge className={cn(
+                      'text-lg px-4 py-2',
+                      cvScore.overall_score >= 75 ? 'bg-green-100 text-green-700 border-green-300' :
+                      cvScore.overall_score >= 50 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                      'bg-red-100 text-red-700 border-red-300'
+                    )}>
+                      {cvScore.overall_score >= 75 ? '🟢 High Match - Rất phù hợp!' :
+                       cvScore.overall_score >= 50 ? '🟡 Medium Match - Khá phù hợp' :
+                       '🔴 Low Match - Cần cải thiện'}
+                    </Badge>
                   </div>
-                  <Badge className={cn(
-                    'text-lg px-4 py-2',
-                    cvScore.overall_score >= 75 ? 'bg-green-100 text-green-700 border-green-300' :
-                    cvScore.overall_score >= 50 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-                    'bg-red-100 text-red-700 border-red-300'
-                  )}>
-                    {cvScore.overall_score >= 75 ? '🟢 High Match - Rất phù hợp!' :
-                     cvScore.overall_score >= 50 ? '🟡 Medium Match - Khá phù hợp' :
-                     '🔴 Low Match - Cần cải thiện'}
-                  </Badge>
-                </div>
-                <p className="text-center text-gray-600 max-w-2xl mx-auto">
+                  <p className="text-center text-gray-600 max-w-2xl mx-auto">
                   {cvScore.overall_score >= 75 
                     ? 'CV của bạn rất phù hợp với vị trí này! Hãy apply ngay.'
                     : cvScore.overall_score >= 50
@@ -448,7 +764,27 @@ const CVScoreDetail = () => {
                 </p>
               </CardContent>
             </Card>
-
+            ) : (
+              <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+                <CardContent className="p-8">
+                  <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Độ phù hợp CV với Job</h2>
+                    <div className="relative mx-auto flex h-48 w-48 items-center justify-center">
+                      <div className="absolute -inset-4 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(124,58,237,0)_35deg,rgba(124,58,237,0.95)_92deg,rgba(236,72,153,0.9)_145deg,rgba(99,102,241,0)_230deg,transparent_360deg)] opacity-80 blur-[1px] animate-spin" />
+                      <div className="absolute -inset-3 rounded-full bg-purple-50" />
+                      <div className="absolute -inset-2 rounded-full border border-dashed border-purple-300/80 animate-[spin_7s_linear_infinite_reverse]" />
+                      <div className="absolute inset-0 rounded-full bg-white/70 shadow-[0_22px_80px_rgba(126,34,206,0.18)]" />
+                      <div className="absolute inset-2 rounded-full bg-gradient-to-br from-purple-100 via-white to-indigo-100" />
+                      <div className="absolute inset-0 rounded-full border-[5px] border-purple-200/70" />
+                      <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-purple-600 border-r-fuchsia-500 animate-[spin_1.1s_linear_infinite]" />
+                      <div className="relative z-10 h-16 w-28 rounded-xl bg-gray-200/90 animate-pulse" />
+                    </div>
+                    <div className="h-8 w-48 bg-gray-200 rounded-full mx-auto animate-pulse" />
+                    <div className="h-4 w-64 bg-gray-200 rounded mx-auto animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Breakdown Scores */}
             {cvScore.breakdown && (
               <Card>
@@ -542,7 +878,7 @@ const CVScoreDetail = () => {
                       {cvScore.critical_gaps.slice(0, 3).map((gap, idx) => (
                         <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
                           <span className="text-red-600 mt-1">✗</span>
-                          <span>{gap}</span>
+                          <span>{renderTextValue(gap)}</span>
                         </li>
                       ))}
                     </ul>
@@ -566,6 +902,7 @@ const CVScoreDetail = () => {
                   {/* Generate suggestions from missing keywords */}
                   {cvScore.analysis?.keyword_match?.missing?.slice(0, 5).map((skill, idx) => {
                     const impact = Math.max(5, Math.min(20, 20 - idx * 3));
+                    const skillText = renderTextValue(skill);
                     const newScore = Math.min(100, cvScore.overall_score + impact);
                     const priority = idx + 1;
                     const effort = priority <= 2 ? 3 : priority <= 4 ? 2 : 1;
@@ -582,7 +919,7 @@ const CVScoreDetail = () => {
                                 #{priority}
                               </Badge>
                               <span className="font-semibold text-gray-900">
-                                Thêm kỹ năng: <span className="text-orange-600">{skill}</span>
+                                Thêm kỹ năng: <span className="text-orange-600">{skillText}</span>
                               </span>
                             </div>
                             <div className="flex items-center gap-4 text-sm">
@@ -874,7 +1211,7 @@ const CVScoreDetail = () => {
                             className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200"
                           >
                             <span className="text-red-600 font-bold">{idx + 1}.</span>
-                            <span className="text-gray-700">{gap}</span>
+                            <span className="text-gray-700">{renderTextValue(gap)}</span>
                           </li>
                         ))}
                       </ul>
@@ -895,7 +1232,7 @@ const CVScoreDetail = () => {
                             className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200"
                           >
                             <span className="text-yellow-600 font-bold">{idx + 1}.</span>
-                            <span className="text-gray-700">{gap}</span>
+                            <span className="text-gray-700">{renderTextValue(gap)}</span>
                           </li>
                         ))}
                       </ul>
@@ -916,7 +1253,7 @@ const CVScoreDetail = () => {
                             className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
                           >
                             <span className="text-blue-600 font-bold">{idx + 1}.</span>
-                            <span className="text-gray-700">{gap}</span>
+                            <span className="text-gray-700">{renderTextValue(gap)}</span>
                           </li>
                         ))}
                       </ul>
@@ -980,7 +1317,7 @@ const CVScoreDetail = () => {
                     {cvScore.enhanced.skill_gaps.map((gap, idx) => (
                       <div key={idx} className="bg-white rounded-lg p-4 border-2 border-orange-200">
                         <div className="flex items-start justify-between mb-3">
-                          <h4 className="font-semibold text-lg text-gray-900">{gap.skill}</h4>
+                          <h4 className="font-semibold text-lg text-gray-900">{renderTextValue(gap.skill || gap)}</h4>
                           <Badge
                             className={cn(
                               'px-3 py-1',
@@ -997,11 +1334,11 @@ const CVScoreDetail = () => {
                         <div className="grid md:grid-cols-2 gap-4 mb-3">
                           <div>
                             <span className="text-sm text-gray-600">Trình độ hiện tại:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(gap.current_level)}</span>
+                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(getGapCurrentLevel(gap))}</span>
                           </div>
                           <div>
                             <span className="text-sm text-gray-600">Trình độ cần đạt:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(gap.required_level)}</span>
+                            <span className="ml-2 font-semibold text-gray-900">{formatSkillLevel(getGapRequiredLevel(gap))}</span>
                           </div>
                         </div>
                         {gap.learning_path && gap.learning_path.length > 0 && (
@@ -1011,7 +1348,7 @@ const CVScoreDetail = () => {
                               {gap.learning_path.map((step, i) => (
                                 <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
                                   <span className="text-orange-600">{i + 1}.</span>
-                                  {step}
+                                  {renderTextValue(step)}
                                 </li>
                               ))}
                             </ul>
@@ -1019,7 +1356,7 @@ const CVScoreDetail = () => {
                         )}
                         <div className="flex items-center justify-between pt-3 border-t">
                           <span className="text-sm text-gray-600">
-                            Thời gian: <span className="font-semibold">{gap.estimated_time}</span>
+                            Thời gian: <span className="font-semibold">{renderTextValue(getGapEstimatedTime(gap))}</span>
                           </span>
                           <span className="text-sm font-semibold text-green-600">{gap.impact}</span>
                         </div>
@@ -1235,6 +1572,7 @@ const CVScoreDetail = () => {
                   {cvScore.analysis?.keyword_match?.missing?.slice(0, 5).map((skill, idx) => {
                     // Calculate simulated impact (mock data - can be replaced with real backend calculation)
                     const impact = Math.max(5, Math.min(20, 20 - idx * 3));
+                    const skillText = renderTextValue(skill);
                     const newScore = Math.min(100, cvScore.overall_score + impact);
                     const priority = idx + 1;
                     
@@ -1250,7 +1588,7 @@ const CVScoreDetail = () => {
                                 #{priority}
                               </Badge>
                               <span className="font-semibold text-gray-900">
-                                Thêm kỹ năng: <span className="text-orange-600">{skill}</span>
+                                Thêm kỹ năng: <span className="text-orange-600">{skillText}</span>
                               </span>
                             </div>
                             <div className="flex items-center gap-4 text-sm">
@@ -1413,15 +1751,7 @@ const CVScoreDetail = () => {
           {/* Tab 4: Gợi ý cải thiện */}
           <TabsContent value="suggestions" className="space-y-6">
             {/* AI Improvement Panel - Interactive suggestions */}
-            <AIImprovementPanel 
-              cvScore={cvScore}
-              onApplyImprovement={(improvements) => {
-                // Navigate to CV builder with improvements data
-                const cvKey = `cv-improvements-${Date.now()}`;
-                sessionStorage.setItem(cvKey, JSON.stringify(improvements));
-                navigate(`/my-cvs/builder?improvements=${cvKey}`);
-              }}
-            />
+            <AIImprovementPanel cvScore={cvScore} />
 
             {/* Project Recommendations - NEW COMPONENT */}
             {cvScore?.enhanced?.recommended_projects && cvScore.enhanced.recommended_projects.length > 0 && (

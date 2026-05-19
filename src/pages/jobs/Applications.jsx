@@ -30,7 +30,7 @@ import {
   TrendingUp,
   Loader2,
 } from 'lucide-react';
-import { getMyApplications, scoreCVForApplication } from '../../services/jobService';
+import { getMyApplications, startCVScoreAnalysis } from '../../services/jobService';
 import { ErrorState } from '../../components/common/ErrorState';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -46,20 +46,14 @@ const Applications = () => {
   const [scoringApplicationId, setScoringApplicationId] = useState(null);
   const limit = 10; // Increased limit for list view
 
-  // Mutation để chấm điểm CV
+  // Mutation để bắt đầu phân tích CV (SSE stream)
   const scoreCVMutation = useMutation({
-    mutationFn: scoreCVForApplication,
+    mutationFn: startCVScoreAnalysis,
     onSuccess: (data, applicationId) => {
-      toast.success('Chấm điểm CV thành công!');
-      
-      // Refetch applications để cập nhật điểm
-      queryClient.invalidateQueries(['myApplications']);
-      
-      // Redirect sang trang chi tiết CV score
-      navigate(`/dashboard/applications/${applicationId}/cv-score`);
+      // Logic navigation được handle trực tiếp trong handleScoreCV
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể chấm điểm CV');
+      toast.error(error.response?.data?.message || 'Không thể bắt đầu phân tích CV');
       setScoringApplicationId(null);
     }
   });
@@ -173,10 +167,21 @@ const Applications = () => {
     window.open(cvUrl, '_blank');
   };
 
-  const handleScoreCV = (e, applicationId) => {
+  const handleScoreCV = async (e, applicationId) => {
     e.stopPropagation();
     setScoringApplicationId(applicationId);
-    scoreCVMutation.mutate(applicationId);
+    try {
+      const response = await scoreCVMutation.mutateAsync(applicationId);
+      const analysisId = response.data?.analysisId || response.analysisId; // Phụ thuộc vào cấu trúc trả về
+      
+      setTimeout(() => {
+        navigate(`/dashboard/applications/${applicationId}/cv-score`, {
+          state: { analysisId }
+        });
+      }, 700);
+    } catch (error) {
+      // error handled by mutation onError
+    }
   };
 
   const handleViewScore = (e, applicationId) => {
@@ -470,9 +475,25 @@ const Applications = () => {
                           </div>
 
                           <div className="flex items-center gap-3">
-                      
-  
-
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-primary text-primary hover:bg-primary/5"
+                              onClick={(e) => handleScoreCV(e, application._id)}
+                              disabled={scoringApplicationId === application._id}
+                            >
+                              {scoringApplicationId === application._id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Đang chuyển...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="h-4 w-4 mr-2" />
+                                  Chấm điểm CV
+                                </>
+                              )}
+                            </Button>
                             {application.submittedCV && (
                               <Button
                                 variant="ghost"
