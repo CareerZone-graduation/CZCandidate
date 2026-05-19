@@ -10,6 +10,7 @@ import ChatContextHeader from './ChatContextHeader';
 import socketService from '@/services/socketService';
 import { cn } from '@/lib/utils';
 import { getAccessToken } from '@/utils/token';
+import { shouldShowConversationLoading } from './chatInterfaceState';
 
 /**
  * ChatInterface Component
@@ -37,6 +38,7 @@ const ChatInterface = ({
   const [nextRetryDelay, setNextRetryDelay] = useState(0);
   const [showMobileThread, setShowMobileThread] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [isInitializingConversation, setIsInitializingConversation] = useState(false);
 
   // Get current user and token from Redux
   const currentUser = useSelector((state) => state.auth.user?.user);
@@ -216,6 +218,10 @@ const ChatInterface = ({
 
       // If recipientId is provided, create or get conversation
       if (initialRecipientId) {
+        setSelectedConversation(null);
+        setIsInitializingConversation(true);
+        setShowMobileThread(true);
+
         try {
           console.log('[ChatInterface] Creating/getting conversation with recipient:', initialRecipientId);
           const { createOrGetConversation } = await import('@/services/chatService');
@@ -242,6 +248,8 @@ const ChatInterface = ({
         } catch (error) {
           console.error('[ChatInterface] Error creating conversation:', error);
           toast.error(error.message || 'Không thể tạo cuộc trò chuyện');
+        } finally {
+          setIsInitializingConversation(false);
         }
       }
     };
@@ -271,6 +279,7 @@ const ChatInterface = ({
   const handleClose = useCallback(() => {
     setSelectedConversation(null);
     setShowMobileThread(false);
+    setIsInitializingConversation(false);
     onClose();
   }, [onClose]);
 
@@ -336,6 +345,15 @@ const ChatInterface = ({
 
   // Don't render if not open
   if (!isOpen) return null;
+
+  const showConversationLoading = shouldShowConversationLoading({
+    isOpen,
+    initialConversationId,
+    initialRecipientId,
+    selectedConversation,
+    connectionStatus,
+    isInitializingConversation,
+  });
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/10">
@@ -421,7 +439,17 @@ const ChatInterface = ({
             "flex-1 flex flex-col",
             !showMobileThread && "hidden md:flex"
           )}>
-            {selectedConversation ? (
+            {showConversationLoading ? (
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  Đang mở cuộc trò chuyện...
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Hệ thống đang kết nối với nhà tuyển dụng, vui lòng đợi trong giây lát.
+                </p>
+              </div>
+            ) : selectedConversation ? (
               <>
                 {/* Mobile back button */}
                 <div className="md:hidden flex items-center gap-2 p-2 border-b">
