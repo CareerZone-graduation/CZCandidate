@@ -139,7 +139,7 @@ const AIInterviewLanding = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">AI Assistant</h3>
                                         <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] md:text-xs px-2 py-0.5">
-                                            Đòi hỏi máy khỏe
+                                            Preview
                                         </Badge>
                                     </div>
                                     <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">

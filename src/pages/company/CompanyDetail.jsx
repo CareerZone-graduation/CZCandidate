@@ -375,7 +375,7 @@ const CompanyDetail = () => {
       </div>
 
       {/* Knowledge Chatbot */}
-      {isAuthenticated && companyData && (
+      {isAuthenticated && companyData && companyData.enableChatbot === true && (
         <>
           <KnowledgeChatFAB
             onClick={() => setIsChatSidebarOpen(true)}

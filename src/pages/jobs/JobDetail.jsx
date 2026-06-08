@@ -633,7 +633,7 @@ const JobDetail = () => {
         )}
 
         {/* Knowledge Chatbot */}
-        {isAuthenticated && job && (
+        {isAuthenticated && job && job.company?.enableChatbot === true && (
           <>
             <KnowledgeChatFAB
               onClick={() => setIsChatSidebarOpen(true)}

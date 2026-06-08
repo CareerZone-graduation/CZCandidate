@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { chatWithJobStream, chatWithCompanyStream } from '../../services/knowledgeChat.service';
-import { Bot, X, Send, Sparkles, FileText, Loader2, MessageSquareText, ChevronDown } from 'lucide-react';
+import { Bot, X, Send, Sparkles, FileText, Loader2, MessageSquareText, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -99,7 +99,7 @@ function ChatBubble({ message }) {
 }
 
 // ── Welcome state ──
-function WelcomeState({ companyName }) {
+function WelcomeState({ companyName, onSelectSuggestion }) {
   const suggestions = [
     'Chính sách làm việc từ xa?',
     'Quy trình tuyển dụng như thế nào?',
@@ -141,11 +141,12 @@ function WelcomeState({ companyName }) {
         {suggestions.map((text, i) => (
           <motion.button
             key={i}
+            type="button"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 + i * 0.1 }}
-            className="w-full text-left text-sm px-3.5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-accent hover:border-primary/30 transition-all duration-200 text-muted-foreground hover:text-foreground"
-            disabled
+            className="w-full text-left text-sm px-3.5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-accent hover:border-primary/30 transition-all duration-200 text-muted-foreground hover:text-foreground cursor-pointer"
+            onClick={() => onSelectSuggestion(text)}
           >
             {text}
           </motion.button>
@@ -190,18 +191,18 @@ export default function KnowledgeChatSidebar({ jobId, recruiterId, companyName, 
     setShowScrollBtn(gap > 120);
   }, []);
 
-  const handleSend = async () => {
-    const trimmed = input.trim();
+  const handleSend = async (text) => {
+    const textToSend = typeof text === 'string' ? text : input;
+    const trimmed = textToSend.trim();
     if (!trimmed || isLoading) return;
 
     const newMsg = { role: 'user', content: trimmed };
-    setMessages(prev => [...prev, newMsg]);
     setInput('');
     setIsLoading(true);
 
     // Add placeholder for streaming response
     const assistantMsgIndex = messages.length + 1;
-    setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
+    setMessages(prev => [...prev, newMsg, { role: 'assistant', content: '', streaming: true }]);
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
@@ -274,6 +275,12 @@ export default function KnowledgeChatSidebar({ jobId, recruiterId, companyName, 
     }
   };
 
+  const handleClearChat = () => {
+    setMessages([]);
+    setInput('');
+    setIsLoading(false);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -313,14 +320,26 @@ export default function KnowledgeChatSidebar({ jobId, recruiterId, companyName, 
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearChat}
+                  title="Xóa hội thoại (Bắt đầu lại)"
+                  className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {/* ── Message Area ── */}
@@ -330,7 +349,7 @@ export default function KnowledgeChatSidebar({ jobId, recruiterId, companyName, 
               className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin"
             >
               {messages.length === 0 ? (
-                <WelcomeState companyName={companyName} />
+                <WelcomeState companyName={companyName} onSelectSuggestion={handleSend} />
               ) : (
                 <>
                   {messages.map((m, i) => (

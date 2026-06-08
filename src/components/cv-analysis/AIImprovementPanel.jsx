@@ -32,6 +32,40 @@ const formatSkillLevel = (level) => {
   return levelLabels[normalizedLevel] || level;
 };
 
+const renderTextValue = (value) => {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (Array.isArray(value)) return value.map(renderTextValue).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    return value.name || value.title || value.label || value.description || value.skill || JSON.stringify(value);
+  }
+  return String(value);
+};
+
+const normalizeSkillGap = (gap) => {
+  if (typeof gap === 'string') {
+    return {
+      skill: gap,
+      current: null,
+      required: null,
+      resources: [],
+      time: null,
+      impact: null
+    };
+  }
+
+  const resources = gap?.learning_resources ?? gap?.resources ?? [];
+
+  return {
+    skill: gap?.skill || gap?.name || gap?.title || 'Kỹ năng cần bổ sung',
+    current: gap?.current_level ?? gap?.current,
+    required: gap?.required_level ?? gap?.required,
+    resources: Array.isArray(resources) ? resources : [resources].filter(Boolean),
+    time: gap?.time_to_proficiency ?? gap?.estimated_time ?? gap?.time,
+    impact: gap?.impact
+  };
+};
+
 const AIImprovementPanel = ({ cvScore }) => {
   const [expandedSections, setExpandedSections] = useState({
     summary: true,
@@ -49,7 +83,7 @@ const AIImprovementPanel = ({ cvScore }) => {
   };
 
   const handleCopy = (text, index) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(renderTextValue(text));
     setCopiedIndex(index);
     toast.success('Đã copy vào clipboard!');
     setTimeout(() => setCopiedIndex(null), 2000);
@@ -61,11 +95,12 @@ const AIImprovementPanel = ({ cvScore }) => {
       title: 'Tóm tắt & Mục tiêu',
       icon: Target,
       color: 'blue',
-      suggestions: cvScore?.improvements?.content?.filter(s => 
-        s.toLowerCase().includes('tóm tắt') || 
-        s.toLowerCase().includes('mục tiêu') ||
-        s.toLowerCase().includes('summary')
-      ) || []
+      suggestions: cvScore?.improvements?.content?.filter(s => {
+        const suggestionText = renderTextValue(s).toLowerCase();
+        return suggestionText.includes('tóm tắt') ||
+          suggestionText.includes('mục tiêu') ||
+          suggestionText.includes('summary');
+      }) || []
     },
     {
       id: 'experience',
@@ -80,13 +115,7 @@ const AIImprovementPanel = ({ cvScore }) => {
       title: 'Kỹ năng cần bổ sung',
       icon: Lightbulb,
       color: 'purple',
-      suggestions: cvScore?.skill_gaps?.map(gap => ({
-        skill: gap.skill,
-        current: gap.current_level,
-        required: gap.required_level,
-        resources: gap.learning_resources,
-        time: gap.time_to_proficiency
-      })) || []
+      suggestions: cvScore?.skill_gaps?.map(normalizeSkillGap) || []
     },
     {
       id: 'keywords',
@@ -129,7 +158,7 @@ const AIImprovementPanel = ({ cvScore }) => {
               <MessageSquare className="h-5 w-5 text-purple-600 flex-shrink-0 mt-1" />
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Tổng quan</h4>
-                <p className="text-gray-700 leading-relaxed">{cvScore.summary}</p>
+                <p className="text-gray-700 leading-relaxed">{renderTextValue(cvScore.summary)}</p>
               </div>
             </div>
           </div>
@@ -185,16 +214,16 @@ const AIImprovementPanel = ({ cvScore }) => {
                       <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="mb-3">
                           <Badge className="bg-red-100 text-red-700 mb-2">Trước</Badge>
-                          <p className="text-sm text-gray-700">{example.original}</p>
+                          <p className="text-sm text-gray-700">{renderTextValue(example.original)}</p>
                         </div>
                         <div className="mb-3">
                           <Badge className="bg-green-100 text-green-700 mb-2">Sau</Badge>
-                          <p className="text-sm text-gray-900 font-medium">{example.improved}</p>
+                          <p className="text-sm text-gray-900 font-medium">{renderTextValue(example.improved)}</p>
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleCopy(example.improved, `rewrite-${idx}`)}
+                          onClick={() => handleCopy(renderTextValue(example.improved), `rewrite-${idx}`)}
                           className="w-full"
                         >
                           {copiedIndex === `rewrite-${idx}` ? (
@@ -216,10 +245,12 @@ const AIImprovementPanel = ({ cvScore }) => {
                     {section.id === 'skills' && section.suggestions.map((gap, idx) => (
                       <div key={idx} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-semibold text-gray-900">{gap.skill}</h5>
-                          <Badge className="bg-purple-100 text-purple-700">
-                            {gap.time}
-                          </Badge>
+                          <h5 className="font-semibold text-gray-900">{renderTextValue(gap.skill)}</h5>
+                          {gap.time && (
+                            <Badge className="bg-purple-100 text-purple-700">
+                              {renderTextValue(gap.time)}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 mb-3 text-sm">
                           <span className="text-gray-600">Hiện tại:</span>
@@ -235,11 +266,16 @@ const AIImprovementPanel = ({ cvScore }) => {
                               {gap.resources.map((resource, rIdx) => (
                                 <li key={rIdx} className="text-sm text-gray-600 flex items-start gap-2">
                                   <span className="text-purple-600">•</span>
-                                  <span>{resource}</span>
+                                  <span>{renderTextValue(resource)}</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
+                        )}
+                        {gap.impact && (
+                          <p className="mt-3 text-sm font-semibold text-green-700">
+                            {renderTextValue(gap.impact)}
+                          </p>
                         )}
                       </div>
                     ))}
@@ -251,9 +287,9 @@ const AIImprovementPanel = ({ cvScore }) => {
                           <Badge
                             key={idx}
                             className="bg-orange-100 text-orange-700 cursor-pointer hover:bg-orange-200 transition-colors"
-                            onClick={() => handleCopy(keyword, `keyword-${idx}`)}
+                            onClick={() => handleCopy(renderTextValue(keyword), `keyword-${idx}`)}
                           >
-                            {keyword}
+                            {renderTextValue(keyword)}
                             {copiedIndex === `keyword-${idx}` ? (
                               <Check className="h-3 w-3 ml-1" />
                             ) : (
@@ -265,9 +301,9 @@ const AIImprovementPanel = ({ cvScore }) => {
                     )}
 
                     {/* General Suggestions */}
-                    {!section.isRewrite && !section.keywords && section.suggestions.map((suggestion, idx) => (
+                    {!section.isRewrite && !section.keywords && section.id !== 'skills' && section.suggestions.map((suggestion, idx) => (
                       <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-sm text-gray-700">{suggestion}</p>
+                        <p className="text-sm text-gray-700">{renderTextValue(suggestion)}</p>
                       </div>
                     ))}
                   </div>
