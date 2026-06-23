@@ -22,7 +22,13 @@ export default defineConfig(({ mode }) => {
       global: 'globalThis',
       'process.env': {},
     },
+    optimizeDeps: {
+      include: ['simli-client'],
+    },
     build: {
+      commonjsOptions: {
+        include: [/simli-client/, /node_modules/],
+      },
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
