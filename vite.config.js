@@ -5,41 +5,62 @@ import mkcert from 'vite-plugin-mkcert'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
+import { build as esbuildBundle } from 'esbuild'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Pre-resolve simli-client's dist dir so the custom plugin can fix CJS proxy resolution.
-// @rollup/plugin-commonjs creates virtual modules like "./Client?commonjs-external" with
-// relative paths, then fails to resolve "./Client" from those virtual paths on Linux.
 const _require = createRequire(import.meta.url)
-let simliClientDistDir = ''
-try {
-  simliClientDistDir = path.dirname(_require.resolve('simli-client'))
-} catch {}
+
+// Bundle simli-client (CJS) into a single ESM file via esbuild so Rollup never
+// sees the raw CJS require('./Client') calls that confuse @rollup/plugin-commonjs.
+function simliClientEsmPlugin() {
+  let cachedBundle = null
+
+  return {
+    name: 'simli-client-esm',
+    enforce: 'pre',
+    async resolveId(id) {
+      if (id === 'simli-client') return '\0virtual:simli-client'
+    },
+    async load(id) {
+      if (id !== '\0virtual:simli-client') return
+      if (!cachedBundle) {
+        let entryPoint
+        try {
+          entryPoint = _require.resolve('simli-client')
+        } catch {
+          return 'export {}'
+        }
+        const result = await esbuildBundle({
+          entryPoints: [entryPoint],
+          bundle: true,
+          format: 'esm',
+          platform: 'browser',
+          write: false,
+          external: ['livekit-client'],
+        })
+        // esbuild wraps CJS in "export default require_xxx()" — no named exports.
+        // Replace the default export with named exports so Rollup can tree-shake properly.
+        cachedBundle = result.outputFiles[0].text.replace(
+          /^export default (.+);$/m,
+          [
+            'const __simliPkg = $1;',
+            'export default __simliPkg;',
+            'export const { SimliClient, LogLevel, generateSimliSessionToken, generateIceServers } = __simliPkg;',
+          ].join('\n')
+        )
+      }
+      return { code: cachedBundle, map: null }
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [
-      react(),
-      tailwindcss(),
-      mkcert(),
-      {
-        name: 'fix-simli-cjs',
-        enforce: 'pre',
-        resolveId(source, importer) {
-          if (
-            simliClientDistDir &&
-            source === './Client' &&
-            importer?.includes('commonjs-external')
-          ) {
-            return path.resolve(simliClientDistDir, 'Client.js')
-          }
-        },
-      },
-    ],
+    plugins: [react(), tailwindcss(), mkcert(), simliClientEsmPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -49,13 +70,7 @@ export default defineConfig(({ mode }) => {
       global: 'globalThis',
       'process.env': {},
     },
-    optimizeDeps: {
-      include: ['simli-client'],
-    },
     build: {
-      commonjsOptions: {
-        transformMixedEsModules: true,
-      },
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
@@ -67,15 +82,7 @@ export default defineConfig(({ mode }) => {
     server: {
       https: false,
       host: '0.0.0.0',
-      // open: true,
       port: 3000,
-      // proxy: {
-      //   '/api': {
-      //     // dùng env ở đây là được
-      //     target: env.VITE_API_BASE_URL || 'http://localhost:5000',
-      //     changeOrigin: true,
-      //   },
-      // },
       allowedHosts: true,
     },
   }
